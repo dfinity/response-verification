@@ -2,7 +2,7 @@ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
 
 filegroup(
     name = "srcs",
-    srcs = glob(["src/**/*"]),
+    srcs = glob(["src/**/*.rs"]),
     visibility = ["//ic-response-verification-ts:__pkg__"],
 )
 
