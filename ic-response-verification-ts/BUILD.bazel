@@ -1,20 +1,13 @@
-load("@rules_rust//rust:defs.bzl", "rust_shared_library")
 load("@rules_rust//wasm_bindgen:wasm_bindgen.bzl", "rust_wasm_bindgen")
-
-rust_shared_library(
-    name = "lib_wasm",
-    srcs = ["//ic-response-verification-rs:srcs"],
-    deps = ["@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen"],
-)
 
 rust_wasm_bindgen(
     name = "lib_wasm_web",
     target = "web",
-    wasm_file = ":lib_wasm",
+    wasm_file = "//ic-response-verification-rs:lib_wasm",
 )
 
 rust_wasm_bindgen(
     name = "lib_wasm_nodejs",
     target = "nodejs",
-    wasm_file = ":lib_wasm",
+    wasm_file = "//ic-response-verification-rs:lib_wasm",
 )
