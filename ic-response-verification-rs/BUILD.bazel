@@ -1,0 +1,18 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
+
+filegroup(
+    name = "srcs",
+    srcs = glob(["src/**/*"]),
+    visibility = ["//ic-response-verification-ts:__pkg__"],
+)
+
+rust_library(
+    name = "lib",
+    srcs = [":srcs"],
+    crate_name = "ic_response_verification",
+)
+
+rust_test(
+    name = "lib_test",
+    crate = ":lib",
+)
