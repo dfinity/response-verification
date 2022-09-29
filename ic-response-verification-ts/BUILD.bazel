@@ -1,0 +1,13 @@
+load("@rules_rust//wasm_bindgen:wasm_bindgen.bzl", "rust_wasm_bindgen")
+
+rust_wasm_bindgen(
+    name = "lib_wasm_web",
+    target = "web",
+    wasm_file = "//ic-response-verification-rs:lib_wasm",
+)
+
+rust_wasm_bindgen(
+    name = "lib_wasm_nodejs",
+    target = "nodejs",
+    wasm_file = "//ic-response-verification-rs:lib_wasm",
+)
