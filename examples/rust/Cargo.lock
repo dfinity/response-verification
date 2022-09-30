@@ -55,6 +55,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust"
+version = "0.1.0"
+dependencies = [
+ "ic-response-verification",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.101"
 source = "registry+https://github.com/rust-lang/crates.io-index"

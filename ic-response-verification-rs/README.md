@@ -3,13 +3,13 @@
 ## Build
 
 ```shell
-$ bazel build //ic-response-verification-rs:lib
+$ cargo build
 ```
 
 ## Test
 
 ```shell
-$ bazel test //ic-response-verification-rs:lib_test
+$ cargo test --lib
 ```
 
 ## Format
@@ -17,5 +17,5 @@ $ bazel test //ic-response-verification-rs:lib_test
 Format rust files.
 
 ```shell
-$ bazel run @rules_rust//:rustfmt
+$ cargo fmt
 ```
