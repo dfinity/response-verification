@@ -1,0 +1,77 @@
+name: Release
+
+on: workflow_dispatch
+
+jobs:
+  bump_version:
+    name: Bump version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - id: cz
+        name: Run commitizen
+        uses: commitizen-tools/commitizen-action@master
+        with:
+          changelog_increment_filename: RELEASE_NOTES.md
+          commit: false
+
+      - name: Print Version
+        run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
+
+      - name: Update Cargo.lock
+        run:
+          working-directory: ic-response-verification-rs
+          shell: cargo build
+
+      - name: Update package-lock.json
+        run:
+          working-directory: ic-response-verification-ts
+          shell: npm i --package-lock-only
+
+      - name: Commit and Push changes to repository
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'bump: release ${{ steps.cz.outputs.version }}'
+          commit_options: '--no-verify --signoff'
+          file_pattern: >
+            .cz.yaml
+            CHANGELOG.md
+            ic-response-verification-rs/Cargo.toml
+            ic-response-verification-rs/Cargo.lock
+            ic-response-verification-ts/package.json
+            ic-response-verification-ts/package-lock.json
+          tagging_message: '${{ steps.cz.outputs.version }}'
+
+      - name: Create Cargo crate release
+        run:
+          working-directory: ic-response-verification-rs
+          shell: cargo publish --dry-run
+
+      - name: Create NPM package release
+        run:
+          working-directory: ic-response-verification-ts
+          shell: npm pack
+
+      - name: Create Github release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: >
+            ic-response-verification-rs/target/package/ic-response-verification-${{ steps.cz.outputs.version }}.crate
+            ic-response-verification-ts/dfinity-response-verification-${{ steps.cz.outputs.version }}.tgz
+          bodyFile: 'RELEASE_NOTES.md'
+          tag: '${{ steps.cz.outputs.version }}'
+          commit: 'main'
