@@ -1,5 +1,8 @@
-pub fn say_hello() -> &'static str {
-    "Hello World!"
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(js_name = sayHello)]
+pub fn say_hello() -> String {
+    String::from("Hello World!")
 }
 
 #[cfg(test)]

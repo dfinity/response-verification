@@ -1,14 +1,8 @@
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_shared_library", "rust_test")
+load("@rules_rust//rust:defs.bzl", "rust_shared_library")
 
 filegroup(
     name = "srcs",
     srcs = glob(["src/**/*.rs"]),
-)
-
-rust_library(
-    name = "lib",
-    srcs = [":srcs"],
-    crate_name = "ic_response_verification",
 )
 
 rust_shared_library(
@@ -16,9 +10,4 @@ rust_shared_library(
     srcs = [":srcs"],
     visibility = ["//ic-response-verification-ts:__pkg__"],
     deps = ["@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen"],
-)
-
-rust_test(
-    name = "lib_test",
-    crate = ":lib",
 )

@@ -1,4 +1,5 @@
 load("@rules_rust//wasm_bindgen:wasm_bindgen.bzl", "rust_wasm_bindgen")
+load("@build_bazel_rules_nodejs//:index.bzl", "pkg_npm")
 
 rust_wasm_bindgen(
     name = "lib_wasm_web",
@@ -10,4 +11,14 @@ rust_wasm_bindgen(
     name = "lib_wasm_nodejs",
     target = "nodejs",
     wasm_file = "//ic-response-verification-rs:lib_wasm",
+)
+
+pkg_npm(
+    name = "lib",
+    package_name = "@dfinity/response-verification",
+    srcs = ["package.json"],
+    deps = [
+        ":lib_wasm_nodejs",
+        ":lib_wasm_web",
+    ],
 )

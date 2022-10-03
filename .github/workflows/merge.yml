@@ -1,0 +1,39 @@
+name: Pull Request
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  update_changelog:
+    name: Update Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Commitzen
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U Commitizen
+
+      - name: Check Commit Messages
+        run: cz check --rev-range HEAD
+
+      - name: Update Changelog
+        run: cz changelog
+
+      - name: Commit and Push Changes to Repository
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'chore: update changelog'
+          commit_options: '--no-verify --signoff'
+          file_pattern: 'CHANGELOG.md'
