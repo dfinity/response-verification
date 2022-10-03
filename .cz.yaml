@@ -1,0 +1,8 @@
+commitizen:
+  name: cz_conventional_commits
+  tag_format: $version
+  version: 0.0.0
+  version_files:
+    - ic-response-verification-rs/Cargo.toml:version
+    - ic-response-verification-ts/package.json:version
+  update_changelog_on_bump: true
