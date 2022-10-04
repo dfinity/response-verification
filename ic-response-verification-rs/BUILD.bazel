@@ -1,4 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_shared_library")
+load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 
 filegroup(
     name = "srcs",
@@ -8,6 +9,10 @@ filegroup(
 rust_shared_library(
     name = "lib_wasm",
     srcs = [":srcs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(proc_macro = True),
     visibility = ["//ic-response-verification-ts:__pkg__"],
-    deps = ["@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen"],
+    deps = all_crate_deps(normal = True) + [
+        "@rules_rust//wasm_bindgen/3rdparty:wasm_bindgen",
+    ],
 )
