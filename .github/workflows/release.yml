@@ -35,14 +35,12 @@ jobs:
         run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
 
       - name: Update Cargo.lock
-        run:
-          working-directory: ic-response-verification-rs
-          shell: cargo build
+        run: cargo build
+        working-directory: ic-response-verification-rs
 
       - name: Update package-lock.json
-        run:
-          working-directory: ic-response-verification-ts
-          shell: npm i --package-lock-only
+        run: npm i --package-lock-only
+        working-directory: ic-response-verification-ts
 
       - name: Commit and Push changes to repository
         uses: stefanzweifel/git-auto-commit-action@v4
@@ -59,14 +57,12 @@ jobs:
           tagging_message: '${{ steps.cz.outputs.version }}'
 
       - name: Create Cargo crate release
-        run:
-          working-directory: ic-response-verification-rs
-          shell: cargo publish --dry-run
+        run: cargo publish --dry-run
+        working-directory: ic-response-verification-rs
 
       - name: Create NPM package release
-        run:
-          working-directory: ic-response-verification-ts
-          shell: npm pack
+        run: npm pack
+        working-directory: ic-response-verification-ts
 
       - name: Create Github release
         uses: ncipollo/release-action@v1
