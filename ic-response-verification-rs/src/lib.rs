@@ -1,18 +1,13 @@
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen(js_name = sayHello)]
-pub fn say_hello() -> String {
-    String::from("Hello World!")
-}
+pub mod certificate_header;
+mod certificate_header_field;
+mod logger;
 
-#[cfg(test)]
-mod tests {
-    use crate::say_hello;
+use certificate_header::CertificateHeader;
 
-    #[test]
-    fn say_hello_returns_a_string() {
-        let result = say_hello();
-
-        assert_eq!(result, "Hello World!");
-    }
+#[cfg_attr(target_arch = "wasm32", wasm_bindgen(js_name = parseCertificateHeader))]
+pub fn parse_certificate_header(header_value: String) -> CertificateHeader {
+    CertificateHeader::from(header_value.as_str())
 }

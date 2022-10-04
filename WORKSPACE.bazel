@@ -15,6 +15,23 @@ rules_rust_dependencies()
 
 rust_register_toolchains(edition = "2021")
 
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies()
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+
+crates_repository(
+    name = "crate_index",
+    cargo_lockfile = "//ic-response-verification-rs:Cargo.lock",
+    lockfile = "//ic-response-verification-rs:cargo-bazel-lock.json",
+    manifests = ["//ic-response-verification-rs:Cargo.toml"],
+)
+
+load("@crate_index//:defs.bzl", "crate_repositories")
+
+crate_repositories()
+
 load("@rules_rust//wasm_bindgen:repositories.bzl", "rust_wasm_bindgen_repositories")
 
 rust_wasm_bindgen_repositories()
