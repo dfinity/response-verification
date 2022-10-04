@@ -3,6 +3,7 @@ use wasm_bindgen::prelude::*;
 
 use crate::{certificate_header_field::CertificateHeaderField, warn};
 
+/// Parsed `Ic-Certificate` header, containing a certificate and tree.
 #[derive(Debug)]
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen(getter_with_clone))]
 pub struct CertificateHeader {
@@ -11,6 +12,11 @@ pub struct CertificateHeader {
 }
 
 impl CertificateHeader {
+    /// Parses the given header and returns a new CertificateHeader.
+    ///
+    /// ```
+    /// let certificate_header = CertificateHeader::from("certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:,tree=:SGVsbG8gVHJlZSE=:");
+    /// ```
     pub fn from(header_value: &str) -> CertificateHeader {
         let mut certificate_header = CertificateHeader {
             certificate: None,

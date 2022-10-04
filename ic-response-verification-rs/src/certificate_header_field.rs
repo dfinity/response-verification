@@ -2,10 +2,16 @@ use lazy_regex::regex_captures;
 
 use crate::error;
 
+/// Parsed key, value pair for an `Ic-Certificate` header field.
 #[derive(Debug)]
 pub struct CertificateHeaderField<'a>(pub &'a str, pub Vec<u8>);
 
 impl<'a> CertificateHeaderField<'a> {
+    /// Parses the given header field string and returns a new CertificateHeaderField.
+    ///
+    /// ```
+    /// let certificate_header_field = CertificateHeaderField::from("certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:");
+    /// ```
     pub fn from(header_field: &'a str) -> Option<CertificateHeaderField<'a>> {
         if let Some((_, name, encoded_value)) =
             regex_captures!("^(.*)=:(.*):$", header_field.trim())
