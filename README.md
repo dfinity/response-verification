@@ -31,6 +31,7 @@ window.addEventListener('load', async () => {
 
 - [Install pre-commit](https://pre-commit.com/#installation)
 - [Install commitizen](https://commitizen-tools.github.io/commitizen/#installation)
+- [Install Bazelisk](https://github.com/bazelbuild/bazelisk)
 
 ### Making a Commit
 
