@@ -18,6 +18,7 @@ pkg_npm(
     package_name = "@dfinity/response-verification",
     srcs = ["package.json"],
     deps = [
+        "lib_wasm_typings.d.ts",
         ":lib_wasm_nodejs",
         ":lib_wasm_web",
     ],

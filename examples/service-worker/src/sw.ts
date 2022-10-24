@@ -1,6 +1,6 @@
 import initResponseVerification, {
-  parseCertificateHeader,
-} from '@dfinity/response-verification';
+  verifyRequestResponsePair,
+} from "@dfinity/response-verification";
 
 function createHeaderField(name: string, value: string): string {
   let base64Value = btoa(value);
@@ -15,8 +15,10 @@ self.addEventListener('activate', async () => {
     createHeaderField('certificate', 'Hello Certificate!'),
     createHeaderField('tree', 'Hello Tree!'),
   ].join(',');
-  const certificateHeader = parseCertificateHeader(header);
+  const result = verifyRequestResponsePair(
+    { headers: [["Ic-Certificate", header]] },
+    { headers: [["Ic-Certificate", header]] }
+  );
 
-  console.log('CertificateHeader.certificate', certificateHeader.certificate);
-  console.log('CertificateHeader.tree', certificateHeader.tree);
+  console.log("Result", result);
 });
