@@ -1,5 +1,5 @@
 {
-  "checksum": "8f006a9e56c454215faf4ba881e8102939335dfa3bd8c48575ed7c973a552d68",
+  "checksum": "0e3824d9490da326f5766477f7931d400e4e700cfd67fdef669ed19dd2c6252a",
   "crates": {
     "aho-corasick 0.7.19": {
       "name": "aho-corasick",
@@ -231,6 +231,10 @@
             {
               "id": "console_error_panic_hook 0.1.7",
               "target": "console_error_panic_hook"
+            },
+            {
+              "id": "js-sys 0.3.60",
+              "target": "js_sys"
             },
             {
               "id": "lazy-regex 2.3.0",

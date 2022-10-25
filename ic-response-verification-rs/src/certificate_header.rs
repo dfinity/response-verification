@@ -25,7 +25,7 @@ impl CertificateHeader {
 
         for field in header_value.split(',') {
             if let Some(CertificateHeaderField(name, value)) = CertificateHeaderField::from(field) {
-                match name {
+                match name.as_str() {
                     "certificate" => {
                         certificate_header.certificate = match certificate_header.certificate {
                             None => Some(value),

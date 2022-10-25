@@ -1,22 +1,18 @@
-use lazy_regex::regex_captures;
-
 use crate::error;
 
 /// Parsed key, value pair for an `Ic-Certificate` header field.
 #[derive(Debug)]
-pub struct CertificateHeaderField<'a>(pub &'a str, pub Vec<u8>);
+pub struct CertificateHeaderField(pub String, pub Vec<u8>);
 
-impl<'a> CertificateHeaderField<'a> {
+impl CertificateHeaderField {
     /// Parses the given header field string and returns a new CertificateHeaderField.
     ///
     /// ```
     /// let certificate_header_field = CertificateHeaderField::from("certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:");
     /// ```
-    pub fn from(header_field: &'a str) -> Option<CertificateHeaderField<'a>> {
-        if let Some((_, name, encoded_value)) =
-            regex_captures!("^(.*)=:(.*):$", header_field.trim())
-        {
-            if let Some(value) = decode_header_field_value(name, encoded_value) {
+    pub fn from(header_field: &str) -> Option<CertificateHeaderField> {
+        if let Some((name, encoded_value)) = extract_header_field(header_field.trim()) {
+            if let Some(value) = decode_header_field_value(&name, &encoded_value) {
                 return Some(CertificateHeaderField(name, value));
             }
         }
@@ -37,6 +33,30 @@ fn decode_header_field_value(name: &str, value: &str) -> Option<Vec<u8>> {
             None
         }
     }
+}
+
+fn extract_header_field(header_field: &str) -> Option<(String, String)> {
+    #[cfg(target_arch = "wasm32")]
+    if let Some(values) = js_sys::RegExp::new("^(.*)=:(.*):$", "")
+        .exec(header_field)
+        .map(|x| x.to_vec())
+        .map(|x| {
+            x.into_iter()
+                .filter_map(|y| y.as_string())
+                .collect::<Vec<String>>()
+        })
+    {
+        return Some((values[1].clone(), values[2].clone()));
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    if let Some((_whole, name, encoded_value)) =
+        lazy_regex::regex_captures!("^(.*)=:(.*):$", header_field)
+    {
+        return Some((name.to_string(), encoded_value.to_string()));
+    }
+
+    return None;
 }
 
 #[cfg(test)]
