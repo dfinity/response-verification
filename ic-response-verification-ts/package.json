@@ -1,7 +1,7 @@
 {
   "name": "@dfinity/response-verification",
   "version": "0.0.0",
-  "main": "./lib_wasm_nodejs.js",
-  "browser": "./lib_wasm_web.js",
+  "main": "./lib_wasm_nodejs_opt/lib_wasm_nodejs.js",
+  "browser": "./lib_wasm_web_opt/./lib_wasm_web.js",
   "types": "./lib_wasm_typings.d.ts"
 }
