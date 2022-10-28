@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 base64 = "0.13.0"
 console_error_panic_hook = "0.1.7"
-lazy-regex = "2.3.0"
+nom = "7.1.1"
 js-sys = "0.3"
 wasm-bindgen = "0.2.83"
 
