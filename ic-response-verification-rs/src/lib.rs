@@ -21,8 +21,8 @@ mod logger;
 pub fn verify_request_response_pair_js(request: JsValue, response: JsValue) -> bool {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    let request: Request = serde_wasm_bindgen::from_value(request).unwrap();
-    let response: Response = serde_wasm_bindgen::from_value(response).unwrap();
+    let request = Request::from(request);
+    let response = Response::from(response);
 
     verify_request_response_pair(request, response)
 }
