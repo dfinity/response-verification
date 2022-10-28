@@ -1,6 +1,10 @@
-use lazy_regex::regex_captures;
-
 use crate::error;
+use nom::{
+    bytes::complete::{tag, take_until},
+    combinator::eof,
+    sequence::terminated,
+    IResult,
+};
 
 /// Parsed key, value pair for an `Ic-Certificate` header field.
 #[derive(Debug)]
@@ -13,9 +17,7 @@ impl<'a> CertificateHeaderField<'a> {
     /// let certificate_header_field = CertificateHeaderField::from("certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:");
     /// ```
     pub fn from(header_field: &'a str) -> Option<CertificateHeaderField<'a>> {
-        if let Some((_, name, encoded_value)) =
-            regex_captures!("^(.*)=:(.*):$", header_field.trim())
-        {
+        if let Some((name, encoded_value)) = extract_header_field(header_field.trim()) {
             if let Some(value) = decode_header_field_value(name, encoded_value) {
                 return Some(CertificateHeaderField(name, value));
             }
@@ -23,6 +25,22 @@ impl<'a> CertificateHeaderField<'a> {
 
         return None;
     }
+}
+
+fn extract_header_field(header_field: &str) -> Option<(&str, &str)> {
+    fn until_terminated<'a>(v: &str, i: &'a str) -> IResult<&'a str, &'a str> {
+        terminated(take_until(v), tag(v))(i)
+    }
+
+    fn extract(i: &str) -> IResult<&str, (&str, &str)> {
+        let (i, name) = until_terminated("=:", i)?;
+        let (i, encoded_value) = until_terminated(":", i)?;
+        eof(i)?;
+
+        Ok((i, (name, encoded_value)))
+    }
+
+    extract(header_field).ok().map(|v| v.1)
 }
 
 fn decode_header_field_value(name: &str, value: &str) -> Option<Vec<u8>> {

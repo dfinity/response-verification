@@ -1,52 +1,6 @@
 {
-  "checksum": "0266fa39d4b3708d52728143f2c69a013673609a8c01f9560da9f9acf2d8ef62",
+  "checksum": "4fde57291d07fd57e71756be912e7ac07f6526635cdaa5aecd9c284f7eaa1a05",
   "crates": {
-    "aho-corasick 0.7.19": {
-      "name": "aho-corasick",
-      "version": "0.7.19",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/aho-corasick/0.7.19/download",
-          "sha256": "b4f55bd91a0978cbfd91c457a164bab8b4001c833b7f323132c0a4e1922dd44e"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "aho_corasick",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "aho_corasick",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": [
-          "default",
-          "std"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "memchr 2.5.0",
-              "target": "memchr"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.7.19"
-      },
-      "license": "Unlicense/MIT"
-    },
     "base64 0.13.1": {
       "name": "base64",
       "version": "0.13.1",
@@ -237,8 +191,8 @@
               "target": "js_sys"
             },
             {
-              "id": "lazy-regex 2.3.0",
-              "target": "lazy_regex"
+              "id": "nom 7.1.1",
+              "target": "nom"
             },
             {
               "id": "wasm-bindgen 0.2.83",
@@ -302,118 +256,6 @@
         "version": "0.3.60"
       },
       "license": "MIT/Apache-2.0"
-    },
-    "lazy-regex 2.3.0": {
-      "name": "lazy-regex",
-      "version": "2.3.0",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/lazy-regex/2.3.0/download",
-          "sha256": "b6b12f2eb6ed7d39405c5eb25a034b4c106a9ad87a6d9be3298de6c5f32fd57d"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "lazy_regex",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "lazy_regex",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": [
-          "default"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "once_cell 1.16.0",
-              "target": "once_cell"
-            },
-            {
-              "id": "regex 1.6.0",
-              "target": "regex"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2021",
-        "proc_macro_deps": {
-          "common": [
-            {
-              "id": "lazy-regex-proc_macros 2.3.0",
-              "target": "lazy_regex_proc_macros"
-            }
-          ],
-          "selects": {}
-        },
-        "version": "2.3.0"
-      },
-      "license": "MIT"
-    },
-    "lazy-regex-proc_macros 2.3.0": {
-      "name": "lazy-regex-proc_macros",
-      "version": "2.3.0",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/lazy-regex-proc_macros/2.3.0/download",
-          "sha256": "f2496e5264069bc726ccf37eb76b9cd89406ae110d836c3f76729f99c8a23293"
-        }
-      },
-      "targets": [
-        {
-          "ProcMacro": {
-            "crate_name": "lazy_regex_proc_macros",
-            "crate_root": "mod.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "lazy_regex_proc_macros",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "proc-macro2 1.0.47",
-              "target": "proc_macro2"
-            },
-            {
-              "id": "quote 1.0.21",
-              "target": "quote"
-            },
-            {
-              "id": "regex 1.6.0",
-              "target": "regex"
-            },
-            {
-              "id": "syn 1.0.103",
-              "target": "syn"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "2.3.0"
-      },
-      "license": "MIT"
     },
     "log 0.4.17": {
       "name": "log",
@@ -519,7 +361,6 @@
           "**"
         ],
         "crate_features": [
-          "default",
           "std"
         ],
         "deps": {
@@ -540,6 +381,93 @@
         ]
       },
       "license": "Unlicense/MIT"
+    },
+    "minimal-lexical 0.2.1": {
+      "name": "minimal-lexical",
+      "version": "0.2.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/minimal-lexical/0.2.1/download",
+          "sha256": "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "minimal_lexical",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "include": [
+                "**/*.rs"
+              ],
+              "exclude": []
+            }
+          }
+        }
+      ],
+      "library_target_name": "minimal_lexical",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": [
+          "std"
+        ],
+        "edition": "2018",
+        "version": "0.2.1"
+      },
+      "license": "MIT/Apache-2.0"
+    },
+    "nom 7.1.1": {
+      "name": "nom",
+      "version": "7.1.1",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/nom/7.1.1/download",
+          "sha256": "a8903e5a29a317527874d0402f867152a3d21c908bb0b933e416c65e301d4c36"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "nom",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "include": [
+                "**/*.rs"
+              ],
+              "exclude": []
+            }
+          }
+        }
+      ],
+      "library_target_name": "nom",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": [
+          "alloc",
+          "default",
+          "std"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "memchr 2.5.0",
+              "target": "memchr"
+            },
+            {
+              "id": "minimal-lexical 0.2.1",
+              "target": "minimal_lexical"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "7.1.1"
+      },
+      "license": "MIT"
     },
     "once_cell 1.16.0": {
       "name": "once_cell",
@@ -714,126 +642,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "regex 1.6.0": {
-      "name": "regex",
-      "version": "1.6.0",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/regex/1.6.0/download",
-          "sha256": "4c4eb3267174b8c6c2f654116623910a0fef09c4753f8dd83db29c48a0df988b"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "regex",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "regex",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": [
-          "aho-corasick",
-          "default",
-          "memchr",
-          "perf",
-          "perf-cache",
-          "perf-dfa",
-          "perf-inline",
-          "perf-literal",
-          "std",
-          "unicode",
-          "unicode-age",
-          "unicode-bool",
-          "unicode-case",
-          "unicode-gencat",
-          "unicode-perl",
-          "unicode-script",
-          "unicode-segment"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "aho-corasick 0.7.19",
-              "target": "aho_corasick"
-            },
-            {
-              "id": "memchr 2.5.0",
-              "target": "memchr"
-            },
-            {
-              "id": "regex-syntax 0.6.27",
-              "target": "regex_syntax"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "1.6.0"
-      },
-      "license": "MIT OR Apache-2.0"
-    },
-    "regex-syntax 0.6.27": {
-      "name": "regex-syntax",
-      "version": "0.6.27",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/regex-syntax/0.6.27/download",
-          "sha256": "a3f87b73ce11b1619a3c6332f45341e0047173771e8b8b73f87bfeefb7b56244"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "regex_syntax",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "regex_syntax",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "crate_features": [
-          "default",
-          "unicode",
-          "unicode-age",
-          "unicode-bool",
-          "unicode-case",
-          "unicode-gencat",
-          "unicode-perl",
-          "unicode-script",
-          "unicode-segment"
-        ],
-        "edition": "2018",
-        "version": "0.6.27"
-      },
-      "license": "MIT OR Apache-2.0"
-    },
-    "scoped-tls 1.0.0": {
+    "scoped-tls 1.0.1": {
       "name": "scoped-tls",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/scoped-tls/1.0.0/download",
-          "sha256": "ea6a9290e3c9cf0f18145ef7ffa62d68ee0bf5fcd651017e586dc7fd5da448c2"
+          "url": "https://crates.io/api/v1/crates/scoped-tls/1.0.1/download",
+          "sha256": "e1cf6437eb19a8f4a6cc0f7dca544973b0b78843adbfeb3683d1a94a0024a294"
         }
       },
       "targets": [
@@ -856,7 +671,7 @@
           "**"
         ],
         "edition": "2015",
-        "version": "1.0.0"
+        "version": "1.0.1"
       },
       "license": "MIT/Apache-2.0"
     },
@@ -1387,7 +1202,7 @@
               "target": "js_sys"
             },
             {
-              "id": "scoped-tls 1.0.0",
+              "id": "scoped-tls 1.0.1",
               "target": "scoped_tls"
             },
             {
