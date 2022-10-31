@@ -1,6 +1,5 @@
 #[cfg(target_arch = "wasm32")]
-use wasm_bindgen::{JsCast, prelude::*};
-
+use wasm_bindgen::{prelude::*, JsCast};
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(typescript_custom_section)]
@@ -19,7 +18,7 @@ pub struct Response {
 #[cfg(target_arch = "wasm32")]
 impl From<JsValue> for Response {
     fn from(req: JsValue) -> Self {
-        use js_sys::{Array, Object, JsString};
+        use js_sys::{Array, JsString, Object};
 
         let headers_str = JsString::from("headers");
 
@@ -40,33 +39,37 @@ impl From<JsValue> for Response {
                 }
             }
         }
-        Self{
-            headers
-        }
+        Self { headers }
     }
 }
 
 #[cfg(all(target_arch = "wasm32", test))]
 mod tests {
-    use wasm_bindgen_test::wasm_bindgen_test;
     use super::*;
     use js_sys::JSON;
+    use wasm_bindgen_test::wasm_bindgen_test;
 
     #[wasm_bindgen_test]
     fn request_from() {
-        let v = JSON::parse(r#"{
+        let v = JSON::parse(
+            r#"{
     "headers": [
         ["header1", "header1val"],
         ["header2", "header2val"]
     ]
-}"#).expect("failed to parse JSON");
+}"#,
+        )
+        .expect("failed to parse JSON");
         let r = Response::from(v);
 
-        assert_eq!(r, Response{
-            headers: vec![
-                ("header1".into(), "header1val".into()),
-                ("header2".into(), "header2val".into()),
-            ],
-        });
+        assert_eq!(
+            r,
+            Response {
+                headers: vec![
+                    ("header1".into(), "header1val".into()),
+                    ("header2".into(), "header2val".into()),
+                ],
+            }
+        );
     }
 }
