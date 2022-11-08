@@ -23,6 +23,18 @@ rust_shared_library(
     srcs = [":srcs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(proc_macro = True),
+    rustc_flags = [
+        "-C",
+        "linker-plugin-lto",
+        "-C",
+        "opt-level=s",
+        "-C",
+        "debug-assertions=no",
+        "-C",
+        "debuginfo=0",
+        "-C",
+        "lto",
+    ],
     visibility = ["//ic-response-verification-ts:__pkg__"],
     deps = all_crate_deps(normal = True),
 )

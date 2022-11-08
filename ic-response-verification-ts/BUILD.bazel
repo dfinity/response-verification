@@ -1,10 +1,16 @@
 load("@rules_rust//wasm_bindgen:wasm_bindgen.bzl", "rust_wasm_bindgen")
 load("@build_bazel_rules_nodejs//:index.bzl", "pkg_npm")
+load("//binaryen:wasm_opt.bzl", "wasm_opt")
 
 rust_wasm_bindgen(
     name = "lib_wasm_web",
     target = "web",
     wasm_file = "//ic-response-verification-rs:lib_wasm",
+)
+
+wasm_opt(
+    name = "lib_wasm_web_opt",
+    srcs = [":lib_wasm_web"],
 )
 
 rust_wasm_bindgen(
@@ -13,13 +19,18 @@ rust_wasm_bindgen(
     wasm_file = "//ic-response-verification-rs:lib_wasm",
 )
 
+wasm_opt(
+    name = "lib_wasm_nodejs_opt",
+    srcs = [":lib_wasm_nodejs"],
+)
+
 pkg_npm(
     name = "lib",
     package_name = "@dfinity/response-verification",
     srcs = ["package.json"],
     deps = [
         "lib_wasm_typings.d.ts",
-        ":lib_wasm_nodejs",
-        ":lib_wasm_web",
+        ":lib_wasm_nodejs_opt",
+        ":lib_wasm_web_opt",
     ],
 )

@@ -1,5 +1,5 @@
-export * from './lib_wasm_web';
-import init, { Request, Response } from './lib_wasm_web';
+export * from './lib_wasm_web_opt/lib_wasm_web';
+import init, { Request, Response } from './lib_wasm_web_opt/lib_wasm_web';
 
 export function verifyRequestResponsePair(
   request: Request,
