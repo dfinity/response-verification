@@ -67,3 +67,9 @@ npm_install(
     package_json = "//ic-response-verification-ts:package.json",
     package_lock_json = "//ic-response-verification-ts:package-lock.json",
 )
+
+# Binaryen
+
+load("//binaryen:binaryen_repositories.bzl", "binaryen_repositories")
+
+binaryen_repositories()
