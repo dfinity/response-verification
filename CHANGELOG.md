@@ -11,4 +11,8 @@
 - rename pub interface function for JS to verify_request_response_pair
 - remove `serde` in favor of `js-sys`
 
+### Perf
+
+- add binaryen wasm opt support
+
 ## 0.0.0 (2022-09-29)
