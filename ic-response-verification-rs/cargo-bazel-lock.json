@@ -1,5 +1,5 @@
 {
-  "checksum": "370d125e17409a07edfa8e0a708eb8849b764188b224d7d435452468ba92feeb",
+  "checksum": "85100a3f70a7bfd4564190b37fb484790927baac563898671e7fa4e8c8a04f64",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -894,7 +894,7 @@
               "target": "candid_derive"
             },
             {
-              "id": "paste 1.0.9",
+              "id": "paste 1.0.10",
               "target": "paste"
             }
           ],
@@ -3735,13 +3735,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "paste 1.0.9": {
+    "paste 1.0.10": {
       "name": "paste",
-      "version": "1.0.9",
+      "version": "1.0.10",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/paste/1.0.9/download",
-          "sha256": "b1de2e551fb905ac83f73f7aedf2f0cb4a0da7e35efa24a202a936269f1f18e1"
+          "url": "https://crates.io/api/v1/crates/paste/1.0.10/download",
+          "sha256": "cf1c2c742266c2f1041c914ba65355a83ae8747b05f208319784083583494b4b"
         }
       },
       "targets": [
@@ -3756,6 +3756,18 @@
               "exclude": []
             }
           }
+        },
+        {
+          "BuildScript": {
+            "crate_name": "build_script_build",
+            "crate_root": "build.rs",
+            "srcs": {
+              "include": [
+                "**/*.rs"
+              ],
+              "exclude": []
+            }
+          }
         }
       ],
       "library_target_name": "paste",
@@ -3763,8 +3775,22 @@
         "compile_data_glob": [
           "**"
         ],
+        "deps": {
+          "common": [
+            {
+              "id": "paste 1.0.10",
+              "target": "build_script_build"
+            }
+          ],
+          "selects": {}
+        },
         "edition": "2018",
-        "version": "1.0.9"
+        "version": "1.0.10"
+      },
+      "build_script_attrs": {
+        "data_glob": [
+          "**"
+        ]
       },
       "license": "MIT OR Apache-2.0"
     },
