@@ -3,14 +3,14 @@ use crate::error::ResponseVerificationError;
 use crate::hash_tree::parsed_cbor_to_tree;
 use ic_certification::{Certificate, Delegation, HashTree};
 
-pub trait CertificateToCbor {
-    fn from_cbor(cbor: &[u8]) -> Result<Certificate, ResponseVerificationError>;
+pub trait CertificateToCbor<'a> {
+    fn from_cbor(cbor: Vec<u8>) -> Result<Certificate<'a>, ResponseVerificationError>;
 }
 
-impl<'a> CertificateToCbor for Certificate<'a> {
-    fn from_cbor(cbor: &[u8]) -> Result<Certificate, ResponseVerificationError> {
+impl<'a> CertificateToCbor<'a> for Certificate<'a> {
+    fn from_cbor(cbor: Vec<u8>) -> Result<Certificate<'a>, ResponseVerificationError> {
         let parsed_cbor =
-            parse_cbor(cbor).map_err(|e| ResponseVerificationError::InvalidCbor(e.to_string()))?;
+            parse_cbor(&cbor).map_err(|e| ResponseVerificationError::InvalidCbor(e.to_string()))?;
 
         parsed_cbor_to_certificate(parsed_cbor)
     }
@@ -98,7 +98,7 @@ mod tests {
             .expect("Failed to encode certificate to cbor");
 
         let certificate =
-            Certificate::from_cbor(&cbor).expect("Failed to decode certificate from cbor");
+            Certificate::from_cbor(cbor).expect("Failed to decode certificate from cbor");
 
         assert_eq!(certificate, original_certificate);
     }
@@ -122,7 +122,7 @@ mod tests {
             .expect("Failed to encode certificate to cbor");
 
         let certificate =
-            Certificate::from_cbor(&cbor).expect("Failed to decode certificate from cbor");
+            Certificate::from_cbor(cbor).expect("Failed to decode certificate from cbor");
 
         assert_eq!(certificate, original_certificate);
     }
