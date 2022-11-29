@@ -20,3 +20,12 @@ pub enum ResponseVerificationError {
     #[error(r#"Invalid pruned data: "{0}""#)]
     InvalidPrunedData(#[from] std::array::TryFromSliceError),
 }
+
+#[cfg(target_arch = "wasm32")]
+impl Into<wasm_bindgen::JsValue> for ResponseVerificationError {
+    fn into(self) -> wasm_bindgen::JsValue {
+        let error = js_sys::Error::new(&self.to_string());
+        
+        wasm_bindgen::JsValue::from(error)
+    }
+}

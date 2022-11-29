@@ -35,13 +35,16 @@ mod validation;
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = verifyRequestResponsePair)]
-pub fn verify_request_response_pair(request: JsValue, response: JsValue) -> bool {
+pub fn verify_request_response_pair(
+    request: JsValue,
+    response: JsValue,
+) -> Result<bool, ResponseVerificationError> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let request = Request::from(request);
     let response = Response::from(response);
 
-    verify_request_response_pair_impl(request, response).unwrap()
+    verify_request_response_pair_impl(request, response)
 }
 
 #[cfg(not(target_arch = "wasm32"))]
