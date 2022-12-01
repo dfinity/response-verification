@@ -32,6 +32,8 @@ mod error;
 mod hash_tree;
 mod logger;
 mod validation;
+mod principal;
+mod base32;
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = verifyRequestResponsePair)]

@@ -1,6 +1,6 @@
-use candid::Principal;
 use http::Uri;
 use ic_certification::{hash_tree::Sha256Digest, Certificate, HashTree, LookupResult};
+use crate::principal::Principal;
 
 pub fn validate_tree(canister_id: &Principal, certificate: &Certificate, tree: &HashTree) -> bool {
     let certified_data_path = [

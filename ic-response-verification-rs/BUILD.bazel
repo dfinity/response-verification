@@ -27,7 +27,7 @@ rust_shared_library(
         "-C",
         "linker-plugin-lto",
         "-C",
-        "opt-level=s",
+        "opt-level=z",
         "-C",
         "debug-assertions=no",
         "-C",

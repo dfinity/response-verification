@@ -1,5 +1,5 @@
-use candid::Principal;
 use http::Uri;
+use crate::principal::Principal;
 
 fn resolve_canister_id_from_query_params(uri: &Uri) -> Option<Principal> {
     if let Some(query_params) = uri.query() {
