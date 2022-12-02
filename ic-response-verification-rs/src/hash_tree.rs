@@ -26,9 +26,9 @@ pub fn parsed_cbor_to_tree<'a>(
 
         if let Some(CborValue::HashTree(hash_tree_tag)) = cbor_tags.pop() {
             return match hash_tree_tag {
-                CborHashTree::Empty() => Ok(empty()),
+                CborHashTree::Empty => Ok(empty()),
 
-                CborHashTree::Leaf() => {
+                CborHashTree::Leaf => {
                     return if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
                         Ok(leaf(data))
                     } else {
@@ -38,7 +38,7 @@ pub fn parsed_cbor_to_tree<'a>(
                     };
                 }
 
-                CborHashTree::Pruned() => {
+                CborHashTree::Pruned => {
                     return if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
                         let digest: Sha256Digest = TryFrom::try_from(data.as_ref())
                             .map_err(ResponseVerificationError::InvalidPrunedData)?;
@@ -51,7 +51,7 @@ pub fn parsed_cbor_to_tree<'a>(
                     };
                 }
 
-                CborHashTree::Labelled() => {
+                CborHashTree::Labelled => {
                     return if let (Some(CborValue::ByteString(data)), Some(child_tag)) =
                         (cbor_tags.pop(), cbor_tags.pop())
                     {
@@ -66,7 +66,7 @@ pub fn parsed_cbor_to_tree<'a>(
                     };
                 }
 
-                CborHashTree::Fork() => {
+                CborHashTree::Fork => {
                     return if let (Some(left_tag), Some(right_tag)) =
                         (cbor_tags.pop(), cbor_tags.pop())
                     {

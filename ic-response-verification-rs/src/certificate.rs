@@ -1,7 +1,7 @@
 use crate::cbor::{parse_cbor, CborValue};
 use crate::error::ResponseVerificationError;
 use crate::hash_tree::parsed_cbor_to_tree;
-use ic_certification::{Certificate, Delegation, HashTree};
+use ic_certification::{Certificate, Delegation};
 
 pub trait CertificateToCbor {
     fn from_cbor(cbor: &[u8]) -> Result<Certificate, ResponseVerificationError>;
@@ -19,53 +19,74 @@ impl<'a> CertificateToCbor for Certificate<'a> {
 fn parsed_cbor_to_certificate<'a>(
     parsed_cbor: CborValue,
 ) -> Result<Certificate<'a>, ResponseVerificationError> {
-    let mut tree: Option<HashTree> = None;
-    let mut signature: Option<Vec<u8>> = None;
-    let mut delegation: Option<Delegation> = None;
-
-    if let CborValue::Map(map) = parsed_cbor {
-        if let Some(tree_cbor) = map.get("tree") {
-            let parsed_tree = parsed_cbor_to_tree(tree_cbor)?;
-            tree = Some(parsed_tree);
+    let map = match parsed_cbor {
+        CborValue::Map(map) => map,
+        _ => {
+            return Err(ResponseVerificationError::InvalidCertificate(
+                "Expected Map when parsing Certificate Cbor".into()
+            ));
         }
+    };
 
-        if let Some(CborValue::ByteString(parsed_signature)) = map.get("signature") {
-            signature = Some(parsed_signature.to_owned());
+    let tree = match map.get("tree") {
+        Some(tree_cbor) => parsed_cbor_to_tree(tree_cbor)?,
+        _ => {
+            return Err(ResponseVerificationError::InvalidCertificate(
+                "Expected Tree when parsing Certificate Cbor".into()
+            ));
         }
+    };
 
-        if let Some(CborValue::Map(parsed_delegation)) = map.get("delegation") {
-            if let (
-                Some(CborValue::ByteString(subnet_id)),
-                Some(CborValue::ByteString(certificate)),
-            ) = (
-                parsed_delegation.get("subnet_id"),
-                parsed_delegation.get("certificate"),
-            ) {
-                delegation = Some(Delegation {
+    let signature = match map.get("signature") {
+        Some(CborValue::ByteString(signature)) => signature.to_owned(),
+        _ => {
+            return Err(ResponseVerificationError::InvalidCertificate(
+                "Expected Signature when parsing Certificate Cbor".into()
+            ));
+        }
+    };
+
+    let delegation = match map.get("delegation") {
+        Some(CborValue::Map(delegation_map)) => {
+            let subnet_id = match delegation_map.get("subnet_id") {
+                Some(CborValue::ByteString(subnet_id)) => subnet_id,
+                _ => {
+                    return Err(ResponseVerificationError::InvalidCertificate(
+                        "Expected Delegation Map to contain a Subnet ID when parsing Certificate Cbor".into()
+                    ));
+                }
+            };
+
+            let certificate = match delegation_map.get("certificate") {
+                Some(CborValue::ByteString(certificate)) => certificate,
+                _ => {
+                    return Err(ResponseVerificationError::InvalidCertificate(
+                        "Expected Delegation Map to contain a Certificate when parsing Certificate Cbor".into()
+                    ));
+                }
+            };
+
+            Some(
+                Delegation {
                     subnet_id: subnet_id.to_owned(),
                     certificate: certificate.to_owned(),
-                });
-            }
+                }
+            )
         }
-    }
+        _ => None
+    };
 
-    if let (Some(tree), Some(signature)) = (tree, signature) {
-        Ok(Certificate {
-            tree,
-            signature,
-            delegation,
-        })
-    } else {
-        Err(ResponseVerificationError::InvalidCertificate(String::from(
-            "Missing tree or signature in Certificate",
-        )))
-    }
+    Ok(Certificate {
+        tree,
+        signature,
+        delegation,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ic_certification::hash_tree::{empty, fork, label, leaf};
+    use ic_certification::{HashTree, hash_tree::{empty, fork, label, leaf}};
 
     fn create_tree<'a>() -> HashTree<'a> {
         return fork(
