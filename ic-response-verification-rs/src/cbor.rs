@@ -8,62 +8,67 @@ use nom::Err;
 use nom::IResult;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum CborSigned {
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum CborNegativeInt {
     Int8(i8),
     Int16(i16),
     Int32(i32),
     Int64(i64),
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum CborUnsigned {
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum CborUnsignedInt {
     UInt8(u8),
     UInt16(u16),
     UInt32(u32),
     UInt64(u64),
 }
 
-impl CborUnsigned {
+impl CborUnsignedInt {
     fn to_usize(self) -> usize {
         match self {
-            CborUnsigned::UInt8(v) => v as usize,
-            CborUnsigned::UInt16(v) => v as usize,
-            CborUnsigned::UInt32(v) => v as usize,
-            CborUnsigned::UInt64(v) => v as usize,
+            CborUnsignedInt::UInt8(v) => v as usize,
+            CborUnsignedInt::UInt16(v) => v as usize,
+            CborUnsignedInt::UInt32(v) => v as usize,
+            CborUnsignedInt::UInt64(v) => v as usize,
         }
     }
 
-    fn to_signed(self) -> CborSigned {
+    // https://www.rfc-editor.org/rfc/rfc8949.html#section-3.1
+    // The value of a Cbor Major type 1 (negative int) is encoded as its positive counterpart - 1
+    // For example: -5 is encoded as 4
+    // So to decode the value we take -1 - n where n is the encoded value
+    // For example: -1 - 4 = -5
+    fn to_negative(self) -> CborNegativeInt {
         match self {
-            CborUnsigned::UInt8(n) => CborSigned::Int8(-1 - (n as i8)),
-            CborUnsigned::UInt16(n) => CborSigned::Int16(-1 - (n as i16)),
-            CborUnsigned::UInt32(n) => CborSigned::Int32(-1 - (n as i32)),
-            CborUnsigned::UInt64(n) => CborSigned::Int64(-1 - (n as i64)),
+            CborUnsignedInt::UInt8(n) => CborNegativeInt::Int8(-1 - (n as i8)),
+            CborUnsignedInt::UInt16(n) => CborNegativeInt::Int16(-1 - (n as i16)),
+            CborUnsignedInt::UInt32(n) => CborNegativeInt::Int32(-1 - (n as i32)),
+            CborUnsignedInt::UInt64(n) => CborNegativeInt::Int64(-1 - (n as i64)),
         }
     }
 
     fn to_u8(self) -> Result<u8, String> {
         Ok(match self {
-            CborUnsigned::UInt8(n) => n,
+            CborUnsignedInt::UInt8(n) => n,
             _ => return Err(String::from("Expected u8")),
         })
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum CborHashTree {
-    Empty(),
-    Fork(),
-    Labelled(),
-    Leaf(),
-    Pruned(),
+    Empty,
+    Fork,
+    Labelled,
+    Leaf,
+    Pruned,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum CborValue {
-    Unsigned(CborUnsigned),
-    Signed(CborSigned),
+    Unsigned(CborUnsignedInt),
+    Signed(CborNegativeInt),
     ByteString(Vec<u8>),
     Array(Vec<CborValue>),
     Map(HashMap<String, CborValue>),
@@ -71,7 +76,7 @@ pub enum CborValue {
 }
 
 /// Cbor major type information is stored in the high-order 3 bits.
-fn get_cbor_type(e: u8) -> u8 {
+const fn get_cbor_type(e: u8) -> u8 {
     (e & 0b111_00000) >> 5
 }
 
@@ -86,7 +91,7 @@ fn peek_cbor_type(i: &[u8]) -> IResult<&[u8], u8> {
 /// Additional cbor information is stored in the low-order 5 bits.
 /// This additional information can be a value,
 /// or the size of a value contained in the following bytes.
-fn get_cbor_info(e: u8) -> u8 {
+const fn get_cbor_info(e: u8) -> u8 {
     e & 0b000_11111
 }
 
@@ -94,15 +99,15 @@ fn extract_cbor_info(i: &[u8]) -> IResult<&[u8], u8> {
     map(be_u8, get_cbor_info)(i)
 }
 
-fn extract_cbor_value(i: &[u8]) -> IResult<&[u8], CborUnsigned> {
+fn extract_cbor_value(i: &[u8]) -> IResult<&[u8], CborUnsignedInt> {
     let (i, cbor_info) = extract_cbor_info(i)?;
 
     match cbor_info {
-        _n @ 0..=23 => Ok((i, CborUnsigned::UInt8(cbor_info))),
-        24 => map(be_u8, CborUnsigned::UInt8)(i),
-        25 => map(be_u16, CborUnsigned::UInt16)(i),
-        26 => map(be_u32, CborUnsigned::UInt32)(i),
-        27 => map(be_u64, CborUnsigned::UInt64)(i),
+        _n @ 0..=23 => Ok((i, CborUnsignedInt::UInt8(cbor_info))),
+        24 => map(be_u8, CborUnsignedInt::UInt8)(i),
+        25 => map(be_u16, CborUnsignedInt::UInt16)(i),
+        26 => map(be_u32, CborUnsignedInt::UInt32)(i),
+        27 => map(be_u64, CborUnsignedInt::UInt64)(i),
         _ => Err(Err::Error(Error::new(i, ErrorKind::Alt))),
     }
 }
@@ -131,13 +136,13 @@ fn parser(i: &[u8]) -> IResult<&[u8], CborValue> {
         0 => {
             // Hash Tree nodes are encoded as unsigned int instead of tagged data items,
             // if we ever need to decode an actual unsigned int with a value 0-4 then this will break
-            if let Ok(tag) = cbor_value.clone().to_u8() {
+            if let Ok(tag) = cbor_value.to_u8() {
                 return match tag {
-                    0 => Ok((i, CborValue::HashTree(CborHashTree::Empty()))),
-                    1 => Ok((i, CborValue::HashTree(CborHashTree::Fork()))),
-                    2 => Ok((i, CborValue::HashTree(CborHashTree::Labelled()))),
-                    3 => Ok((i, CborValue::HashTree(CborHashTree::Leaf()))),
-                    4 => Ok((i, CborValue::HashTree(CborHashTree::Pruned()))),
+                    0 => Ok((i, CborValue::HashTree(CborHashTree::Empty))),
+                    1 => Ok((i, CborValue::HashTree(CborHashTree::Fork))),
+                    2 => Ok((i, CborValue::HashTree(CborHashTree::Labelled))),
+                    3 => Ok((i, CborValue::HashTree(CborHashTree::Leaf))),
+                    4 => Ok((i, CborValue::HashTree(CborHashTree::Pruned))),
                     _ => Ok((i, CborValue::Unsigned(cbor_value))),
                 };
             }
@@ -145,7 +150,7 @@ fn parser(i: &[u8]) -> IResult<&[u8], CborValue> {
             Ok((i, CborValue::Unsigned(cbor_value)))
         }
 
-        1 => Ok((i, CborValue::Signed(cbor_value.to_signed()))),
+        1 => Ok((i, CborValue::Signed(cbor_value.to_negative()))),
 
         2 | 3 => {
             let data_len = cbor_value.to_usize();
@@ -206,9 +211,9 @@ mod tests {
         assert_eq!(
             result,
             CborValue::Array(vec![
-                CborValue::Unsigned(CborUnsigned::UInt8(7)),
-                CborValue::Unsigned(CborUnsigned::UInt8(8)),
-                CborValue::Unsigned(CborUnsigned::UInt8(9)),
+                CborValue::Unsigned(CborUnsignedInt::UInt8(7)),
+                CborValue::Unsigned(CborUnsignedInt::UInt8(8)),
+                CborValue::Unsigned(CborUnsignedInt::UInt8(9)),
             ])
         );
     }
@@ -223,14 +228,14 @@ mod tests {
         assert_eq!(
             result,
             CborValue::Array(vec![
-                CborValue::Unsigned(CborUnsigned::UInt8(7)),
+                CborValue::Unsigned(CborUnsignedInt::UInt8(7)),
                 CborValue::Array(vec![
-                    CborValue::Unsigned(CborUnsigned::UInt8(8)),
-                    CborValue::Unsigned(CborUnsigned::UInt8(9)),
+                    CborValue::Unsigned(CborUnsignedInt::UInt8(8)),
+                    CborValue::Unsigned(CborUnsignedInt::UInt8(9)),
                 ]),
                 CborValue::Array(vec![
-                    CborValue::Unsigned(CborUnsigned::UInt8(10)),
-                    CborValue::Unsigned(CborUnsigned::UInt8(11)),
+                    CborValue::Unsigned(CborUnsignedInt::UInt8(10)),
+                    CborValue::Unsigned(CborUnsignedInt::UInt8(11)),
                 ]),
             ])
         );
@@ -267,13 +272,13 @@ mod tests {
             CborValue::Map(HashMap::from([
                 (
                     String::from("a"),
-                    CborValue::Unsigned(CborUnsigned::UInt8(7))
+                    CborValue::Unsigned(CborUnsignedInt::UInt8(7))
                 ),
                 (
                     String::from("b"),
                     CborValue::Array(vec![
-                        CborValue::Unsigned(CborUnsigned::UInt8(8)),
-                        CborValue::Unsigned(CborUnsigned::UInt8(9)),
+                        CborValue::Unsigned(CborUnsignedInt::UInt8(8)),
+                        CborValue::Unsigned(CborUnsignedInt::UInt8(9)),
                     ])
                 ),
             ]))
