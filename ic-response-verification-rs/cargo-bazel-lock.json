@@ -1,5 +1,5 @@
 {
-  "checksum": "eb70e7bfd0f29f631989360788bca3d4bcd602b3b917ec09d78a87e77cc2999a",
+  "checksum": "372a0f71461f52dea8f2b8a8f1c977ab6af14297aea046712828769830138cd6",
   "crates": {
     "base64 0.13.1": {
       "name": "base64",
@@ -228,19 +228,19 @@
           "selects": {
             "aarch64-apple-darwin": [
               {
-                "id": "libc 0.2.137",
+                "id": "libc 0.2.138",
                 "target": "libc"
               }
             ],
             "aarch64-linux-android": [
               {
-                "id": "libc 0.2.137",
+                "id": "libc 0.2.138",
                 "target": "libc"
               }
             ],
             "cfg(all(target_arch = \"aarch64\", target_os = \"linux\"))": [
               {
-                "id": "libc 0.2.137",
+                "id": "libc 0.2.138",
                 "target": "libc"
               }
             ]
@@ -539,7 +539,7 @@
               "target": "hex"
             },
             {
-              "id": "serde 1.0.147",
+              "id": "serde 1.0.149",
               "target": "serde"
             },
             {
@@ -678,13 +678,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "libc 0.2.137": {
+    "libc 0.2.138": {
       "name": "libc",
-      "version": "0.2.137",
+      "version": "0.2.138",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/libc/0.2.137/download",
-          "sha256": "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
+          "url": "https://crates.io/api/v1/crates/libc/0.2.138/download",
+          "sha256": "db6d7e329c562c5dfab7a46a2afabc8b987ab9a4834c9d1ca04dc54c1546cef8"
         }
       },
       "targets": [
@@ -725,14 +725,14 @@
         "deps": {
           "common": [
             {
-              "id": "libc 0.2.137",
+              "id": "libc 0.2.138",
               "target": "build_script_build"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "0.2.137"
+        "version": "0.2.138"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1159,13 +1159,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "serde 1.0.147": {
+    "serde 1.0.149": {
       "name": "serde",
-      "version": "1.0.147",
+      "version": "1.0.149",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/serde/1.0.147/download",
-          "sha256": "d193d69bae983fc11a79df82342761dfbf28a99fc8d203dca4c3c1b590948965"
+          "url": "https://crates.io/api/v1/crates/serde/1.0.149/download",
+          "sha256": "256b9932320c590e707b94576e3cc1f7c9024d0ee6612dfbcf1cb106cbe8e055"
         }
       },
       "targets": [
@@ -1208,7 +1208,7 @@
         "deps": {
           "common": [
             {
-              "id": "serde 1.0.147",
+              "id": "serde 1.0.149",
               "target": "build_script_build"
             }
           ],
@@ -1218,13 +1218,13 @@
         "proc_macro_deps": {
           "common": [
             {
-              "id": "serde_derive 1.0.147",
+              "id": "serde_derive 1.0.149",
               "target": "serde_derive"
             }
           ],
           "selects": {}
         },
-        "version": "1.0.147"
+        "version": "1.0.149"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1268,7 +1268,7 @@
         "deps": {
           "common": [
             {
-              "id": "serde 1.0.147",
+              "id": "serde 1.0.149",
               "target": "serde"
             }
           ],
@@ -1318,7 +1318,7 @@
               "target": "half"
             },
             {
-              "id": "serde 1.0.147",
+              "id": "serde 1.0.149",
               "target": "serde"
             }
           ],
@@ -1329,13 +1329,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "serde_derive 1.0.147": {
+    "serde_derive 1.0.149": {
       "name": "serde_derive",
-      "version": "1.0.147",
+      "version": "1.0.149",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/serde_derive/1.0.147/download",
-          "sha256": "4f1d362ca8fc9c3e3a7484440752472d68a6caa98f1ab81d99b5dfe517cec852"
+          "url": "https://crates.io/api/v1/crates/serde_derive/1.0.149/download",
+          "sha256": "b4eae9b04cbffdfd550eb462ed33bc6a1b68c935127d008b27444d08380f94e4"
         }
       },
       "targets": [
@@ -1383,18 +1383,18 @@
               "target": "quote"
             },
             {
-              "id": "serde_derive 1.0.147",
+              "id": "serde_derive 1.0.149",
               "target": "build_script_build"
             },
             {
-              "id": "syn 1.0.103",
+              "id": "syn 1.0.105",
               "target": "syn"
             }
           ],
           "selects": {}
         },
         "edition": "2015",
-        "version": "1.0.147"
+        "version": "1.0.149"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1460,13 +1460,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "syn 1.0.103": {
+    "syn 1.0.105": {
       "name": "syn",
-      "version": "1.0.103",
+      "version": "1.0.105",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/syn/1.0.103/download",
-          "sha256": "a864042229133ada95abf3b54fdc62ef5ccabe9515b64717bcb9a1919e59445d"
+          "url": "https://crates.io/api/v1/crates/syn/1.0.105/download",
+          "sha256": "60b9b43d45702de4c839cb9b51d9f529c5dd26a4aff255b42b1ebc03e88ee908"
         }
       },
       "targets": [
@@ -1522,7 +1522,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.103",
+              "id": "syn 1.0.105",
               "target": "build_script_build"
             },
             {
@@ -1533,7 +1533,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.103"
+        "version": "1.0.105"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -1649,7 +1649,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.103",
+              "id": "syn 1.0.105",
               "target": "syn"
             }
           ],
@@ -1916,7 +1916,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.103",
+              "id": "syn 1.0.105",
               "target": "syn"
             },
             {
@@ -2079,7 +2079,7 @@
               "target": "quote"
             },
             {
-              "id": "syn 1.0.103",
+              "id": "syn 1.0.105",
               "target": "syn"
             },
             {
@@ -2343,6 +2343,7 @@
       "aarch64-apple-ios",
       "aarch64-apple-ios-sim",
       "aarch64-linux-android",
+      "aarch64-pc-windows-msvc",
       "aarch64-unknown-linux-gnu",
       "i686-apple-darwin",
       "i686-linux-android",

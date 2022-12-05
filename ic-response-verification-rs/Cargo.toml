@@ -2,6 +2,7 @@
 name = "ic-response-verification"
 version = "0.0.0"
 edition = "2021"
+rust-version = "1.65.0"
 
 [dependencies]
 base64 = "0.13.0"

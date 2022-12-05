@@ -19,61 +19,47 @@ impl<'a> CertificateToCbor for Certificate<'a> {
 fn parsed_cbor_to_certificate<'a>(
     parsed_cbor: CborValue,
 ) -> Result<Certificate<'a>, ResponseVerificationError> {
-    let map = match parsed_cbor {
-        CborValue::Map(map) => map,
-        _ => {
-            return Err(ResponseVerificationError::InvalidCertificate(
-                "Expected Map when parsing Certificate Cbor".into()
-            ));
-        }
+    let CborValue::Map(map) = parsed_cbor else {
+        return Err(ResponseVerificationError::InvalidCertificate(
+            "Expected Map when parsing Certificate Cbor".into()
+        ));
     };
 
-    let tree = match map.get("tree") {
-        Some(tree_cbor) => parsed_cbor_to_tree(tree_cbor)?,
-        _ => {
-            return Err(ResponseVerificationError::InvalidCertificate(
-                "Expected Tree when parsing Certificate Cbor".into()
-            ));
-        }
+    let Some(tree_cbor) = map.get("tree") else {
+        return Err(ResponseVerificationError::InvalidCertificate(
+            "Expected Tree when parsing Certificate Cbor".into()
+        ));
     };
 
-    let signature = match map.get("signature") {
-        Some(CborValue::ByteString(signature)) => signature.to_owned(),
-        _ => {
-            return Err(ResponseVerificationError::InvalidCertificate(
-                "Expected Signature when parsing Certificate Cbor".into()
-            ));
-        }
+    let tree = parsed_cbor_to_tree(tree_cbor)?;
+
+    let signature = if let Some(CborValue::ByteString(signature)) = map.get("signature") {
+        signature.to_owned()
+    } else {
+        return Err(ResponseVerificationError::InvalidCertificate(
+            "Expected Signature when parsing Certificate Cbor".into(),
+        ));
     };
 
-    let delegation = match map.get("delegation") {
-        Some(CborValue::Map(delegation_map)) => {
-            let subnet_id = match delegation_map.get("subnet_id") {
-                Some(CborValue::ByteString(subnet_id)) => subnet_id,
-                _ => {
-                    return Err(ResponseVerificationError::InvalidCertificate(
-                        "Expected Delegation Map to contain a Subnet ID when parsing Certificate Cbor".into()
-                    ));
-                }
-            };
+    let delegation = if let Some(CborValue::Map(delegation_map)) = map.get("delegation") {
+        let Some(CborValue::ByteString(subnet_id)) = delegation_map.get("subnet_id") else {
+            return Err(ResponseVerificationError::InvalidCertificate(
+                "Expected Delegation Map to contain a Subnet ID when parsing Certificate Cbor".into()
+            ));
+        };
 
-            let certificate = match delegation_map.get("certificate") {
-                Some(CborValue::ByteString(certificate)) => certificate,
-                _ => {
-                    return Err(ResponseVerificationError::InvalidCertificate(
-                        "Expected Delegation Map to contain a Certificate when parsing Certificate Cbor".into()
-                    ));
-                }
-            };
+        let Some(CborValue::ByteString(certificate)) = delegation_map.get("certificate") else {
+            return Err(ResponseVerificationError::InvalidCertificate(
+                "Expected Delegation Map to contain a Certificate when parsing Certificate Cbor".into()
+            ));
+        };
 
-            Some(
-                Delegation {
-                    subnet_id: subnet_id.to_owned(),
-                    certificate: certificate.to_owned(),
-                }
-            )
-        }
-        _ => None
+        Some(Delegation {
+            subnet_id: subnet_id.to_owned(),
+            certificate: certificate.to_owned(),
+        })
+    } else {
+        None
     };
 
     Ok(Certificate {
@@ -86,7 +72,10 @@ fn parsed_cbor_to_certificate<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ic_certification::{HashTree, hash_tree::{empty, fork, label, leaf}};
+    use ic_certification::{
+        hash_tree::{empty, fork, label, leaf},
+        HashTree,
+    };
 
     fn create_tree<'a>() -> HashTree<'a> {
         return fork(
