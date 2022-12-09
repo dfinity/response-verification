@@ -3,13 +3,19 @@
 ## Build
 
 ```shell
-$ cargo build
+cargo build
 ```
 
 ## Test
 
 ```shell
-$ cargo test --lib
+cargo test --lib
+```
+
+## Wasm Test
+
+```
+wasm-pack test --node
 ```
 
 ## Format
@@ -17,5 +23,5 @@ $ cargo test --lib
 Format rust files.
 
 ```shell
-$ cargo fmt
+cargo fmt
 ```

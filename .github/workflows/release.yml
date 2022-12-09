@@ -12,6 +12,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Bazel
+        uses: bazelbuild/setup-bazelisk@v2
+
+      - name: Setup Bazel Cache
+        uses: actions/cache@v3
+        with:
+          path: '~/.cache/bazel'
+          key: bazel
+
       - name: Setup NodeJS
         uses: actions/setup-node@v3
         with:
@@ -61,15 +70,14 @@ jobs:
         working-directory: ic-response-verification-rs
 
       - name: Create NPM package release
-        run: npm pack
-        working-directory: ic-response-verification-ts
+        run: bazel run //ic-response-verification-ts:lib.pack
 
       - name: Create Github release
         uses: ncipollo/release-action@v1
         with:
           artifacts: >
             ic-response-verification-rs/target/package/ic-response-verification-${{ steps.cz.outputs.version }}.crate
-            ic-response-verification-ts/dfinity-response-verification-${{ steps.cz.outputs.version }}.tgz
+            dfinity-response-verification-${{ steps.cz.outputs.version }}.tgz
           bodyFile: 'RELEASE_NOTES.md'
           tag: '${{ steps.cz.outputs.version }}'
           commit: 'main'

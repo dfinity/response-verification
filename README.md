@@ -32,6 +32,8 @@ window.addEventListener('load', async () => {
 - [Install pre-commit](https://pre-commit.com/#installation)
 - [Install commitizen](https://commitizen-tools.github.io/commitizen/#installation)
 - [Install Bazelisk](https://github.com/bazelbuild/bazelisk)
+- [Install Rust](https://www.rust-lang.org/learn/get-started)
+- [Install wasm-pack](https://rustwasm.github.io/wasm-pack/installer)
 
 ### Making a Commit
 
