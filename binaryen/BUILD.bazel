@@ -1,8 +1,0 @@
-load("//binaryen:binaryen_toolchains.bzl", "configure_binaryen_toolchains")
-
-toolchain_type(
-    name = "toolchain_type",
-    visibility = ["//visibility:public"],
-)
-
-configure_binaryen_toolchains()

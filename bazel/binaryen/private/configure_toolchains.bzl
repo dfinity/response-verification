@@ -1,6 +1,6 @@
 """Binaryen toolchain configuration"""
 
-load("//binaryen:binaryen_platforms.bzl", "BINARYEN_PLATFORMS")
+load("//bazel/binaryen/private:platforms.bzl", "PLATFORMS")
 
 def _binaryen_toolchain_impl(ctx):
     return [
@@ -20,13 +20,13 @@ _binaryen_toolchain = rule(
     },
 )
 
-def configure_binaryen_toolchain(name, exec_compatible_with, bin_path):
-    """Configures a binary toolchain given a name, platform constraints and a wasm-opt binary path
+def configure_toolchain(name, compatible_with, bin_path):
+    """Configures a binaryen toolchain given a name, platform constraints and a wasm-opt binary path
 
     Args:
         name: unique name for this toolchain, in the form "{name}_binaryen_{platform}"
         bin_path: path to the binaryen bin directory
-        exec_compatible_with: list of platform constraints
+        compatible_with: list of platform constraints
     """
 
     _binaryen_toolchain(
@@ -36,23 +36,23 @@ def configure_binaryen_toolchain(name, exec_compatible_with, bin_path):
 
     native.toolchain(
         name = "%s_toolchain" % name,
-        exec_compatible_with = exec_compatible_with,
+        exec_compatible_with = compatible_with,
         toolchain = name,
-        toolchain_type = "//binaryen:toolchain_type",
+        toolchain_type = "//bazel/binaryen:toolchain_type",
     )
 
-def configure_binaryen_toolchains(name = ""):
+def configure_toolchains(name = ""):
     """Configures binaryen toolchains for a list of supported platforms
 
     Args:
         name: unused
     """
 
-    for name, meta in BINARYEN_PLATFORMS.items():
+    for name, meta in PLATFORMS.items():
         name = "binaryen_%s" % name
 
-        configure_binaryen_toolchain(
+        configure_toolchain(
             name = name,
-            exec_compatible_with = meta.exec_compatible_with,
+            compatible_with = meta.compatible_with,
             bin_path = "@%s_repo" % name,
         )

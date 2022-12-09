@@ -1,17 +1,5 @@
 load("@rules_rust//rust:defs.bzl", "rust_shared_library")
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
-load("@rules_rust//bindgen:bindgen.bzl", "rust_bindgen_toolchain")
-
-rust_bindgen_toolchain(
-    name = "wasm_bindgen_toolchain_impl",
-    bindgen = "//3rdparty:wasm-bindgen-cli",
-)
-
-toolchain(
-    name = "wasm_bindgen_toolchain",
-    toolchain = "wasm_bindgen_toolchain_impl",
-    toolchain_type = "@rules_rust//wasm_bindgen:toolchain_type",
-)
 
 filegroup(
     name = "srcs",
@@ -19,7 +7,7 @@ filegroup(
 )
 
 rust_shared_library(
-    name = "lib_wasm",
+    name = "lib",
     srcs = [":srcs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(proc_macro = True),
