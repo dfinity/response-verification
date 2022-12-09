@@ -1,7 +1,7 @@
 "Rule to run wasm-opt"
 
 def _wasm_opt_impl(ctx):
-    binaryen_toolchain = ctx.toolchains["//binaryen:toolchain_type"]
+    binaryen_toolchain = ctx.toolchains["//bazel/binaryen:toolchain_type"]
 
     output_files = []
 
@@ -37,5 +37,5 @@ wasm_opt = rule(
     attrs = {
         "srcs": attr.label_list(allow_files = True),
     },
-    toolchains = ["//binaryen:toolchain_type"],
+    toolchains = ["//bazel/binaryen:toolchain_type"],
 )

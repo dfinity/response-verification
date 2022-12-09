@@ -1,0 +1,8 @@
+load("//bazel/binaryen/private:configure_toolchains.bzl", "configure_toolchains")
+
+toolchain_type(
+    name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+configure_toolchains()
