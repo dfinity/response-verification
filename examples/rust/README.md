@@ -3,5 +3,5 @@
 ## Run
 
 ```shell
-$ cargo run
+cargo run
 ```

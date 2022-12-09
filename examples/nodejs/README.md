@@ -5,25 +5,25 @@
 Install NPM modules:
 
 ```shell
-$ npm install
+npm install
 ```
 
 Build the `@dfinity/response-verification` package:
 
 ```shell
-$ bazel build //ic-response-verification-ts:lib
+bazel build //ic-response-verification-ts:lib
 ```
 
 Link `@dfinity/response-verification` globally:
 
 ```shell
-$ pushd ../../bazel-bin/ic-response-verification-ts/lib && sudo npm link && popd
+pushd ../../bazel-bin/ic-response-verification-ts/lib && sudo npm link && popd
 ```
 
 Link `@dfinity/response-verification` in this project:
 
 ```shell
-$ npm link @dfinity/response-verification
+npm link @dfinity/response-verification
 ```
 
 ## Run with TSNode
@@ -31,7 +31,7 @@ $ npm link @dfinity/response-verification
 Run:
 
 ```shell
-$ npm start
+npm start
 ```
 
 ## Run with Node
@@ -39,11 +39,11 @@ $ npm start
 Compile TypeScript:
 
 ```shell
-$ npm run build
+npm run build
 ```
 
 Run:
 
 ```shell
-$ node ./dist/index.js
+node ./dist/index.js
 ```

@@ -9,6 +9,9 @@ jobs:
   build_and_test_rust:
     name: Build and Test Rust
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ic-response-verification-rs
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -18,21 +21,23 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+
       - name: Build
         run: cargo build --release
-        working-directory: ic-response-verification-rs
 
       - name: Test
         run: cargo test --lib
-        working-directory: ic-response-verification-rs
+
+      - name: Wasm test
+        run: wasm-pack test --node
 
       - name: Lint
         run: cargo clippy
-        working-directory: ic-response-verification-rs
 
       - name: Check Formatting
         run: cargo fmt --all -- --check
-        working-directory: ic-response-verification-rs
 
   build_npm_package:
     name: Build NPM Package
