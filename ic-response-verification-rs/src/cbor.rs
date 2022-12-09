@@ -136,18 +136,17 @@ fn parser(i: &[u8]) -> IResult<&[u8], CborValue> {
         0 => {
             // Hash Tree nodes are encoded as unsigned int instead of tagged data items,
             // if we ever need to decode an actual unsigned int with a value 0-4 then this will break
-            if let Ok(tag) = cbor_value.to_u8() {
-                return match tag {
-                    0 => Ok((i, CborValue::HashTree(CborHashTree::Empty))),
-                    1 => Ok((i, CborValue::HashTree(CborHashTree::Fork))),
-                    2 => Ok((i, CborValue::HashTree(CborHashTree::Labelled))),
-                    3 => Ok((i, CborValue::HashTree(CborHashTree::Leaf))),
-                    4 => Ok((i, CborValue::HashTree(CborHashTree::Pruned))),
-                    _ => Ok((i, CborValue::Unsigned(cbor_value))),
-                };
-            }
-
-            Ok((i, CborValue::Unsigned(cbor_value)))
+            Ok((
+                i,
+                match cbor_value.to_u8() {
+                    Ok(0) => CborValue::HashTree(CborHashTree::Empty),
+                    Ok(1) => CborValue::HashTree(CborHashTree::Fork),
+                    Ok(2) => CborValue::HashTree(CborHashTree::Labelled),
+                    Ok(3) => CborValue::HashTree(CborHashTree::Leaf),
+                    Ok(4) => CborValue::HashTree(CborHashTree::Pruned),
+                    _ => CborValue::Unsigned(cbor_value),
+                },
+            ))
         }
 
         1 => Ok((i, CborValue::Signed(cbor_value.to_negative()))),
