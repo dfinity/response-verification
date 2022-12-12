@@ -30,6 +30,10 @@ pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest
     let tree_sha = match tree.lookup_path(&asset_path) {
         LookupResult::Found(v) => v,
 
+        // This is a strange fallback, but it is necessary for SPA routing at the moment.
+        // https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway-certification
+        //
+        // It may be possible to remove this with a combination of asset canister redirect rules and v2 response redirection.
         _ => match tree.lookup_path(&index_fallback_path) {
             LookupResult::Found(v) => v,
             _ => {
@@ -99,11 +103,12 @@ mod tests {
         let other_principal =
             Principal::from_text(OTHER_CANISTER_ID).expect("Failed to create Principal");
         let tree = fork(leaf("a"), fork(leaf("b"), leaf("c")));
+        let digest = tree.digest();
         let certificate_tree = label(
             "canister",
             label(
                 other_principal.as_slice(),
-                label("certified_data", leaf([1, 2, 3, 4, 5, 6])),
+                label("certified_data", leaf(digest)),
             ),
         );
         let certificate = Certificate {
@@ -120,13 +125,11 @@ mod tests {
     #[test]
     fn validate_tree_without_certified_data() {
         let principal = Principal::from_text(CANISTER_ID).expect("Failed to create Principal");
-        let other_principal =
-            Principal::from_text(OTHER_CANISTER_ID).expect("Failed to create Principal");
         let tree = fork(leaf("a"), fork(leaf("b"), leaf("c")));
         let certificate_tree = label(
             "canister",
             label(
-                other_principal.as_slice(),
+                principal.as_slice(),
                 label("garbage_data", leaf([1, 2, 3, 4, 5, 6])),
             ),
         );
@@ -156,6 +159,10 @@ mod tests {
         assert_eq!(result, true);
     }
 
+    /// This is a strange fallback, but it is necessary for SPA routing at the moment.
+    /// https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway-certification
+    ///
+    /// It may be possible to remove this with a combination of asset canister redirect rules and v2 response redirection.
     #[test]
     fn validate_body_with_index_fallback() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];

@@ -8,38 +8,35 @@ const MAX_CHUNK_SIZE_TO_DECOMPRESS: usize = 1024;
 const MAX_CHUNKS_TO_DECOMPRESS: u64 = 10_240;
 
 pub fn decode_body_to_sha256(body: &[u8], encoding: Option<String>) -> Option<Sha256Digest> {
+    return match encoding.as_deref() {
+        Some("gzip") => decode_body(GzDecoder::new(body)),
+        Some("deflate") => decode_body(DeflateDecoder::new(body)),
+        _ => {
+            let mut sha256 = Sha256::new();
+            sha256.update(body);
+            Some(sha256.finalize().into())
+        }
+    };
+}
+
+fn decode_body<D: Read>(mut decoder: D) -> Option<Sha256Digest> {
     let mut sha256 = Sha256::new();
     let mut decoded = [0u8; MAX_CHUNK_SIZE_TO_DECOMPRESS];
 
-    match encoding.as_deref() {
-        Some("gzip") => {
-            let mut decoder = GzDecoder::new(body);
-            for _ in 0..MAX_CHUNKS_TO_DECOMPRESS {
-                let bytes = decoder.read(&mut decoded).ok()?;
-                if bytes == 0 {
-                    return Some(sha256.finalize().into());
-                }
-                sha256.update(&decoded[0..bytes]);
-            }
-            if decoder.bytes().next().is_some() {
-                return None;
-            }
+    for _ in 0..MAX_CHUNKS_TO_DECOMPRESS {
+        let bytes = decoder.read(&mut decoded).ok()?;
+
+        if bytes == 0 {
+            return Some(sha256.finalize().into());
         }
-        Some("deflate") => {
-            let mut decoder = DeflateDecoder::new(body);
-            for _ in 0..MAX_CHUNKS_TO_DECOMPRESS {
-                let bytes = decoder.read(&mut decoded).ok()?;
-                if bytes == 0 {
-                    return Some(sha256.finalize().into());
-                }
-                sha256.update(&decoded[0..bytes]);
-            }
-            if decoder.bytes().next().is_some() {
-                return None;
-            }
-        }
-        _ => sha256.update(body),
-    };
+
+        sha256.update(&decoded[0..bytes]);
+    }
+
+    if decoder.bytes().next().is_some() {
+        // [TODO] throw "body too big" exception here
+        return None;
+    }
 
     Some(sha256.finalize().into())
 }
