@@ -1,5 +1,9 @@
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseVerificationError {
+    /// The provided URL was invalid
+    #[error(r#"Invalid url: "{0}""#)]
+    InvalidUrl(String),
+
     /// The parsed hash tree was invalid
     #[error(r#"Invalid hash tree: "{0}""#)]
     InvalidHashTree(String),
