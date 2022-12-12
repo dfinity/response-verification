@@ -9,6 +9,7 @@
 
 ### Refactor
 
+- migrate wasm-bindgen to bazel toolchain rules format and refactor binaryen to match
 - create reusable function for body decoding
 - remove redundant if statement and merge with match statement
 - replace let match statements with let else statements
