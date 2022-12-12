@@ -91,7 +91,7 @@ pub fn verify_request_response_pair_impl(
         let body_sha = decode_body_to_sha256(response.body.as_slice(), encoding).unwrap();
 
         let result = validate_tree(&canister_id, &certificate, &tree)
-            && validate_body(&tree, &request_uri, &body_sha);
+            && validate_body(&tree, &request_uri, &body_sha); // [TODO] - validate certificate
 
         Ok(result)
     } else {
