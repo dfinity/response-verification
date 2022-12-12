@@ -15,7 +15,12 @@ CARGO_BAZEL_REPIN=true bazel run //3rdparty:crates_vendor
 ## Build
 
 ```shell
-$ bazel build //ic-response-verification-ts:lib
+bazel build //ic-response-verification-ts:lib
+```
+
+If lockfiles need to be updated:
+```shell
+CARGO_BAZEL_REPIN=true bazel build //ic-response-verification-ts:lib
 ```
 
 ## Test in another project
@@ -23,11 +28,11 @@ $ bazel build //ic-response-verification-ts:lib
 From the root of this repository:
 
 ```shell
-$ pushd bazel-bin/ic-response-verification-ts/lib && sudo npm link && popd
+pushd bazel-bin/ic-response-verification-ts/lib && sudo npm link && popd
 ```
 
 In your other project:
 
 ```shell
-$ npm link @dfinity/response-verification
+npm link @dfinity/response-verification
 ```

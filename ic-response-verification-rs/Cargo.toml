@@ -2,7 +2,6 @@
 name = "ic-response-verification"
 version = "0.0.0"
 edition = "2021"
-rust-version = "1.65.0"
 
 [dependencies]
 base64 = "0.13.0"
@@ -11,10 +10,14 @@ nom = "7.1.1"
 js-sys = "0.3"
 wasm-bindgen = "0.2.83"
 thiserror = "1.0.37"
+sha2 = "0.10.6"
+http = "0.2.8"
 ic-certification = { version = "0.22.0", default_features = false }
+flate2 = "1.0.24"
 
 [dev-dependencies]
 hex = "0.4.3"
 serde_cbor = "0.11.2"
 wasm-bindgen-test = "0.3"
 ic-certification = "0.22.0"
+candid = "0.8.4"
