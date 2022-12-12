@@ -2,11 +2,15 @@
 
 ### Feat
 
+- add cbor parsing of certificate and tree
 - **response-verification**: add initial request, response interface
 - **certificate-header**: add certificate header handling (#5)
 
 ### Refactor
 
+- remove redundant if statement and merge with match statement
+- replace let match statements with let else statements
+- improved error handling
 - use nom to parse header field instead of regex
 - rename pub interface function for JS to verify_request_response_pair
 - remove `serde` in favor of `js-sys`
