@@ -2,12 +2,14 @@
 
 ### Feat
 
+- add initial response verification logic
 - add cbor parsing of certificate and tree
 - **response-verification**: add initial request, response interface
 - **certificate-header**: add certificate header handling (#5)
 
 ### Refactor
 
+- create reusable function for body decoding
 - remove redundant if statement and merge with match statement
 - replace let match statements with let else statements
 - improved error handling
