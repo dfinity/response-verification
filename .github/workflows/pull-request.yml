@@ -15,14 +15,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        
+
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
 
+      - name: Setup Cargo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: cargo
+
       - name: Install wasm-pack
-        run: cargo install wasm-pack
+        run: cargo install wasm-pack || true
 
       - name: Build
         run: cargo build --release
