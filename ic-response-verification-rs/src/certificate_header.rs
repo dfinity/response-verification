@@ -1,11 +1,7 @@
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
-
 use crate::{certificate_header_field::CertificateHeaderField, warn};
 
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.
 #[derive(Debug)]
-#[cfg_attr(target_arch = "wasm32", wasm_bindgen(getter_with_clone))]
 pub struct CertificateHeader {
     pub certificate: Option<Vec<u8>>,
     pub tree: Option<Vec<u8>>,
