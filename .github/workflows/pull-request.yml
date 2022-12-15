@@ -21,18 +21,8 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Setup Cargo Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: cargo
-
       - name: Install wasm-pack
-        run: cargo install wasm-pack || true
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build
         run: cargo build --release
