@@ -7,6 +7,9 @@ extern crate console_error_panic_hook;
 #[cfg(target_arch = "wasm32")]
 use std::panic;
 
+#[cfg(target_arch = "wasm32")]
+use error::ResponseVerificationJsError;
+
 use body::decode_body_to_sha256;
 use certificate::CertificateToCbor;
 use certificate_header::CertificateHeader;
@@ -37,13 +40,13 @@ pub fn verify_request_response_pair(
     request: JsValue,
     response: JsValue,
     canister_id: &[u8],
-) -> bool {
+) -> Result<bool, ResponseVerificationJsError> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let request = Request::from(request);
     let response = Response::from(response);
 
-    verify_request_response_pair_impl(request, response, canister_id).unwrap()
+    verify_request_response_pair_impl(request, response, canister_id).map_err(|e| e.into())
 }
 
 #[cfg(not(target_arch = "wasm32"))]
