@@ -1,2 +1,5 @@
 /bazel-*
 .idea
+
+/target
+.DS_Store
