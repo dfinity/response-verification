@@ -2,6 +2,9 @@
 
 ### Feat
 
+- **hashing**: added (probably incorrect) R-I hashing implementation
+- **hashing**: new crate
+- **cel-parser**: new crate
 - add type-safe exception for JS clients
 - add initial response verification logic
 - add initial response verification logic
