@@ -3,36 +3,36 @@ use wasm_bindgen::prelude::*;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseVerificationError {
-    /// The provided URL was invalid
-    #[error(r#"Invalid url: "{0}""#)]
-    InvalidUrl(String),
+    /// The URL was malformed and could not be parsed correctly
+    #[error(r#"Failed to parse url: "{0}""#)]
+    MalformedUrl(String),
 
-    /// The parsed hash tree was invalid
-    #[error(r#"Invalid hash tree: "{0}""#)]
-    InvalidHashTree(String),
+    /// The hash tree was malformed and could not be parsed correctly
+    #[error(r#"Failed to parse hash tree: "{0}""#)]
+    MalformedHashTree(String),
 
-    /// The parsed certificate was invalid
-    #[error(r#"Invalid certificate: "{0}""#)]
-    InvalidCertificate(String),
+    /// The certificate was malformed and could not be parsed correctly
+    #[error(r#"Failed to parse certificate: "{0}""#)]
+    MalformedCertificate(String),
 
-    /// The cbor was invalid
+    /// The CBOR was malformed and could not be parsed correctly
     #[error(r#"Invalid cbor: "{0}""#)]
-    InvalidCbor(String),
+    MalformedCbor(String),
 
-    /// The hash tree pruned data was not valid
+    /// The hash tree pruned data was not the correct length
     #[error(r#"Invalid pruned data: "{0}""#)]
-    InvalidPrunedData(#[from] std::array::TryFromSliceError),
+    IncorrectPrunedDataLength(#[from] std::array::TryFromSliceError),
 }
 
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = ResponseVerificationErrorCode)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ResponseVerificationJsErrorCode {
-    InvalidUrl,
-    InvalidHashTree,
-    InvalidCertificate,
-    InvalidCbor,
-    InvalidPrunedData,
+    MalformedUrl,
+    MalformedHashTree,
+    MalformedCertificate,
+    MalformedCbor,
+    IncorrectPrunedDataLength,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -47,24 +47,26 @@ pub struct ResponseVerificationJsError {
 }
 
 #[cfg(target_arch = "wasm32")]
-impl Into<ResponseVerificationJsError> for ResponseVerificationError {
-    fn into(self) -> ResponseVerificationJsError {
-        let code = match self {
-            ResponseVerificationError::InvalidUrl(_) => ResponseVerificationJsErrorCode::InvalidUrl,
-            ResponseVerificationError::InvalidHashTree(_) => {
-                ResponseVerificationJsErrorCode::InvalidHashTree
+impl From<ResponseVerificationError> for ResponseVerificationJsError {
+    fn from(error: ResponseVerificationError) -> ResponseVerificationJsError {
+        let code = match error {
+            ResponseVerificationError::MalformedUrl(_) => {
+                ResponseVerificationJsErrorCode::MalformedUrl
             }
-            ResponseVerificationError::InvalidCertificate(_) => {
-                ResponseVerificationJsErrorCode::InvalidCertificate
+            ResponseVerificationError::MalformedHashTree(_) => {
+                ResponseVerificationJsErrorCode::MalformedHashTree
             }
-            ResponseVerificationError::InvalidCbor(_) => {
-                ResponseVerificationJsErrorCode::InvalidCbor
+            ResponseVerificationError::MalformedCertificate(_) => {
+                ResponseVerificationJsErrorCode::MalformedCertificate
             }
-            ResponseVerificationError::InvalidPrunedData(_) => {
-                ResponseVerificationJsErrorCode::InvalidPrunedData
+            ResponseVerificationError::MalformedCbor(_) => {
+                ResponseVerificationJsErrorCode::MalformedCbor
+            }
+            ResponseVerificationError::IncorrectPrunedDataLength(_) => {
+                ResponseVerificationJsErrorCode::IncorrectPrunedDataLength
             }
         };
-        let message = self.to_string();
+        let message = error.to_string();
 
         ResponseVerificationJsError {
             code: code.into(),
@@ -81,38 +83,40 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn error_into_invalid_url() {
-        let error = ResponseVerificationError::InvalidUrl("https://internetcomputer.org".into());
+        let error = ResponseVerificationError::MalformedUrl("https://internetcomputer.org".into());
 
         let result: ResponseVerificationJsError = error.into();
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidUrl,
-                message: r#"Invalid url: "https://internetcomputer.org""#.into(),
+                code: ResponseVerificationJsErrorCode::MalformedUrl,
+                message: r#"Failed to parse url: "https://internetcomputer.org""#.into(),
             }
         )
     }
 
     #[wasm_bindgen_test]
     fn error_into_invalid_hash_tree() {
-        let error =
-            ResponseVerificationError::InvalidHashTree("Missing ByteString for Pruned node".into());
+        let error = ResponseVerificationError::MalformedHashTree(
+            "Missing ByteString for Pruned node".into(),
+        );
 
         let result: ResponseVerificationJsError = error.into();
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidHashTree,
-                message: r#"Invalid hash tree: "Missing ByteString for Pruned node""#.into(),
+                code: ResponseVerificationJsErrorCode::MalformedHashTree,
+                message: r#"Failed to parse hash tree: "Missing ByteString for Pruned node""#
+                    .into(),
             }
         )
     }
 
     #[wasm_bindgen_test]
     fn error_into_invalid_certificate() {
-        let error = ResponseVerificationError::InvalidCertificate(
+        let error = ResponseVerificationError::MalformedCertificate(
             "Expected Tree when parsing Certificate Cbor".into(),
         );
 
@@ -121,23 +125,24 @@ mod tests {
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidCertificate,
-                message: r#"Invalid certificate: "Expected Tree when parsing Certificate Cbor""#
-                    .into(),
+                code: ResponseVerificationJsErrorCode::MalformedCertificate,
+                message:
+                    r#"Failed to parse certificate: "Expected Tree when parsing Certificate Cbor""#
+                        .into(),
             }
         )
     }
 
     #[wasm_bindgen_test]
     fn error_into_invalid_cbor() {
-        let error = ResponseVerificationError::InvalidCbor("Unexpected EOF reached".into());
+        let error = ResponseVerificationError::MalformedCbor("Unexpected EOF reached".into());
 
         let result: ResponseVerificationJsError = error.into();
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidCbor,
+                code: ResponseVerificationJsErrorCode::MalformedCbor,
                 message: r#"Invalid cbor: "Unexpected EOF reached""#.into(),
             }
         )
@@ -150,14 +155,14 @@ mod tests {
             TryFrom::try_from(incorrectly_sized_data);
         let inner_error = conversion_attempt.expect_err("Expected error");
 
-        let error = ResponseVerificationError::InvalidPrunedData(inner_error);
+        let error = ResponseVerificationError::IncorrectPrunedDataLength(inner_error);
 
         let result: ResponseVerificationJsError = error.into();
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidPrunedData,
+                code: ResponseVerificationJsErrorCode::IncorrectPrunedDataLength,
                 message: format!(r#"Invalid pruned data: "{}""#, inner_error.to_string()).into(),
             }
         )
