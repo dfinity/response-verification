@@ -46,7 +46,8 @@ pub fn verify_request_response_pair(
     let request = Request::from(request);
     let response = Response::from(response);
 
-    verify_request_response_pair_impl(request, response, canister_id).map_err(|e| e.into())
+    verify_request_response_pair_impl(request, response, canister_id)
+        .map_err(|e| ResponseVerificationJsError::from(e))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -88,7 +89,7 @@ pub fn verify_request_response_pair_impl(
     let request_uri = request
         .url
         .parse::<Uri>()
-        .map_err(|_| ResponseVerificationError::InvalidUrl(request.url))?;
+        .map_err(|_| ResponseVerificationError::MalformedUrl(request.url))?;
 
     return if let (Some(tree), Some(certificate)) = (tree, certificate) {
         let body_sha = decode_body_to_sha256(response.body.as_slice(), encoding).unwrap();

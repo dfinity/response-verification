@@ -11,8 +11,8 @@ pub trait HashTreeToCbor<'a> {
 
 impl<'a> HashTreeToCbor<'a> for HashTree<'a> {
     fn from_cbor(cbor: Vec<u8>) -> Result<HashTree<'a>, ResponseVerificationError> {
-        let parsed_cbor =
-            parse_cbor(&cbor).map_err(|e| ResponseVerificationError::InvalidCbor(e.to_string()))?;
+        let parsed_cbor = parse_cbor(&cbor)
+            .map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
 
         parsed_cbor_to_tree(&parsed_cbor)
     }
@@ -34,7 +34,7 @@ pub fn parsed_cbor_to_tree<'a>(
                     return if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
                         Ok(leaf(data))
                     } else {
-                        Err(ResponseVerificationError::InvalidHashTree(String::from(
+                        Err(ResponseVerificationError::MalformedHashTree(String::from(
                             "Missing ByteString for Leaf node",
                         )))
                     };
@@ -43,11 +43,11 @@ pub fn parsed_cbor_to_tree<'a>(
                 CborHashTree::Pruned => {
                     return if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
                         let digest: Sha256Digest = TryFrom::try_from(data.as_ref())
-                            .map_err(ResponseVerificationError::InvalidPrunedData)?;
+                            .map_err(ResponseVerificationError::IncorrectPrunedDataLength)?;
 
                         Ok(pruned(digest))
                     } else {
-                        Err(ResponseVerificationError::InvalidHashTree(String::from(
+                        Err(ResponseVerificationError::MalformedHashTree(String::from(
                             "Missing ByteString for Pruned node",
                         )))
                     };
@@ -62,7 +62,7 @@ pub fn parsed_cbor_to_tree<'a>(
 
                         Ok(label(node_label, child_node))
                     } else {
-                        Err(ResponseVerificationError::InvalidHashTree(String::from(
+                        Err(ResponseVerificationError::MalformedHashTree(String::from(
                             "Missing ByteString or child node for Labelled node",
                         )))
                     };
@@ -77,19 +77,19 @@ pub fn parsed_cbor_to_tree<'a>(
 
                         Ok(fork(left, right))
                     } else {
-                        Err(ResponseVerificationError::InvalidHashTree(String::from(
+                        Err(ResponseVerificationError::MalformedHashTree(String::from(
                             "Missing child nodes for Fork node",
                         )))
                     };
                 }
             };
         } else {
-            Err(ResponseVerificationError::InvalidHashTree(String::from(
+            Err(ResponseVerificationError::MalformedHashTree(String::from(
                 "Expected Hash Tree cbor tag",
             )))
         }
     } else {
-        Err(ResponseVerificationError::InvalidHashTree(String::from(
+        Err(ResponseVerificationError::MalformedHashTree(String::from(
             "Expected Array cbor tag",
         )))
     }
