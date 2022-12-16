@@ -1,0 +1,2 @@
+[workspace]
+members = ["cel-parser", "ic-response-verification-rs", "representation-independent-hashing"]
