@@ -2,6 +2,8 @@
 
 ### Feat
 
+- add type-safe exception for JS clients
+- add initial response verification logic
 - add initial response verification logic
 - add cbor parsing of certificate and tree
 - **response-verification**: add initial request, response interface
@@ -9,6 +11,7 @@
 
 ### Refactor
 
+- use From trait for error conversion instead of Into
 - migrate wasm-bindgen to bazel toolchain rules format and refactor binaryen to match
 - create reusable function for body decoding
 - remove redundant if statement and merge with match statement
