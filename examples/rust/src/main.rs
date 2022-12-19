@@ -45,9 +45,18 @@ fn main() {
     println!("Headers: {:#?}", response.headers);
     println!("\n\n");
 
-    let canister_id = Principal::from_text("rdmx6-jaaaa-aaaaa-aaadq-cai").expect("Could not decode principal from text");
+    let canister_id = Principal::from_text("rdmx6-jaaaa-aaaaa-aaadq-cai")
+        .expect("Could not decode principal from text");
 
-    let result = verify_request_response_pair(request, response, canister_id.as_slice());
+    let current_time_ns = 1669202493944584367;
+    let max_cert_time_offset_ns = 300_000_000_000;
+    let result = verify_request_response_pair(
+        request,
+        response,
+        canister_id.as_slice(),
+        current_time_ns,
+        max_cert_time_offset_ns,
+    );
 
     println!("Result: {:?}", result);
 }
