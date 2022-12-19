@@ -32,28 +32,44 @@ try {
 
   console.log("Result", result);
 } catch (error) {
-  console.log('Error', error);
-  
+  console.log("Error", error);
+
   if (error instanceof ResponseVerificationError) {
     switch (error.code) {
-      case ResponseVerificationErrorCode.InvalidCbor:
+      case ResponseVerificationErrorCode.MalformedCbor:
         console.log(`Error parsing cbor: ${error.message}`);
         break;
 
-      case ResponseVerificationErrorCode.InvalidCertificate:
+      case ResponseVerificationErrorCode.MalformedCertificate:
         console.log(`Error parsing certificate: ${error.message}`);
         break;
 
-      case ResponseVerificationErrorCode.InvalidHashTree:
+      case ResponseVerificationErrorCode.MalformedHashTree:
         console.log(`Error parsing hash tree: ${error.message}`);
         break;
 
-      case ResponseVerificationErrorCode.InvalidPrunedData:
+      case ResponseVerificationErrorCode.IncorrectPrunedDataLength:
         console.log(`Error parsing hash tree pruned node: ${error.message}`);
         break;
 
-      case ResponseVerificationErrorCode.InvalidUrl:
+      case ResponseVerificationErrorCode.MalformedUrl:
         console.log(`Invalid URL provided: ${error.message}`);
+        break;
+
+      case ResponseVerificationErrorCode.LebDecodingOverflow:
+        console.log(`Leb decoding overflow: ${error.message}`);
+        break;
+
+      case ResponseVerificationErrorCode.MissingTimePathInTree:
+        console.log(`Missing time path: ${error.message}`);
+        break;
+
+      case ResponseVerificationErrorCode.CertificateTimeTooFarInThePast:
+        console.log(`Certificate time too far in the past: ${error.message}`);
+        break;
+
+      case ResponseVerificationErrorCode.CertificateTimeTooFarInTheFuture:
+        console.log(`Certificate time too far in the future: ${error.message}`);
         break;
     }
   }

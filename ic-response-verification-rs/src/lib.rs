@@ -19,7 +19,7 @@ use http::Uri;
 use ic_certification::{Certificate, HashTree};
 use request::Request;
 use response::Response;
-use validation::{validate_body, validate_tree};
+use validation::{validate_body, validate_certificate_time, validate_tree};
 
 pub mod request;
 pub mod response;
@@ -32,6 +32,7 @@ mod certificate_header_field;
 mod error;
 mod hash_tree;
 mod logger;
+mod time;
 mod validation;
 
 #[cfg(target_arch = "wasm32")]
@@ -94,8 +95,9 @@ pub fn verify_request_response_pair_impl(
     return if let (Some(tree), Some(certificate)) = (tree, certificate) {
         let body_sha = decode_body_to_sha256(response.body.as_slice(), encoding).unwrap();
 
+        validate_certificate_time(&certificate)?;
         let result = validate_tree(&canister_id, &certificate, &tree)
-            && validate_body(&tree, &request_uri, &body_sha); // [TODO] - validate certificate
+            && validate_body(&tree, &request_uri, &body_sha);
 
         Ok(result)
     } else {
