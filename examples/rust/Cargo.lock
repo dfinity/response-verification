@@ -392,6 +392,7 @@ dependencies = [
  "http",
  "ic-certification",
  "js-sys",
+ "leb128",
  "nom",
  "sha2",
  "thiserror",

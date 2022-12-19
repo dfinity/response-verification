@@ -1,5 +1,8 @@
+use crate::error;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
+
+pub type ResponseVerificationResult<T = ()> = Result<T, ResponseVerificationError>;
 
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseVerificationError {
@@ -15,6 +18,21 @@ pub enum ResponseVerificationError {
     #[error(r#"Failed to parse certificate: "{0}""#)]
     MalformedCertificate(String),
 
+    #[error(r#"Certificate is missing the "time" path"#)]
+    MissingTimePathInTree,
+
+    #[error("Certificate time is too far in the future. Received {certificate_time:?}, expected {max_certificate_time:?} or earlier")]
+    CertificateTimeTooFarInTheFuture {
+        certificate_time: u128,
+        max_certificate_time: u128,
+    },
+
+    #[error("Certificate time is too far in the past. Received {certificate_time:?}, expected {min_certificate_time:?} or later")]
+    CertificateTimeTooFarInThePast {
+        certificate_time: u128,
+        min_certificate_time: u128,
+    },
+
     /// The CBOR was malformed and could not be parsed correctly
     #[error(r#"Invalid cbor: "{0}""#)]
     MalformedCbor(String),
@@ -22,6 +40,9 @@ pub enum ResponseVerificationError {
     /// The hash tree pruned data was not the correct length
     #[error(r#"Invalid pruned data: "{0}""#)]
     IncorrectPrunedDataLength(#[from] std::array::TryFromSliceError),
+
+    #[error("Overflow while decoding leb")]
+    LebDecodingOverflow,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -33,6 +54,10 @@ pub enum ResponseVerificationJsErrorCode {
     MalformedCertificate,
     MalformedCbor,
     IncorrectPrunedDataLength,
+    MissingTimePathInTree,
+    CertificateTimeTooFarInTheFuture,
+    CertificateTimeTooFarInThePast,
+    LebDecodingOverflow,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -64,6 +89,18 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             }
             ResponseVerificationError::IncorrectPrunedDataLength(_) => {
                 ResponseVerificationJsErrorCode::IncorrectPrunedDataLength
+            }
+            ResponseVerificationError::MissingTimePathInTree => {
+                ResponseVerificationJsErrorCode::MissingTimePathInTree
+            }
+            ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. } => {
+                ResponseVerificationJsErrorCode::CertificateTimeTooFarInTheFuture
+            }
+            ResponseVerificationError::CertificateTimeTooFarInThePast { .. } => {
+                ResponseVerificationJsErrorCode::CertificateTimeTooFarInThePast
+            }
+            ResponseVerificationError::LebDecodingOverflow { .. } => {
+                ResponseVerificationJsErrorCode::LebDecodingOverflow
             }
         };
         let message = error.to_string();
@@ -164,6 +201,74 @@ mod tests {
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::IncorrectPrunedDataLength,
                 message: format!(r#"Invalid pruned data: "{}""#, inner_error.to_string()).into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_missing_time_path_in_tree() {
+        let error = ResponseVerificationError::MissingTimePathInTree;
+
+        let result: ResponseVerificationJsError = error.into();
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MissingTimePathInTree,
+                message: r#"Certificate is missing the "time" path"#.into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_certificate_time_too_far_in_the_future() {
+        let error = ResponseVerificationError::CertificateTimeTooFarInTheFuture {
+            certificate_time: 1000,
+            max_certificate_time: 500,
+        };
+
+        let result: ResponseVerificationJsError = error.into();
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::CertificateTimeTooFarInTheFuture,
+                message: "Certificate time is too far in the future. Received 1000, expected 500 or earlier".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_certificate_time_too_far_in_the_past() {
+        let error = ResponseVerificationError::CertificateTimeTooFarInThePast {
+            certificate_time: 500,
+            min_certificate_time: 1000,
+        };
+
+        let result: ResponseVerificationJsError = error.into();
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::CertificateTimeTooFarInThePast,
+                message:
+                    "Certificate time is too far in the past. Received 500, expected 1000 or later"
+                        .into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_leb_decoding_overflow() {
+        let error = ResponseVerificationError::LebDecodingOverflow;
+
+        let result: ResponseVerificationJsError = error.into();
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::LebDecodingOverflow,
+                message: "Overflow while decoding leb".into(),
             }
         )
     }
