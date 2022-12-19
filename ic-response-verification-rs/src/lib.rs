@@ -32,7 +32,6 @@ mod certificate_header_field;
 mod error;
 mod hash_tree;
 mod logger;
-mod time;
 mod validation;
 
 #[cfg(target_arch = "wasm32")]
@@ -41,14 +40,22 @@ pub fn verify_request_response_pair(
     request: JsValue,
     response: JsValue,
     canister_id: &[u8],
+    current_time_ns: u64,
+    max_cert_time_offset_ns: u64,
 ) -> Result<bool, ResponseVerificationJsError> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
     let request = Request::from(request);
     let response = Response::from(response);
 
-    verify_request_response_pair_impl(request, response, canister_id)
-        .map_err(|e| ResponseVerificationJsError::from(e))
+    verify_request_response_pair_impl(
+        request,
+        response,
+        canister_id,
+        current_time_ns as u128,
+        max_cert_time_offset_ns as u128,
+    )
+    .map_err(|e| ResponseVerificationJsError::from(e))
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -58,6 +65,8 @@ pub fn verify_request_response_pair_impl(
     request: Request,
     response: Response,
     canister_id: &[u8],
+    current_time_ns: u128,
+    max_cert_time_offset_ns: u128,
 ) -> Result<bool, ResponseVerificationError> {
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
@@ -95,7 +104,8 @@ pub fn verify_request_response_pair_impl(
     return if let (Some(tree), Some(certificate)) = (tree, certificate) {
         let body_sha = decode_body_to_sha256(response.body.as_slice(), encoding).unwrap();
 
-        validate_certificate_time(&certificate)?;
+        validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
+        // [TODO] - validate_certificate
         let result = validate_tree(&canister_id, &certificate, &tree)
             && validate_body(&tree, &request_uri, &body_sha);
 

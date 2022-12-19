@@ -2,11 +2,12 @@ use http::Uri;
 use ic_certification::{hash_tree::Sha256Digest, Certificate, HashTree, LookupResult};
 
 use crate::error::{ResponseVerificationError, ResponseVerificationResult};
-use crate::time::get_current_timestamp;
 
-const MAX_CERT_TIME_OFFSET_IN_NS: u128 = 300_000_000_000; // 5 min
-
-pub fn validate_certificate_time(certificate: &Certificate) -> ResponseVerificationResult {
+pub fn validate_certificate_time(
+    certificate: &Certificate,
+    current_time_ns: &u128,
+    allowed_certificate_time_offset: &u128,
+) -> ResponseVerificationResult {
     let time_path = ["time".into()];
 
     let LookupResult::Found(encoded_certificate_time) = certificate.tree.lookup_path(&time_path) else {
@@ -16,9 +17,8 @@ pub fn validate_certificate_time(certificate: &Certificate) -> ResponseVerificat
     let certificate_time = leb128::read::unsigned(&mut encoded_certificate_time.as_ref())
         .map_err(|_| ResponseVerificationError::LebDecodingOverflow)?
         as u128;
-    let current_time = get_current_timestamp();
-    let max_certificate_time = current_time + MAX_CERT_TIME_OFFSET_IN_NS;
-    let min_certificate_time = current_time - MAX_CERT_TIME_OFFSET_IN_NS;
+    let max_certificate_time = current_time_ns + allowed_certificate_time_offset;
+    let min_certificate_time = current_time_ns - allowed_certificate_time_offset;
 
     if certificate_time > max_certificate_time {
         return Err(
@@ -94,12 +94,13 @@ mod tests {
 
     static CANISTER_ID: &str = "r7inp-6aaaa-aaaaa-aaabq-cai";
     static OTHER_CANISTER_ID: &str = "rdmx6-jaaaa-aaaaa-aaadq-cai";
+    const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000; // 5 min
 
-    fn get_timestamp(time: SystemTime) -> u64 {
-        time.duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64
+    fn get_timestamp(time: SystemTime) -> u128 {
+        time.duration_since(UNIX_EPOCH).unwrap().as_nanos()
     }
 
-    fn leb_encode_timestamp(timestamp: u64) -> [u8; 1024] {
+    fn leb_encode_timestamp(timestamp: u128) -> [u8; 1024] {
         let mut buf = [0; 1024];
         let mut writable = &mut buf[..];
         leb128::write::unsigned(&mut writable, timestamp as u64)
@@ -111,9 +112,9 @@ mod tests {
     #[test]
     fn validate_certificate_time_with_suitable_time() {
         let current_time = SystemTime::now();
+        let current_timestamp = get_timestamp(current_time);
 
-        let timestamp = get_timestamp(current_time);
-        let encoded_timestamp = leb_encode_timestamp(timestamp);
+        let encoded_timestamp = leb_encode_timestamp(current_timestamp);
 
         let certificate_tree = label("time", leaf(encoded_timestamp));
         let certificate = Certificate {
@@ -122,46 +123,54 @@ mod tests {
             delegation: None,
         };
 
-        validate_certificate_time(&certificate)
+        validate_certificate_time(&certificate, &current_timestamp, &MAX_CERT_TIME_OFFSET_NS)
             .expect("Certificate time within expected time period");
     }
 
     #[test]
-    #[should_panic]
     fn validate_certificate_time_with_time_too_far_in_the_future() {
         let current_time = SystemTime::now();
+        let current_timestamp = get_timestamp(current_time);
+
         let future_time = current_time.add(Duration::new(301, 0));
+        let future_timestamp = get_timestamp(future_time);
+        let encoded_future_timestamp = leb_encode_timestamp(future_timestamp);
 
-        let timestamp = get_timestamp(future_time);
-        let encoded_timestamp = leb_encode_timestamp(timestamp);
-
-        let certificate_tree = label("time", leaf(encoded_timestamp));
+        let certificate_tree = label("time", leaf(encoded_future_timestamp));
         let certificate = Certificate {
             tree: certificate_tree,
             signature: vec![],
             delegation: None,
         };
 
-        validate_certificate_time(&certificate).unwrap();
+        assert!(matches!(
+            validate_certificate_time(&certificate, &current_timestamp, &MAX_CERT_TIME_OFFSET_NS).err(),
+            Some(ResponseVerificationError::CertificateTimeTooFarInTheFuture { certificate_time, max_certificate_time })
+                if certificate_time == future_timestamp && max_certificate_time == current_timestamp + MAX_CERT_TIME_OFFSET_NS
+        ))
     }
 
     #[test]
-    #[should_panic]
     fn validate_certificate_time_with_time_too_far_in_the_past() {
         let current_time = SystemTime::now();
-        let future_time = current_time.sub(Duration::new(301, 0));
+        let current_timestamp = get_timestamp(current_time);
 
-        let timestamp = get_timestamp(future_time);
-        let encoded_timestamp = leb_encode_timestamp(timestamp);
+        let past_time = current_time.sub(Duration::new(301, 0));
+        let past_timestamp = get_timestamp(past_time);
+        let encoded_past_timestamp = leb_encode_timestamp(past_timestamp);
 
-        let certificate_tree = label("time", leaf(encoded_timestamp));
+        let certificate_tree = label("time", leaf(encoded_past_timestamp));
         let certificate = Certificate {
             tree: certificate_tree,
             signature: vec![],
             delegation: None,
         };
 
-        validate_certificate_time(&certificate).unwrap();
+        assert!(matches!(
+            validate_certificate_time(&certificate, &current_timestamp, &MAX_CERT_TIME_OFFSET_NS).err(),
+            Some(ResponseVerificationError::CertificateTimeTooFarInThePast { certificate_time, min_certificate_time })
+                if certificate_time == past_timestamp && min_certificate_time == current_timestamp - MAX_CERT_TIME_OFFSET_NS
+        ))
     }
 
     #[test]

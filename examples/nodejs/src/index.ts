@@ -27,8 +27,17 @@ const canister_id = Principal.fromText(
   "rdmx6-jaaaa-aaaaa-aaadq-cai"
 ).toUint8Array();
 
+const current_time_ns = BigInt(1669202493944584367);
+const max_cert_time_offset_ns = BigInt(300_000_000_000);
+
 try {
-  const result = verifyRequestResponsePair(request, response, canister_id);
+  const result = verifyRequestResponsePair(
+    request,
+    response,
+    canister_id,
+    current_time_ns,
+    max_cert_time_offset_ns
+  );
 
   console.log("Result", result);
 } catch (error) {
