@@ -9,9 +9,6 @@ jobs:
   build_and_test_rust:
     name: Build and Test Rust
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ic-response-verification-rs
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -31,6 +28,7 @@ jobs:
         run: cargo test --lib
 
       - name: Wasm test
+        working-directory: ic-response-verification-rs
         run: wasm-pack test --node
 
       - name: Lint
