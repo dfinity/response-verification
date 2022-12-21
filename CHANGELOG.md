@@ -2,6 +2,8 @@
 
 ### Feat
 
+- add current time and max cert time offset as parameters
+- add certificate time check
 - **hashing**: added (probably incorrect) R-I hashing implementation
 - **hashing**: new crate
 - **cel-parser**: new crate
