@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add cel to ast parser
 - add current time and max cert time offset as parameters
 - add certificate time check
 - **hashing**: added (probably incorrect) R-I hashing implementation
