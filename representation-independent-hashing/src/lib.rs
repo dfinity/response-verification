@@ -1,2 +1,4 @@
 mod hash;
-pub mod representation_independent_hash;
+mod representation_independent_hash;
+
+pub mod response_hash;
