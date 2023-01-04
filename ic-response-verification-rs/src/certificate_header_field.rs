@@ -12,10 +12,6 @@ pub struct CertificateHeaderField<'a>(pub &'a str, pub Vec<u8>);
 
 impl<'a> CertificateHeaderField<'a> {
     /// Parses the given header field string and returns a new CertificateHeaderField.
-    ///
-    /// ```
-    /// let certificate_header_field = CertificateHeaderField::from("certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:");
-    /// ```
     pub fn from(header_field: &'a str) -> Option<CertificateHeaderField<'a>> {
         if let Some((name, encoded_value)) = extract_header_field(header_field.trim()) {
             if let Some(value) = decode_header_field_value(name, encoded_value) {

@@ -9,10 +9,6 @@ pub struct CertificateHeader {
 
 impl CertificateHeader {
     /// Parses the given header and returns a new CertificateHeader.
-    ///
-    /// ```
-    /// let certificate_header = CertificateHeader::from("certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:,tree=:SGVsbG8gVHJlZSE=:");
-    /// ```
     pub fn from(header_value: &str) -> CertificateHeader {
         let mut certificate_header = CertificateHeader {
             certificate: None,

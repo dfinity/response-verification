@@ -1,3 +1,4 @@
+use crate::error::{CelParserError, CelParserResult};
 use crate::Certification;
 use nom::branch::alt;
 use nom::bytes::complete::{escaped, tag, take_till, take_until, take_while};
@@ -9,6 +10,7 @@ use nom::multi::separated_list0;
 use nom::sequence::{delimited, preceded, separated_pair, terminated, tuple};
 use nom::{AsChar, IResult, InputIter, Parser, Slice};
 use std::collections::HashMap;
+use std::fmt;
 use std::ops::RangeFrom;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -17,6 +19,12 @@ pub enum CelValue {
     Array(Vec<CelValue>),
     Object(String, HashMap<String, CelValue>),
     Function(String, Vec<CelValue>),
+}
+
+impl fmt::Display for CelValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
 }
 
 fn trim_whitespace<'a, O, P, E: ParseError<&'a str> + ContextError<&'a str>>(
@@ -160,8 +168,7 @@ fn cel_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     )))(i)
 }
 
-// [TODO] - Create concrete error type instead of just "String"
-pub fn parse_cel_expression(i: &str) -> Result<CelValue, String> {
+pub fn parse_cel_expression(i: &str) -> CelParserResult<CelValue> {
     // [TODO] - Create "debug" feature flag to toggle on verbose errors
     let result = cel_value::<VerboseError<&str>>(i);
 
@@ -170,194 +177,9 @@ pub fn parse_cel_expression(i: &str) -> Result<CelValue, String> {
             // [TODO] - Create "debug" feature flag to toggle on stacktrace
             let stacktrace = convert_error(i, e);
 
-            Err(stacktrace)
+            Err(CelParserError::CelSyntaxException(stacktrace))
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(CelParserError::CelSyntaxException(e.to_string())),
         Ok((_remaining, result)) => Ok(result),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use nom::error::{convert_error, VerboseError};
-
-    #[test]
-    fn parses_no_certification_expression() {
-        let cel_expression = r#"
-            default_certification (
-              ValidationArgs {
-                no_certification: Empty { }
-              }
-            )
-        "#;
-
-        let result = parse_cel_expression(cel_expression).unwrap();
-
-        assert_eq!(
-            result,
-            CelValue::Function(
-                "default_certification".into(),
-                vec![CelValue::Object(
-                    "ValidationArgs".into(),
-                    HashMap::from([(
-                        "no_certification".into(),
-                        CelValue::Object("Empty".into(), HashMap::from([]))
-                    )]),
-                )],
-            )
-        );
-    }
-
-    #[test]
-    fn parses_no_request_certification_expression() {
-        let cel_expression = r#"
-            default_certification (
-              ValidationArgs {
-                certification: Certification {
-                  no_request_certification: Empty {},
-                  response_certification: ResponseCertification {
-                    response_header_exclusions: ResponseHeaderList {
-                      headers: ["Server","Date","X-Cache-Status"]
-                    }
-                  }
-                }
-              }
-            )
-        "#;
-
-        let result = parse_cel_expression(cel_expression).unwrap();
-
-        assert_eq!(
-            result,
-            CelValue::Function(
-                "default_certification".into(),
-                vec![CelValue::Object(
-                    "ValidationArgs".into(),
-                    HashMap::from([(
-                        "certification".into(),
-                        CelValue::Object(
-                            "Certification".into(),
-                            HashMap::from([
-                                (
-                                    "no_request_certification".into(),
-                                    CelValue::Object("Empty".into(), HashMap::from([]))
-                                ),
-                                (
-                                    "response_certification".into(),
-                                    CelValue::Object(
-                                        "ResponseCertification".into(),
-                                        HashMap::from([(
-                                            "response_header_exclusions".into(),
-                                            CelValue::Object(
-                                                "ResponseHeaderList".into(),
-                                                HashMap::from([(
-                                                    "headers".into(),
-                                                    CelValue::Array(vec![
-                                                        CelValue::String("Server".into()),
-                                                        CelValue::String("Date".into()),
-                                                        CelValue::String("X-Cache-Status".into()),
-                                                    ])
-                                                )]),
-                                            )
-                                        )]),
-                                    )
-                                )
-                            ]),
-                        )
-                    )]),
-                )],
-            )
-        );
-    }
-
-    #[test]
-    fn parses_full_certification_expression() {
-        let cel_expression = r#"
-            default_certification (
-                ValidationArgs {
-                    certification: Certification {
-                        request_certification: RequestCertification {
-                            certified_request_headers: ["host"],
-                            certified_query_parameters: ["filter"]
-                        },
-                        response_certification: ResponseCertification {
-                            certified_response_headers: ResponseHeaderList {
-                                headers: ["Content-Type","X-Frame-Options","Content-Security-Policy","Strict-Transport-Security","Referrer-Policy","Permissions-Policy"]
-                            }
-                        }
-                    }
-                }
-            )
-        "#;
-
-        let result = parse_cel_expression(cel_expression).unwrap();
-
-        assert_eq!(
-            result,
-            CelValue::Function(
-                "default_certification".into(),
-                vec![CelValue::Object(
-                    "ValidationArgs".into(),
-                    HashMap::from([(
-                        "certification".into(),
-                        CelValue::Object(
-                            "Certification".into(),
-                            HashMap::from([
-                                (
-                                    "request_certification".into(),
-                                    CelValue::Object(
-                                        "RequestCertification".into(),
-                                        HashMap::from([
-                                            (
-                                                "certified_request_headers".into(),
-                                                CelValue::Array(vec![CelValue::String(
-                                                    "host".into()
-                                                )])
-                                            ),
-                                            (
-                                                "certified_query_parameters".into(),
-                                                CelValue::Array(vec![CelValue::String(
-                                                    "filter".into()
-                                                )])
-                                            ),
-                                        ]),
-                                    )
-                                ),
-                                (
-                                    "response_certification".into(),
-                                    CelValue::Object(
-                                        "ResponseCertification".into(),
-                                        HashMap::from([(
-                                            "certified_response_headers".into(),
-                                            CelValue::Object(
-                                                "ResponseHeaderList".into(),
-                                                HashMap::from([(
-                                                    "headers".into(),
-                                                    CelValue::Array(vec![
-                                                        CelValue::String("Content-Type".into()),
-                                                        CelValue::String("X-Frame-Options".into()),
-                                                        CelValue::String(
-                                                            "Content-Security-Policy".into()
-                                                        ),
-                                                        CelValue::String(
-                                                            "Strict-Transport-Security".into()
-                                                        ),
-                                                        CelValue::String("Referrer-Policy".into()),
-                                                        CelValue::String(
-                                                            "Permissions-Policy".into()
-                                                        ),
-                                                    ])
-                                                )]),
-                                            )
-                                        )]),
-                                    )
-                                )
-                            ]),
-                        )
-                    )]),
-                )],
-            )
-        );
     }
 }
