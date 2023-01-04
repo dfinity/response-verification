@@ -1,7 +1,7 @@
 use crate::cbor::{parse_cbor, CborHashTree, CborValue};
 use crate::error::ResponseVerificationError;
 use ic_certification::{
-    hash_tree::{empty, fork, label, leaf, pruned, Label},
+    hash_tree::{empty, fork, label, leaf, pruned, Label, Sha256Digest},
     HashTree,
 };
 
@@ -17,8 +17,6 @@ impl<'a> HashTreeToCbor<'a> for HashTree<'a> {
         parsed_cbor_to_tree(&parsed_cbor)
     }
 }
-
-type Sha256Digest = [u8; 32];
 
 pub fn parsed_cbor_to_tree<'a>(
     parsed_cbor: &CborValue,
