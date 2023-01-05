@@ -1,11 +1,10 @@
 use crate::hash::hash;
 use sha2::{Digest, Sha256};
-use std::collections::HashMap;
 
 /// A partial implementation of [`Representation Independent Hash`] that only supports UTF-8 strings as values.
 ///
 /// [`Representation Independent Hash`]: https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map
-pub fn representation_independent_hash(map: &HashMap<String, String>) -> [u8; 32] {
+pub fn representation_independent_hash(map: &Vec<(String, String)>) -> [u8; 32] {
     let mut hashes: Vec<_> = map
         .iter()
         .map(|(key, value)| (hash(key.as_bytes()), hash(value.as_bytes())))
@@ -28,30 +27,47 @@ mod tests {
 
     #[test]
     fn hash_key_value_map() {
-        let map: HashMap<String, String> = HashMap::from([
+        let map: Vec<(String, String)> = vec![
             ("name".into(), "foo".into()),
             ("message".into(), "Hello World!".into()),
-        ]);
-        let expected_hash: [u8; 32] = [
-            90, 150, 203, 48, 202, 187, 80, 70, 84, 53, 139, 125, 114, 107, 61, 126, 45, 108, 200,
-            244, 243, 58, 162, 122, 170, 81, 137, 21, 129, 21, 202, 204,
         ];
+        let expected_hash =
+            hex::decode("5a96cb30cabb504654358b7d726b3d7e2d6cc8f4f33aa27aaa5189158115cacc")
+                .unwrap();
 
         let result = representation_independent_hash(&map);
 
-        assert_eq!(result, expected_hash);
+        assert_eq!(result, expected_hash.as_slice());
+    }
+
+    #[test]
+    fn handles_duplicate_keys() {
+        let map: Vec<(String, String)> = vec![
+            ("name".into(), "foo".into()),
+            ("name".into(), "bar".into()),
+            ("message".into(), "Hello World!".into()),
+        ];
+        let expected_hash =
+            hex::decode("435f77c9bdeca5dba4a4b8a34e4f732b4311f1fc252ec6d4e8ee475234b170f9")
+                .unwrap();
+
+        let result = representation_independent_hash(&map);
+
+        assert_eq!(result, expected_hash.as_slice());
     }
 
     #[test]
     fn hash_reordered_key_value_map() {
-        let map: HashMap<String, String> = HashMap::from([
+        let map: Vec<(String, String)> = vec![
             ("name".into(), "foo".into()),
             ("message".into(), "Hello World!".into()),
-        ]);
-        let reordered_map: HashMap<String, String> = HashMap::from([
+            ("name".into(), "bar".into()),
+        ];
+        let reordered_map: Vec<(String, String)> = vec![
             ("message".into(), "Hello World!".into()),
+            ("name".into(), "bar".into()),
             ("name".into(), "foo".into()),
-        ]);
+        ];
 
         let result = representation_independent_hash(&map);
         let reordered_result = representation_independent_hash(&reordered_map);

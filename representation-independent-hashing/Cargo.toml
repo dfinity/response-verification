@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 sha2 = "0.10.6"
+
+[dev-dependencies]
+hex = "0.4.3"
