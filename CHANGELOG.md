@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add CEL ast to certification object validation and mapping
 - add cel to ast parser
 - add current time and max cert time offset as parameters
 - add certificate time check
