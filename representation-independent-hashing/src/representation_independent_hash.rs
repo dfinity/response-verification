@@ -2,7 +2,10 @@ use crate::hash::hash;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 
-pub fn representation_independent_hash(map: HashMap<String, String>) -> [u8; 32] {
+/// A partial implementation of [`Representation Independent Hash`] that only supports UTF-8 strings as values.
+///
+/// [`Representation Independent Hash`]: https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map
+pub fn representation_independent_hash(map: &HashMap<String, String>) -> [u8; 32] {
     let mut hashes: Vec<_> = map
         .iter()
         .map(|(key, value)| (hash(key.as_bytes()), hash(value.as_bytes())))
@@ -34,7 +37,7 @@ mod tests {
             244, 243, 58, 162, 122, 170, 81, 137, 21, 129, 21, 202, 204,
         ];
 
-        let result = representation_independent_hash(map);
+        let result = representation_independent_hash(&map);
 
         assert_eq!(result, expected_hash);
     }
@@ -50,8 +53,8 @@ mod tests {
             ("name".into(), "foo".into()),
         ]);
 
-        let result = representation_independent_hash(map);
-        let reordered_result = representation_independent_hash(reordered_map);
+        let result = representation_independent_hash(&map);
+        let reordered_result = representation_independent_hash(&reordered_map);
 
         assert_eq!(result, reordered_result);
     }
