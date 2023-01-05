@@ -781,6 +781,7 @@ name = "representation-independent-hashing"
 version = "0.0.0"
 dependencies = [
  "hex",
+ "leb128",
  "sha2",
 ]
 

@@ -4,6 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+leb128 = "0.2.5"
 sha2 = "0.10.6"
 
 [dev-dependencies]
