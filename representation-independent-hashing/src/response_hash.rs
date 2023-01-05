@@ -1,9 +1,11 @@
 use crate::hash::hash;
-use crate::representation_independent_hash::representation_independent_hash;
+use crate::representation_independent_hash::{representation_independent_hash, Value};
 use cel_parser::ResponseCertification;
 use http::header::HeaderName;
 use http::Response;
-use std::collections::HashMap;
+
+const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
+const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
 
 pub fn response_hash(
     response: &Response<&[u8]>,
@@ -26,28 +28,35 @@ pub fn response_hash(
         }
     };
 
-    let mut filtered_headers: HashMap<_, _> = response
+    let mut filtered_headers: Vec<(String, Value)> = response
         .headers()
         .iter()
         .filter_map(|(header_name, header_value)| {
-            if (header_name
+            let is_certificate_header = header_name
                 .to_string()
-                .eq_ignore_ascii_case("IC-Certificate")
-                || !headers_filter(header_name))
-                && !header_name
-                    .to_string()
-                    .eq_ignore_ascii_case("IC-Certificate-Expression")
-            {
-                return None::<(String, String)>;
+                .eq_ignore_ascii_case(CERTIFICATE_HEADER_NAME);
+            if is_certificate_header {
+                return None;
+            }
+
+            let is_certificate_expression_header = header_name
+                .to_string()
+                .eq_ignore_ascii_case(CERTIFICATE_EXPRESSION_HEADER_NAME);
+            if !headers_filter(header_name) && !is_certificate_expression_header {
+                return None;
             }
 
             Some((
                 header_name.to_string(),
-                String::from(header_value.to_str().unwrap()),
+                Value::String(String::from(header_value.to_str().unwrap())),
             ))
         })
         .collect();
-    filtered_headers.insert(":ic-cert-status".into(), response.status().to_string());
+
+    filtered_headers.push((
+        ":ic-cert-status".into(),
+        Value::Number(response.status().as_u16().into()),
+    ));
 
     let concatenated_hashes = [
         representation_independent_hash(&filtered_headers),
@@ -64,14 +73,28 @@ mod tests {
 
     const HELLO_WORLD_BODY: &[u8] = &[72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33];
     const CERTIFICATE: &str = "certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:,tree=:SGVsbG8gVHJlZSE=:";
-    const CEL_EXPRESSION: &str = r#"
+    const HEADER_EXCLUSIONS_CEL_EXPRESSION: &str = r#"
         default_certification (
           ValidationArgs {
             certification: Certification {
               no_request_certification: Empty {},
               response_certification: ResponseCertification {
                 response_header_exclusions: ResponseHeaderList {
-                  headers: ["Accept-Encoding", "Cache-Control", "X-Cache-Status"]
+                  headers: ["Content-Security-Policy"]
+                }
+              }
+            }
+          }
+        )
+    "#;
+    const CERTIFIED_HEADERS_CEL_EXPRESSION: &str = r#"
+        default_certification (
+          ValidationArgs {
+            certification: Certification {
+              no_request_certification: Empty {},
+              response_certification: ResponseCertification {
+                certified_response_headers: ResponseHeaderList {
+                  headers: ["Accept-Encoding", "Cache-Control"]
                 }
               }
             }
@@ -79,48 +102,32 @@ mod tests {
         )
     "#;
 
-    fn remove_whitespace(s: &str) -> String {
-        s.chars().filter(|c| !c.is_whitespace()).collect()
-    }
-
-    fn create_response() -> Response<&'static [u8]> {
-        let cel_expression = remove_whitespace(CEL_EXPRESSION);
-
-        Response::builder()
-            .header("IC-Certificate", CERTIFICATE)
-            .header("IC-Certificate-Expression", &cel_expression)
-            .header("Accept-Encoding", "gzip")
-            .header("Cache-Control", "no-cache")
-            .header("Content-Security-Policy", "default-src 'self'")
-            .body(HELLO_WORLD_BODY)
-            .unwrap()
-    }
-
     #[test]
     fn response_hash_with_certified_headers() {
         let response_certification = ResponseCertification::CertifiedHeaders(vec![
             "Accept-Encoding".into(),
             "Cache-Control".into(),
         ]);
-        let response = create_response();
-        let expected_hash = [
-            35, 79, 46, 153, 224, 77, 202, 213, 223, 71, 188, 45, 251, 234, 113, 245, 86, 79, 27,
-            172, 81, 216, 25, 126, 39, 155, 113, 155, 201, 200, 168, 190,
-        ];
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
+        let expected_hash =
+            hex::decode("f3f918d36368b615b6e2c01a80e9ca95193d09d039b95977c9741579b09f1725")
+                .unwrap();
 
         let result = response_hash(&response, &response_certification);
 
-        assert_eq!(result, expected_hash);
+        assert_eq!(result, expected_hash.as_slice());
     }
 
     #[test]
     fn response_hash_with_certified_headers_without_excluded_headers() {
-        let cel_expression = remove_whitespace(CEL_EXPRESSION);
         let response_certification =
             ResponseCertification::CertifiedHeaders(vec!["Accept-Encoding".into()]);
-        let response = create_response();
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_without_excluded_headers: Response<&[u8]> = Response::builder()
-            .header("IC-Certificate-Expression", &cel_expression)
+            .header(
+                "IC-Certificate-Expression",
+                remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
+            )
             .header("Accept-Encoding", "gzip")
             .body(HELLO_WORLD_BODY)
             .unwrap();
@@ -134,30 +141,33 @@ mod tests {
 
     #[test]
     fn response_hash_with_header_exclusions() {
-        let response_certification =
-            ResponseCertification::HeaderExclusions(vec!["Content-Security-Policy".into()]);
-        let response = create_response();
-        let expected_hash = [
-            35, 79, 46, 153, 224, 77, 202, 213, 223, 71, 188, 45, 251, 234, 113, 245, 86, 79, 27,
-            172, 81, 216, 25, 126, 39, 155, 113, 155, 201, 200, 168, 190,
-        ];
-
-        let result = response_hash(&response, &response_certification);
-
-        assert_eq!(result, expected_hash);
-    }
-
-    #[test]
-    fn response_hash_with_with_header_exclusions_without_excluded_headers() {
-        let cel_expression = remove_whitespace(CEL_EXPRESSION);
         let response_certification = ResponseCertification::HeaderExclusions(vec![
             "Accept-Encoding".into(),
             "Cache-Control".into(),
         ]);
-        let response = create_response();
+        let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
+        let expected_hash =
+            hex::decode("592bdfe001adca2d48f0372a2d6bbdc561a6806719710dc8d393f8f89f14a25b")
+                .unwrap();
+
+        let result = response_hash(&response, &response_certification);
+
+        assert_eq!(result, expected_hash.as_slice());
+    }
+
+    #[test]
+    fn response_hash_with_header_exclusions_without_excluded_headers() {
+        let response_certification =
+            ResponseCertification::HeaderExclusions(vec!["Content-Security-Policy".into()]);
+        let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let response_without_excluded_headers: Response<&[u8]> = Response::builder()
-            .header("IC-Certificate-Expression", &cel_expression)
-            .header("Content-Security-Policy", "default-src 'self'")
+            .header(
+                "IC-Certificate-Expression",
+                remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
+            )
+            .header("Accept-Encoding", "gzip")
+            .header("Cache-Control", "no-cache")
+            .header("Cache-Control", "no-store")
             .body(HELLO_WORLD_BODY)
             .unwrap();
 
@@ -166,5 +176,29 @@ mod tests {
             response_hash(&response_without_excluded_headers, &response_certification);
 
         assert_eq!(result, result_without_excluded_headers);
+    }
+
+    /// We use this helper to remove white space from CEL expressions to ease the calculation
+    /// of the expected hashes. Generating the hash for a string with so much whitespace manually
+    /// may be prone to error in copy/pasting the string into a website and missing a leading/trailing
+    /// newline or a tab character somewhere.
+    fn remove_whitespace(s: &str) -> String {
+        s.chars().filter(|c| !c.is_whitespace()).collect()
+    }
+
+    fn create_response(cel_expression: &str) -> Response<&'static [u8]> {
+        Response::builder()
+            .header("IC-Certificate", CERTIFICATE)
+            .header(
+                "IC-Certificate-Expression",
+                remove_whitespace(cel_expression),
+            )
+            .header("Accept-Encoding", "gzip")
+            .header("Cache-Control", "no-cache")
+            .header("Cache-Control", "no-store")
+            .header("Content-Security-Policy", "default-src 'self'")
+            .status(200)
+            .body(HELLO_WORLD_BODY)
+            .unwrap()
     }
 }
