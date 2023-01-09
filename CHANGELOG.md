@@ -17,6 +17,10 @@
 - **response-verification**: add initial request, response interface
 - **certificate-header**: add certificate header handling (#5)
 
+### Fix
+
+- representation independant hash should allow for duplicate keys
+
 ### Refactor
 
 - use From trait for error conversion instead of Into
