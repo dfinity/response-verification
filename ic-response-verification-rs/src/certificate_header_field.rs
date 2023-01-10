@@ -56,25 +56,19 @@ fn decode_header_field_value(name: &str, value: &str) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn create_header_field(name: &str, value: &str) -> String {
-        let base64_value = base64::encode(value);
-
-        format!("{}=:{}:", name, base64_value)
-    }
+    use crate::test_utils::test_utils::{cbor_encode, create_certificate, create_header_field};
 
     #[test]
     fn certificate_header_field_parses_valid_field() {
-        let name = "message";
-        let value = "Hello World!";
-        let header_field = create_header_field(name, value);
+        let name = "certificate";
+        let value = cbor_encode(&create_certificate(None));
+        let header_field = create_header_field(name, &value);
 
         let CertificateHeaderField(result_name, result_value) =
-            CertificateHeaderField::from(header_field.as_str())
-                .expect("CertificateHeaderField not parsed correctly");
+            CertificateHeaderField::from(header_field.as_str()).unwrap();
 
         assert_eq!(result_name, name);
-        assert_eq!(result_value, value.as_bytes());
+        assert_eq!(result_value, value.as_slice());
     }
 
     #[test]
@@ -82,8 +76,7 @@ mod tests {
         let header_field = create_header_field("", "");
 
         let CertificateHeaderField(result_name, result_value) =
-            CertificateHeaderField::from(header_field.as_str())
-                .expect("CertificateHeaderField not parsed correctly");
+            CertificateHeaderField::from(header_field.as_str()).unwrap();
 
         assert_eq!(result_name, "");
         assert_eq!(result_value.is_empty(), true);
@@ -110,11 +103,11 @@ mod tests {
 
     #[test]
     fn certificate_header_field_does_not_parse_invalid_field() {
-        let name = "message";
-        let value = "hello_world";
+        let name = "certificate";
+        let value = cbor_encode(&create_certificate(None));
+        let value = base64::encode(value);
 
-        let base64_value = base64::encode(value);
-        let header_field = format!("{}:{}", name, base64_value);
+        let header_field = format!("{}:{}", name, value);
 
         let result = CertificateHeaderField::from(header_field.as_str());
 
