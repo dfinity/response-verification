@@ -44,15 +44,43 @@ fn decode_body<D: Read>(mut decoder: D) -> Option<Sha256Digest> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::test_utils::hex_decode;
+    use flate2::write::{DeflateEncoder, GzEncoder};
+    use flate2::Compression;
+    use std::io::Write;
+
+    const BODY: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8];
+    const BODY_SHA: &str = "66840dda154e8a113c31dd0ad32f7f3a366a80e8136979d8f5a101d3d29d6f72";
 
     #[test]
     fn decode_simple_body() {
-        let body: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8];
+        let result = decode_body_to_sha256(BODY, None).unwrap();
+        let expected = hex_decode(BODY_SHA);
 
-        let result = decode_body_to_sha256(body, None).unwrap();
-        let expected =
-            hex::decode("66840dda154e8a113c31dd0ad32f7f3a366a80e8136979d8f5a101d3d29d6f72")
-                .expect("Failed to hex decode expected result");
+        assert_eq!(result, expected.as_slice());
+    }
+
+    #[test]
+    fn decode_gzip_body() {
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(BODY).unwrap();
+        let encoded_body = encoder.finish().unwrap();
+
+        let result = decode_body_to_sha256(encoded_body.as_slice(), Some("gzip".into())).unwrap();
+        let expected = hex_decode(BODY_SHA);
+
+        assert_eq!(result, expected.as_slice());
+    }
+
+    #[test]
+    fn decode_deflate_body() {
+        let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(BODY).unwrap();
+        let encoded_body = encoder.finish().unwrap();
+
+        let result =
+            decode_body_to_sha256(encoded_body.as_slice(), Some("deflate".into())).unwrap();
+        let expected = hex_decode(BODY_SHA);
 
         assert_eq!(result, expected.as_slice());
     }

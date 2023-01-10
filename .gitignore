@@ -1,5 +1,5 @@
 /bazel-*
 .idea
-
+/.cargo
 /target
 .DS_Store

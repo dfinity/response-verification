@@ -32,6 +32,7 @@ mod certificate_header_field;
 mod error;
 mod hash_tree;
 mod logger;
+mod test_utils;
 mod validation;
 
 #[cfg(target_arch = "wasm32")]

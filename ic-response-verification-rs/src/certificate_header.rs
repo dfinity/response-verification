@@ -52,17 +52,33 @@ impl CertificateHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn create_header_field(name: &str, value: &str) -> String {
-        let base64_value = base64::encode(value);
-
-        format!("{}=:{}:", name, base64_value)
-    }
+    use crate::test_utils::test_utils::{
+        cbor_encode, create_certificate, create_header_field, create_tree,
+    };
 
     #[test]
     fn certificate_header_parses_valid_header() {
-        let certificate = "Hello Certificate!";
-        let tree = "Hello Tree!";
+        let certificate = cbor_encode(&create_certificate(None));
+        let tree = cbor_encode(&create_tree(None));
+        let header = vec![
+            create_header_field("certificate", &certificate),
+            create_header_field("tree", &tree),
+        ]
+        .join(",");
+
+        let certificate_header = CertificateHeader::from(header.as_str());
+
+        assert_eq!(
+            certificate_header.certificate.unwrap(),
+            certificate.as_slice()
+        );
+        assert_eq!(certificate_header.tree.unwrap(), tree.as_slice());
+    }
+
+    #[test]
+    fn certificate_header_parses_valid_header_empty_values() {
+        let certificate = "";
+        let tree = "";
         let header = vec![
             create_header_field("certificate", certificate),
             create_header_field("tree", tree),
@@ -72,84 +88,41 @@ mod tests {
         let certificate_header = CertificateHeader::from(header.as_str());
 
         assert_eq!(
-            certificate_header
-                .certificate
-                .expect("CertificateHeader did not correctly parse the certificate"),
+            certificate_header.certificate.unwrap(),
             certificate.as_bytes()
         );
-        assert_eq!(
-            certificate_header
-                .tree
-                .expect("CertificateHeader did not correctly parse the tree"),
-            tree.as_bytes()
-        );
+        assert_eq!(certificate_header.tree.unwrap(), tree.as_bytes());
     }
 
     #[test]
-    fn certificate_header_parses_valid_header_empty_values() {
-        let certificate = "";
-        let tree = "";
-        let header_fields = vec![
-            create_header_field("certificate", certificate),
-            create_header_field("tree", tree),
-        ];
-        let header = header_fields.join(",");
-
-        let certificate_header = CertificateHeader::from(header.as_str());
-
-        assert_eq!(
-            certificate_header
-                .certificate
-                .expect("CertificateHeader did not correctly parse the certificate"),
-            certificate.as_bytes()
-        );
-        assert_eq!(
-            certificate_header
-                .tree
-                .expect("CertificateHeader did not correctly parse the tree"),
-            tree.as_bytes()
-        );
-    }
-
-    #[test]
-    fn certificate_header_ignores_extranous_fields() {
-        let certificate = "Hello Certificate!";
-        let tree = "Hello Tree!";
-        let header_fields = vec![
-            create_header_field("certificate", certificate),
-            create_header_field("tree", tree),
+    fn certificate_header_ignores_extraneous_fields() {
+        let certificate = cbor_encode(&create_certificate(None));
+        let tree = cbor_encode(&create_tree(None));
+        let header = vec![
+            create_header_field("certificate", &certificate),
+            create_header_field("tree", &tree),
             create_header_field("garbage", "asdhlasjdasdoou"),
-        ];
-        let header = header_fields.join(",");
+        ]
+        .join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str());
 
         assert_eq!(
-            certificate_header
-                .certificate
-                .expect("CertificateHeader did not correctly parse the certificate"),
-            certificate.as_bytes()
+            certificate_header.certificate.unwrap(),
+            certificate.as_slice()
         );
-        assert_eq!(
-            certificate_header
-                .tree
-                .expect("CertificateHeader did not correctly parse the tree"),
-            tree.as_bytes()
-        );
+        assert_eq!(certificate_header.tree.unwrap(), tree.as_slice());
     }
 
     #[test]
     fn certificate_header_handles_missing_tree() {
         let certificate = "Hello Certificate!";
-        let header_fields = vec![create_header_field("certificate", certificate)];
-        let header = header_fields.join(",");
+        let header = vec![create_header_field("certificate", certificate)].join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str());
 
         assert_eq!(
-            certificate_header
-                .certificate
-                .expect("CertificateHeader did not correctly parse the certificate"),
+            certificate_header.certificate.unwrap(),
             certificate.as_bytes()
         );
         assert_eq!(certificate_header.tree.is_none(), true);
@@ -158,47 +131,34 @@ mod tests {
     #[test]
     fn certificate_header_handles_missing_certificate() {
         let tree = "Hello Tree!";
-        let header_fields = vec![create_header_field("tree", tree)];
-        let header = header_fields.join(",");
+        let header = vec![create_header_field("tree", tree)].join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str());
 
         assert_eq!(certificate_header.certificate.is_none(), true);
-        assert_eq!(
-            certificate_header
-                .tree
-                .expect("CertificateHeader did not correctly parse the tree"),
-            tree.as_bytes()
-        );
+        assert_eq!(certificate_header.tree.unwrap(), tree.as_bytes());
     }
 
     #[test]
     fn certificate_header_handles_duplicate_fields() {
-        let certificate = "Hello Certificate!";
-        let tree = "Hello Tree!";
+        let certificate = cbor_encode(&create_certificate(None));
+        let tree = cbor_encode(&create_tree(None));
         let second_certificate = "Goodbye Certificate!";
         let second_tree = "Goodbye tree!";
-        let header_fields = vec![
-            create_header_field("certificate", certificate),
+        let header = vec![
+            create_header_field("certificate", &certificate),
             create_header_field("certificate", second_certificate),
-            create_header_field("tree", tree),
+            create_header_field("tree", &tree),
             create_header_field("tree", second_tree),
-        ];
-        let header = header_fields.join(",");
+        ]
+        .join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str());
 
         assert_eq!(
-            certificate_header
-                .certificate
-                .expect("CertificateHeader did not correctly parse the certificate"),
-            certificate.as_bytes()
+            certificate_header.certificate.unwrap(),
+            certificate.as_slice()
         );
-        assert_eq!(
-            certificate_header
-                .tree
-                .expect("CertificateHeader did not correctly parse the tree"),
-            tree.as_bytes()
-        );
+        assert_eq!(certificate_header.tree.unwrap(), tree.as_slice());
     }
 }

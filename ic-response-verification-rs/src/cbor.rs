@@ -203,9 +203,9 @@ mod tests {
     #[test]
     fn decodes_arrays() {
         let cbor_hex = "83070809";
-        let cbor = hex::decode(cbor_hex).expect("Failed to decode hex");
+        let cbor = hex::decode(cbor_hex).unwrap();
 
-        let result = parse_cbor(cbor.as_slice()).expect("Failed to parse cbor");
+        let result = parse_cbor(cbor.as_slice()).unwrap();
 
         assert_eq!(
             result,
@@ -220,9 +220,9 @@ mod tests {
     #[test]
     fn decodes_nested_arrays() {
         let cbor_hex = "8307820809820A0B";
-        let cbor = hex::decode(cbor_hex).expect("Failed to decode hex");
+        let cbor = hex::decode(cbor_hex).unwrap();
 
-        let result = parse_cbor(cbor.as_slice()).expect("Failed to parse cbor");
+        let result = parse_cbor(cbor.as_slice()).unwrap();
 
         assert_eq!(
             result,
@@ -243,9 +243,9 @@ mod tests {
     #[test]
     fn decodes_array_with_nested_map() {
         let cbor_hex = "826161a161626163";
-        let cbor = hex::decode(cbor_hex).expect("Failed to decode hex");
+        let cbor = hex::decode(cbor_hex).unwrap();
 
-        let result = parse_cbor(cbor.as_slice()).expect("Failed to parse cbor");
+        let result = parse_cbor(cbor.as_slice()).unwrap();
 
         assert_eq!(
             result,
@@ -262,9 +262,9 @@ mod tests {
     #[test]
     fn decodes_map_with_nested_array() {
         let cbor_hex = "A26161076162820809";
-        let cbor = hex::decode(cbor_hex).expect("Failed to decode hex");
+        let cbor = hex::decode(cbor_hex).unwrap();
 
-        let result = parse_cbor(cbor.as_slice()).expect("Failed to parse cbor");
+        let result = parse_cbor(cbor.as_slice()).unwrap();
 
         assert_eq!(
             result,

@@ -72,68 +72,28 @@ fn parsed_cbor_to_certificate<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ic_certification::{
-        hash_tree::{empty, fork, label, leaf},
-        HashTree,
-    };
-
-    fn create_tree<'a>() -> HashTree<'a> {
-        return fork(
-            fork(
-                label(
-                    "a",
-                    fork(
-                        fork(label("x", leaf(b"hello")), empty()),
-                        label("y", leaf(b"world")),
-                    ),
-                ),
-                label("b", leaf(b"good")),
-            ),
-            fork(label("c", empty()), label("d", leaf(b"morning"))),
-        );
-    }
+    use crate::test_utils::test_utils::{create_certificate, create_certificate_delegation};
 
     #[test]
     fn deserialize_from_cbor() {
-        let tree = create_tree();
-        let signature = vec![1, 2, 3, 4, 5, 6];
+        let certificate = create_certificate(None);
 
-        let original_certificate = Certificate {
-            tree,
-            signature,
-            delegation: None,
-        };
+        let cbor = serde_cbor::to_vec(&certificate).unwrap();
 
-        let cbor = serde_cbor::to_vec(&original_certificate)
-            .expect("Failed to encode certificate to cbor");
+        let result = Certificate::from_cbor(cbor).unwrap();
 
-        let certificate =
-            Certificate::from_cbor(cbor).expect("Failed to decode certificate from cbor");
-
-        assert_eq!(certificate, original_certificate);
+        assert_eq!(result, certificate);
     }
 
     #[test]
     fn deserialize_from_cbor_with_delegation() {
-        let tree = create_tree();
-        let signature = vec![1, 2, 3, 4, 5, 6];
-        let delegation = Delegation {
-            subnet_id: vec![7, 8, 9, 10, 11, 12],
-            certificate: vec![13, 14, 15, 16, 17, 18],
-        };
+        let mut certificate = create_certificate(None);
+        certificate.delegation = Some(create_certificate_delegation());
 
-        let original_certificate = Certificate {
-            tree,
-            signature,
-            delegation: Some(delegation),
-        };
+        let cbor = serde_cbor::to_vec(&certificate).unwrap();
 
-        let cbor = serde_cbor::to_vec(&original_certificate)
-            .expect("Failed to encode certificate to cbor");
+        let result = Certificate::from_cbor(cbor).unwrap();
 
-        let certificate =
-            Certificate::from_cbor(cbor).expect("Failed to decode certificate from cbor");
-
-        assert_eq!(certificate, original_certificate);
+        assert_eq!(result, certificate);
     }
 }

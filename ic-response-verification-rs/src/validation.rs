@@ -87,8 +87,11 @@ pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest
 mod tests {
     use super::*;
     use crate::body::decode_body_to_sha256;
+    use crate::test_utils::test_utils::{
+        create_certificate, create_tree, CreateCertificateOptions, CreateTreeOptions,
+    };
     use candid::Principal;
-    use ic_certification::hash_tree::{fork, label, leaf};
+    use ic_certification::hash_tree::{label, leaf};
     use std::ops::{Add, Sub};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -103,8 +106,7 @@ mod tests {
     fn leb_encode_timestamp(timestamp: u128) -> [u8; 1024] {
         let mut buf = [0; 1024];
         let mut writable = &mut buf[..];
-        leb128::write::unsigned(&mut writable, timestamp as u64)
-            .expect("Failed to leb encode timestamp");
+        leb128::write::unsigned(&mut writable, timestamp as u64).unwrap();
 
         buf
     }
@@ -113,18 +115,17 @@ mod tests {
     fn validate_certificate_time_with_suitable_time() {
         let current_time = SystemTime::now();
         let current_timestamp = get_timestamp(current_time);
-
         let encoded_timestamp = leb_encode_timestamp(current_timestamp);
 
-        let certificate_tree = label("time", leaf(encoded_timestamp));
-        let certificate = Certificate {
-            tree: certificate_tree,
-            signature: vec![],
-            delegation: None,
+        let certificate_options = CreateCertificateOptions {
+            time: Some(&encoded_timestamp),
+            canister_id: None,
+            certified_data: None,
         };
+        let certificate = create_certificate(Some(certificate_options));
 
         validate_certificate_time(&certificate, &current_timestamp, &MAX_CERT_TIME_OFFSET_NS)
-            .expect("Certificate time within expected time period");
+            .unwrap();
     }
 
     #[test]
@@ -136,12 +137,12 @@ mod tests {
         let future_timestamp = get_timestamp(future_time);
         let encoded_future_timestamp = leb_encode_timestamp(future_timestamp);
 
-        let certificate_tree = label("time", leaf(encoded_future_timestamp));
-        let certificate = Certificate {
-            tree: certificate_tree,
-            signature: vec![],
-            delegation: None,
+        let certificate_options = CreateCertificateOptions {
+            time: Some(&encoded_future_timestamp),
+            canister_id: None,
+            certified_data: None,
         };
+        let certificate = create_certificate(Some(certificate_options));
 
         assert!(matches!(
             validate_certificate_time(&certificate, &current_timestamp, &MAX_CERT_TIME_OFFSET_NS).err(),
@@ -159,12 +160,12 @@ mod tests {
         let past_timestamp = get_timestamp(past_time);
         let encoded_past_timestamp = leb_encode_timestamp(past_timestamp);
 
-        let certificate_tree = label("time", leaf(encoded_past_timestamp));
-        let certificate = Certificate {
-            tree: certificate_tree,
-            signature: vec![],
-            delegation: None,
+        let certificate_options = CreateCertificateOptions {
+            time: Some(&encoded_past_timestamp),
+            canister_id: None,
+            certified_data: None,
         };
+        let certificate = create_certificate(Some(certificate_options));
 
         assert!(matches!(
             validate_certificate_time(&certificate, &current_timestamp, &MAX_CERT_TIME_OFFSET_NS).err(),
@@ -175,18 +176,16 @@ mod tests {
 
     #[test]
     fn validate_tree_with_matching_digest() {
-        let principal = Principal::from_text(CANISTER_ID).expect("Failed to create Principal");
-        let tree = fork(leaf("a"), fork(leaf("b"), leaf("c")));
+        let principal = Principal::from_text(CANISTER_ID).unwrap();
+        let tree = create_tree(None);
         let digest = tree.digest();
-        let certificate_tree = label(
-            "canister",
-            label(principal.as_slice(), label("certified_data", leaf(digest))),
-        );
-        let certificate = Certificate {
-            tree: certificate_tree,
-            signature: vec![],
-            delegation: None,
+
+        let certificate_options = CreateCertificateOptions {
+            time: None,
+            canister_id: Some(principal.as_slice()),
+            certified_data: Some(&digest),
         };
+        let certificate = create_certificate(Some(certificate_options));
 
         let result = validate_tree(principal.as_slice(), &certificate, &tree);
 
@@ -195,20 +194,15 @@ mod tests {
 
     #[test]
     fn validate_tree_with_mismatching_digest() {
-        let principal = Principal::from_text(CANISTER_ID).expect("Failed to create Principal");
-        let tree = fork(leaf("a"), fork(leaf("b"), leaf("c")));
-        let certificate_tree = label(
-            "canister",
-            label(
-                principal.as_slice(),
-                label("certified_data", leaf([1, 2, 3, 4, 5, 6])),
-            ),
-        );
-        let certificate = Certificate {
-            tree: certificate_tree,
-            signature: vec![],
-            delegation: None,
+        let principal = Principal::from_text(CANISTER_ID).unwrap();
+        let tree = create_tree(None);
+
+        let certificate_options = CreateCertificateOptions {
+            time: None,
+            canister_id: Some(principal.as_slice()),
+            certified_data: Some(&[1, 2, 3, 4, 5, 6]),
         };
+        let certificate = create_certificate(Some(certificate_options));
 
         let result = validate_tree(principal.as_slice(), &certificate, &tree);
 
@@ -217,23 +211,17 @@ mod tests {
 
     #[test]
     fn validate_tree_with_incorrect_canister_id() {
-        let principal = Principal::from_text(CANISTER_ID).expect("Failed to create Principal");
-        let other_principal =
-            Principal::from_text(OTHER_CANISTER_ID).expect("Failed to create Principal");
-        let tree = fork(leaf("a"), fork(leaf("b"), leaf("c")));
+        let principal = Principal::from_text(CANISTER_ID).unwrap();
+        let other_principal = Principal::from_text(OTHER_CANISTER_ID).unwrap();
+        let tree = create_tree(None);
         let digest = tree.digest();
-        let certificate_tree = label(
-            "canister",
-            label(
-                other_principal.as_slice(),
-                label("certified_data", leaf(digest)),
-            ),
-        );
-        let certificate = Certificate {
-            tree: certificate_tree,
-            signature: vec![],
-            delegation: None,
+
+        let certificate_options = CreateCertificateOptions {
+            time: None,
+            canister_id: Some(other_principal.as_slice()),
+            certified_data: Some(&digest),
         };
+        let certificate = create_certificate(Some(certificate_options));
 
         let result = validate_tree(principal.as_slice(), &certificate, &tree);
 
@@ -242,8 +230,8 @@ mod tests {
 
     #[test]
     fn validate_tree_without_certified_data() {
-        let principal = Principal::from_text(CANISTER_ID).expect("Failed to create Principal");
-        let tree = fork(leaf("a"), fork(leaf("b"), leaf("c")));
+        let principal = Principal::from_text(CANISTER_ID).unwrap();
+        let tree = create_tree(None);
         let certificate_tree = label(
             "canister",
             label(
@@ -265,12 +253,15 @@ mod tests {
     #[test]
     fn validate_body_with_matching_sha() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).expect("Failed to decode body to sha245");
-
+        let body_sha = decode_body_to_sha256(body, None).unwrap();
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
-            .expect("Failed to parse URI");
-        let tree = label("http_assets", label(uri.path(), leaf(body_sha)));
+            .unwrap();
+        let tree_options = CreateTreeOptions {
+            path: Some(&uri.path()),
+            body_sha: Some(&body_sha),
+        };
+        let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
@@ -284,12 +275,15 @@ mod tests {
     #[test]
     fn validate_body_with_index_fallback() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).expect("Failed to decode body to sha245");
-
+        let body_sha = decode_body_to_sha256(body, None).unwrap();
         let uri = format!("https://ic0.dev/garbage.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
-            .expect("Failed to parse URI");
-        let tree = label("http_assets", label("/index.html", leaf(body_sha)));
+            .unwrap();
+        let tree_options = CreateTreeOptions {
+            path: Some(&"/index.html"),
+            body_sha: Some(&body_sha),
+        };
+        let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
@@ -299,15 +293,15 @@ mod tests {
     #[test]
     fn validate_body_without_index_fallback() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).expect("Failed to decode body to sha245");
-
+        let body_sha = decode_body_to_sha256(body, None).unwrap();
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
-            .expect("Failed to parse URI");
-        let tree = label(
-            "http_assets",
-            label("/index.html", leaf([9, 8, 7, 6, 5, 4, 3, 2, 1])),
-        );
+            .unwrap();
+        let tree_options = CreateTreeOptions {
+            path: Some(&"/index.html"),
+            body_sha: Some(&[9, 8, 7, 6, 5, 4, 3, 2, 1]),
+        };
+        let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
@@ -317,15 +311,15 @@ mod tests {
     #[test]
     fn validate_body_without_matching_sha() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).expect("Failed to decode body to sha245");
-
+        let body_sha = decode_body_to_sha256(body, None).unwrap();
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
-            .expect("Failed to parse URI");
-        let tree = label(
-            "http_assets",
-            label(uri.path(), leaf([9, 8, 7, 6, 5, 4, 3, 2, 1])),
-        );
+            .unwrap();
+        let tree_options = CreateTreeOptions {
+            path: Some(&uri.path()),
+            body_sha: Some(&[9, 8, 7, 6, 5, 4, 3, 2, 1]),
+        };
+        let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
@@ -335,12 +329,15 @@ mod tests {
     #[test]
     fn validate_body_without_any_matching_path() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).expect("Failed to decode body to sha245");
-
+        let body_sha = decode_body_to_sha256(body, None).unwrap();
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
-            .expect("Failed to parse URI");
-        let tree = label("http_assets", label("/garbage.js", leaf(body_sha)));
+            .unwrap();
+        let tree_options = CreateTreeOptions {
+            path: Some(&"/garbage.js"),
+            body_sha: Some(&body_sha),
+        };
+        let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
