@@ -36,12 +36,22 @@ pub enum ResponseVerificationError {
     #[error(r#"Invalid cbor: "{0}""#)]
     MalformedCbor(String),
 
+    #[error(r#"Expected node with name {node_name:?} to have type {expected_type:?}, found {found_type:?}"#)]
+    UnexpectedCborNodeType {
+        node_name: String,
+        expected_type: String,
+        found_type: String,
+    },
+
     /// The hash tree pruned data was not the correct length
     #[error(r#"Invalid pruned data: "{0}""#)]
     IncorrectPrunedDataLength(#[from] std::array::TryFromSliceError),
 
     #[error("Overflow while decoding leb")]
     LebDecodingOverflow,
+
+    #[error(r#"Error converting UTF8 string bytes: "{0}""#)]
+    Utf8ConversionError(#[from] std::string::FromUtf8Error),
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -51,12 +61,14 @@ pub enum ResponseVerificationJsErrorCode {
     MalformedUrl,
     MalformedHashTree,
     MalformedCertificate,
-    MalformedCbor,
-    IncorrectPrunedDataLength,
     MissingTimePathInTree,
     CertificateTimeTooFarInTheFuture,
     CertificateTimeTooFarInThePast,
+    MalformedCbor,
+    UnexpectedCborNodeType,
+    IncorrectPrunedDataLength,
     LebDecodingOverflow,
+    Utf8ConversionError,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -83,12 +95,6 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::MalformedCertificate(_) => {
                 ResponseVerificationJsErrorCode::MalformedCertificate
             }
-            ResponseVerificationError::MalformedCbor(_) => {
-                ResponseVerificationJsErrorCode::MalformedCbor
-            }
-            ResponseVerificationError::IncorrectPrunedDataLength(_) => {
-                ResponseVerificationJsErrorCode::IncorrectPrunedDataLength
-            }
             ResponseVerificationError::MissingTimePathInTree => {
                 ResponseVerificationJsErrorCode::MissingTimePathInTree
             }
@@ -98,8 +104,20 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::CertificateTimeTooFarInThePast { .. } => {
                 ResponseVerificationJsErrorCode::CertificateTimeTooFarInThePast
             }
+            ResponseVerificationError::MalformedCbor(_) => {
+                ResponseVerificationJsErrorCode::MalformedCbor
+            }
+            ResponseVerificationError::UnexpectedCborNodeType { .. } => {
+                ResponseVerificationJsErrorCode::UnexpectedCborNodeType
+            }
+            ResponseVerificationError::IncorrectPrunedDataLength(_) => {
+                ResponseVerificationJsErrorCode::IncorrectPrunedDataLength
+            }
             ResponseVerificationError::LebDecodingOverflow { .. } => {
                 ResponseVerificationJsErrorCode::LebDecodingOverflow
+            }
+            ResponseVerificationError::Utf8ConversionError { .. } => {
+                ResponseVerificationJsErrorCode::Utf8ConversionError
             }
         };
         let message = error.to_string();
@@ -114,6 +132,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
 #[cfg(all(target_arch = "wasm32", test))]
 mod tests {
     use super::*;
+    use crate::test_utils::test_utils::hex_decode;
     use std::array::TryFromSliceError;
     use wasm_bindgen_test::wasm_bindgen_test;
 
@@ -121,7 +140,7 @@ mod tests {
     fn error_into_invalid_url() {
         let error = ResponseVerificationError::MalformedUrl("https://internetcomputer.org".into());
 
-        let result: ResponseVerificationJsError = error.into();
+        let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
@@ -138,7 +157,7 @@ mod tests {
             "Missing ByteString for Pruned node".into(),
         );
 
-        let result: ResponseVerificationJsError = error.into();
+        let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
@@ -156,7 +175,7 @@ mod tests {
             "Expected Tree when parsing Certificate Cbor".into(),
         );
 
-        let result: ResponseVerificationJsError = error.into();
+        let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
@@ -170,45 +189,10 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn error_into_invalid_cbor() {
-        let error = ResponseVerificationError::MalformedCbor("Unexpected EOF reached".into());
-
-        let result: ResponseVerificationJsError = error.into();
-
-        assert_eq!(
-            result,
-            ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::MalformedCbor,
-                message: r#"Invalid cbor: "Unexpected EOF reached""#.into(),
-            }
-        )
-    }
-
-    #[wasm_bindgen_test]
-    fn error_into_invalid_pruned_data() {
-        let incorrectly_sized_data: &[u8] = &[0u8];
-        let conversion_attempt: Result<[u8; 10], TryFromSliceError> =
-            TryFrom::try_from(incorrectly_sized_data);
-        let inner_error = conversion_attempt.expect_err("Expected error");
-
-        let error = ResponseVerificationError::IncorrectPrunedDataLength(inner_error);
-
-        let result: ResponseVerificationJsError = error.into();
-
-        assert_eq!(
-            result,
-            ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::IncorrectPrunedDataLength,
-                message: format!(r#"Invalid pruned data: "{}""#, inner_error.to_string()).into(),
-            }
-        )
-    }
-
-    #[wasm_bindgen_test]
     fn error_into_missing_time_path_in_tree() {
         let error = ResponseVerificationError::MissingTimePathInTree;
 
-        let result: ResponseVerificationJsError = error.into();
+        let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
@@ -226,7 +210,7 @@ mod tests {
             max_certificate_time: 500,
         };
 
-        let result: ResponseVerificationJsError = error.into();
+        let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
@@ -244,7 +228,7 @@ mod tests {
             min_certificate_time: 1000,
         };
 
-        let result: ResponseVerificationJsError = error.into();
+        let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
@@ -258,16 +242,91 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
+    fn error_into_malformed_cbor() {
+        let error = ResponseVerificationError::MalformedCbor("Unexpected EOF reached".into());
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MalformedCbor,
+                message: r#"Invalid cbor: "Unexpected EOF reached""#.into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_unexpected_cbor_node_type() {
+        let error = ResponseVerificationError::UnexpectedCborNodeType {
+            node_name: "Foo".into(),
+            found_type: "Bar".into(),
+            expected_type: "Baz".into(),
+        };
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::UnexpectedCborNodeType,
+                message: r#"Expected node with name "Foo" to have type "Baz", found "Bar""#.into()
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_incorrect_pruned_data_length() {
+        let incorrectly_sized_data: &[u8] = &[0u8];
+        let conversion_attempt: Result<[u8; 10], TryFromSliceError> =
+            TryFrom::try_from(incorrectly_sized_data);
+        let inner_error = conversion_attempt.expect_err("Expected error");
+
+        let error = ResponseVerificationError::IncorrectPrunedDataLength(inner_error);
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::IncorrectPrunedDataLength,
+                message: format!(r#"Invalid pruned data: "{}""#, inner_error.to_string()),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
     fn error_into_leb_decoding_overflow() {
         let error = ResponseVerificationError::LebDecodingOverflow;
 
-        let result: ResponseVerificationJsError = error.into();
+        let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::LebDecodingOverflow,
                 message: "Overflow while decoding leb".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_utf8_conversion_error() {
+        let invalid_utf_bytes = hex_decode("fca1a1a1a1a1");
+        let inner_error = String::from_utf8(invalid_utf_bytes).expect_err("Expected error");
+
+        let error = ResponseVerificationError::Utf8ConversionError(inner_error.clone());
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::Utf8ConversionError,
+                message: format!(
+                    r#"Error converting UTF8 string bytes: "{0}""#,
+                    inner_error.to_string()
+                )
             }
         )
     }

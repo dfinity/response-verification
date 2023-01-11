@@ -1,3 +1,4 @@
+use crate::error::{ResponseVerificationError, ResponseVerificationResult};
 use nom::bytes::complete::take;
 use nom::combinator::{eof, map, peek};
 use nom::error::{Error, ErrorKind};
@@ -7,6 +8,7 @@ use nom::sequence::terminated;
 use nom::Err;
 use nom::IResult;
 use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CborNegativeInt {
@@ -73,6 +75,12 @@ pub enum CborValue {
     Array(Vec<CborValue>),
     Map(HashMap<String, CborValue>),
     HashTree(CborHashTree),
+}
+
+impl fmt::Display for CborValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
 }
 
 /// Cbor major type information is stored in the high-order 3 bits.
@@ -193,6 +201,38 @@ pub fn parse_cbor(i: &[u8]) -> Result<CborValue, nom::Err<Error<&[u8]>>> {
     let (_remaining, result) = terminated(parser, eof)(i)?;
 
     Ok(result)
+}
+
+pub fn parse_cbor_string_array(
+    i: &[u8],
+    array_name: &str,
+) -> ResponseVerificationResult<Vec<String>> {
+    let parsed_cbor =
+        parse_cbor(i).map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
+
+    let CborValue::Array(elems) = parsed_cbor else {
+        return Err(ResponseVerificationError::UnexpectedCborNodeType {
+            node_name: array_name.into(),
+            expected_type: "Array".into(),
+            found_type: parsed_cbor.to_string()
+        });
+    };
+
+    elems
+        .iter()
+        .map(|elem| {
+            let CborValue::ByteString(elem) = elem else {
+                return Err(ResponseVerificationError::UnexpectedCborNodeType {
+                    node_name: array_name.into(),
+                    expected_type: "Array".into(),
+                    found_type: elem.to_string()
+                });
+            };
+
+            String::from_utf8(elem.to_owned())
+                .map_err(|e| ResponseVerificationError::Utf8ConversionError(e))
+        })
+        .collect::<Result<_, _>>()
 }
 
 /// Testing examples from the Cbor spec: https://www.rfc-editor.org/rfc/rfc8949.html#name-examples-of-encoded-cbor-da

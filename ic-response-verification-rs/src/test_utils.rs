@@ -134,9 +134,13 @@ pub mod test_utils {
         serde_cbor::to_vec(value).unwrap()
     }
 
-    pub fn create_header_field<T: AsRef<[u8]>>(name: &str, value: T) -> String {
+    pub fn create_encoded_header_field<T: AsRef<[u8]>>(name: &str, value: T) -> String {
         let value = base64::encode(value);
 
+        create_header_field(name, &value)
+    }
+
+    pub fn create_header_field(name: &str, value: &str) -> String {
         format!("{}=:{}:", name, value)
     }
 }
