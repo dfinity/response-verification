@@ -6,6 +6,7 @@ use http::Response;
 
 const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
 const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
+const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
 pub fn response_hash(
     response: &Response<&[u8]>,
@@ -54,7 +55,7 @@ pub fn response_hash(
         .collect();
 
     filtered_headers.push((
-        ":ic-cert-status".into(),
+        RESPONSE_STATUS_PSEUDO_HEADER_NAME.into(),
         Value::Number(response.status().as_u16().into()),
     ));
 
