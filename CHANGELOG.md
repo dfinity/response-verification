@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add response hash implementation
 - add support for numbers in representation independent hash
 - add representation indepdendant hash
 - add CEL ast to certification object validation and mapping
@@ -24,6 +25,9 @@
 
 ### Refactor
 
+- early return for filtered headers and certificate expression header
+- make response status pseudo header name const
+- update response hash to use number for status code encoding
 - use From trait for error conversion instead of Into
 - migrate wasm-bindgen to bazel toolchain rules format and refactor binaryen to match
 - create reusable function for body decoding
