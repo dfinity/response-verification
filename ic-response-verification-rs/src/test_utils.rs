@@ -9,12 +9,12 @@ pub mod test_utils {
     }
 
     pub fn create_tree<'a>(options: Option<CreateTreeOptions>) -> HashTree<'a> {
-        let default_path = "/";
+        const DEFAULT_PATH: &str = "/";
         let path = options
             .as_ref()
             .map(|options| options.path)
             .flatten()
-            .unwrap_or(&default_path);
+            .unwrap_or(&DEFAULT_PATH);
 
         let default_body_sha =
             hex_decode("784C0F825A938AA7F471587CDF7C7796F828F9362495E2B9C8490F2232359BDB");
