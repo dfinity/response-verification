@@ -77,10 +77,10 @@ pub fn verify_request_response_pair_impl(
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
     let mut certificate: Option<Certificate> = None;
-    let mut _version = MIN_VERIFICATION_VERSION;
+    let mut version = MIN_VERIFICATION_VERSION;
     let mut _expr_path: Option<Vec<String>> = None;
 
-    for (name, value) in response.headers {
+    for (name, value) in response.headers.iter() {
         if name.eq_ignore_ascii_case("Ic-Certificate") {
             let certificate_header = CertificateHeader::from(value.as_str());
 
@@ -94,7 +94,7 @@ pub fn verify_request_response_pair_impl(
                 .and_then(|certificate| Some(Certificate::from_cbor(certificate)))
                 .transpose()?;
 
-            _version = certificate_header
+            version = certificate_header
                 .version
                 .unwrap_or(MIN_VERIFICATION_VERSION);
 
@@ -105,10 +105,49 @@ pub fn verify_request_response_pair_impl(
         }
 
         if name.eq_ignore_ascii_case("Content-Encoding") {
-            encoding = Some(value);
+            encoding = Some(value.into());
         }
     }
 
+    return match version {
+        1 => v1_verification(
+            request,
+            response,
+            canister_id,
+            current_time_ns,
+            max_cert_time_offset_ns,
+            tree,
+            certificate,
+            encoding,
+        ),
+        2 => v2_verification(
+            request,
+            response,
+            canister_id,
+            current_time_ns,
+            max_cert_time_offset_ns,
+            tree,
+            certificate,
+            encoding,
+        ),
+        _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
+            min_supported_version: MIN_VERIFICATION_VERSION,
+            max_supported_version: MAX_VERIFICATION_VERSION,
+            requested_version: version,
+        }),
+    };
+}
+
+fn v1_verification(
+    request: Request,
+    response: Response,
+    canister_id: &[u8],
+    current_time_ns: u128,
+    max_cert_time_offset_ns: u128,
+    tree: Option<HashTree>,
+    certificate: Option<Certificate>,
+    encoding: Option<String>,
+) -> ResponseVerificationResult<bool> {
     let request_uri = request
         .url
         .parse::<Uri>()
@@ -126,4 +165,17 @@ pub fn verify_request_response_pair_impl(
     } else {
         Ok(false)
     };
+}
+
+fn v2_verification(
+    _request: Request,
+    _response: Response,
+    _canister_id: &[u8],
+    _current_time_ns: u128,
+    _max_cert_time_offset_ns: u128,
+    _tree: Option<HashTree>,
+    _certificate: Option<Certificate>,
+    _encoding: Option<String>,
+) -> ResponseVerificationResult<bool> {
+    panic!("v2 response verification has not been implemented yet")
 }
