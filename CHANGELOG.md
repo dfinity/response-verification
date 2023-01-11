@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add support for numbers in representation independent hash
 - add representation indepdendant hash
 - add CEL ast to certification object validation and mapping
 - add cel to ast parser
