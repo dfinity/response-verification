@@ -135,6 +135,7 @@ mod tests {
     use crate::test_utils::test_utils::hex_decode;
     use std::array::TryFromSliceError;
     use wasm_bindgen_test::wasm_bindgen_test;
+    use crate::test_utils::test_utils::hex_decode;
 
     #[wasm_bindgen_test]
     fn error_into_invalid_url() {
