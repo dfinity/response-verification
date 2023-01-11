@@ -52,6 +52,13 @@ pub enum ResponseVerificationError {
 
     #[error(r#"Error converting UTF8 string bytes: "{0}""#)]
     Utf8ConversionError(#[from] std::string::FromUtf8Error),
+
+    #[error(r#"The requested verification version {requested_version:?} is not supported, the current supported range is {min_supported_version:?}-{max_supported_version:?}"#)]
+    UnsupportedVerificationVersion {
+        min_supported_version: u8,
+        max_supported_version: u8,
+        requested_version: u8,
+    },
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -69,6 +76,7 @@ pub enum ResponseVerificationJsErrorCode {
     IncorrectPrunedDataLength,
     LebDecodingOverflow,
     Utf8ConversionError,
+    UnsupportedVerificationVersion,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -119,6 +127,9 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::Utf8ConversionError { .. } => {
                 ResponseVerificationJsErrorCode::Utf8ConversionError
             }
+            ResponseVerificationError::UnsupportedVerificationVersion { .. } => {
+                ResponseVerificationJsErrorCode::UnsupportedVerificationVersion
+            }
         };
         let message = error.to_string();
 
@@ -135,7 +146,6 @@ mod tests {
     use crate::test_utils::test_utils::hex_decode;
     use std::array::TryFromSliceError;
     use wasm_bindgen_test::wasm_bindgen_test;
-    use crate::test_utils::test_utils::hex_decode;
 
     #[wasm_bindgen_test]
     fn error_into_invalid_url() {
@@ -328,6 +338,25 @@ mod tests {
                     r#"Error converting UTF8 string bytes: "{0}""#,
                     inner_error.to_string()
                 )
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_unsupported_verification_version() {
+        let error = ResponseVerificationError::UnsupportedVerificationVersion {
+            min_supported_version: 1,
+            max_supported_version: 2,
+            requested_version: 42,
+        };
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::UnsupportedVerificationVersion,
+                message: r#"The requested verification version 42 is not supported, the current supported range is 1-2"#.into()
             }
         )
     }
