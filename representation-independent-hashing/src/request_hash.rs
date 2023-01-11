@@ -131,6 +131,24 @@ mod tests {
         assert_ne!(result, reordered_result);
     }
 
+    #[test]
+    fn request_hash_query_with_fragment_does_not_change() {
+        let request_certification = RequestCertification {
+            certified_request_headers: vec!["host".into()],
+            certified_query_parameters: vec!["q".into(), "name".into()],
+        };
+        let request =
+            create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");
+        let request_with_fragment = create_request(
+            "https://ic0.app?q=hello+world&name=foo&name=bar&color=purple#index.html",
+        );
+
+        let result = request_hash(&request, &request_certification);
+        let result_with_fragment = request_hash(&request_with_fragment, &request_certification);
+
+        assert_eq!(result, result_with_fragment);
+    }
+
     fn create_request(uri: &str) -> Request<&'static [u8]> {
         Request::builder()
             .uri(uri)
