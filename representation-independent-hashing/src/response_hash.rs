@@ -43,14 +43,15 @@ pub fn response_hash(
             let is_certificate_expression_header = header_name
                 .to_string()
                 .eq_ignore_ascii_case(CERTIFICATE_EXPRESSION_HEADER_NAME);
-            if !headers_filter(header_name) && !is_certificate_expression_header {
-                return None;
+
+            if headers_filter(header_name) || is_certificate_expression_header {
+                return Some((
+                    header_name.to_string(),
+                    Value::String(String::from(header_value.to_str().unwrap())),
+                ));
             }
 
-            Some((
-                header_name.to_string(),
-                Value::String(String::from(header_value.to_str().unwrap())),
-            ))
+            None
         })
         .collect();
 
