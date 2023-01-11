@@ -35,6 +35,9 @@ mod logger;
 mod test_utils;
 mod validation;
 
+pub const MIN_VERIFICATION_VERSION: u8 = 1;
+pub const MAX_VERIFICATION_VERSION: u8 = 2;
+
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = verifyRequestResponsePair)]
 pub fn verify_request_response_pair(
@@ -59,6 +62,8 @@ pub fn verify_request_response_pair(
     .map_err(|e| ResponseVerificationJsError::from(e))
 }
 
+use crate::cbor::parse_cbor_string_array;
+use crate::error::ResponseVerificationResult;
 #[cfg(not(target_arch = "wasm32"))]
 pub use verify_request_response_pair_impl as verify_request_response_pair;
 
@@ -68,28 +73,35 @@ pub fn verify_request_response_pair_impl(
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
-) -> Result<bool, ResponseVerificationError> {
+) -> ResponseVerificationResult<bool> {
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
     let mut certificate: Option<Certificate> = None;
+    let mut _version = MIN_VERIFICATION_VERSION;
+    let mut _expr_path: Option<Vec<String>> = None;
 
     for (name, value) in response.headers {
         if name.eq_ignore_ascii_case("Ic-Certificate") {
             let certificate_header = CertificateHeader::from(value.as_str());
 
-            if let Some(parsed_tree) = certificate_header.tree {
-                tree = match HashTree::from_cbor(parsed_tree) {
-                    Ok(tree) => Some(tree),
-                    Err(_) => return Ok(false),
-                }
-            }
+            tree = certificate_header
+                .tree
+                .and_then(|tree| Some(HashTree::from_cbor(tree)))
+                .transpose()?;
 
-            if let Some(certificate_cbor) = certificate_header.certificate {
-                certificate = match Certificate::from_cbor(certificate_cbor) {
-                    Ok(certificate) => Some(certificate),
-                    Err(_) => return Ok(false),
-                }
-            }
+            certificate = certificate_header
+                .certificate
+                .and_then(|certificate| Some(Certificate::from_cbor(certificate)))
+                .transpose()?;
+
+            _version = certificate_header
+                .version
+                .unwrap_or(MIN_VERIFICATION_VERSION);
+
+            _expr_path = certificate_header
+                .expr_path
+                .and_then(|expr_path| Some(parse_cbor_string_array(&expr_path, "expr_path")))
+                .transpose()?;
         }
 
         if name.eq_ignore_ascii_case("Content-Encoding") {
