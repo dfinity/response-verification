@@ -26,6 +26,8 @@
 
 ### Refactor
 
+- make default path const
+- add more realistic test data
 - early return for filtered headers and certificate expression header
 - make response status pseudo header name const
 - update response hash to use number for status code encoding
