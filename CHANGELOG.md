@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add request hash
 - add response hash implementation
 - add support for numbers in representation independent hash
 - add representation indepdendant hash
