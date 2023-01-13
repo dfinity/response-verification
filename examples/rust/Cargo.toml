@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-ic-response-verification = { path = "../../ic-response-verification-rs" }
+ic-response-verification = { path = "../../packages/ic-response-verification" }
 candid = "0.8.4"
 hex = "0.4.3"
 serde = "1.0.147"

@@ -15,13 +15,13 @@ npm install
 Build the `@dfinity/response-verification` package:
 
 ```shell
-bazel build //ic-response-verification-ts:lib
+bazel build //packages/ic-response-verification-wasm:lib
 ```
 
 Link `@dfinity/response-verification` globally:
 
 ```shell
-pushd ../../bazel-bin/ic-response-verification-ts/lib && sudo npm link && popd
+pushd ../../bazel-bin/packages/ic-response-verification-wasm/lib && sudo npm link && popd
 ```
 
 Link `@dfinity/response-verification` in this project:

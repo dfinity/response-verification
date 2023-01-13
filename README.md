@@ -45,5 +45,12 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 
 ### Sub Projects
 
-- [Response Verification Rust Crate](./ic-response-verification-rs/README.md)
-- [Response Verification NPM Package](./ic-response-verification-ts/README.md)
+- [Response Verification Rust Crate](./packages/ic-response-verification/README.md)
+- [Response Verification NPM Package](./packages/ic-response-verification-wasm/README.md0)
+
+### Examples
+
+- [NodeJS](./examples/nodejs/README.md)
+- [Rust](./examples/rust/README.md)
+- [Service Worker](./examples/service-worker/README.md)
+- [Web](./examples/web/README.md)

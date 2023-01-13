@@ -1,6 +1,5 @@
-use cel_parser::{
-    cel_to_certification, Certification, RequestCertification, ResponseCertification,
-};
+use ic_response_verification::cel::cel_to_certification;
+use ic_response_verification::types::{Certification, RequestCertification, ResponseCertification};
 
 fn remove_whitespace(s: &str) -> String {
     s.chars().filter(|c| !c.is_whitespace()).collect()

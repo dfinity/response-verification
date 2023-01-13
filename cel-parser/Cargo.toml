@@ -1,8 +1,0 @@
-[package]
-name = "cel-parser"
-version = "0.0.0"
-edition = "2021"
-
-[dependencies]
-nom = "7.1.1"
-thiserror = "1.0.38"

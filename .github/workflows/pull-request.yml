@@ -28,7 +28,7 @@ jobs:
         run: cargo test
 
       - name: Wasm test
-        working-directory: ic-response-verification-rs
+        working-directory: packages/ic-response-verification
         run: wasm-pack test --node
 
       - name: Lint
@@ -54,7 +54,7 @@ jobs:
           key: bazel
 
       - name: Build
-        run: bazel build //ic-response-verification-ts:lib
+        run: bazel build //packages/ic-response-verification-wasm:lib
 
   check_commit_messages:
     name: Check Commit Messages

@@ -1,17 +1,15 @@
-use crate::error::{CelParserError, CelParserResult};
-use crate::Certification;
+use crate::cel::error::{CelParserError, CelParserResult};
 use nom::branch::alt;
-use nom::bytes::complete::{escaped, tag, take_till, take_until, take_while};
-use nom::character::complete::{alphanumeric1, char, multispace0, one_of};
+use nom::bytes::complete::{escaped, take_while};
+use nom::character::complete::{char, multispace0, one_of};
 use nom::character::is_alphanumeric;
-use nom::combinator::{cut, eof, map};
-use nom::error::{context, convert_error, ContextError, Error, ParseError, VerboseError};
+use nom::combinator::{cut, map};
+use nom::error::{context, convert_error, ContextError, ParseError, VerboseError};
 use nom::multi::separated_list0;
-use nom::sequence::{delimited, preceded, separated_pair, terminated, tuple};
-use nom::{AsChar, IResult, InputIter, Parser, Slice};
+use nom::sequence::{preceded, separated_pair, terminated, tuple};
+use nom::{IResult, Parser};
 use std::collections::HashMap;
 use std::fmt;
-use std::ops::RangeFrom;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum CelValue {

@@ -15,12 +15,3 @@ pub struct Certification {
     pub request_certification: Option<RequestCertification>,
     pub response_certification: ResponseCertification,
 }
-
-impl Certification {
-    fn new() -> Self {
-        Certification {
-            request_certification: None,
-            response_certification: ResponseCertification::HeaderExclusions(vec![]),
-        }
-    }
-}

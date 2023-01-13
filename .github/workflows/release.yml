@@ -44,12 +44,11 @@ jobs:
         run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
 
       - name: Update Cargo.lock
-        run: cargo build
-        working-directory: ic-response-verification-rs
+        run: cargo build -p ic-response-verification
 
       - name: Update package-lock.json
         run: npm i --package-lock-only
-        working-directory: ic-response-verification-ts
+        working-directory: packages/ic-response-verification-wasm
 
       - name: Commit and Push changes to repository
         uses: stefanzweifel/git-auto-commit-action@v4
@@ -59,24 +58,23 @@ jobs:
           file_pattern: >
             .cz.yaml
             CHANGELOG.md
-            ic-response-verification-rs/Cargo.toml
-            ic-response-verification-rs/Cargo.lock
-            ic-response-verification-ts/package.json
-            ic-response-verification-ts/package-lock.json
+            packages/ic-response-verification/Cargo.toml
+            packages/ic-response-verification/Cargo.lock
+            packages/ic-response-verification/package.json
+            packages/ic-response-verification/package-lock.json
           tagging_message: '${{ steps.cz.outputs.version }}'
 
       - name: Create Cargo crate release
-        run: cargo publish --dry-run
-        working-directory: ic-response-verification-rs
+        run: cargo publish --dry-run -p ic-response-verification
 
       - name: Create NPM package release
-        run: bazel run //ic-response-verification-ts:lib.pack
+        run: bazel run //packages/ic-response-verification-wasm:lib.pack
 
       - name: Create Github release
         uses: ncipollo/release-action@v1
         with:
           artifacts: >
-            ic-response-verification-rs/target/package/ic-response-verification-${{ steps.cz.outputs.version }}.crate
+            packages/ic-response-verification/target/package/ic-response-verification-${{ steps.cz.outputs.version }}.crate
             dfinity-response-verification-${{ steps.cz.outputs.version }}.tgz
           bodyFile: 'RELEASE_NOTES.md'
           tag: '${{ steps.cz.outputs.version }}'

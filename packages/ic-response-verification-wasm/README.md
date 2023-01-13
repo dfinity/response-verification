@@ -3,12 +3,12 @@
 ## Build
 
 ```shell
-bazel build //ic-response-verification-ts:lib
+bazel build //packages/ic-response-verification-wasm:lib
 ```
 
 If lockfiles need to be updated:
 ```shell
-CARGO_BAZEL_REPIN=true bazel build //ic-response-verification-ts:lib
+CARGO_BAZEL_REPIN=true bazel build //packages/ic-response-verification-wasm:lib
 ```
 
 ## Test in another project

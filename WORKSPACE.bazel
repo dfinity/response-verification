@@ -39,9 +39,9 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
-    cargo_lockfile = "//ic-response-verification-rs:Cargo.lock",
-    lockfile = "//ic-response-verification-rs:cargo-bazel-lock.json",
-    manifests = ["//ic-response-verification-rs:Cargo.toml"],
+    cargo_lockfile = "//packages/ic-response-verification:Cargo.lock",
+    lockfile = "//packages/ic-response-verification:cargo-bazel-lock.json",
+    manifests = ["//packages/ic-response-verification:Cargo.toml"],
 )
 
 load("@crate_index//:defs.bzl", "crate_repositories")

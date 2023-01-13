@@ -9,7 +9,7 @@ cargo build
 ## Test
 
 ```shell
-cargo test --lib
+cargo test
 ```
 
 ## Wasm Test

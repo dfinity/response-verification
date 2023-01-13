@@ -5,7 +5,7 @@ load("//bazel/binaryen:defs.bzl", "wasm_opt")
 rust_wasm_bindgen(
     name = "lib_wasm_web",
     target = "web",
-    wasm_file = "//ic-response-verification-rs:lib",
+    wasm_file = "//packages/ic-response-verification:lib",
 )
 
 wasm_opt(
@@ -16,7 +16,7 @@ wasm_opt(
 rust_wasm_bindgen(
     name = "lib_wasm_nodejs",
     target = "nodejs",
-    wasm_file = "//ic-response-verification-rs:lib",
+    wasm_file = "//packages/ic-response-verification:lib",
 )
 
 wasm_opt(
