@@ -11,26 +11,24 @@ use std::panic;
 use error::ResponseVerificationJsError;
 
 use body::decode_body_to_sha256;
-use certificate::CertificateToCbor;
+use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
 use error::ResponseVerificationError;
-use hash_tree::HashTreeToCbor;
+use error::ResponseVerificationResult;
 use http::Uri;
 use ic_certification::{Certificate, HashTree};
-use request::Request;
-use response::Response;
+use types::{Request, Response};
 use validation::{validate_body, validate_certificate_time, validate_tree};
 
-pub mod request;
-pub mod response;
+pub mod cel;
+pub mod hash;
+pub mod types;
 
 mod body;
 mod cbor;
-mod certificate;
 mod certificate_header;
 mod certificate_header_field;
 mod error;
-mod hash_tree;
 mod logger;
 mod test_utils;
 mod validation;
@@ -62,8 +60,6 @@ pub fn verify_request_response_pair(
     .map_err(|e| ResponseVerificationJsError::from(e))
 }
 
-use crate::cbor::parse_cbor_string_array;
-use crate::error::ResponseVerificationResult;
 #[cfg(not(target_arch = "wasm32"))]
 pub use verify_request_response_pair_impl as verify_request_response_pair;
 

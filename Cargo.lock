@@ -180,14 +180,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cel-parser"
-version = "0.0.0"
-dependencies = [
- "nom",
- "thiserror",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -776,17 +768,6 @@ name = "regex-syntax"
 version = "0.6.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
-
-[[package]]
-name = "representation-independent-hashing"
-version = "0.0.0"
-dependencies = [
- "cel-parser",
- "hex",
- "http",
- "leb128",
- "sha2",
-]
 
 [[package]]
 name = "rust"

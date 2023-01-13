@@ -1,6 +1,6 @@
-use crate::error::{CelParserError, CelParserResult};
-use crate::parser::CelValue;
-use crate::{Certification, RequestCertification, ResponseCertification};
+use crate::cel::error::{CelParserError, CelParserResult};
+use crate::cel::parser::CelValue;
+use crate::types::{Certification, RequestCertification, ResponseCertification};
 use std::collections::HashMap;
 
 fn validate_object<'a>(

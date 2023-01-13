@@ -1,6 +1,6 @@
 use crate::hash::hash;
-use crate::representation_independent_hash::{representation_independent_hash, Value};
-use cel_parser::ResponseCertification;
+use crate::hash::representation_independent_hash::{representation_independent_hash, Value};
+use crate::types::ResponseCertification;
 use http::header::HeaderName;
 use http::Response;
 

@@ -1,5 +1,5 @@
-use crate::representation_independent_hash::{representation_independent_hash, Value};
-use cel_parser::RequestCertification;
+use crate::hash::representation_independent_hash::{representation_independent_hash, Value};
+use crate::types::RequestCertification;
 use http::{HeaderMap, HeaderValue, Request};
 
 pub fn request_hash(

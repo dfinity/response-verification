@@ -23,6 +23,6 @@ rust_shared_library(
         "-C",
         "lto",
     ],
-    visibility = ["//ic-response-verification-ts:__pkg__"],
+    visibility = ["//packages/ic-response-verification-wasm:__pkg__"],
     deps = all_crate_deps(normal = True),
 )

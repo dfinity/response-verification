@@ -1,7 +1,6 @@
 use candid::{CandidType, Decode, Deserialize, Principal};
-use ic_response_verification::{
-    request::Request, response::Response, verify_request_response_pair,
-};
+use ic_response_verification::types::{Request, Response};
+use ic_response_verification::verify_request_response_pair;
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 struct HttpRequest {

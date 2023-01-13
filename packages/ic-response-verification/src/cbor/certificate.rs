@@ -1,6 +1,5 @@
-use crate::cbor::{parse_cbor, CborValue};
+use crate::cbor::{hash_tree::parsed_cbor_to_tree, parse_cbor, CborValue};
 use crate::error::ResponseVerificationError;
-use crate::hash_tree::parsed_cbor_to_tree;
 use ic_certification::{Certificate, Delegation};
 
 pub trait CertificateToCbor<'a> {
