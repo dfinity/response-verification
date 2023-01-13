@@ -2,6 +2,7 @@
 
 ### Feat
 
+- extract version and expr_path from IC certificate header
 - add request hash
 - add response hash implementation
 - add support for numbers in representation independent hash
