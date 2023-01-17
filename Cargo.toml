@@ -1,2 +1,6 @@
 [workspace]
-members = ["packages/ic-response-verification", "examples/rust"]
+members = [
+    "packages/ic-response-verification",
+    "packages/ic-response-verification-tests",
+    "examples/rust",
+]

@@ -46,7 +46,8 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 ### Sub Projects
 
 - [Response Verification Rust Crate](./packages/ic-response-verification/README.md)
-- [Response Verification NPM Package](./packages/ic-response-verification-wasm/README.md0)
+- [Response Verification NPM Package](./packages/ic-response-verification-wasm/README.md)
+- [Response Verification e2e Tests](./packages/ic-response-verification-tests/README.md)
 
 ### Examples
 
