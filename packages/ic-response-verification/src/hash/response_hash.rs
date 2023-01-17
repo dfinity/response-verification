@@ -8,7 +8,7 @@ const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
 const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
 const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
-pub fn response_hash(
+pub fn response_headers_hash(
     response: &Response<&[u8]>,
     response_certification: &ResponseCertification,
 ) -> [u8; 32] {
@@ -60,8 +60,15 @@ pub fn response_hash(
         Value::Number(response.status().as_u16().into()),
     ));
 
+    representation_independent_hash(&filtered_headers)
+}
+
+pub fn response_hash(
+    response: &Response<&[u8]>,
+    response_certification: &ResponseCertification,
+) -> [u8; 32] {
     let concatenated_hashes = [
-        representation_independent_hash(&filtered_headers),
+        response_headers_hash(response, response_certification),
         hash(response.body()),
     ]
     .concat();
