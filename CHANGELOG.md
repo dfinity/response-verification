@@ -2,6 +2,8 @@
 
 ### Feat
 
+- conditionally execute v1 response verification
+- extract version and expr_path from IC certificate header
 - extract version and expr_path from IC certificate header
 - add request hash
 - add response hash implementation
@@ -27,6 +29,7 @@
 
 ### Refactor
 
+- move verification version check to its own function
 - make default path const
 - add more realistic test data
 - early return for filtered headers and certificate expression header
