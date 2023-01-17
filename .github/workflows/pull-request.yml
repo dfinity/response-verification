@@ -31,6 +31,9 @@ jobs:
         working-directory: packages/ic-response-verification
         run: wasm-pack test --node
 
+      - name: e2e tests
+        run: ./scripts/e2e.sh
+
       - name: Lint
         run: cargo clippy
 

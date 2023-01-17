@@ -3,3 +3,4 @@
 /.cargo
 /target
 .DS_Store
+/tmp
