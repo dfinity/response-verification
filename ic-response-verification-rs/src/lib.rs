@@ -109,7 +109,31 @@ pub fn verify_request_response_pair_impl(
         }
     }
 
-    return match version {
+    verification(
+        version,
+        request,
+        response,
+        canister_id,
+        current_time_ns,
+        max_cert_time_offset_ns,
+        tree,
+        certificate,
+        encoding,
+    )
+}
+
+fn verification(
+    version: u8,
+    request: Request,
+    response: Response,
+    canister_id: &[u8],
+    current_time_ns: u128,
+    max_cert_time_offset_ns: u128,
+    tree: Option<HashTree>,
+    certificate: Option<Certificate>,
+    encoding: Option<String>,
+) -> ResponseVerificationResult<bool> {
+    match version {
         1 => v1_verification(
             request,
             response,
@@ -135,7 +159,7 @@ pub fn verify_request_response_pair_impl(
             max_supported_version: MAX_VERIFICATION_VERSION,
             requested_version: version,
         }),
-    };
+    }
 }
 
 fn v1_verification(
