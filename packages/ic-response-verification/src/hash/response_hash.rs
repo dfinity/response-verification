@@ -187,6 +187,82 @@ mod tests {
         assert_eq!(result, result_without_excluded_headers);
     }
 
+    #[test]
+    fn response_headers_hash_with_certified_headers() {
+        let response_certification = ResponseCertification::CertifiedHeaders(vec![
+            "Accept-Encoding".into(),
+            "Cache-Control".into(),
+        ]);
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
+        let expected_hash =
+            hex::decode("9f90f9e9cc067e1071d4a5e1de415bc261d536a50772fbad2440ccc8494470c2")
+                .unwrap();
+
+        let result = response_headers_hash(&response, &response_certification);
+
+        assert_eq!(result, expected_hash.as_slice());
+    }
+
+    #[test]
+    fn response_headers_hash_with_certified_headers_without_excluded_headers() {
+        let response_certification =
+            ResponseCertification::CertifiedHeaders(vec!["Accept-Encoding".into()]);
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
+        let response_without_excluded_headers: Response<&[u8]> = Response::builder()
+            .header(
+                "IC-Certificate-Expression",
+                remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
+            )
+            .header("Accept-Encoding", "gzip")
+            .body(HELLO_WORLD_BODY)
+            .unwrap();
+
+        let result = response_headers_hash(&response, &response_certification);
+        let result_without_excluded_headers =
+            response_headers_hash(&response_without_excluded_headers, &response_certification);
+
+        assert_eq!(result, result_without_excluded_headers);
+    }
+
+    #[test]
+    fn response_headers_hash_with_header_exclusions() {
+        let response_certification = ResponseCertification::HeaderExclusions(vec![
+            "Accept-Encoding".into(),
+            "Cache-Control".into(),
+        ]);
+        let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
+        let expected_hash =
+            hex::decode("80d1666b9b5f377fafc98ac68e4a9b5514956995937a54e0b50e63b21d9c5bfa")
+                .unwrap();
+
+        let result = response_headers_hash(&response, &response_certification);
+
+        assert_eq!(result, expected_hash.as_slice());
+    }
+
+    #[test]
+    fn response_headers_hash_with_header_exclusions_without_excluded_headers() {
+        let response_certification =
+            ResponseCertification::HeaderExclusions(vec!["Content-Security-Policy".into()]);
+        let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
+        let response_without_excluded_headers: Response<&[u8]> = Response::builder()
+            .header(
+                "IC-Certificate-Expression",
+                remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
+            )
+            .header("Accept-Encoding", "gzip")
+            .header("Cache-Control", "no-cache")
+            .header("Cache-Control", "no-store")
+            .body(HELLO_WORLD_BODY)
+            .unwrap();
+
+        let result = response_headers_hash(&response, &response_certification);
+        let result_without_excluded_headers =
+            response_headers_hash(&response_without_excluded_headers, &response_certification);
+
+        assert_eq!(result, result_without_excluded_headers);
+    }
+
     /// We use this helper to remove white space from CEL expressions to ease the calculation
     /// of the expected hashes. Generating the hash for a string with so much whitespace manually
     /// may be prone to error in copy/pasting the string into a website and missing a leading/trailing
