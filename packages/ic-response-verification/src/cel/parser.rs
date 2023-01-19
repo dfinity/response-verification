@@ -4,7 +4,7 @@ use nom::bytes::complete::{escaped, take_while};
 use nom::character::complete::{char, multispace0, one_of};
 use nom::character::is_alphanumeric;
 use nom::combinator::{cut, map};
-use nom::error::{context, convert_error, ContextError, ParseError, VerboseError};
+use nom::error::{context, ContextError, ParseError};
 use nom::multi::separated_list0;
 use nom::sequence::{preceded, separated_pair, terminated, tuple};
 use nom::{IResult, Parser};
@@ -167,13 +167,16 @@ fn cel_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 pub fn parse_cel_expression(i: &str) -> CelParserResult<CelValue> {
-    // [TODO] - Create "debug" feature flag to toggle on verbose errors
-    let result = cel_value::<VerboseError<&str>>(i);
+    #[cfg(feature = "debug")]
+    let result = cel_value::<nom::error::VerboseError<&str>>(i);
+
+    #[cfg(not(feature = "debug"))]
+    let result = cel_value::<nom::error::Error<&str>>(i);
 
     match result {
+        #[cfg(feature = "debug")]
         Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-            // [TODO] - Create "debug" feature flag to toggle on stacktrace
-            let stacktrace = convert_error(i, e);
+            let stacktrace = nom::error::convert_error(i, e);
 
             Err(CelParserError::CelSyntaxException(stacktrace))
         }

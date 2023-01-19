@@ -1,5 +1,7 @@
-mod ast_mapping;
 mod error;
+pub use error::*;
+
+mod ast_mapping;
 mod parser;
 
 use crate::cel::ast_mapping::map_cel_ast;

@@ -24,12 +24,26 @@ wasm_opt(
     srcs = [":lib_wasm_nodejs"],
 )
 
+rust_wasm_bindgen(
+    name = "lib_wasm_web_debug",
+    target = "web",
+    wasm_file = "//packages/ic-response-verification:lib_debug",
+)
+
+rust_wasm_bindgen(
+    name = "lib_wasm_nodejs_debug",
+    target = "nodejs",
+    wasm_file = "//packages/ic-response-verification:lib_debug",
+)
+
 pkg_npm(
     name = "lib",
     package_name = "@dfinity/response-verification",
     srcs = ["package.json"],
     deps = [
         ":lib_wasm_nodejs_opt",
+        ":lib_wasm_nodejs_debug",
         ":lib_wasm_web_opt",
+        ":lib_wasm_web_debug"
     ],
 )

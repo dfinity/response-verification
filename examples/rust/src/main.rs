@@ -23,6 +23,7 @@ fn main() {
     let http_request =
         Decode!(&request_candid, HttpRequest).expect("Could not decode request from candid");
     let request = Request {
+        method: "GET".into(),
         url: http_request.url,
         headers: http_request.headers,
     };
@@ -36,6 +37,7 @@ fn main() {
     let http_response =
         Decode!(&response_candid, HttpResponse).expect("Could not decode response from candid");
     let response = Response {
+        status_code: 200,
         headers: http_response.headers,
         body: http_response.body,
     };

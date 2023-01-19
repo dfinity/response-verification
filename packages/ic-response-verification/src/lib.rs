@@ -20,7 +20,7 @@ use error::ResponseVerificationError;
 use error::ResponseVerificationResult;
 use http::Uri;
 use ic_certification::{Certificate, HashTree};
-use types::{Request, Response};
+use types::{Certification, Request, Response};
 use validation::{validate_body, validate_certificate_time, validate_tree};
 
 pub mod cel;
@@ -95,7 +95,8 @@ pub fn verify_request_response_pair_impl(
     let mut tree: Option<HashTree> = None;
     let mut certificate: Option<Certificate> = None;
     let mut version = MIN_VERIFICATION_VERSION;
-    let mut _expr_path: Option<Vec<String>> = None;
+    let mut expr_path: Option<Vec<String>> = None;
+    let mut certification: Option<Certification> = None;
 
     for (name, value) in response.headers.iter() {
         if name.eq_ignore_ascii_case("Ic-Certificate") {
@@ -115,10 +116,14 @@ pub fn verify_request_response_pair_impl(
                 .version
                 .unwrap_or(MIN_VERIFICATION_VERSION);
 
-            _expr_path = certificate_header
+            expr_path = certificate_header
                 .expr_path
                 .and_then(|expr_path| Some(parse_cbor_string_array(&expr_path, "expr_path")))
                 .transpose()?;
+        }
+
+        if name.eq_ignore_ascii_case("Ic-Certificate-Expression") {
+            certification = cel::cel_to_certification(value)?;
         }
 
         if name.eq_ignore_ascii_case("Content-Encoding") {
@@ -136,6 +141,8 @@ pub fn verify_request_response_pair_impl(
         tree,
         certificate,
         encoding,
+        expr_path,
+        certification,
     )
 }
 
@@ -149,6 +156,8 @@ fn verification(
     tree: Option<HashTree>,
     certificate: Option<Certificate>,
     encoding: Option<String>,
+    expr_path: Option<Vec<String>>,
+    certification: Option<Certification>,
 ) -> ResponseVerificationResult<CertificationResult> {
     match version {
         1 => v1_verification(
@@ -170,6 +179,8 @@ fn verification(
             tree,
             certificate,
             encoding,
+            expr_path,
+            certification,
         ),
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
             min_supported_version: MIN_VERIFICATION_VERSION,
@@ -205,6 +216,7 @@ fn v1_verification(
 
         let certified_response: Option<Response> = if result {
             Some(Response {
+                status_code: response.status_code,
                 headers: Vec::new(),
                 body: response.body.clone(),
             })
@@ -233,6 +245,8 @@ fn v2_verification(
     _tree: Option<HashTree>,
     _certificate: Option<Certificate>,
     _encoding: Option<String>,
+    _expr_path: Option<Vec<String>>,
+    _certification: Option<Certification>,
 ) -> ResponseVerificationResult<CertificationResult> {
     panic!("v2 response verification has not been implemented yet")
 }
