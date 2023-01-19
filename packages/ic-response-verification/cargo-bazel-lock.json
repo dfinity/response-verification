@@ -1,5 +1,5 @@
 {
-  "checksum": "520cdf624c57eb38ff50cbae0f6fb93c19eaaa422d2fe8b7caf65fcc7c8a698c",
+  "checksum": "6efb4e92747a1533d380561d93216c2eae38412f4e4858c10869fa988a9f29d0",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -4045,7 +4045,7 @@
               "target": "thiserror"
             },
             {
-              "id": "toml 0.5.10",
+              "id": "toml 0.5.11",
               "target": "toml"
             }
           ],
@@ -5324,13 +5324,13 @@
       },
       "license": "CC0-1.0"
     },
-    "toml 0.5.10": {
+    "toml 0.5.11": {
       "name": "toml",
-      "version": "0.5.10",
+      "version": "0.5.11",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/toml/0.5.10/download",
-          "sha256": "1333c76748e868a4d9d1017b5ab53171dfd095f70c712fdb4653a406547f598f"
+          "url": "https://crates.io/api/v1/crates/toml/0.5.11/download",
+          "sha256": "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
         }
       },
       "targets": [
@@ -5365,7 +5365,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "0.5.10"
+        "version": "0.5.11"
       },
       "license": "MIT/Apache-2.0"
     },

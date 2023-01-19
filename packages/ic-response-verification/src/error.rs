@@ -1,6 +1,8 @@
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
+use crate::cel;
+
 pub type ResponseVerificationResult<T = ()> = Result<T, ResponseVerificationError>;
 
 #[derive(thiserror::Error, Debug)]
@@ -59,6 +61,9 @@ pub enum ResponseVerificationError {
         max_supported_version: u8,
         requested_version: u8,
     },
+
+    #[error("Cel parser error")]
+    CelError(#[from] cel::CelParserError),
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -77,6 +82,7 @@ pub enum ResponseVerificationJsErrorCode {
     LebDecodingOverflow,
     Utf8ConversionError,
     UnsupportedVerificationVersion,
+    CelError,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -130,6 +136,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::UnsupportedVerificationVersion { .. } => {
                 ResponseVerificationJsErrorCode::UnsupportedVerificationVersion
             }
+            ResponseVerificationError::CelError(_) => ResponseVerificationJsErrorCode::CelError,
         };
         let message = error.to_string();
 
@@ -143,7 +150,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
 #[cfg(all(target_arch = "wasm32", test))]
 mod tests {
     use super::*;
-    use crate::test_utils::test_utils::hex_decode;
+    use crate::{cel::CelParserError, test_utils::test_utils::hex_decode};
     use std::array::TryFromSliceError;
     use wasm_bindgen_test::wasm_bindgen_test;
 
@@ -281,7 +288,7 @@ mod tests {
             result,
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::UnexpectedCborNodeType,
-                message: r#"Expected node with name "Foo" to have type "Baz", found "Bar""#.into()
+                message: r#"Expected node with name "Foo" to have type "Baz", found "Bar""#.into(),
             }
         )
     }
@@ -337,7 +344,7 @@ mod tests {
                 message: format!(
                     r#"Error converting UTF8 string bytes: "{0}""#,
                     inner_error.to_string()
-                )
+                ),
             }
         )
     }
@@ -356,7 +363,25 @@ mod tests {
             result,
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::UnsupportedVerificationVersion,
-                message: r#"The requested verification version 42 is not supported, the current supported range is 1-2"#.into()
+                message: r#"The requested verification version 42 is not supported, the current supported range is 1-2"#.into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_cel_error() {
+        let inner_error = CelParserError::CelSyntaxException(
+            "Garbage is not allowed in the CEL expression!".into(),
+        );
+        let error = ResponseVerificationError::from(inner_error);
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::CelError,
+                message: r#"Cel parser error"#.into(),
             }
         )
     }

@@ -57,12 +57,13 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn serialize_certification_result_with_response() {
-        let expected = r#"{"passed":true,"response":{"body":{"0":0,"1":1,"2":2},"headers":[]}}"#;
+        let expected = r#"{"passed":true,"response":{"statusCode":200,"body":{"0":0,"1":1,"2":2},"headers":[]}}"#;
 
         assert_eq!(
             JSON::stringify(&JsValue::from(CertificationResult {
                 passed: true,
                 response: Some(Response {
+                    status_code: 200,
                     body: vec![0, 1, 2],
                     headers: vec![],
                 })

@@ -5,14 +5,17 @@ use wasm_bindgen::{prelude::*, JsCast};
 #[wasm_bindgen(typescript_custom_section)]
 const REQUEST: &'static str = r#"
 interface Request {
+    method: String;
     url: String;
     headers: [string, string][];
+    body: Uint8Array;
 }
 "#;
 
 /// Represents a Request from the IC
 #[derive(Debug, PartialEq, Eq)]
 pub struct Request {
+    pub method: String,
     pub url: String,
     pub headers: Vec<(String, String)>,
 }
@@ -22,16 +25,30 @@ impl From<JsValue> for Request {
     fn from(req: JsValue) -> Self {
         use js_sys::{Array, JsString, Object};
 
-        let headers_str = JsString::from("headers");
+        let method_str = JsString::from("method");
         let url_str = JsString::from("url");
+        let headers_str = JsString::from("headers");
 
-        let mut headers = Vec::new();
+        let mut method = String::from("");
         let mut url = String::from("");
+        let mut headers = Vec::new();
 
         let req = Object::unchecked_from_js(req);
         for entry in Object::entries(&req).iter() {
             let entry = Array::unchecked_from_js(entry);
             let k = JsString::unchecked_from_js(entry.get(0));
+
+            if k == method_str {
+                method = JsString::unchecked_from_js(entry.get(1))
+                    .as_string()
+                    .unwrap();
+            }
+
+            if k == url_str {
+                url = JsString::unchecked_from_js(entry.get(1))
+                    .as_string()
+                    .unwrap();
+            }
 
             if k == headers_str {
                 let headers_v = Array::unchecked_from_js(entry.get(1));
@@ -44,15 +61,13 @@ impl From<JsValue> for Request {
                     headers.push((header_name, header_val))
                 }
             }
-
-            if k == url_str {
-                url = JsString::unchecked_from_js(entry.get(1))
-                    .as_string()
-                    .unwrap();
-            }
         }
 
-        Self { headers, url }
+        Self {
+            method,
+            url,
+            headers,
+        }
     }
 }
 
@@ -66,6 +81,7 @@ mod tests {
     fn request_from() {
         let v = JSON::parse(
             r#"{
+    "method": "GET",
     "url": "http://url.com",
     "headers": [
         ["header1", "header1val"],
@@ -79,6 +95,7 @@ mod tests {
         assert_eq!(
             r,
             Request {
+                method: "GET".into(),
                 url: "http://url.com".into(),
                 headers: vec![
                     ("header1".into(), "header1val".into()),

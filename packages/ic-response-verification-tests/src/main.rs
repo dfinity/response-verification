@@ -41,6 +41,7 @@ async fn main() -> Result<()> {
         .await?;
 
     let request = ic_response_verification::types::Request {
+        method: "GET".into(),
         headers: vec![],
         url: "/".into(),
     };
@@ -51,6 +52,7 @@ async fn main() -> Result<()> {
             .map(|HeaderField(key, value)| (key.to_string(), value.to_string()))
             .collect(),
         body: response.body,
+        status_code: response.status_code,
     };
     let current_time_ns = get_current_time();
     let max_cert_time_offset_ns = 300_000_000_000; // 5 mins

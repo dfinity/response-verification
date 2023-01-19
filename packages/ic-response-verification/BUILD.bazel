@@ -26,3 +26,13 @@ rust_shared_library(
     visibility = ["//packages/ic-response-verification-wasm:__pkg__"],
     deps = all_crate_deps(normal = True),
 )
+
+rust_shared_library(
+    name = "lib_debug",
+    srcs = [":srcs"],
+    crate_features = ["debug"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(proc_macro = True),
+    visibility = ["//packages/ic-response-verification-wasm:__pkg__"],
+    deps = all_crate_deps(normal = True),
+)

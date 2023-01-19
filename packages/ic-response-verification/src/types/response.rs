@@ -5,23 +5,26 @@ use wasm_bindgen::{prelude::*, JsCast};
 #[wasm_bindgen(typescript_custom_section)]
 const RESPONSE: &'static str = r#"
 interface Response {
-    body: Uint8Array;
+    statusCode: number;
     headers: [string, string][];
+    body: Uint8Array;
 }
 "#;
 
 /// Represents a Response from the IC
 #[derive(Debug, PartialEq, Eq)]
 pub struct Response {
-    pub body: Vec<u8>,
+    pub status_code: u16,
     pub headers: Vec<(String, String)>,
+    pub body: Vec<u8>,
 }
 
 #[cfg(target_arch = "wasm32")]
 impl From<Response> for JsValue {
     fn from(response: Response) -> Self {
-        use js_sys::{Array, Object, Uint8Array};
+        use js_sys::{Array, Number, Object, Uint8Array};
 
+        let status_code = Number::from(response.status_code);
         let body = Uint8Array::from(response.body.as_slice());
 
         let headers = Array::new();
@@ -30,9 +33,12 @@ impl From<Response> for JsValue {
             headers.push(&Array::of2(&k.into(), &value.into()));
         }
 
+        let status_code_entry = Array::of2(&JsValue::from("statusCode"), &status_code);
         let body_entry = Array::of2(&JsValue::from("body"), &body);
         let headers_entry = Array::of2(&JsValue::from("headers"), &headers);
-        let js_response = Object::from_entries(&Array::of2(&body_entry, &headers_entry)).unwrap();
+        let js_response =
+            Object::from_entries(&Array::of3(&status_code_entry, &body_entry, &headers_entry))
+                .unwrap();
 
         JsValue::from(js_response)
     }
@@ -41,11 +47,13 @@ impl From<Response> for JsValue {
 #[cfg(target_arch = "wasm32")]
 impl From<JsValue> for Response {
     fn from(resp: JsValue) -> Self {
-        use js_sys::{Array, JsString, Object, Uint8Array};
+        use js_sys::{Array, JsString, Number, Object, Uint8Array};
 
+        let status_code_str = JsString::from("statusCode");
         let headers_str = JsString::from("headers");
         let body_str = JsString::from("body");
 
+        let mut status_code: u16 = 0;
         let mut headers = Vec::new();
         let mut body = Vec::new();
 
@@ -53,6 +61,10 @@ impl From<JsValue> for Response {
         for entry in Object::entries(&resp).iter() {
             let entry = Array::unchecked_from_js(entry);
             let k = JsString::unchecked_from_js(entry.get(0));
+
+            if k == status_code_str {
+                status_code = Number::unchecked_from_js(entry.get(1)).as_f64().unwrap() as u16;
+            }
 
             if k == headers_str {
                 let headers_v = Array::unchecked_from_js(entry.get(1));
@@ -71,7 +83,11 @@ impl From<JsValue> for Response {
             }
         }
 
-        Self { headers, body }
+        Self {
+            status_code,
+            headers,
+            body,
+        }
     }
 }
 
@@ -86,6 +102,7 @@ mod tests {
     fn request_from() {
         let v = JSON::parse(
             r#"{
+    "statusCode": 200,
     "body": [0, 1, 2, 3, 4, 5, 6],
     "headers": [
         ["header1", "header1val"],
@@ -99,6 +116,7 @@ mod tests {
         assert_eq!(
             r,
             Response {
+                status_code: 200,
                 body: vec![0, 1, 2, 3, 4, 5, 6],
                 headers: vec![
                     ("header1".into(), "header1val".into()),
@@ -110,10 +128,12 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn serialize_response_with_headers() {
-        let expected = r#"{"body":{"0":0,"1":1,"2":2},"headers":[["header1","header1val"]]}"#;
+        let expected =
+            r#"{"statusCode":200,"body":{"0":0,"1":1,"2":2},"headers":[["header1","header1val"]]}"#;
 
         assert_eq!(
             JSON::stringify(&JsValue::from(Response {
+                status_code: 200,
                 body: vec![0, 1, 2],
                 headers: vec![("header1".into(), "header1val".into()),],
             }))
@@ -124,10 +144,11 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn serialize_response_with_empty_headers() {
-        let expected = r#"{"body":{"0":0,"1":1,"2":2},"headers":[]}"#;
+        let expected = r#"{"statusCode":200,"body":{"0":0,"1":1,"2":2},"headers":[]}"#;
 
         assert_eq!(
             JSON::stringify(&JsValue::from(Response {
+                status_code: 200,
                 body: vec![0, 1, 2],
                 headers: vec![],
             }))
