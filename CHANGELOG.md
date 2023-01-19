@@ -30,6 +30,7 @@
 
 ### Refactor
 
+- remove unnecessary dfx.json config
 - update project structure
 - move verification version check to its own function
 - make default path const
