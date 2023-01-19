@@ -86,7 +86,8 @@ pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::body::decode_body_to_sha256;
+    use crate::body::decode_body;
+    use crate::hash::hash;
     use crate::test_utils::test_utils::{
         create_certificate, create_tree, CreateCertificateOptions, CreateTreeOptions,
     };
@@ -253,7 +254,7 @@ mod tests {
     #[test]
     fn validate_body_with_matching_sha() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).unwrap();
+        let body_sha = hash(decode_body(&body.into(), None).unwrap().as_slice());
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
             .unwrap();
@@ -275,7 +276,7 @@ mod tests {
     #[test]
     fn validate_body_with_index_fallback() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).unwrap();
+        let body_sha = hash(decode_body(&body.into(), None).unwrap().as_slice());
         let uri = format!("https://ic0.dev/garbage.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
             .unwrap();
@@ -293,7 +294,7 @@ mod tests {
     #[test]
     fn validate_body_without_index_fallback() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).unwrap();
+        let body_sha = hash(decode_body(&body.into(), None).unwrap().as_slice());
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
             .unwrap();
@@ -311,7 +312,7 @@ mod tests {
     #[test]
     fn validate_body_without_matching_sha() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).unwrap();
+        let body_sha = hash(decode_body(&body.into(), None).unwrap().as_slice());
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
             .unwrap();
@@ -329,7 +330,7 @@ mod tests {
     #[test]
     fn validate_body_without_any_matching_path() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
-        let body_sha = decode_body_to_sha256(body, None).unwrap();
+        let body_sha = hash(decode_body(&body.into(), None).unwrap().as_slice());
         let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
             .parse::<Uri>()
             .unwrap();

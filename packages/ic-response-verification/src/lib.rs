@@ -14,7 +14,6 @@ use std::panic;
 use error::ResponseVerificationJsError;
 
 use crate::types::CertificationResult;
-use body::decode_body_to_sha256;
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
 use error::ResponseVerificationError;
@@ -75,13 +74,13 @@ pub fn verify_request_response_pair(
         max_cert_time_offset_ns as u128,
     )
     .map(|certification_result| {
-        serde_wasm_bindgen::to_value(&certification_result)
-            .unwrap()
-            .unchecked_into::<JsCertificationResult>()
+        JsValue::from(certification_result).unchecked_into::<JsCertificationResult>()
     })
     .map_err(|e| ResponseVerificationJsError::from(e))
 }
 
+use crate::body::decode_body;
+use crate::hash::hash;
 #[cfg(not(target_arch = "wasm32"))]
 pub use verify_request_response_pair_impl as verify_request_response_pair;
 
@@ -196,12 +195,13 @@ fn v1_verification(
         .map_err(|_| ResponseVerificationError::MalformedUrl(request.url))?;
 
     return if let (Some(tree), Some(certificate)) = (tree, certificate) {
-        let body_sha = decode_body_to_sha256(response.body.as_slice(), encoding).unwrap();
+        let decoded_body = decode_body(&response.body, encoding).unwrap();
+        let decoded_body_sha = hash(decoded_body.as_slice());
 
         validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
         // [TODO] - validate_certificate
         let result = validate_tree(&canister_id, &certificate, &tree)
-            && validate_body(&tree, &request_uri, &body_sha);
+            && validate_body(&tree, &request_uri, &decoded_body_sha);
 
         let certified_response: Option<Response> = if result {
             Some(Response {

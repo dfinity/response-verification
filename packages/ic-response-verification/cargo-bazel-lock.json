@@ -1,5 +1,5 @@
 {
-  "checksum": "2bab5bae9dc562dfbae1733c94f0ee8213f5c71f2864209cdadd86ba030ff848",
+  "checksum": "520cdf624c57eb38ff50cbae0f6fb93c19eaaa422d2fe8b7caf65fcc7c8a698c",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -2217,14 +2217,6 @@
               "target": "nom"
             },
             {
-              "id": "serde 1.0.152",
-              "target": "serde"
-            },
-            {
-              "id": "serde-wasm-bindgen 0.4.5",
-              "target": "serde_wasm_bindgen"
-            },
-            {
               "id": "sha2 0.10.6",
               "target": "sha2"
             },
@@ -2248,6 +2240,10 @@
             {
               "id": "hex 0.4.3",
               "target": "hex"
+            },
+            {
+              "id": "serde 1.0.152",
+              "target": "serde"
             },
             {
               "id": "serde_cbor 0.11.2",
@@ -4597,56 +4593,6 @@
         ]
       },
       "license": "MIT OR Apache-2.0"
-    },
-    "serde-wasm-bindgen 0.4.5": {
-      "name": "serde-wasm-bindgen",
-      "version": "0.4.5",
-      "repository": {
-        "Http": {
-          "url": "https://crates.io/api/v1/crates/serde-wasm-bindgen/0.4.5/download",
-          "sha256": "e3b4c031cd0d9014307d82b8abf653c0290fbdaeb4c02d00c63cf52f728628bf"
-        }
-      },
-      "targets": [
-        {
-          "Library": {
-            "crate_name": "serde_wasm_bindgen",
-            "crate_root": "src/lib.rs",
-            "srcs": {
-              "include": [
-                "**/*.rs"
-              ],
-              "exclude": []
-            }
-          }
-        }
-      ],
-      "library_target_name": "serde_wasm_bindgen",
-      "common_attrs": {
-        "compile_data_glob": [
-          "**"
-        ],
-        "deps": {
-          "common": [
-            {
-              "id": "js-sys 0.3.60",
-              "target": "js_sys"
-            },
-            {
-              "id": "serde 1.0.152",
-              "target": "serde"
-            },
-            {
-              "id": "wasm-bindgen 0.2.83",
-              "target": "wasm_bindgen"
-            }
-          ],
-          "selects": {}
-        },
-        "edition": "2018",
-        "version": "0.4.5"
-      },
-      "license": "MIT"
     },
     "serde_bytes 0.11.8": {
       "name": "serde_bytes",
