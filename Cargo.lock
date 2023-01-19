@@ -763,7 +763,7 @@ dependencies = [
  "http",
  "http-body",
  "hyper-rustls",
- "ic-certification 0.23.0",
+ "ic-certification",
  "ic-verify-bls-signature",
  "k256",
  "leb128",
@@ -798,18 +798,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-certification"
-version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b201d11ba96f09548ec09409beb50cf845828f058f5c6a17c285729eab3a77d3"
-dependencies = [
- "hex",
- "serde",
- "serde_bytes",
- "sha2 0.10.6",
-]
-
-[[package]]
 name = "ic-response-verification"
 version = "0.0.0"
 dependencies = [
@@ -819,7 +807,7 @@ dependencies = [
  "flate2",
  "hex",
  "http",
- "ic-certification 0.22.0",
+ "ic-certification",
  "js-sys",
  "leb128",
  "nom",
