@@ -1,20 +1,19 @@
 use crate::hash::representation_independent_hash::{representation_independent_hash, Value};
-use crate::types::RequestCertification;
-use http::{HeaderMap, HeaderValue, Request};
+use crate::types::{Request, RequestCertification};
+use http::Uri;
 
-pub fn request_hash(
-    request: &Request<&[u8]>,
-    request_certification: &RequestCertification,
-) -> [u8; 32] {
-    let mut filtered_headers = get_filtered_headers(request.headers(), request_certification);
+pub fn request_hash(request: &Request, request_certification: &RequestCertification) -> [u8; 32] {
+    let mut filtered_headers = get_filtered_headers(&request.headers, request_certification);
 
     filtered_headers.push((
         ":ic-cert-method".into(),
-        Value::String(request.method().to_string()),
+        Value::String(request.method.to_string()),
     ));
 
     let filtered_query = request
-        .uri()
+        .url
+        .parse::<Uri>()
+        .unwrap()
         .query()
         .and_then(|query| Some(get_filtered_query(query, request_certification)));
     if let Some(query_hash) = filtered_query {
@@ -25,7 +24,7 @@ pub fn request_hash(
 }
 
 fn get_filtered_headers(
-    headers: &HeaderMap<HeaderValue>,
+    headers: &Vec<(String, String)>,
     request_certification: &RequestCertification,
 ) -> Vec<(String, Value)> {
     headers
@@ -44,8 +43,8 @@ fn get_filtered_headers(
             }
 
             Some((
-                header_name.to_string(),
-                Value::String(String::from(header_value.to_str().unwrap())),
+                header_name.to_string().to_ascii_lowercase(),
+                Value::String(String::from(header_value)),
             ))
         })
         .collect()
@@ -149,14 +148,15 @@ mod tests {
         assert_eq!(result, result_with_fragment);
     }
 
-    fn create_request(uri: &str) -> Request<&'static [u8]> {
-        Request::builder()
-            .uri(uri)
-            .method("POST")
-            .header("accept-language", "en")
-            .header("accept-language", "en-US")
-            .header("host", "https://ic0.app")
-            .body(&[] as &[u8])
-            .unwrap()
+    fn create_request(uri: &str) -> Request {
+        Request {
+            url: uri.into(),
+            method: "POST".into(),
+            headers: vec![
+                ("Accept-Language".into(), "en".into()),
+                ("Accept-Language".into(), "en-US".into()),
+                ("Host".into(), "https://ic0.app".into()),
+            ],
+        }
     }
 }
