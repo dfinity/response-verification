@@ -1,36 +1,30 @@
 use flate2::read::{DeflateDecoder, GzDecoder};
-use ic_certification::hash_tree::Sha256Digest;
-use sha2::{Digest, Sha256};
 use std::io::Read;
 
 // The limit of a buffer we should decompress ~10mb.
 const MAX_CHUNK_SIZE_TO_DECOMPRESS: usize = 1024;
 const MAX_CHUNKS_TO_DECOMPRESS: u64 = 10_240;
 
-pub fn decode_body_to_sha256(body: &[u8], encoding: Option<String>) -> Option<Sha256Digest> {
+pub fn decode_body(body: &Vec<u8>, encoding: Option<String>) -> Option<Vec<u8>> {
     return match encoding.as_deref() {
-        Some("gzip") => decode_body(GzDecoder::new(body)),
-        Some("deflate") => decode_body(DeflateDecoder::new(body)),
-        _ => {
-            let mut sha256 = Sha256::new();
-            sha256.update(body);
-            Some(sha256.finalize().into())
-        }
+        Some("gzip") => body_from_decoder(GzDecoder::new(body.as_slice())),
+        Some("deflate") => body_from_decoder(DeflateDecoder::new(body.as_slice())),
+        _ => Some(body.to_owned()),
     };
 }
 
-fn decode_body<D: Read>(mut decoder: D) -> Option<Sha256Digest> {
-    let mut sha256 = Sha256::new();
-    let mut decoded = [0u8; MAX_CHUNK_SIZE_TO_DECOMPRESS];
+fn body_from_decoder<D: Read>(mut decoder: D) -> Option<Vec<u8>> {
+    let mut decoded = Vec::new();
+    let mut buffer = [0u8; MAX_CHUNK_SIZE_TO_DECOMPRESS];
 
     for _ in 0..MAX_CHUNKS_TO_DECOMPRESS {
-        let bytes = decoder.read(&mut decoded).ok()?;
+        let bytes = decoder.read(&mut buffer).ok()?;
 
         if bytes == 0 {
-            return Some(sha256.finalize().into());
+            return Some(decoded.into());
         }
 
-        sha256.update(&decoded[0..bytes]);
+        decoded.extend_from_slice(&buffer[..bytes]);
     }
 
     if decoder.bytes().next().is_some() {
@@ -38,12 +32,13 @@ fn decode_body<D: Read>(mut decoder: D) -> Option<Sha256Digest> {
         return None;
     }
 
-    Some(sha256.finalize().into())
+    Some(decoded.into())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::hash::hash;
     use crate::test_utils::test_utils::hex_decode;
     use flate2::write::{DeflateEncoder, GzEncoder};
     use flate2::Compression;
@@ -54,7 +49,7 @@ mod tests {
 
     #[test]
     fn decode_simple_body() {
-        let result = decode_body_to_sha256(BODY, None).unwrap();
+        let result = hash(decode_body(&BODY.into(), None).unwrap().as_slice());
         let expected = hex_decode(BODY_SHA);
 
         assert_eq!(result, expected.as_slice());
@@ -66,7 +61,11 @@ mod tests {
         encoder.write_all(BODY).unwrap();
         let encoded_body = encoder.finish().unwrap();
 
-        let result = decode_body_to_sha256(encoded_body.as_slice(), Some("gzip".into())).unwrap();
+        let result = hash(
+            decode_body(&encoded_body, Some("gzip".into()))
+                .unwrap()
+                .as_slice(),
+        );
         let expected = hex_decode(BODY_SHA);
 
         assert_eq!(result, expected.as_slice());
@@ -78,8 +77,11 @@ mod tests {
         encoder.write_all(BODY).unwrap();
         let encoded_body = encoder.finish().unwrap();
 
-        let result =
-            decode_body_to_sha256(encoded_body.as_slice(), Some("deflate".into())).unwrap();
+        let result = hash(
+            decode_body(&encoded_body, Some("deflate".into()))
+                .unwrap()
+                .as_slice(),
+        );
         let expected = hex_decode(BODY_SHA);
 
         assert_eq!(result, expected.as_slice());

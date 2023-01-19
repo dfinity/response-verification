@@ -1,5 +1,3 @@
-use serde::{Deserialize, Serialize};
-
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::{prelude::*, JsCast};
 
@@ -13,10 +11,31 @@ interface Response {
 "#;
 
 /// Represents a Response from the IC
-#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Response {
     pub body: Vec<u8>,
     pub headers: Vec<(String, String)>,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl From<Response> for JsValue {
+    fn from(response: Response) -> Self {
+        use js_sys::{Array, Object, Uint8Array};
+
+        let body = Uint8Array::from(response.body.as_slice());
+
+        let headers = Array::new();
+        for (k, v) in response.headers.iter() {
+            let value = JsValue::from(v);
+            headers.push(&Array::of2(&k.into(), &value.into()));
+        }
+
+        let body_entry = Array::of2(&JsValue::from("body"), &body);
+        let headers_entry = Array::of2(&JsValue::from("headers"), &headers);
+        let js_response = Object::from_entries(&Array::of2(&body_entry, &headers_entry)).unwrap();
+
+        JsValue::from(js_response)
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
