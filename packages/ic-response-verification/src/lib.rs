@@ -13,11 +13,13 @@ use std::panic;
 #[cfg(target_arch = "wasm32")]
 use error::ResponseVerificationJsError;
 
+use crate::body::decode_body;
 use crate::types::CertificationResult;
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
 use error::ResponseVerificationError;
 use error::ResponseVerificationResult;
+use hash::hash;
 use http::Uri;
 use ic_certification::{Certificate, HashTree};
 use types::{Certification, Request, Response};
@@ -79,8 +81,6 @@ pub fn verify_request_response_pair(
     .map_err(|e| ResponseVerificationJsError::from(e))
 }
 
-use crate::body::decode_body;
-use crate::hash::hash;
 #[cfg(not(target_arch = "wasm32"))]
 pub use verify_request_response_pair_impl as verify_request_response_pair;
 
@@ -237,16 +237,37 @@ fn v1_verification(
 }
 
 fn v2_verification(
-    _request: Request,
-    _response: Response,
+    request: Request,
+    response: Response,
     _canister_id: &[u8],
     _current_time_ns: u128,
     _max_cert_time_offset_ns: u128,
     _tree: Option<HashTree>,
     _certificate: Option<Certificate>,
-    _encoding: Option<String>,
+    encoding: Option<String>,
     _expr_path: Option<Vec<String>>,
-    _certification: Option<Certification>,
+    certification: Option<Certification>,
 ) -> ResponseVerificationResult<CertificationResult> {
+    let Some(certification) = certification else {
+        return Ok(CertificationResult {
+            passed: true,
+            response: None,
+        });
+    };
+
+    let _request_hash = match certification.request_certification {
+        Some(request_certification) => Some(hash::request_hash(&request, &request_certification)),
+        None => None,
+    };
+
+    let decoded_body = decode_body(&response.body, encoding).unwrap();
+    let decoded_body_sha = hash(decoded_body.as_slice());
+    let response_headers_hash =
+        hash::response_headers_hash(&response, &certification.response_certification);
+    let _response_hash = hash(
+        [response_headers_hash, decoded_body_sha]
+            .concat()
+            .as_slice(),
+    );
     panic!("v2 response verification has not been implemented yet")
 }
