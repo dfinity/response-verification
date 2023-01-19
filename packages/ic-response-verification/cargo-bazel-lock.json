@@ -1,5 +1,5 @@
 {
-  "checksum": "d2fac56bed457b5a4284456869b6a097013dbd802b1bd8e8798e365579cf3812",
+  "checksum": "2bab5bae9dc562dfbae1733c94f0ee8213f5c71f2864209cdadd86ba030ff848",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -483,7 +483,7 @@
               "target": "either"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -655,13 +655,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "bumpalo 3.11.1": {
+    "bumpalo 3.12.0": {
       "name": "bumpalo",
-      "version": "3.11.1",
+      "version": "3.12.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/bumpalo/3.11.1/download",
-          "sha256": "572f695136211188308f16ad2ca5c851a712c464060ae6974944458eb83880ba"
+          "url": "https://crates.io/api/v1/crates/bumpalo/3.12.0/download",
+          "sha256": "0d261e256854913907f67ed06efbc3338dfe6179796deefc1ff763fc1aee5535"
         }
       },
       "targets": [
@@ -687,7 +687,7 @@
           "default"
         ],
         "edition": "2021",
-        "version": "3.11.1"
+        "version": "3.12.0"
       },
       "license": "MIT/Apache-2.0"
     },
@@ -953,7 +953,7 @@
               "target": "lazy_static"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -1036,7 +1036,7 @@
         "deps": {
           "common": [
             {
-              "id": "termcolor 1.1.3",
+              "id": "termcolor 1.2.0",
               "target": "termcolor"
             },
             {
@@ -2100,13 +2100,13 @@
       },
       "license": "MIT OR Apache-2.0"
     },
-    "ic-certification 0.22.0": {
+    "ic-certification 0.23.0": {
       "name": "ic-certification",
-      "version": "0.22.0",
+      "version": "0.23.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/ic-certification/0.22.0/download",
-          "sha256": "2d0a3d65c98044ca3aa16232d828971e9e89132ba815cc126a3aa2d1a700aa73"
+          "url": "https://crates.io/api/v1/crates/ic-certification/0.23.0/download",
+          "sha256": "b201d11ba96f09548ec09409beb50cf845828f058f5c6a17c285729eab3a77d3"
         }
       },
       "targets": [
@@ -2155,7 +2155,7 @@
           "selects": {}
         },
         "edition": "2021",
-        "version": "0.22.0"
+        "version": "0.23.0"
       },
       "license": "Apache-2.0"
     },
@@ -2201,7 +2201,7 @@
               "target": "http"
             },
             {
-              "id": "ic-certification 0.22.0",
+              "id": "ic-certification 0.23.0",
               "target": "ic_certification"
             },
             {
@@ -2213,8 +2213,16 @@
               "target": "leb128"
             },
             {
-              "id": "nom 7.1.2",
+              "id": "nom 7.1.3",
               "target": "nom"
+            },
+            {
+              "id": "serde 1.0.152",
+              "target": "serde"
+            },
+            {
+              "id": "serde-wasm-bindgen 0.4.5",
+              "target": "serde_wasm_bindgen"
             },
             {
               "id": "sha2 0.10.6",
@@ -2240,10 +2248,6 @@
             {
               "id": "hex 0.4.3",
               "target": "hex"
-            },
-            {
-              "id": "serde 1.0.152",
-              "target": "serde"
             },
             {
               "id": "serde_cbor 0.11.2",
@@ -2980,7 +2984,7 @@
               "target": "fnv"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -3180,13 +3184,13 @@
       },
       "license": "MIT"
     },
-    "nom 7.1.2": {
+    "nom 7.1.3": {
       "name": "nom",
-      "version": "7.1.2",
+      "version": "7.1.3",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/nom/7.1.2/download",
-          "sha256": "e5507769c4919c998e69e49c839d9dc6e693ede4cc4290d6ad8b41d4f09c548c"
+          "url": "https://crates.io/api/v1/crates/nom/7.1.3/download",
+          "sha256": "d273983c5a657a70a3e8f2a01329822f3b8c8172b73826411a55751e404a0a4a"
         }
       },
       "targets": [
@@ -3227,7 +3231,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "7.1.2"
+        "version": "7.1.3"
       },
       "license": "MIT"
     },
@@ -3550,7 +3554,7 @@
               "target": "proc_macro_crate"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -4056,13 +4060,13 @@
       },
       "license": "Apache-2.0/MIT"
     },
-    "proc-macro2 1.0.49": {
+    "proc-macro2 1.0.50": {
       "name": "proc-macro2",
-      "version": "1.0.49",
+      "version": "1.0.50",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.49/download",
-          "sha256": "57a8eca9f9c4ffde41714334dee777596264c7825420f521abc92b5b5deb63a5"
+          "url": "https://crates.io/api/v1/crates/proc-macro2/1.0.50/download",
+          "sha256": "6ef7d57beacfaf2d8aee5937dab7b7f28de3cb8b1828479bb5de2a7106f2bae2"
         }
       },
       "targets": [
@@ -4103,7 +4107,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "build_script_build"
             },
             {
@@ -4114,7 +4118,7 @@
           "selects": {}
         },
         "edition": "2018",
-        "version": "1.0.49"
+        "version": "1.0.50"
       },
       "build_script_attrs": {
         "data_glob": [
@@ -4170,7 +4174,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -4594,6 +4598,56 @@
       },
       "license": "MIT OR Apache-2.0"
     },
+    "serde-wasm-bindgen 0.4.5": {
+      "name": "serde-wasm-bindgen",
+      "version": "0.4.5",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/serde-wasm-bindgen/0.4.5/download",
+          "sha256": "e3b4c031cd0d9014307d82b8abf653c0290fbdaeb4c02d00c63cf52f728628bf"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "serde_wasm_bindgen",
+            "crate_root": "src/lib.rs",
+            "srcs": {
+              "include": [
+                "**/*.rs"
+              ],
+              "exclude": []
+            }
+          }
+        }
+      ],
+      "library_target_name": "serde_wasm_bindgen",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "js-sys 0.3.60",
+              "target": "js_sys"
+            },
+            {
+              "id": "serde 1.0.152",
+              "target": "serde"
+            },
+            {
+              "id": "wasm-bindgen 0.2.83",
+              "target": "wasm_bindgen"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.4.5"
+      },
+      "license": "MIT"
+    },
     "serde_bytes 0.11.8": {
       "name": "serde_bytes",
       "version": "0.11.8",
@@ -4736,7 +4790,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -5004,7 +5058,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -5095,13 +5149,13 @@
       },
       "license": "MIT/Apache-2.0"
     },
-    "termcolor 1.1.3": {
+    "termcolor 1.2.0": {
       "name": "termcolor",
-      "version": "1.1.3",
+      "version": "1.2.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/termcolor/1.1.3/download",
-          "sha256": "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
+          "url": "https://crates.io/api/v1/crates/termcolor/1.2.0/download",
+          "sha256": "be55cf8942feac5c765c2c993422806843c9a9a45d4d5c407ad6dd2ea95eb9b6"
         }
       },
       "targets": [
@@ -5135,7 +5189,7 @@
           }
         },
         "edition": "2018",
-        "version": "1.1.3"
+        "version": "1.2.0"
       },
       "license": "Unlicense OR MIT"
     },
@@ -5238,7 +5292,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -5748,7 +5802,7 @@
         "deps": {
           "common": [
             {
-              "id": "bumpalo 3.11.1",
+              "id": "bumpalo 3.12.0",
               "target": "bumpalo"
             },
             {
@@ -5760,7 +5814,7 @@
               "target": "once_cell"
             },
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -5923,7 +5977,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {
@@ -6108,7 +6162,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro2 1.0.49",
+              "id": "proc-macro2 1.0.50",
               "target": "proc_macro2"
             },
             {

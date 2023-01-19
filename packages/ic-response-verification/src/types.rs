@@ -6,3 +6,6 @@ pub use request::*;
 
 pub mod response;
 pub use response::*;
+
+pub mod certification_result;
+pub use certification_result::*;

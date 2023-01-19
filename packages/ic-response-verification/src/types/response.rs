@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::{prelude::*, JsCast};
 
@@ -11,7 +13,7 @@ interface Response {
 "#;
 
 /// Represents a Response from the IC
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Response {
     pub body: Vec<u8>,
     pub headers: Vec<(String, String)>,
@@ -19,7 +21,7 @@ pub struct Response {
 
 #[cfg(target_arch = "wasm32")]
 impl From<JsValue> for Response {
-    fn from(req: JsValue) -> Self {
+    fn from(resp: JsValue) -> Self {
         use js_sys::{Array, JsString, Object, Uint8Array};
 
         let headers_str = JsString::from("headers");
@@ -28,8 +30,8 @@ impl From<JsValue> for Response {
         let mut headers = Vec::new();
         let mut body = Vec::new();
 
-        let req = Object::unchecked_from_js(req);
-        for entry in Object::entries(&req).iter() {
+        let resp = Object::unchecked_from_js(resp);
+        for entry in Object::entries(&resp).iter() {
             let entry = Array::unchecked_from_js(entry);
             let k = JsString::unchecked_from_js(entry.get(0));
 

@@ -11,11 +11,13 @@ base64 = "0.13.0"
 console_error_panic_hook = "0.1.7"
 nom = "7.1.1"
 js-sys = "0.3"
+serde = { version = "1.0.152", features = ["derive"] }
+serde-wasm-bindgen = "0.4.5"
 wasm-bindgen = "0.2.83"
 thiserror = "1.0.37"
 sha2 = "0.10.6"
 http = "0.2.8"
-ic-certification = { version = "0.22.0", default_features = false }
+ic-certification = { version = "0.23.0", default_features = false }
 flate2 = "1.0.24"
 leb128 = "0.2.5"
 
@@ -23,6 +25,6 @@ leb128 = "0.2.5"
 hex = "0.4.3"
 serde_cbor = "0.11.2"
 wasm-bindgen-test = "0.3"
-ic-certification = "0.22.0"
+ic-certification = "0.23.0"
 candid = "0.8.4"
 serde = "1.0.152"

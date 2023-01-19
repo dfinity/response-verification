@@ -2,6 +2,9 @@
 use wasm_bindgen::prelude::*;
 
 #[cfg(target_arch = "wasm32")]
+use wasm_bindgen::JsCast;
+
+#[cfg(target_arch = "wasm32")]
 extern crate console_error_panic_hook;
 
 #[cfg(target_arch = "wasm32")]
@@ -10,6 +13,7 @@ use std::panic;
 #[cfg(target_arch = "wasm32")]
 use error::ResponseVerificationJsError;
 
+use crate::types::CertificationResult;
 use body::decode_body_to_sha256;
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
@@ -37,18 +41,31 @@ pub const MIN_VERIFICATION_VERSION: u8 = 1;
 pub const MAX_VERIFICATION_VERSION: u8 = 2;
 
 #[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(typescript_type = "CertificationResult")]
+    pub type JsCertificationResult;
+
+    #[wasm_bindgen(typescript_type = "Request")]
+    pub type JsRequest;
+
+    #[wasm_bindgen(typescript_type = "Response")]
+    pub type JsResponse;
+}
+
+#[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = verifyRequestResponsePair)]
 pub fn verify_request_response_pair(
-    request: JsValue,
-    response: JsValue,
+    request: JsRequest,
+    response: JsResponse,
     canister_id: &[u8],
     current_time_ns: u64,
     max_cert_time_offset_ns: u64,
-) -> Result<bool, ResponseVerificationJsError> {
+) -> Result<JsCertificationResult, ResponseVerificationJsError> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
-    let request = Request::from(request);
-    let response = Response::from(response);
+    let request = Request::from(JsValue::from(request));
+    let response = Response::from(JsValue::from(response));
 
     verify_request_response_pair_impl(
         request,
@@ -57,6 +74,11 @@ pub fn verify_request_response_pair(
         current_time_ns as u128,
         max_cert_time_offset_ns as u128,
     )
+    .map(|certification_result| {
+        serde_wasm_bindgen::to_value(&certification_result)
+            .unwrap()
+            .unchecked_into::<JsCertificationResult>()
+    })
     .map_err(|e| ResponseVerificationJsError::from(e))
 }
 
@@ -69,7 +91,7 @@ pub fn verify_request_response_pair_impl(
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
-) -> ResponseVerificationResult<bool> {
+) -> ResponseVerificationResult<CertificationResult> {
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
     let mut certificate: Option<Certificate> = None;
@@ -128,7 +150,7 @@ fn verification(
     tree: Option<HashTree>,
     certificate: Option<Certificate>,
     encoding: Option<String>,
-) -> ResponseVerificationResult<bool> {
+) -> ResponseVerificationResult<CertificationResult> {
     match version {
         1 => v1_verification(
             request,
@@ -167,7 +189,7 @@ fn v1_verification(
     tree: Option<HashTree>,
     certificate: Option<Certificate>,
     encoding: Option<String>,
-) -> ResponseVerificationResult<bool> {
+) -> ResponseVerificationResult<CertificationResult> {
     let request_uri = request
         .url
         .parse::<Uri>()
@@ -181,9 +203,24 @@ fn v1_verification(
         let result = validate_tree(&canister_id, &certificate, &tree)
             && validate_body(&tree, &request_uri, &body_sha);
 
-        Ok(result)
+        let certified_response: Option<Response> = if result {
+            Some(Response {
+                headers: Vec::new(),
+                body: response.body.clone(),
+            })
+        } else {
+            None
+        };
+
+        Ok(CertificationResult {
+            passed: result,
+            response: certified_response,
+        })
     } else {
-        Ok(false)
+        Ok(CertificationResult {
+            passed: false,
+            response: None,
+        })
     };
 }
 
@@ -196,6 +233,6 @@ fn v2_verification(
     _tree: Option<HashTree>,
     _certificate: Option<Certificate>,
     _encoding: Option<String>,
-) -> ResponseVerificationResult<bool> {
+) -> ResponseVerificationResult<CertificationResult> {
     panic!("v2 response verification has not been implemented yet")
 }
