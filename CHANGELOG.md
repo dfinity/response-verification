@@ -2,6 +2,7 @@
 
 ### Feat
 
+- create separate function for response header hashing
 - conditionally execute v1 response verification
 - extract version and expr_path from IC certificate header
 - extract version and expr_path from IC certificate header
