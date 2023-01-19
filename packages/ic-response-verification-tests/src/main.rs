@@ -63,7 +63,7 @@ async fn main() -> Result<()> {
         max_cert_time_offset_ns,
     )?;
 
-    assert!(result);
+    assert!(result.passed);
 
     Ok(())
 }
