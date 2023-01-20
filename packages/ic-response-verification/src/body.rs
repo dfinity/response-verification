@@ -38,21 +38,17 @@ fn body_from_decoder<D: Read>(mut decoder: D) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hash::hash;
-    use crate::test_utils::test_utils::hex_decode;
     use flate2::write::{DeflateEncoder, GzEncoder};
     use flate2::Compression;
     use std::io::Write;
 
     const BODY: &[u8] = &[1, 2, 3, 4, 5, 6, 7, 8];
-    const BODY_SHA: &str = "66840dda154e8a113c31dd0ad32f7f3a366a80e8136979d8f5a101d3d29d6f72";
 
     #[test]
     fn decode_simple_body() {
-        let result = hash(decode_body(&BODY.into(), None).unwrap().as_slice());
-        let expected = hex_decode(BODY_SHA);
+        let result = decode_body(&BODY.into(), None).unwrap();
 
-        assert_eq!(result, expected.as_slice());
+        assert_eq!(result.as_slice(), BODY);
     }
 
     #[test]
@@ -61,14 +57,11 @@ mod tests {
         encoder.write_all(BODY).unwrap();
         let encoded_body = encoder.finish().unwrap();
 
-        let result = hash(
+        let result =
             decode_body(&encoded_body, Some("gzip".into()))
-                .unwrap()
-                .as_slice(),
-        );
-        let expected = hex_decode(BODY_SHA);
+                .unwrap();
 
-        assert_eq!(result, expected.as_slice());
+        assert_eq!(result.as_slice(), BODY);
     }
 
     #[test]
@@ -77,13 +70,8 @@ mod tests {
         encoder.write_all(BODY).unwrap();
         let encoded_body = encoder.finish().unwrap();
 
-        let result = hash(
-            decode_body(&encoded_body, Some("deflate".into()))
-                .unwrap()
-                .as_slice(),
-        );
-        let expected = hex_decode(BODY_SHA);
+        let result = decode_body(&encoded_body, Some("deflate".into())).unwrap();
 
-        assert_eq!(result, expected.as_slice());
+        assert_eq!(result.as_slice(), BODY);
     }
 }

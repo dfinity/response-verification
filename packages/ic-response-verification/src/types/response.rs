@@ -79,6 +79,7 @@ impl From<JsValue> for Response {
 mod tests {
     use super::*;
     use js_sys::JSON;
+    use wasm_bindgen::JsValue;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     #[wasm_bindgen_test]
@@ -104,6 +105,42 @@ mod tests {
                     ("header2".into(), "header2val".into()),
                 ],
             }
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn serialize_response_with_headers() {
+        let expected = r#"{"body":{"0":0,"1":1,"2":2},"headers":[["header1","header1val"]]}"#;
+
+        assert_eq!(
+            JSON::stringify(
+                &JsValue::from(
+                    Response {
+                        body: vec![0, 1, 2],
+                        headers: vec![
+                            ("header1".into(), "header1val".into()),
+                        ],
+                    }
+                )
+            ).unwrap(),
+            expected
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn serialize_response_with_empty_headers() {
+        let expected = r#"{"body":{"0":0,"1":1,"2":2},"headers":[]}"#;
+
+        assert_eq!(
+            JSON::stringify(
+                &JsValue::from(
+                    Response {
+                        body: vec![0, 1, 2],
+                        headers: vec![],
+                    }
+                )
+            ).unwrap(),
+            expected
         );
     }
 }
