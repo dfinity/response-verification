@@ -2,6 +2,8 @@
 
 ### Feat
 
+- returns the decoded response body to the client
+- envelope request verification adding the certified response
 - create separate function for response header hashing
 - conditionally execute v1 response verification
 - extract version and expr_path from IC certificate header
@@ -26,6 +28,7 @@
 
 ### Fix
 
+- fixes cargo lock duplicate entry for ic-certification
 - representation independant hash should allow for duplicate keys
 
 ### Refactor
