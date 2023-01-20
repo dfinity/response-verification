@@ -57,9 +57,7 @@ mod tests {
         encoder.write_all(BODY).unwrap();
         let encoded_body = encoder.finish().unwrap();
 
-        let result =
-            decode_body(&encoded_body, Some("gzip".into()))
-                .unwrap();
+        let result = decode_body(&encoded_body, Some("gzip".into())).unwrap();
 
         assert_eq!(result.as_slice(), BODY);
     }

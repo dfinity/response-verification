@@ -113,16 +113,11 @@ mod tests {
         let expected = r#"{"body":{"0":0,"1":1,"2":2},"headers":[["header1","header1val"]]}"#;
 
         assert_eq!(
-            JSON::stringify(
-                &JsValue::from(
-                    Response {
-                        body: vec![0, 1, 2],
-                        headers: vec![
-                            ("header1".into(), "header1val".into()),
-                        ],
-                    }
-                )
-            ).unwrap(),
+            JSON::stringify(&JsValue::from(Response {
+                body: vec![0, 1, 2],
+                headers: vec![("header1".into(), "header1val".into()),],
+            }))
+            .unwrap(),
             expected
         );
     }
@@ -132,14 +127,11 @@ mod tests {
         let expected = r#"{"body":{"0":0,"1":1,"2":2},"headers":[]}"#;
 
         assert_eq!(
-            JSON::stringify(
-                &JsValue::from(
-                    Response {
-                        body: vec![0, 1, 2],
-                        headers: vec![],
-                    }
-                )
-            ).unwrap(),
+            JSON::stringify(&JsValue::from(Response {
+                body: vec![0, 1, 2],
+                headers: vec![],
+            }))
+            .unwrap(),
             expected
         );
     }

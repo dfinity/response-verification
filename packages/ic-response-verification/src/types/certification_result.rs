@@ -36,24 +36,21 @@ impl From<CertificationResult> for JsValue {
 
 #[cfg(all(target_arch = "wasm32", test))]
 mod tests {
+    use crate::types::{CertificationResult, Response};
     use js_sys::JSON;
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::wasm_bindgen_test;
-    use crate::types::{CertificationResult, Response};
 
     #[wasm_bindgen_test]
     fn serialize_certification_result_with_no_response() {
         let expected = r#"{"passed":true}"#;
 
         assert_eq!(
-            JSON::stringify(
-                &JsValue::from(
-                    CertificationResult {
-                        passed: true,
-                        response: None
-                    }
-                )
-            ).unwrap(),
+            JSON::stringify(&JsValue::from(CertificationResult {
+                passed: true,
+                response: None
+            }))
+            .unwrap(),
             expected
         );
     }
@@ -63,17 +60,14 @@ mod tests {
         let expected = r#"{"passed":true,"response":{"body":{"0":0,"1":1,"2":2},"headers":[]}}"#;
 
         assert_eq!(
-            JSON::stringify(
-                &JsValue::from(
-                    CertificationResult {
-                        passed: true,
-                        response: Some(Response {
-                            body: vec![0, 1, 2],
-                            headers: vec![],
-                        })
-                    }
-                )
-            ).unwrap(),
+            JSON::stringify(&JsValue::from(CertificationResult {
+                passed: true,
+                response: Some(Response {
+                    body: vec![0, 1, 2],
+                    headers: vec![],
+                })
+            }))
+            .unwrap(),
             expected
         );
     }
