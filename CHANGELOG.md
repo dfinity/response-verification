@@ -2,6 +2,7 @@
 
 ### Feat
 
+- integrate cel parser with response verification entry point
 - returns the decoded response body to the client
 - envelope request verification adding the certified response
 - create separate function for response header hashing
