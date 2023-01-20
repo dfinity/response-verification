@@ -13,6 +13,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup Cargo Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -31,14 +42,43 @@ jobs:
         working-directory: packages/ic-response-verification
         run: wasm-pack test --node
 
-      - name: e2e tests
-        run: ./scripts/e2e.sh
-
       - name: Lint
         run: cargo clippy
 
       - name: Check Formatting
         run: cargo fmt --all -- --check
+
+  e2e_tests:
+    name: e2e Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Cargo e2e Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-e2e-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup e2e Deps Cache
+        uses: actions/cache@v3
+        with:
+          path: tmp/
+          key: ${{ runner.os }}-tmp
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: e2e tests
+        run: ./scripts/e2e.sh
 
   build_npm_package:
     name: Build NPM Package
