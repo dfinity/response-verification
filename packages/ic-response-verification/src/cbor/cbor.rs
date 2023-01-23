@@ -1,4 +1,5 @@
 use crate::error::{ResponseVerificationError, ResponseVerificationResult};
+use candid::Principal;
 use nom::bytes::complete::take;
 use nom::combinator::{eof, map, peek};
 use nom::error::{Error, ErrorKind};
@@ -201,6 +202,36 @@ pub fn parse_cbor(i: &[u8]) -> Result<CborValue, nom::Err<Error<&[u8]>>> {
     let (_remaining, result) = terminated(parser, eof)(i)?;
 
     Ok(result)
+}
+
+pub fn parse_cbor_principals_array(
+    i: &[u8],
+) -> ResponseVerificationResult<Vec<(Principal, Principal)>> {
+    let parsed_cbor =
+        parse_cbor(i).map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
+
+    let CborValue::Array(ranges_entries) = parsed_cbor else {
+        return Err(ResponseVerificationError::MalformedCborCanisterRanges);
+    };
+
+    ranges_entries
+        .iter()
+        .map(|ranges_entry| {
+            let CborValue::Array(range) = ranges_entry else {
+                return Err(ResponseVerificationError::MalformedCborCanisterRanges);
+            };
+
+            let (first_principal, second_principal) = match (range.get(0), range.get(1)) {
+                (Some(CborValue::ByteString(a)), Some(CborValue::ByteString(b))) => (a, b),
+                _ => return Err(ResponseVerificationError::MalformedCborCanisterRanges),
+            };
+
+            Ok((
+                Principal::from_slice(first_principal),
+                Principal::from_slice(second_principal),
+            ))
+        })
+        .collect::<Result<_, _>>()
 }
 
 pub fn parse_cbor_string_array(

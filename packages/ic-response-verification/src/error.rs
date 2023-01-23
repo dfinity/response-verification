@@ -64,6 +64,29 @@ pub enum ResponseVerificationError {
 
     #[error("Cel parser error")]
     CelError(#[from] cel::CelParserError),
+
+    #[error(
+        r#"BLS DER-encoded public key must be ${expected} bytes long, but is {actual} bytes long"#
+    )]
+    DerKeyLengthMismatch { expected: usize, actual: usize },
+
+    #[error("BLS DER-encoded public key is invalid. Expected the following prefix: ${expected:?}, but got ${actual:?}")]
+    DerPrefixMismatch { expected: Vec<u8>, actual: Vec<u8> },
+
+    #[error("Certificate verification failed")]
+    CertificateVerificationFailed,
+
+    #[error("Certificate verification failed because with principal out of range")]
+    CertificatePrincipalOutOfRange,
+
+    #[error("Certificate verification subnet public key not found")]
+    CertificateSubnetPublicKeyNotFound,
+
+    #[error("Certificate verification subnet canister ranges not found")]
+    CertificateSubnetCanisterRangesNotFound,
+
+    #[error("Invalid cbor canister ranges")]
+    MalformedCborCanisterRanges,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -83,6 +106,13 @@ pub enum ResponseVerificationJsErrorCode {
     Utf8ConversionError,
     UnsupportedVerificationVersion,
     CelError,
+    DerKeyLengthMismatch,
+    DerPrefixMismatch,
+    CertificateVerificationFailed,
+    CertificatePrincipalOutOfRange,
+    CertificateSubnetPublicKeyNotFound,
+    CertificateSubnetCanisterRangesNotFound,
+    MalformedCborCanisterRanges,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -135,6 +165,27 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             }
             ResponseVerificationError::UnsupportedVerificationVersion { .. } => {
                 ResponseVerificationJsErrorCode::UnsupportedVerificationVersion
+            }
+            ResponseVerificationError::DerPrefixMismatch { .. } => {
+                ResponseVerificationJsErrorCode::DerPrefixMismatch
+            }
+            ResponseVerificationError::DerKeyLengthMismatch { .. } => {
+                ResponseVerificationJsErrorCode::DerKeyLengthMismatch
+            }
+            ResponseVerificationError::CertificateVerificationFailed { .. } => {
+                ResponseVerificationJsErrorCode::CertificateVerificationFailed
+            }
+            ResponseVerificationError::CertificatePrincipalOutOfRange { .. } => {
+                ResponseVerificationJsErrorCode::CertificatePrincipalOutOfRange
+            }
+            ResponseVerificationError::CertificateSubnetPublicKeyNotFound { .. } => {
+                ResponseVerificationJsErrorCode::CertificateSubnetPublicKeyNotFound
+            }
+            ResponseVerificationError::CertificateSubnetCanisterRangesNotFound { .. } => {
+                ResponseVerificationJsErrorCode::CertificateSubnetCanisterRangesNotFound
+            }
+            ResponseVerificationError::MalformedCborCanisterRanges { .. } => {
+                ResponseVerificationJsErrorCode::MalformedCborCanisterRanges
             }
             ResponseVerificationError::CelError(_) => ResponseVerificationJsErrorCode::CelError,
         };

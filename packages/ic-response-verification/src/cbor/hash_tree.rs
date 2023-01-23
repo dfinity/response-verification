@@ -40,7 +40,7 @@ pub fn parsed_cbor_to_tree<'a>(
 
                 CborHashTree::Pruned => {
                     return if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
-                        let digest: Sha256Digest = TryFrom::try_from(data.as_ref())
+                        let digest: Sha256Digest = TryFrom::<&[u8]>::try_from(data.as_ref())
                             .map_err(ResponseVerificationError::IncorrectPrunedDataLength)?;
 
                         Ok(pruned(digest))
