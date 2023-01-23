@@ -178,7 +178,6 @@ fn verification(
             max_cert_time_offset_ns,
             tree,
             certificate,
-            encoding,
             expr_path,
             certification,
         ),
@@ -244,7 +243,6 @@ fn v2_verification(
     _max_cert_time_offset_ns: u128,
     _tree: Option<HashTree>,
     _certificate: Option<Certificate>,
-    encoding: Option<String>,
     _expr_path: Option<Vec<String>>,
     certification: Option<Certification>,
 ) -> ResponseVerificationResult<CertificationResult> {
@@ -260,14 +258,9 @@ fn v2_verification(
         None => None,
     };
 
-    let decoded_body = decode_body(&response.body, encoding).unwrap();
-    let decoded_body_sha = hash(decoded_body.as_slice());
+    let body_hash = hash(&response.body);
     let response_headers_hash =
         hash::response_headers_hash(&response, &certification.response_certification);
-    let _response_hash = hash(
-        [response_headers_hash, decoded_body_sha]
-            .concat()
-            .as_slice(),
-    );
+    let _response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
     panic!("v2 response verification has not been implemented yet")
 }
