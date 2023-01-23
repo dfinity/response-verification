@@ -14,12 +14,13 @@ use std::panic;
 use error::ResponseVerificationJsError;
 
 use crate::body::decode_body;
+use crate::hash::hash;
 use crate::types::CertificationResult;
+use crate::validation::VerifyCertificate;
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
 use error::ResponseVerificationError;
 use error::ResponseVerificationResult;
-use hash::hash;
 use http::Uri;
 use ic_certification::hash_tree::Sha256Digest;
 use ic_certification::{Certificate, HashTree};
@@ -63,6 +64,7 @@ pub fn verify_request_response_pair(
     canister_id: &[u8],
     current_time_ns: u64,
     max_cert_time_offset_ns: u64,
+    ic_public_key: &[u8],
 ) -> Result<JsCertificationResult, ResponseVerificationJsError> {
     panic::set_hook(Box::new(console_error_panic_hook::hook));
 
@@ -75,6 +77,7 @@ pub fn verify_request_response_pair(
         canister_id,
         current_time_ns as u128,
         max_cert_time_offset_ns as u128,
+        ic_public_key,
     )
     .map(|certification_result| {
         JsValue::from(certification_result).unchecked_into::<JsCertificationResult>()
@@ -91,6 +94,7 @@ pub fn verify_request_response_pair_impl(
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
+    ic_public_key: &[u8],
 ) -> ResponseVerificationResult<CertificationResult> {
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
@@ -147,6 +151,7 @@ pub fn verify_request_response_pair_impl(
         expr_path,
         expr_hash,
         certification,
+        ic_public_key,
     )
 }
 
@@ -163,6 +168,7 @@ fn verification(
     expr_path: Option<Vec<String>>,
     expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
+    ic_public_key: &[u8],
 ) -> ResponseVerificationResult<CertificationResult> {
     match version {
         1 => v1_verification(
@@ -174,6 +180,7 @@ fn verification(
             tree,
             certificate,
             encoding,
+            ic_public_key,
         ),
         2 => v2_verification(
             request,
@@ -186,6 +193,7 @@ fn verification(
             expr_path,
             expr_hash,
             certification,
+            ic_public_key,
         ),
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
             min_supported_version: MIN_VERIFICATION_VERSION,
@@ -204,6 +212,7 @@ fn v1_verification(
     tree: Option<HashTree>,
     certificate: Option<Certificate>,
     encoding: Option<String>,
+    ic_public_key: &[u8],
 ) -> ResponseVerificationResult<CertificationResult> {
     let request_uri = request
         .url
@@ -215,7 +224,7 @@ fn v1_verification(
         let decoded_body_sha = hash(decoded_body.as_slice());
 
         validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-        // [TODO] - validate_certificate
+        certificate.verify(&canister_id, &ic_public_key)?;
         let result = validate_tree(&canister_id, &certificate, &tree)
             && validate_body(&tree, &request_uri, &decoded_body_sha);
 
@@ -252,6 +261,7 @@ fn v2_verification(
     expr_path: Option<Vec<String>>,
     expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
+    _ic_public_key: &[u8],
 ) -> ResponseVerificationResult<CertificationResult> {
     let Some(certification) = certification else {
         return Ok(CertificationResult {

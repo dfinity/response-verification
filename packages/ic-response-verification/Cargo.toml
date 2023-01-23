@@ -22,6 +22,7 @@ http = "0.2.8"
 ic-certification = { git = "https://github.com/dfinity/agent-rs", default_features = false, branch = "main" }
 flate2 = "1.0.24"
 leb128 = "0.2.5"
+candid = "0.8.4"
 
 [dev-dependencies]
 hex = "0.4.3"
