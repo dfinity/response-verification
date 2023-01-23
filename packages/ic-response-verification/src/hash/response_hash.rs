@@ -77,6 +77,7 @@ pub fn response_hash(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::test_utils::remove_whitespace;
 
     const HELLO_WORLD_BODY: &[u8] = &[72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33];
     const CERTIFICATE: &str = "certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:,tree=:SGVsbG8gVHJlZSE=:";
@@ -275,14 +276,10 @@ mod tests {
         assert_eq!(result, result_without_excluded_headers);
     }
 
-    /// We use this helper to remove white space from CEL expressions to ease the calculation
+    /// We remove white space from CEL expressions to ease the calculation
     /// of the expected hashes. Generating the hash for a string with so much whitespace manually
     /// may be prone to error in copy/pasting the string into a website and missing a leading/trailing
     /// newline or a tab character somewhere.
-    fn remove_whitespace(s: &str) -> String {
-        s.chars().filter(|c| !c.is_whitespace()).collect()
-    }
-
     fn create_response(cel_expression: &str) -> Response {
         Response {
             status_code: 200,

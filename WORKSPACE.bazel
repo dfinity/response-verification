@@ -19,8 +19,8 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "rules_rust",
-    sha256 = "dd79bd4e2e2adabae738c5e93c36d351cf18071ff2acf6590190acf4138984f6",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.14.0/rules_rust-v0.14.0.tar.gz"],
+    sha256 = "aaaa4b9591a5dad8d8907ae2dbe6e0eb49e6314946ce4c7149241648e56a1277",
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.16.1/rules_rust-v0.16.1.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
@@ -64,8 +64,8 @@ wasm_bindgen_register_toolchains()
 
 http_archive(
     name = "build_bazel_rules_nodejs",
-    sha256 = "0e8a818724c0d5dcc10c31f9452ebd54b2ab94c452d4dcbb0d45a6636d2d5a44",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.7.2/rules_nodejs-5.7.2.tar.gz"],
+    sha256 = "dcc55f810142b6cf46a44d0180a5a7fb923c04a5061e2e8d8eb05ccccc60864b",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/5.8.0/rules_nodejs-5.8.0.tar.gz"],
 )
 
 load("@build_bazel_rules_nodejs//:repositories.bzl", "build_bazel_rules_nodejs_dependencies")

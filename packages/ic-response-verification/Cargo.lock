@@ -381,8 +381,7 @@ dependencies = [
 [[package]]
 name = "ic-certification"
 version = "0.23.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b201d11ba96f09548ec09409beb50cf845828f058f5c6a17c285729eab3a77d3"
+source = "git+https://github.com/dfinity/agent-rs?branch=main#60f7a0db21688ca423dee0bb150e142a03e925c6"
 dependencies = [
  "hex",
  "serde",

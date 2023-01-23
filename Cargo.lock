@@ -763,7 +763,7 @@ dependencies = [
  "http",
  "http-body",
  "hyper-rustls",
- "ic-certification",
+ "ic-certification 0.23.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ic-verify-bls-signature",
  "k256",
  "leb128",
@@ -798,6 +798,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-certification"
+version = "0.23.0"
+source = "git+https://github.com/dfinity/agent-rs?branch=main#60f7a0db21688ca423dee0bb150e142a03e925c6"
+dependencies = [
+ "hex",
+ "serde",
+ "serde_bytes",
+ "sha2 0.10.6",
+]
+
+[[package]]
 name = "ic-response-verification"
 version = "0.0.0"
 dependencies = [
@@ -807,7 +818,7 @@ dependencies = [
  "flate2",
  "hex",
  "http",
- "ic-certification",
+ "ic-certification 0.23.0 (git+https://github.com/dfinity/agent-rs?branch=main)",
  "js-sys",
  "leb128",
  "nom",

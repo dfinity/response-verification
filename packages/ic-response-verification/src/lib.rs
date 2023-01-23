@@ -21,9 +21,10 @@ use error::ResponseVerificationError;
 use error::ResponseVerificationResult;
 use hash::hash;
 use http::Uri;
+use ic_certification::hash_tree::Sha256Digest;
 use ic_certification::{Certificate, HashTree};
 use types::{Certification, Request, Response};
-use validation::{validate_body, validate_certificate_time, validate_tree};
+use validation::{validate_body, validate_certificate_time, validate_expr_hash, validate_tree};
 
 pub mod cel;
 pub mod hash;
@@ -97,6 +98,7 @@ pub fn verify_request_response_pair_impl(
     let mut version = MIN_VERIFICATION_VERSION;
     let mut expr_path: Option<Vec<String>> = None;
     let mut certification: Option<Certification> = None;
+    let mut expr_hash: Option<Sha256Digest> = None;
 
     for (name, value) in response.headers.iter() {
         if name.eq_ignore_ascii_case("Ic-Certificate") {
@@ -124,6 +126,7 @@ pub fn verify_request_response_pair_impl(
 
         if name.eq_ignore_ascii_case("Ic-Certificate-Expression") {
             certification = cel::cel_to_certification(value)?;
+            expr_hash = Some(hash(value.as_bytes()));
         }
 
         if name.eq_ignore_ascii_case("Content-Encoding") {
@@ -142,6 +145,7 @@ pub fn verify_request_response_pair_impl(
         certificate,
         encoding,
         expr_path,
+        expr_hash,
         certification,
     )
 }
@@ -157,6 +161,7 @@ fn verification(
     certificate: Option<Certificate>,
     encoding: Option<String>,
     expr_path: Option<Vec<String>>,
+    expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
 ) -> ResponseVerificationResult<CertificationResult> {
     match version {
@@ -179,6 +184,7 @@ fn verification(
             tree,
             certificate,
             expr_path,
+            expr_hash,
             certification,
         ),
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
@@ -238,17 +244,25 @@ fn v1_verification(
 fn v2_verification(
     request: Request,
     response: Response,
-    _canister_id: &[u8],
-    _current_time_ns: u128,
-    _max_cert_time_offset_ns: u128,
-    _tree: Option<HashTree>,
-    _certificate: Option<Certificate>,
-    _expr_path: Option<Vec<String>>,
+    canister_id: &[u8],
+    current_time_ns: u128,
+    max_cert_time_offset_ns: u128,
+    tree: Option<HashTree>,
+    certificate: Option<Certificate>,
+    expr_path: Option<Vec<String>>,
+    expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
 ) -> ResponseVerificationResult<CertificationResult> {
     let Some(certification) = certification else {
         return Ok(CertificationResult {
             passed: true,
+            response: None,
+        });
+    };
+
+    let (Some(expr_path), Some(expr_hash), Some(tree), Some(certificate)) = (expr_path, expr_hash, tree, certificate) else {
+        return Ok(CertificationResult {
+            passed: false,
             response: None,
         });
     };
@@ -262,5 +276,13 @@ fn v2_verification(
     let response_headers_hash =
         hash::response_headers_hash(&response, &certification.response_certification);
     let _response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
+
+    validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
+    // [TODO] - validate_certificate
+    // [TODO] - validate expr_hash sibling nodes
+    // [TODO] - validate expr_path with req_hash & res_hash
+    let _result = validate_tree(&canister_id, &certificate, &tree)
+        && validate_expr_hash(&expr_hash, &expr_path, &tree);
+
     panic!("v2 response verification has not been implemented yet")
 }
