@@ -102,7 +102,7 @@ run_e2e_tests() {
     clean_exit
   fi
 
-  IC_ROOT_KEY=$(dfx ping | sed -n 's/.*"root_key": \(.*\)/\1/p' | sed 's/[][,]//g' | xargs printf "%02x")
+  IC_ROOT_KEY=$($DFX ping $DFX_REPLICA_ADDRESS | sed -n 's/.*"root_key": \(.*\)/\1/p' | sed 's/[][,]//g' | xargs printf "%02x")
 
   IC_ROOT_KEY=$IC_ROOT_KEY RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_REPLICA_ADDRESS" "$DFX_CANISTER_ID" || clean_exit
 }
