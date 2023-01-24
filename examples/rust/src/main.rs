@@ -38,8 +38,6 @@ fn main() {
     let http_response =
         Decode!(&response_candid, HttpResponse).expect("Could not decode response from candid");
 
-    println!("{:?}", http_response.headers);
-
     let response = Response {
         status_code: 200,
         headers: http_response.headers,
