@@ -20,6 +20,7 @@ sha2 = "0.10.6"
 http = "0.2.8"
 # temporary git reference until a new release of ic-certification
 ic-certification = { git = "https://github.com/dfinity/agent-rs", default_features = false, branch = "main" }
+miracl_core_bls12381 = { version = "4.2.2", default_features = false, features = ["std", "allow_alt_compress"] }
 flate2 = "1.0.24"
 leb128 = "0.2.5"
 candid = "0.8.4"
