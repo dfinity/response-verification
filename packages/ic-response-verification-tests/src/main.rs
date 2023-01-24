@@ -30,6 +30,11 @@ async fn main() -> Result<()> {
         return Err(anyhow!("The canister_id arg was not provided: `cargo run [replica_address] [canister_id]`"));
     };
 
+    let Ok(env_ic_root_key) = env::var("IC_ROOT_KEY") else {
+        return Err(anyhow!("The `IC_ROOT_KEY` env variable not provided"));
+    };
+
+    let ic_root_key = hex::decode(&env_ic_root_key).unwrap();
     let agent = create_agent(replica_address)?;
     let canister_id = Principal::from_text(canister_id)?;
     let canister_id_bytes = canister_id.as_slice();
@@ -63,6 +68,7 @@ async fn main() -> Result<()> {
         canister_id_bytes,
         current_time_ns,
         max_cert_time_offset_ns,
+        &ic_root_key,
     )?;
 
     assert!(result.passed);
