@@ -835,6 +835,7 @@ name = "ic-response-verification-tests"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "hex",
  "http",
  "ic-agent",
  "ic-response-verification",

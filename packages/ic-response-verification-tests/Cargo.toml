@@ -4,6 +4,7 @@ version = "0.0.0"
 edition = "2021"
 
 [dependencies]
+hex = "0.4.3"
 http = "0.2.8"
 ic-agent = "0.23.0"
 ic-utils = "0.23.0"
