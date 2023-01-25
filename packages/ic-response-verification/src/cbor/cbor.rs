@@ -270,6 +270,7 @@ pub fn parse_cbor_string_array(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use candid::Principal;
 
     #[test]
     fn decodes_arrays() {
@@ -353,5 +354,34 @@ mod tests {
                 ),
             ]))
         )
+    }
+
+    #[test]
+    fn can_parse_cbor_principals_array() {
+        let expected_cbor = vec![(
+            Principal::from_slice("rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes()),
+            Principal::from_slice("rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes()),
+        )];
+
+        assert_eq!(
+            parse_cbor_principals_array(&serde_cbor::to_vec(&expected_cbor).unwrap()).unwrap(),
+            vec![(
+                Principal::from_slice("rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes()),
+                Principal::from_slice("rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes())
+            )],
+        )
+    }
+
+    #[test]
+    fn fails_to_parse_cbor_principals_array() {
+        let expected_cbor = vec![(
+            "rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes(),
+            "rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes(),
+        )];
+
+        assert!(matches!(
+            parse_cbor_principals_array(&serde_cbor::to_vec(&expected_cbor).unwrap()).err(),
+            Some(ResponseVerificationError::MalformedCborCanisterRanges),
+        ));
     }
 }

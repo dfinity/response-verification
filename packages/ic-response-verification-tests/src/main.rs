@@ -22,20 +22,20 @@ fn get_current_time() -> u128 {
 async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
-    let Some(replica_address) = args.get(1) else {
-        return Err(anyhow!("The replica_address arg was not provided: `cargo run [replica_address] [canister_id]`"));
-    };
-
-    let Some(canister_id) = args.get(2) else {
-        return Err(anyhow!("The canister_id arg was not provided: `cargo run [replica_address] [canister_id]`"));
+    let Ok(replica_address) = env::var("DFX_REPLICA_ADDRESS") else {
+        return Err(anyhow!("The `DFX_REPLICA_ADDRESS` env variable not provided`"));
     };
 
     let Ok(env_ic_root_key) = env::var("IC_ROOT_KEY") else {
         return Err(anyhow!("The `IC_ROOT_KEY` env variable not provided"));
     };
 
+    let Some(canister_id) = args.get(1) else {
+        return Err(anyhow!("The canister_id arg was not provided: `cargo run [canister_id]`"));
+    };
+
     let ic_root_key = hex::decode(&env_ic_root_key).unwrap();
-    let agent = create_agent(replica_address)?;
+    let agent = create_agent(replica_address.as_str())?;
     let canister_id = Principal::from_text(canister_id)?;
     let canister_id_bytes = canister_id.as_slice();
     let canister_interface = HttpRequestCanister::create(&agent, canister_id);
