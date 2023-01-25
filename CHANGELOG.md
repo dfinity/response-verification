@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add expr_path check
 - integrate request and response hash functions
 - integrate cel parser with response verification entry point
 - returns the decoded response body to the client
