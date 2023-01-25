@@ -21,7 +21,6 @@ use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor
 use certificate_header::CertificateHeader;
 use error::ResponseVerificationError;
 use error::ResponseVerificationResult;
-use http::Uri;
 use ic_certification::hash_tree::Sha256Digest;
 use ic_certification::{Certificate, HashTree};
 use types::{Certification, Request, Response};
@@ -214,40 +213,42 @@ fn v1_verification(
     encoding: Option<String>,
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<CertificationResult> {
-    let request_uri = request
-        .url
-        .parse::<Uri>()
-        .map_err(|_| ResponseVerificationError::MalformedUrl(request.url))?;
+    match (tree, certificate) {
+        (Some(tree), Some(certificate)) => {
+            validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
+            certificate.verify(&canister_id, &ic_public_key)?;
 
-    return if let (Some(tree), Some(certificate)) = (tree, certificate) {
-        let decoded_body = decode_body(&response.body, encoding).unwrap();
-        let decoded_body_sha = hash(decoded_body.as_slice());
+            let request_uri = &request.get_uri()?;
+            let decoded_body = decode_body(&response.body, &encoding).unwrap();
+            let decoded_body_sha = hash(decoded_body.as_slice());
+            let valid_tree = validate_tree(&canister_id, &certificate, &tree);
+            let mut valid_body = validate_body(&tree, &request_uri, &decoded_body_sha);
 
-        validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-        certificate.verify(&canister_id, &ic_public_key)?;
-        let result = validate_tree(&canister_id, &certificate, &tree)
-            && validate_body(&tree, &request_uri, &decoded_body_sha);
+            if !encoding.is_none() && !valid_body {
+                let body_sha = hash(response.body.as_slice());
+                valid_body = validate_body(&tree, &request_uri, &body_sha);
+            }
 
-        let certified_response: Option<Response> = if result {
-            Some(Response {
-                status_code: response.status_code,
-                headers: Vec::new(),
-                body: response.body.clone(),
+            let result = valid_tree && valid_body;
+            let certified_response = match result {
+                true => Some(Response {
+                    status_code: response.status_code,
+                    headers: Vec::new(),
+                    body: decoded_body,
+                }),
+                false => None,
+            };
+
+            Ok(CertificationResult {
+                passed: result,
+                response: certified_response,
             })
-        } else {
-            None
-        };
-
-        Ok(CertificationResult {
-            passed: result,
-            response: certified_response,
-        })
-    } else {
-        Ok(CertificationResult {
+        }
+        _ => Ok(CertificationResult {
             passed: false,
             response: None,
-        })
-    };
+        }),
+    }
 }
 
 fn v2_verification(
@@ -261,7 +262,7 @@ fn v2_verification(
     expr_path: Option<Vec<String>>,
     expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
-    _ic_public_key: &[u8],
+    ic_public_key: &[u8],
 ) -> ResponseVerificationResult<CertificationResult> {
     let Some(certification) = certification else {
         return Ok(CertificationResult {
@@ -288,7 +289,7 @@ fn v2_verification(
     let _response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-    // [TODO] - validate_certificate
+    certificate.verify(&canister_id, &ic_public_key)?;
     // [TODO] - validate expr_hash sibling nodes
     // [TODO] - validate expr_path with req_hash & res_hash
     let _result = validate_tree(&canister_id, &certificate, &tree)
