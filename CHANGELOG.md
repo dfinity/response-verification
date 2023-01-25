@@ -2,6 +2,7 @@
 
 ### Feat
 
+- Verify ic certificate with root public key
 - add expr_path check
 - integrate request and response hash functions
 - integrate cel parser with response verification entry point
@@ -37,6 +38,9 @@
 
 ### Refactor
 
+- move certificate verification logic to acommodate for code split
+- remove debug log used for rust examples
+- use miracl_core_bls12381 crate for bls verification to reduce wasm size
 - remove unnecessary dfx.json config
 - update project structure
 - move verification version check to its own function
