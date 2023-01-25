@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod test_utils {
-    use ic_certification::hash_tree::{fork, label, leaf, pruned_from_hex};
+    use ic_certification::hash_tree::{fork, label, leaf, pruned_from_hex, Sha256Digest};
     use ic_certification::{Certificate, Delegation, HashTree};
 
     pub struct CreateTreeOptions<'a> {
@@ -121,6 +121,10 @@ pub mod test_utils {
 
     pub fn create_pruned(data: &str) -> HashTree {
         pruned_from_hex(data).unwrap()
+    }
+
+    pub fn sha256_from_hex(data: &str) -> Sha256Digest {
+        TryFrom::try_from(hex_decode(data)).unwrap()
     }
 
     pub fn hex_decode(data: &str) -> Vec<u8> {

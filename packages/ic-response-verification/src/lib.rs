@@ -24,7 +24,7 @@ use error::ResponseVerificationResult;
 use ic_certification::hash_tree::Sha256Digest;
 use ic_certification::{Certificate, HashTree};
 use types::{Certification, Request, Response};
-use validation::{validate_body, validate_certificate_time, validate_expr_hash, validate_tree};
+use validation::{validate_body, validate_certificate_time, validate_hashes, validate_tree};
 
 pub mod cel;
 pub mod hash;
@@ -278,22 +278,28 @@ fn v2_verification(
         });
     };
 
-    let _request_hash = match certification.request_certification {
-        Some(request_certification) => Some(hash::request_hash(&request, &request_certification)),
+    let request_hash = match &certification.request_certification {
+        Some(request_certification) => Some(hash::request_hash(&request, request_certification)),
         None => None,
     };
 
     let body_hash = hash(&response.body);
     let response_headers_hash =
         hash::response_headers_hash(&response, &certification.response_certification);
-    let _response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
+    let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
     certificate.verify(&canister_id, &ic_public_key)?;
     // [TODO] - validate expr_hash sibling nodes
-    // [TODO] - validate expr_path with req_hash & res_hash
     let _result = validate_tree(&canister_id, &certificate, &tree)
-        && validate_expr_hash(&expr_hash, &expr_path, &tree);
+        && validate_hashes(
+            &expr_hash,
+            &request_hash,
+            &response_hash,
+            &expr_path,
+            &tree,
+            &certification,
+        );
 
     panic!("v2 response verification has not been implemented yet")
 }

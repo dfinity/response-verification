@@ -381,7 +381,7 @@ dependencies = [
 [[package]]
 name = "ic-certification"
 version = "0.23.0"
-source = "git+https://github.com/dfinity/agent-rs?rev=60f7a0d#60f7a0db21688ca423dee0bb150e142a03e925c6"
+source = "git+https://github.com/dfinity/agent-rs?rev=815ee1f#815ee1f523d498d8777a8941acf1a6042f959afc"
 dependencies = [
  "hex",
  "serde",

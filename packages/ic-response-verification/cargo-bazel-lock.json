@@ -1,5 +1,5 @@
 {
-  "checksum": "2f5cf75ef8d9f769d68df95a4f36be3c74192c1e4358a0417cd0bd69025b9d2c",
+  "checksum": "51d2d5284ab624f948f1afffb3f152a4f560750ac7bcb3c80d0891608364f959",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -1953,7 +1953,7 @@
         "Git": {
           "remote": "https://github.com/dfinity/agent-rs",
           "commitish": {
-            "Rev": "60f7a0d"
+            "Rev": "815ee1f"
           },
           "strip_prefix": "ic-certification"
         }
