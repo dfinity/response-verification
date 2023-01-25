@@ -1,5 +1,5 @@
-use ic_certification::{Certificate, Delegation, HashTree, LookupResult};
 use candid::Principal;
+use ic_certification::{Certificate, Delegation, HashTree, LookupResult};
 use miracl_core_bls12381::bls12381::bls::{core_verify, BLS_OK};
 
 use crate::cbor::certificate::CertificateToCbor;
