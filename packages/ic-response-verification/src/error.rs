@@ -66,17 +66,17 @@ pub enum ResponseVerificationError {
     CelError(#[from] cel::CelParserError),
 
     #[error(
-        r#"BLS DER-encoded public key must be ${expected} bytes long, but is {actual} bytes long"#
+        r#"BLS DER-encoded public key must be {expected} bytes long, but is {actual} bytes long"#
     )]
     DerKeyLengthMismatch { expected: usize, actual: usize },
 
-    #[error("BLS DER-encoded public key is invalid. Expected the following prefix: ${expected:?}, but got ${actual:?}")]
+    #[error("BLS DER-encoded public key is invalid. Expected the following prefix: {expected:?}, but got {actual:?}")]
     DerPrefixMismatch { expected: Vec<u8>, actual: Vec<u8> },
 
     #[error("Certificate verification failed")]
     CertificateVerificationFailed,
 
-    #[error("Certificate verification failed because with principal out of range")]
+    #[error("Certificate verification failed with principal out of range")]
     CertificatePrincipalOutOfRange,
 
     #[error("Certificate verification subnet public key not found")]
@@ -433,6 +433,118 @@ mod tests {
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::CelError,
                 message: r#"Cel parser error"#.into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_der_prefix_mismatch() {
+        let error = ResponseVerificationError::DerPrefixMismatch {
+            actual: vec![1, 2, 4],
+            expected: vec![1, 2, 3],
+        };
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::DerPrefixMismatch,
+                message: "BLS DER-encoded public key is invalid. Expected the following prefix: [1, 2, 3], but got [1, 2, 4]".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_der_key_length_mismatch() {
+        let error = ResponseVerificationError::DerKeyLengthMismatch {
+            actual: 10,
+            expected: 11,
+        };
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::DerKeyLengthMismatch,
+                message: "BLS DER-encoded public key must be 11 bytes long, but is 10 bytes long"
+                    .into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_certificate_verification_failed() {
+        let error = ResponseVerificationError::CertificateVerificationFailed;
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::CertificateVerificationFailed,
+                message: "Certificate verification failed".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_certificate_principal_out_of_range() {
+        let error = ResponseVerificationError::CertificatePrincipalOutOfRange;
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::CertificatePrincipalOutOfRange,
+                message: "Certificate verification failed with principal out of range".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_certificate_subnet_public_key_not_found() {
+        let error = ResponseVerificationError::CertificateSubnetPublicKeyNotFound;
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::CertificateSubnetPublicKeyNotFound,
+                message: "Certificate verification subnet public key not found".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_certificate_subnet_canister_ranges_not_found() {
+        let error = ResponseVerificationError::CertificateSubnetCanisterRangesNotFound;
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::CertificateSubnetCanisterRangesNotFound,
+                message: "Certificate verification subnet canister ranges not found".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_malformed_cbor_canister_ranges() {
+        let error = ResponseVerificationError::MalformedCborCanisterRanges;
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MalformedCborCanisterRanges,
+                message: "Invalid cbor canister ranges".into(),
             }
         )
     }
