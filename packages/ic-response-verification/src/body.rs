@@ -5,7 +5,7 @@ use std::io::Read;
 const MAX_CHUNK_SIZE_TO_DECOMPRESS: usize = 1024;
 const MAX_CHUNKS_TO_DECOMPRESS: u64 = 10_240;
 
-pub fn decode_body(body: &Vec<u8>, encoding: Option<String>) -> Option<Vec<u8>> {
+pub fn decode_body(body: &Vec<u8>, encoding: &Option<String>) -> Option<Vec<u8>> {
     return match encoding.as_deref() {
         Some("gzip") => body_from_decoder(GzDecoder::new(body.as_slice())),
         Some("deflate") => body_from_decoder(DeflateDecoder::new(body.as_slice())),
@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn decode_simple_body() {
-        let result = decode_body(&BODY.into(), None).unwrap();
+        let result = decode_body(&BODY.into(), &None).unwrap();
 
         assert_eq!(result.as_slice(), BODY);
     }
@@ -57,7 +57,7 @@ mod tests {
         encoder.write_all(BODY).unwrap();
         let encoded_body = encoder.finish().unwrap();
 
-        let result = decode_body(&encoded_body, Some("gzip".into())).unwrap();
+        let result = decode_body(&encoded_body, &Some("gzip".into())).unwrap();
 
         assert_eq!(result.as_slice(), BODY);
     }
@@ -68,7 +68,7 @@ mod tests {
         encoder.write_all(BODY).unwrap();
         let encoded_body = encoder.finish().unwrap();
 
-        let result = decode_body(&encoded_body, Some("deflate".into())).unwrap();
+        let result = decode_body(&encoded_body, &Some("deflate".into())).unwrap();
 
         assert_eq!(result.as_slice(), BODY);
     }

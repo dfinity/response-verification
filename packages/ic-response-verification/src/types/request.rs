@@ -1,3 +1,5 @@
+use crate::error::{ResponseVerificationError, ResponseVerificationResult};
+use http::Uri;
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::{prelude::*, JsCast};
 
@@ -18,6 +20,14 @@ pub struct Request {
     pub method: String,
     pub url: String,
     pub headers: Vec<(String, String)>,
+}
+
+impl Request {
+    pub fn get_uri(&self) -> ResponseVerificationResult<Uri> {
+        self.url
+            .parse::<Uri>()
+            .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
