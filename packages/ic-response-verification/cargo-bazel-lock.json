@@ -1,5 +1,5 @@
 {
-  "checksum": "8e6d48d79f09081c000ffea1b644adf1d4f98732cbe49e18cd352a7ee22f5a5c",
+  "checksum": "69647f5282ea17ff4d23dbb389ccd49f318310f74784127e6f5370e2da8a3bad",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -2032,6 +2032,10 @@
               "target": "base64"
             },
             {
+              "id": "candid 0.8.4",
+              "target": "candid"
+            },
+            {
               "id": "console_error_panic_hook 0.1.7",
               "target": "console_error_panic_hook"
             },
@@ -2056,6 +2060,10 @@
               "target": "leb128"
             },
             {
+              "id": "miracl_core_bls12381 4.2.2",
+              "target": "miracl_core_bls12381"
+            },
+            {
               "id": "nom 7.1.3",
               "target": "nom"
             },
@@ -2076,10 +2084,6 @@
         },
         "deps_dev": {
           "common": [
-            {
-              "id": "candid 0.8.4",
-              "target": "candid"
-            },
             {
               "id": "hex 0.4.3",
               "target": "hex"
@@ -2903,6 +2907,42 @@
       },
       "license": "MIT OR Zlib OR Apache-2.0"
     },
+    "miracl_core_bls12381 4.2.2": {
+      "name": "miracl_core_bls12381",
+      "version": "4.2.2",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/miracl_core_bls12381/4.2.2/download",
+          "sha256": "d07cbe42e2a8dd41df582fb8e00fc24d920b5561cc301fcb6d14e2e0434b500f"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "miracl_core_bls12381",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "miracl_core_bls12381",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": [
+          "allow_alt_compress",
+          "default",
+          "fallback_separator",
+          "std"
+        ],
+        "edition": "2018",
+        "version": "4.2.2"
+      },
+      "license": "Apache-2.0"
+    },
     "new_debug_unreachable 1.0.4": {
       "name": "new_debug_unreachable",
       "version": "1.0.4",
@@ -2978,6 +3018,50 @@
         },
         "edition": "2018",
         "version": "7.1.3"
+      },
+      "license": "MIT"
+    },
+    "nom8 0.2.0": {
+      "name": "nom8",
+      "version": "0.2.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/nom8/0.2.0/download",
+          "sha256": "ae01545c9c7fc4486ab7debaf2aad7003ac19431791868fb2e8066df97fad2f8"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "nom8",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "nom8",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "crate_features": [
+          "alloc",
+          "default",
+          "std"
+        ],
+        "deps": {
+          "common": [
+            {
+              "id": "memchr 2.5.0",
+              "target": "memchr"
+            }
+          ],
+          "selects": {}
+        },
+        "edition": "2018",
+        "version": "0.2.0"
       },
       "license": "MIT"
     },
@@ -3272,7 +3356,7 @@
         "deps": {
           "common": [
             {
-              "id": "proc-macro-crate 1.2.1",
+              "id": "proc-macro-crate 1.3.0",
               "target": "proc_macro_crate"
             },
             {
@@ -3699,13 +3783,13 @@
       },
       "license": "MIT"
     },
-    "proc-macro-crate 1.2.1": {
+    "proc-macro-crate 1.3.0": {
       "name": "proc-macro-crate",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/proc-macro-crate/1.2.1/download",
-          "sha256": "eda0fc3b0fb7c975631757e14d9049da17374063edb6ebbcbc54d880d4fe94e9"
+          "url": "https://crates.io/api/v1/crates/proc-macro-crate/1.3.0/download",
+          "sha256": "66618389e4ec1c7afe67d51a9bf34ff9236480f8d51e7489b7d5ab0303c13f34"
         }
       },
       "targets": [
@@ -3731,20 +3815,16 @@
               "target": "once_cell"
             },
             {
-              "id": "thiserror 1.0.38",
-              "target": "thiserror"
-            },
-            {
-              "id": "toml 0.5.11",
-              "target": "toml"
+              "id": "toml_edit 0.18.0",
+              "target": "toml_edit"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "1.2.1"
+        "edition": "2021",
+        "version": "1.3.0"
       },
-      "license": "Apache-2.0/MIT"
+      "license": "MIT OR Apache-2.0"
     },
     "proc-macro2 1.0.50": {
       "name": "proc-macro2",
@@ -4921,19 +5001,19 @@
       },
       "license": "CC0-1.0"
     },
-    "toml 0.5.11": {
-      "name": "toml",
-      "version": "0.5.11",
+    "toml_datetime 0.5.1": {
+      "name": "toml_datetime",
+      "version": "0.5.1",
       "repository": {
         "Http": {
-          "url": "https://crates.io/api/v1/crates/toml/0.5.11/download",
-          "sha256": "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
+          "url": "https://crates.io/api/v1/crates/toml_datetime/0.5.1/download",
+          "sha256": "4553f467ac8e3d374bc9a177a26801e5d0f9b211aa1673fb137a403afd1c9cf5"
         }
       },
       "targets": [
         {
           "Library": {
-            "crate_name": "toml",
+            "crate_name": "toml_datetime",
             "crate_root": "src/lib.rs",
             "srcs": [
               "**/*.rs"
@@ -4941,7 +5021,37 @@
           }
         }
       ],
-      "library_target_name": "toml",
+      "library_target_name": "toml_datetime",
+      "common_attrs": {
+        "compile_data_glob": [
+          "**"
+        ],
+        "edition": "2021",
+        "version": "0.5.1"
+      },
+      "license": "MIT OR Apache-2.0"
+    },
+    "toml_edit 0.18.0": {
+      "name": "toml_edit",
+      "version": "0.18.0",
+      "repository": {
+        "Http": {
+          "url": "https://crates.io/api/v1/crates/toml_edit/0.18.0/download",
+          "sha256": "729bfd096e40da9c001f778f5cdecbd2957929a24e10e5883d9392220a751581"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "toml_edit",
+            "crate_root": "src/lib.rs",
+            "srcs": [
+              "**/*.rs"
+            ]
+          }
+        }
+      ],
+      "library_target_name": "toml_edit",
       "common_attrs": {
         "compile_data_glob": [
           "**"
@@ -4952,16 +5062,24 @@
         "deps": {
           "common": [
             {
-              "id": "serde 1.0.152",
-              "target": "serde"
+              "id": "indexmap 1.9.2",
+              "target": "indexmap"
+            },
+            {
+              "id": "nom8 0.2.0",
+              "target": "nom8"
+            },
+            {
+              "id": "toml_datetime 0.5.1",
+              "target": "toml_datetime"
             }
           ],
           "selects": {}
         },
-        "edition": "2018",
-        "version": "0.5.11"
+        "edition": "2021",
+        "version": "0.18.0"
       },
-      "license": "MIT/Apache-2.0"
+      "license": "MIT OR Apache-2.0"
     },
     "typed-arena 2.0.2": {
       "name": "typed-arena",
