@@ -19,7 +19,7 @@ thiserror = "1.0.37"
 sha2 = "0.10.6"
 http = "0.2.8"
 # temporary git reference until a new release of ic-certification
-ic-certification = { git = "https://github.com/dfinity/agent-rs", default_features = false, rev = "60f7a0d" }
+ic-certification = { git = "https://github.com/dfinity/agent-rs", default_features = false, rev = "815ee1f" }
 miracl_core_bls12381 = { version = "4.2.2", default_features = false, features = ["std", "allow_alt_compress"] }
 flate2 = "1.0.24"
 leb128 = "0.2.5"
@@ -30,6 +30,6 @@ hex = "0.4.3"
 serde_cbor = "0.11.2"
 wasm-bindgen-test = "0.3"
 # temporary git reference until a new release of ic-certification
-ic-certification = { git = "https://github.com/dfinity/agent-rs", rev = "60f7a0d" }
+ic-certification = { git = "https://github.com/dfinity/agent-rs", rev = "815ee1f" }
 candid = "0.8.4"
 serde = "1.0.152"
