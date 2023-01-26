@@ -6,10 +6,16 @@ const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
 const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
 const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
-pub fn response_headers_hash(
+pub struct ResponseHeaders {
+    headers: Vec<(String, String)>,
+    certificate: Option<String>,
+    certificate_expression: Option<String>,
+}
+
+pub fn filter_response_headers(
     response: &Response,
     response_certification: &ResponseCertification,
-) -> [u8; 32] {
+) -> ResponseHeaders {
     let headers_filter: Box<dyn Fn(_) -> _> = match response_certification {
         ResponseCertification::CertifiedHeaders(headers_to_include) => {
             Box::new(move |header_name: &String| {
@@ -27,7 +33,13 @@ pub fn response_headers_hash(
         }
     };
 
-    let mut filtered_headers: Vec<(String, Value)> = response
+    let mut response_headers = ResponseHeaders {
+        headers: vec![],
+        certificate: None,
+        certificate_expression: None,
+    };
+
+    response_headers.headers = response
         .headers
         .iter()
         .filter_map(|(header_name, header_value)| {
@@ -35,17 +47,22 @@ pub fn response_headers_hash(
                 .to_string()
                 .eq_ignore_ascii_case(CERTIFICATE_HEADER_NAME);
             if is_certificate_header {
+                response_headers.certificate = Some(header_value.into());
                 return None;
             }
 
             let is_certificate_expression_header = header_name
                 .to_string()
                 .eq_ignore_ascii_case(CERTIFICATE_EXPRESSION_HEADER_NAME);
+            if is_certificate_expression_header {
+                response_headers.certificate_expression = Some(header_value.into());
+                return None;
+            }
 
-            if headers_filter(header_name) || is_certificate_expression_header {
+            if headers_filter(header_name) {
                 return Some((
                     header_name.to_string().to_ascii_lowercase(),
-                    Value::String(String::from(header_value)),
+                    String::from(header_value),
                 ));
             }
 
@@ -53,20 +70,45 @@ pub fn response_headers_hash(
         })
         .collect();
 
-    filtered_headers.push((
+    response_headers
+}
+
+pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeaders) -> [u8; 32] {
+    let mut headers_to_verify: Vec<(String, Value)> = response_headers
+        .headers
+        .iter()
+        .filter_map(|(header_name, header_value)| {
+            return Some((
+                header_name.to_string(),
+                Value::String(String::from(header_value)),
+            ));
+        })
+        .collect();
+
+    if !response_headers.certificate_expression.is_none() {
+        headers_to_verify.push((
+            CERTIFICATE_EXPRESSION_HEADER_NAME
+                .to_ascii_lowercase()
+                .into(),
+            Value::String(response_headers.certificate_expression.clone().unwrap()),
+        ));
+    }
+
+    headers_to_verify.push((
         RESPONSE_STATUS_PSEUDO_HEADER_NAME.into(),
-        Value::Number(response.status_code.into()),
+        Value::Number(status_code.clone()),
     ));
 
-    representation_independent_hash(&filtered_headers)
+    representation_independent_hash(&headers_to_verify)
 }
 
 pub fn response_hash(
     response: &Response,
     response_certification: &ResponseCertification,
 ) -> [u8; 32] {
+    let filtered_headers = filter_response_headers(&response, &response_certification);
     let concatenated_hashes = [
-        response_headers_hash(response, response_certification),
+        response_headers_hash(&response.status_code.into(), &filtered_headers),
         hash(&response.body),
     ]
     .concat();
@@ -109,6 +151,38 @@ mod tests {
           }
         )
     "#;
+
+    #[test]
+    fn response_with_certified_headers_without_excluded_headers() {
+        let response_certification =
+            ResponseCertification::CertifiedHeaders(vec!["Accept-Encoding".into()]);
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
+        let response_headers = filter_response_headers(&response, &response_certification);
+
+        assert_eq!(
+            response_headers.headers,
+            vec![("accept-encoding".into(), "gzip".into()),]
+        );
+    }
+
+    #[test]
+    fn response_with_certified_headers() {
+        let response_certification = ResponseCertification::CertifiedHeaders(vec![
+            "Accept-Encoding".into(),
+            "Cache-Control".into(),
+        ]);
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
+        let response_headers = filter_response_headers(&response, &response_certification);
+
+        assert_eq!(
+            response_headers.headers,
+            vec![
+                ("accept-encoding".into(), "gzip".into()),
+                ("cache-control".into(), "no-cache".into()),
+                ("cache-control".into(), "no-store".into()),
+            ]
+        );
+    }
 
     #[test]
     fn response_hash_with_certified_headers() {
@@ -203,7 +277,8 @@ mod tests {
             hex::decode("9f90f9e9cc067e1071d4a5e1de415bc261d536a50772fbad2440ccc8494470c2")
                 .unwrap();
 
-        let result = response_headers_hash(&response, &response_certification);
+        let filtered_headers = filter_response_headers(&response, &response_certification);
+        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -226,9 +301,14 @@ mod tests {
             body: HELLO_WORLD_BODY.into(),
         };
 
-        let result = response_headers_hash(&response, &response_certification);
-        let result_without_excluded_headers =
-            response_headers_hash(&response_without_excluded_headers, &response_certification);
+        let filtered_headers = filter_response_headers(&response, &response_certification);
+        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
+        let filtered_headers_without_excluded_headers =
+            filter_response_headers(&response_without_excluded_headers, &response_certification);
+        let result_without_excluded_headers = response_headers_hash(
+            &response_without_excluded_headers.status_code.into(),
+            &filtered_headers_without_excluded_headers,
+        );
 
         assert_eq!(result, result_without_excluded_headers);
     }
@@ -244,7 +324,8 @@ mod tests {
             hex::decode("80d1666b9b5f377fafc98ac68e4a9b5514956995937a54e0b50e63b21d9c5bfa")
                 .unwrap();
 
-        let result = response_headers_hash(&response, &response_certification);
+        let filtered_headers = filter_response_headers(&response, &response_certification);
+        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -269,9 +350,15 @@ mod tests {
             body: HELLO_WORLD_BODY.into(),
         };
 
-        let result = response_headers_hash(&response, &response_certification);
-        let result_without_excluded_headers =
-            response_headers_hash(&response_without_excluded_headers, &response_certification);
+        let filtered_headers = filter_response_headers(&response, &response_certification);
+        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
+
+        let response_headers_without_excluded_headers =
+            filter_response_headers(&response_without_excluded_headers, &response_certification);
+        let result_without_excluded_headers = response_headers_hash(
+            &response_without_excluded_headers.status_code.into(),
+            &response_headers_without_excluded_headers,
+        );
 
         assert_eq!(result, result_without_excluded_headers);
     }

@@ -14,7 +14,7 @@ use std::panic;
 use error::ResponseVerificationJsError;
 
 use crate::body::decode_body;
-use crate::hash::hash;
+use crate::hash::{filter_response_headers, hash};
 use crate::types::CertificationResult;
 use crate::validation::VerifyCertificate;
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
@@ -284,8 +284,10 @@ fn v2_verification(
     };
 
     let body_hash = hash(&response.body);
+    let response_headers =
+        filter_response_headers(&response, &certification.response_certification);
     let response_headers_hash =
-        hash::response_headers_hash(&response, &certification.response_certification);
+        hash::response_headers_hash(&response.status_code.into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
