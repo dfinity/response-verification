@@ -7,9 +7,9 @@ const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
 const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
 pub struct ResponseHeaders {
-    headers: Vec<(String, String)>,
-    certificate: Option<String>,
-    certificate_expression: Option<String>,
+    pub headers: Vec<(String, String)>,
+    pub certificate: Option<String>,
+    pub certificate_expression: Option<String>,
 }
 
 pub fn filter_response_headers(
