@@ -2,6 +2,7 @@
 
 ### Feat
 
+- filter and return response headers based on certificate expression
 - verify request & response hashes in tree
 - Verify ic certificate with root public key
 - add expr_path check
