@@ -2,6 +2,7 @@
 
 ### Feat
 
+- verify request & response hashes in tree
 - Verify ic certificate with root public key
 - add expr_path check
 - integrate request and response hash functions
