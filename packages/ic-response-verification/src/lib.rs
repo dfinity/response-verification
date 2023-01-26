@@ -16,7 +16,7 @@ use error::ResponseVerificationJsError;
 use crate::body::decode_body;
 use crate::hash::{filter_response_headers, hash};
 use crate::types::CertificationResult;
-use crate::validation::VerifyCertificate;
+use crate::validation::{validate_expr_path, VerifyCertificate};
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
 use error::ResponseVerificationError;
@@ -264,6 +264,8 @@ fn v2_verification(
     certification: Option<Certification>,
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<CertificationResult> {
+    let request_uri = request.get_uri()?;
+
     let Some(certification) = certification else {
         return Ok(CertificationResult {
             passed: true,
@@ -292,8 +294,8 @@ fn v2_verification(
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
     certificate.verify(&canister_id, &ic_public_key)?;
-    // [TODO] - validate expr_hash sibling nodes
-    let _result = validate_tree(&canister_id, &certificate, &tree)
+    let result = validate_tree(&canister_id, &certificate, &tree)
+        && validate_expr_path(&expr_path, &request_uri, &tree)
         && validate_hashes(
             &expr_hash,
             &request_hash,
@@ -303,5 +305,12 @@ fn v2_verification(
             &certification,
         );
 
-    panic!("v2 response verification has not been implemented yet")
+    Ok(CertificationResult {
+        passed: result,
+        response: Some(Response {
+            status_code: response.status_code,
+            headers: Vec::new(), // [TODO] - pass only the certified headers in here
+            body: response.body.clone(),
+        }),
+    })
 }

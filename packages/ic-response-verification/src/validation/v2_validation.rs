@@ -2,6 +2,71 @@ use crate::types::Certification;
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Sha256Digest, HashTree, Label, SubtreeLookupResult};
 
+fn path_from_parts<T>(parts: &Vec<T>) -> Vec<Label>
+where
+    T: AsRef<[u8]>,
+{
+    let mut path = vec![Label::from("http_expr")];
+    path.extend(parts.iter().map(Label::from));
+
+    path
+}
+
+fn path_exists_in_tree(path: &Vec<Label>, tree: &HashTree) -> bool {
+    match tree.lookup_subtree(path) {
+        SubtreeLookupResult::Found(_) => true,
+        _ => false,
+    }
+}
+
+pub fn validate_expr_path(
+    expr_path: &Vec<String>,
+    request_url: &http::Uri,
+    tree: &HashTree,
+) -> bool {
+    let mut request_url_parts = request_url
+        .path()
+        .split('/')
+        .filter(|e| !e.is_empty())
+        .collect::<Vec<_>>();
+
+    let certified_path = path_from_parts(&expr_path);
+    let mut request_url_path = path_from_parts(&request_url_parts);
+
+    // if the expr_path matches the full URL, there can't be a more precise path in the tree
+    request_url_path.push("<$>".into());
+    if certified_path.eq(&request_url_path) {
+        return true;
+    }
+
+    // if the expr_path does not match full URL and the full URL exists in the tree
+    // then validation fails
+    if path_exists_in_tree(&request_url_path, tree) {
+        return false;
+    }
+    request_url_path.pop();
+
+    // if the expr_path matches the full URL with a wildcard, there can't be a more precise path in the tree
+    request_url_path.push("<*>".into());
+    if certified_path.eq(&request_url_path) {
+        return true;
+    }
+
+    // recursively check for partial URL matches with wildcards that are more precise than the expr_path
+    while request_url_parts.len() >= expr_path.len() {
+        let mut paths = path_from_parts(&request_url_parts);
+        paths.push("<*>".into());
+
+        if path_exists_in_tree(&paths, tree) {
+            return false;
+        }
+
+        request_url_parts.pop();
+    }
+
+    return true;
+}
+
 pub fn validate_hashes(
     expr_hash: &Sha256Digest,
     request_hash: &Option<Sha256Digest>,
@@ -10,8 +75,7 @@ pub fn validate_hashes(
     tree: &HashTree,
     certification: &Certification,
 ) -> bool {
-    let mut path = vec![Label::from("http_expr")];
-    path.extend(expr_path.iter().map(Label::from));
+    let mut path = path_from_parts(expr_path);
     path.push(expr_hash.into());
 
     let SubtreeLookupResult::Found(expr_tree) = tree.lookup_subtree(&path) else {
@@ -323,6 +387,80 @@ mod tests {
             &tree,
             &certification,
         );
+
+        assert!(!result);
+    }
+
+    #[test]
+    fn validate_expr_path_that_is_most_precise_path_available() {
+        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                label(
+                    "assets",
+                    label("js", label("app.js", label("<$>", empty()))),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(result);
+    }
+
+    #[test]
+    fn validate_expr_path_that_does_not_exist() {
+        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                label("assets", label("js", label("<*>", empty()))),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(result);
+    }
+
+    #[test]
+    fn validate_expr_path_that_has_more_precise_path_available() {
+        let expr_path = vec!["assets".into(), "js".into(), "<*>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                label(
+                    "assets",
+                    label("js", label("app.js", label("<$>", empty()))),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(!result);
+    }
+
+    #[test]
+    fn validate_expr_path_that_has_more_precise_wildcard_path_available() {
+        let expr_path = vec!["assets".into(), "<*>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                label("assets", label("js", label("<*>", empty()))),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
 
         assert!(!result);
     }
