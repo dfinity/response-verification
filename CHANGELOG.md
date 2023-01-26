@@ -32,6 +32,7 @@
 
 ### Fix
 
+- validate against encoded and decoded body sha
 - hash encoded body for v2 response verification instead of decoded body
 - fixes cargo lock duplicate entry for ic-certification
 - representation independant hash should allow for duplicate keys
