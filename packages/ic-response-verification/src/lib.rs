@@ -309,7 +309,7 @@ fn v2_verification(
         passed: result,
         response: Some(Response {
             status_code: response.status_code,
-            headers: Vec::new(), // [TODO] - pass only the certified headers in here
+            headers: response_headers.headers,
             body: response.body.clone(),
         }),
     })
