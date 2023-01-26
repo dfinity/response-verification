@@ -16,7 +16,7 @@ use error::ResponseVerificationJsError;
 use crate::body::decode_body;
 use crate::hash::{filter_response_headers, hash};
 use crate::types::CertificationResult;
-use crate::validation::{validate_expr_path, VerifyCertificate};
+use crate::validation::{validate_expr_hash, validate_expr_path, VerifyCertificate};
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
 use error::ResponseVerificationError;
@@ -266,16 +266,28 @@ fn v2_verification(
 ) -> ResponseVerificationResult<CertificationResult> {
     let request_uri = request.get_uri()?;
 
-    let Some(certification) = certification else {
+    let (Some(expr_path), Some(expr_hash), Some(tree), Some(certificate)) = (expr_path, expr_hash, tree, certificate) else {
         return Ok(CertificationResult {
-            passed: true,
+            passed: false,
             response: None,
         });
     };
 
-    let (Some(expr_path), Some(expr_hash), Some(tree), Some(certificate)) = (expr_path, expr_hash, tree, certificate) else {
+    validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
+    certificate.verify(&canister_id, &ic_public_key)?;
+
+    if !validate_tree(&canister_id, &certificate, &tree)
+        || !validate_expr_path(&expr_path, &request_uri, &tree)
+    {
         return Ok(CertificationResult {
             passed: false,
+            response: None,
+        });
+    };
+
+    let Some(certification) = certification else {
+        return Ok(CertificationResult {
+            passed: validate_expr_hash(&expr_path, &expr_hash, &tree).is_some(),
             response: None,
         });
     };
@@ -292,21 +304,17 @@ fn v2_verification(
         hash::response_headers_hash(&response.status_code.into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
-    validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-    certificate.verify(&canister_id, &ic_public_key)?;
-    let result = validate_tree(&canister_id, &certificate, &tree)
-        && validate_expr_path(&expr_path, &request_uri, &tree)
-        && validate_hashes(
-            &expr_hash,
-            &request_hash,
-            &response_hash,
-            &expr_path,
-            &tree,
-            &certification,
-        );
+    let are_hashes_valid = validate_hashes(
+        &expr_hash,
+        &request_hash,
+        &response_hash,
+        &expr_path,
+        &tree,
+        &certification,
+    );
 
     Ok(CertificationResult {
-        passed: result,
+        passed: are_hashes_valid,
         response: Some(Response {
             status_code: response.status_code,
             headers: response_headers.headers,

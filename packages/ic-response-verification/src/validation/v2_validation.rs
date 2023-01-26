@@ -67,6 +67,20 @@ pub fn validate_expr_path(
     return true;
 }
 
+pub fn validate_expr_hash<'a>(
+    expr_path: &Vec<String>,
+    expr_hash: &Sha256Digest,
+    tree: &'a HashTree,
+) -> Option<HashTree<'a>> {
+    let mut path = path_from_parts(expr_path);
+    path.push(expr_hash.into());
+
+    match tree.lookup_subtree(&path) {
+        SubtreeLookupResult::Found(expr_tree) => Some(expr_tree),
+        _ => None,
+    }
+}
+
 pub fn validate_hashes(
     expr_hash: &Sha256Digest,
     request_hash: &Option<Sha256Digest>,
@@ -75,10 +89,7 @@ pub fn validate_hashes(
     tree: &HashTree,
     certification: &Certification,
 ) -> bool {
-    let mut path = path_from_parts(expr_path);
-    path.push(expr_hash.into());
-
-    let SubtreeLookupResult::Found(expr_tree) = tree.lookup_subtree(&path) else {
+    let Some(expr_tree) = validate_expr_hash(expr_path, expr_hash, tree) else {
         return false;
     };
 
@@ -123,6 +134,13 @@ mod tests {
                         }
                     }
                 }
+            }
+        )
+    "#;
+    const NO_CERTIFICATION_CEL_EXPRESSION: &str = r#"
+        default_certification (
+            ValidationArgs {
+                no_certification: Empty {}
             }
         )
     "#;
@@ -392,6 +410,52 @@ mod tests {
     }
 
     #[test]
+    fn validate_expr_hash_no_certification() {
+        let expr_hash = hash(remove_whitespace(NO_CERTIFICATION_CEL_EXPRESSION).as_bytes());
+        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let tree = fork(
+            label(
+                "http_expr",
+                label(
+                    "assets",
+                    label(
+                        "js",
+                        label("app.js", label("<$>", label(expr_hash, empty()))),
+                    ),
+                ),
+            ),
+            create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
+        );
+
+        let result = validate_expr_hash(&expr_path, &expr_hash, &tree);
+
+        assert_eq!(result, Some(empty()));
+    }
+
+    #[test]
+    fn validate_expr_hash_does_not_exist() {
+        let expr_hash = hash(remove_whitespace(NO_CERTIFICATION_CEL_EXPRESSION).as_bytes());
+        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let tree = fork(
+            label(
+                "http_expr",
+                label(
+                    "assets",
+                    label(
+                        "js",
+                        label("app.js", label("<$>", label(sha256_from_hex("02456594f95f4e8f35f14850d23bc05aa065ecc17eb4aeaff3c1819edaee0816"), empty()))),
+                    ),
+                ),
+            ),
+            create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
+        );
+
+        let result = validate_expr_hash(&expr_path, &expr_hash, &tree);
+
+        assert!(result.is_none());
+    }
+
+    #[test]
     fn validate_expr_path_that_is_most_precise_path_available() {
         let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
@@ -418,10 +482,7 @@ mod tests {
         let tree = fork(
             label(
                 "http_expr",
-                label(
-                    "assets",
-                    label("js", label("<*>", empty())),
-                ),
+                label("assets", label("js", label("<*>", empty()))),
             ),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
