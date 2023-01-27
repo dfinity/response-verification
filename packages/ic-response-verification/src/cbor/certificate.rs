@@ -3,12 +3,12 @@ use crate::error::ResponseVerificationError;
 use ic_certification::{Certificate, Delegation};
 
 pub trait CertificateToCbor<'a> {
-    fn from_cbor(cbor: Vec<u8>) -> Result<Certificate<'a>, ResponseVerificationError>;
+    fn from_cbor(cbor: &[u8]) -> Result<Certificate<'a>, ResponseVerificationError>;
 }
 
 impl<'a> CertificateToCbor<'a> for Certificate<'a> {
-    fn from_cbor(cbor: Vec<u8>) -> Result<Certificate<'a>, ResponseVerificationError> {
-        let parsed_cbor = parse_cbor(&cbor)
+    fn from_cbor(cbor: &[u8]) -> Result<Certificate<'a>, ResponseVerificationError> {
+        let parsed_cbor = parse_cbor(cbor)
             .map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
 
         parsed_cbor_to_certificate(parsed_cbor)
@@ -79,7 +79,7 @@ mod tests {
 
         let cbor = serde_cbor::to_vec(&certificate).unwrap();
 
-        let result = Certificate::from_cbor(cbor).unwrap();
+        let result = Certificate::from_cbor(&cbor).unwrap();
 
         assert_eq!(result, certificate);
     }
@@ -91,7 +91,7 @@ mod tests {
 
         let cbor = serde_cbor::to_vec(&certificate).unwrap();
 
-        let result = Certificate::from_cbor(cbor).unwrap();
+        let result = Certificate::from_cbor(&cbor).unwrap();
 
         assert_eq!(result, certificate);
     }

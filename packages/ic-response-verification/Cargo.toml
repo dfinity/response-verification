@@ -24,6 +24,7 @@ miracl_core_bls12381 = { version = "4.2.2", default_features = false, features =
 flate2 = "1.0.24"
 leb128 = "0.2.5"
 candid = "0.8.4"
+wee_alloc = "0.4.5"
 
 [dev-dependencies]
 hex = "0.4.3"

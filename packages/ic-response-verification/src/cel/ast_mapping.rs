@@ -128,15 +128,12 @@ fn validate_response_certification(
         |property_name| -> CelParserResult<Option<Vec<String>>> {
             response_certification
                 .get(property_name)
-                .and_then(|certified_response_headers| {
-                    Some(validate_object(
-                        certified_response_headers,
-                        "ResponseHeaderList",
-                    ))
+                .map(|certified_response_headers| {
+                    validate_object(certified_response_headers, "ResponseHeaderList")
                 })
                 .transpose()?
                 .and_then(|certified_response_headers| certified_response_headers.get("headers"))
-                .and_then(|headers| Some(validate_string_array(headers, property_name)))
+                .map(|headers| validate_string_array(headers, property_name))
                 .transpose()
         };
 
@@ -146,12 +143,12 @@ fn validate_response_certification(
     let response_header_exclusions =
         get_response_certification_headers("response_header_exclusions")?;
 
-    return match (certified_response_headers, response_header_exclusions) {
+    match (certified_response_headers, response_header_exclusions) {
         (Some(_), Some(_)) => Err(CelParserError::ExtraneousResponseCertificationProperty),
         (None, None) => Err(CelParserError::MissingResponseCertificationProperty),
         (Some(headers), None) => Ok(ResponseCertification::CertifiedHeaders(headers)),
         (None, Some(headers)) => Ok(ResponseCertification::HeaderExclusions(headers)),
-    };
+    }
 }
 
 pub fn map_cel_ast(cel: CelValue) -> CelParserResult<Option<Certification>> {
@@ -171,7 +168,7 @@ pub fn map_cel_ast(cel: CelValue) -> CelParserResult<Option<Certification>> {
     let no_certification = validation_args.get("no_certification");
     let certification = validation_args.get("certification");
 
-    return match (no_certification, certification) {
+    match (no_certification, certification) {
         (Some(_), Some(_)) => Err(CelParserError::ExtraneousValidationArgsProperty),
         (None, None) => Err(CelParserError::MissingValidationArgsProperty),
         (Some(_), None) => Ok(None),
@@ -187,5 +184,5 @@ pub fn map_cel_ast(cel: CelValue) -> CelParserResult<Option<Certification>> {
                 response_certification,
             }))
         }
-    };
+    }
 }

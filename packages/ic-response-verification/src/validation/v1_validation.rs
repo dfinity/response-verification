@@ -20,7 +20,7 @@ pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest
         },
     };
 
-    return body_sha == tree_sha;
+    body_sha == tree_sha
 }
 
 #[cfg(test)]
@@ -41,14 +41,14 @@ mod tests {
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
-            path: Some(&uri.path()),
+            path: Some(uri.path()),
             body_sha: Some(&body_sha),
         };
         let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     /// This is a strange fallback, but it is necessary for SPA routing at the moment.
@@ -63,14 +63,14 @@ mod tests {
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
-            path: Some(&"/index.html"),
+            path: Some("/index.html"),
             body_sha: Some(&body_sha),
         };
         let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     #[test]
@@ -81,14 +81,14 @@ mod tests {
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
-            path: Some(&"/index.html"),
+            path: Some("/index.html"),
             body_sha: Some(&[9, 8, 7, 6, 5, 4, 3, 2, 1]),
         };
         let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
@@ -99,14 +99,14 @@ mod tests {
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
-            path: Some(&uri.path()),
+            path: Some(uri.path()),
             body_sha: Some(&[9, 8, 7, 6, 5, 4, 3, 2, 1]),
         };
         let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
@@ -117,13 +117,13 @@ mod tests {
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
-            path: Some(&"/garbage.js"),
+            path: Some("/garbage.js"),
             body_sha: Some(&body_sha),
         };
         let tree = create_tree(Some(tree_options));
 
         let result = validate_body(&tree, &uri, &body_sha);
 
-        assert_eq!(result, false);
+        assert!(!result);
     }
 }

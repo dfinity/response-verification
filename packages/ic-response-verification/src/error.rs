@@ -87,6 +87,12 @@ pub enum ResponseVerificationError {
 
     #[error("Invalid cbor canister ranges")]
     MalformedCborCanisterRanges,
+
+    #[error("Base64 decoding error")]
+    Base64DecodingError(#[from] base64::DecodeError),
+
+    #[error("Error parsing int")]
+    ParseIntError(#[from] std::num::ParseIntError),
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -113,6 +119,8 @@ pub enum ResponseVerificationJsErrorCode {
     CertificateSubnetPublicKeyNotFound,
     CertificateSubnetCanisterRangesNotFound,
     MalformedCborCanisterRanges,
+    Base64DecodingError,
+    ParseIntError,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -188,6 +196,12 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
                 ResponseVerificationJsErrorCode::MalformedCborCanisterRanges
             }
             ResponseVerificationError::CelError(_) => ResponseVerificationJsErrorCode::CelError,
+            ResponseVerificationError::Base64DecodingError(_) => {
+                ResponseVerificationJsErrorCode::Base64DecodingError
+            }
+            ResponseVerificationError::ParseIntError(_) => {
+                ResponseVerificationJsErrorCode::ParseIntError
+            }
         };
         let message = error.to_string();
 
@@ -545,6 +559,42 @@ mod tests {
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::MalformedCborCanisterRanges,
                 message: "Invalid cbor canister ranges".into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_base64_decoding_error() {
+        let invalid_base64 = hex_decode("fca1a1a1a1a1");
+        let inner_error = base64::decode(invalid_base64).expect_err("Expected error");
+
+        let error = ResponseVerificationError::Base64DecodingError(inner_error);
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::Base64DecodingError,
+                message: format!(r#"Base64 decoding error"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_parse_int_error() {
+        let invalid_int = "fortytwo";
+        let inner_error = invalid_int.parse::<u8>().expect_err("Expected error");
+
+        let error = ResponseVerificationError::ParseIntError(inner_error);
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::ParseIntError,
+                message: format!(r#"Error parsing int"#),
             }
         )
     }

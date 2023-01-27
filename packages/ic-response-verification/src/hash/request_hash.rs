@@ -1,8 +1,12 @@
+use crate::error::ResponseVerificationResult;
 use crate::hash::representation_independent_hash::{representation_independent_hash, Value};
 use crate::types::{Request, RequestCertification};
-use http::Uri;
+use ic_certification::hash_tree::Sha256Digest;
 
-pub fn request_hash(request: &Request, request_certification: &RequestCertification) -> [u8; 32] {
+pub fn request_hash(
+    request: &Request,
+    request_certification: &RequestCertification,
+) -> ResponseVerificationResult<Sha256Digest> {
     let mut filtered_headers = get_filtered_headers(&request.headers, request_certification);
 
     filtered_headers.push((
@@ -10,21 +14,19 @@ pub fn request_hash(request: &Request, request_certification: &RequestCertificat
         Value::String(request.method.to_string()),
     ));
 
-    let filtered_query = request
-        .url
-        .parse::<Uri>()
-        .unwrap()
+    let request_uri = request.get_uri()?;
+    let filtered_query = request_uri
         .query()
-        .and_then(|query| Some(get_filtered_query(query, request_certification)));
+        .map(|query| get_filtered_query(query, request_certification));
     if let Some(query_hash) = filtered_query {
         filtered_headers.push((":ic-cert-query".into(), Value::String(query_hash)))
     }
 
-    representation_independent_hash(&filtered_headers)
+    Ok(representation_independent_hash(&filtered_headers))
 }
 
 fn get_filtered_headers(
-    headers: &Vec<(String, String)>,
+    headers: &[(String, String)],
     request_certification: &RequestCertification,
 ) -> Vec<(String, Value)> {
     headers
@@ -52,21 +54,18 @@ fn get_filtered_headers(
 
 fn get_filtered_query(query: &str, request_certification: &RequestCertification) -> String {
     let filtered_query_string = query
-        .split("&")
+        .split('&')
         .filter(|query_fragment| {
-            let mut split_fragment: Vec<&str> = query_fragment.split("=").take(1).collect();
+            let mut split_fragment: Vec<&str> = query_fragment.split('=').take(1).collect();
             let query_param_name = split_fragment.pop();
 
             query_param_name
-                .and_then(|query_param_name| {
-                    let is_param_included = request_certification
-                        .certified_query_parameters
-                        .iter()
-                        .any(|query_param_to_include| {
-                            query_param_to_include.eq_ignore_ascii_case(&query_param_name)
-                        });
-
-                    Some(is_param_included)
+                .map(|query_param_name| {
+                    request_certification.certified_query_parameters.iter().any(
+                        |query_param_to_include| {
+                            query_param_to_include.eq_ignore_ascii_case(query_param_name)
+                        },
+                    )
                 })
                 .unwrap_or(false)
         })
@@ -91,7 +90,7 @@ mod tests {
             hex::decode("acf45639fb32005e186bb68d4aefb5caf39c986ed32f620c278ef6eb0196e237")
                 .unwrap();
 
-        let result = request_hash(&request, &request_certification);
+        let result = request_hash(&request, &request_certification).unwrap();
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -108,7 +107,7 @@ mod tests {
             hex::decode("213b9e222b01decd26d0db070808ca8d437d863ac5b8172f8149c40735e13f47")
                 .unwrap();
 
-        let result = request_hash(&request, &request_certification);
+        let result = request_hash(&request, &request_certification).unwrap();
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -124,8 +123,8 @@ mod tests {
         let reordered_request =
             create_request("https://ic0.app?q=hello+world&name=bar&name=foo&color=purple");
 
-        let result = request_hash(&request, &request_certification);
-        let reordered_result = request_hash(&reordered_request, &request_certification);
+        let result = request_hash(&request, &request_certification).unwrap();
+        let reordered_result = request_hash(&reordered_request, &request_certification).unwrap();
 
         assert_ne!(result, reordered_result);
     }
@@ -142,8 +141,9 @@ mod tests {
             "https://ic0.app?q=hello+world&name=foo&name=bar&color=purple#index.html",
         );
 
-        let result = request_hash(&request, &request_certification);
-        let result_with_fragment = request_hash(&request_with_fragment, &request_certification);
+        let result = request_hash(&request, &request_certification).unwrap();
+        let result_with_fragment =
+            request_hash(&request_with_fragment, &request_certification).unwrap();
 
         assert_eq!(result, result_with_fragment);
     }

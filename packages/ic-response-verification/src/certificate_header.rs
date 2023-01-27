@@ -1,4 +1,8 @@
-use crate::{certificate_header_field::CertificateHeaderField, error, warn};
+use crate::{
+    certificate_header_field::CertificateHeaderField,
+    error::{ResponseVerificationError, ResponseVerificationResult},
+    warn,
+};
 
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.
 #[derive(Debug)]
@@ -11,7 +15,7 @@ pub struct CertificateHeader {
 
 impl CertificateHeader {
     /// Parses the given header and returns a new CertificateHeader.
-    pub fn from(header_value: &str) -> CertificateHeader {
+    pub fn from(header_value: &str) -> ResponseVerificationResult<CertificateHeader> {
         let mut certificate_header = CertificateHeader {
             certificate: None,
             tree: None,
@@ -24,7 +28,7 @@ impl CertificateHeader {
                 match name {
                     "certificate" => {
                         certificate_header.certificate = match certificate_header.certificate {
-                            None => decode_base64_header(name, value),
+                            None => Some(decode_base64_header(value)?),
                             Some(existing_certificate) => {
                                 warn!("Found duplicate certificate field in certificate header, ignoring...");
 
@@ -34,7 +38,7 @@ impl CertificateHeader {
                     }
                     "tree" => {
                         certificate_header.tree = match certificate_header.tree {
-                            None => decode_base64_header(name, value),
+                            None => Some(decode_base64_header(value)?),
                             Some(existing_tree) => {
                                 warn!(
                                     "Found duplicate tree field in certificate header, ignoring..."
@@ -46,7 +50,7 @@ impl CertificateHeader {
                     }
                     "version" => {
                         certificate_header.version = match certificate_header.version {
-                            None => parse_int_header(name, value),
+                            None => Some(parse_int_header(value)?),
                             Some(existing_version) => {
                                 warn!(
                                     "Found duplicate version field in certificate header, ignoring..."
@@ -58,7 +62,7 @@ impl CertificateHeader {
                     }
                     "expr_path" => {
                         certificate_header.expr_path = match certificate_header.expr_path {
-                            None => decode_base64_header(name, value),
+                            None => Some(decode_base64_header(value)?),
                             Some(existing_expr_path) => {
                                 warn!(
                                     "Found duplicate expr_path field in certificate header, ignoring..."
@@ -73,41 +77,24 @@ impl CertificateHeader {
             }
         }
 
-        return certificate_header;
+        Ok(certificate_header)
     }
 }
 
-fn decode_base64_header(name: &str, value: &str) -> Option<Vec<u8>> {
-    match base64::decode(value) {
-        Ok(value) => Some(value),
-        Err(e) => {
-            error!(
-                "Error base64 decoding {} field of certificate header: {}",
-                name, e
-            );
-
-            None
-        }
-    }
+fn decode_base64_header(value: &str) -> ResponseVerificationResult<Vec<u8>> {
+    base64::decode(value).map_err(ResponseVerificationError::Base64DecodingError)
 }
 
-fn parse_int_header(name: &str, value: &str) -> Option<u8> {
-    match value.parse::<u8>() {
-        Ok(value) => Some(value),
-        Err(e) => {
-            error!(
-                "Error parsing {} field of certificate header into uint8: {}",
-                name, e
-            );
-
-            None
-        }
-    }
+fn parse_int_header(value: &str) -> ResponseVerificationResult<u8> {
+    value
+        .parse::<u8>()
+        .map_err(ResponseVerificationError::ParseIntError)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::ResponseVerificationError;
     use crate::test_utils::test_utils::{
         cbor_encode, create_certificate, create_encoded_header_field, create_header_field,
         create_tree,
@@ -127,7 +114,7 @@ mod tests {
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
         assert_eq!(certificate_header.certificate.unwrap(), certificate);
         assert_eq!(certificate_header.tree.unwrap(), tree);
@@ -145,12 +132,9 @@ mod tests {
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let result = CertificateHeader::from(header.as_str()).expect_err("Expected an error");
 
-        assert!(certificate_header.certificate.unwrap().is_empty());
-        assert!(certificate_header.tree.unwrap().is_empty());
-        assert!(certificate_header.version.is_none());
-        assert!(certificate_header.expr_path.unwrap().is_empty());
+        assert!(matches!(result, ResponseVerificationError::ParseIntError(_)));
     }
 
     #[test]
@@ -168,7 +152,7 @@ mod tests {
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
         assert_eq!(certificate_header.certificate.unwrap(), certificate);
         assert_eq!(certificate_header.tree.unwrap(), tree);
@@ -188,7 +172,7 @@ mod tests {
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
         assert_eq!(certificate_header.certificate.unwrap(), certificate);
         assert!(certificate_header.tree.is_none());
@@ -208,7 +192,7 @@ mod tests {
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
         assert!(certificate_header.certificate.is_none());
         assert_eq!(certificate_header.tree.unwrap(), tree);
@@ -226,7 +210,7 @@ mod tests {
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
         assert_eq!(certificate_header.certificate.unwrap(), certificate);
         assert_eq!(certificate_header.tree.unwrap(), tree);
@@ -246,7 +230,7 @@ mod tests {
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
         assert_eq!(certificate_header.certificate.unwrap(), certificate);
         assert_eq!(certificate_header.tree.unwrap(), tree);
@@ -274,11 +258,11 @@ mod tests {
             create_header_field("version", &version.to_string()),
             create_encoded_header_field("expr_path", &expr_path),
             create_encoded_header_field("version", &second_version.to_string()),
-            create_encoded_header_field("expr_path", &second_expr_path),
+            create_encoded_header_field("expr_path", second_expr_path),
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str());
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
         assert_eq!(certificate_header.certificate.unwrap(), certificate);
         assert_eq!(certificate_header.tree.unwrap(), tree.as_slice());

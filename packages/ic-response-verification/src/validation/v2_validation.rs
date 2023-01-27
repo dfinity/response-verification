@@ -2,7 +2,7 @@ use crate::types::Certification;
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Sha256Digest, HashTree, Label, SubtreeLookupResult};
 
-fn path_from_parts<T>(parts: &Vec<T>) -> Vec<Label>
+fn path_from_parts<T>(parts: &[T]) -> Vec<Label>
 where
     T: AsRef<[u8]>,
 {
@@ -13,10 +13,7 @@ where
 }
 
 fn path_exists_in_tree(path: &Vec<Label>, tree: &HashTree) -> bool {
-    match tree.lookup_subtree(path) {
-        SubtreeLookupResult::Found(_) => true,
-        _ => false,
-    }
+    matches!(tree.lookup_subtree(path), SubtreeLookupResult::Found(_))
 }
 
 pub fn validate_expr_path(
@@ -30,7 +27,7 @@ pub fn validate_expr_path(
         .filter(|e| !e.is_empty())
         .collect::<Vec<_>>();
 
-    let certified_path = path_from_parts(&expr_path);
+    let certified_path = path_from_parts(expr_path);
     let mut request_url_path = path_from_parts(&request_url_parts);
 
     // if the expr_path matches the full URL, there can't be a more precise path in the tree
@@ -64,7 +61,7 @@ pub fn validate_expr_path(
         request_url_parts.pop();
     }
 
-    return true;
+    true
 }
 
 pub fn validate_expr_hash<'a>(
@@ -85,7 +82,7 @@ pub fn validate_hashes(
     expr_hash: &Sha256Digest,
     request_hash: &Option<Sha256Digest>,
     response_hash: &Sha256Digest,
-    expr_path: &Vec<String>,
+    expr_path: &[String],
     tree: &HashTree,
     certification: &Certification,
 ) -> bool {

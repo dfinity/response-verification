@@ -86,7 +86,7 @@ impl fmt::Display for CborValue {
 
 /// Cbor major type information is stored in the high-order 3 bits.
 const fn get_cbor_type(e: u8) -> u8 {
-    (e & 0b111_00000) >> 5
+    (e & 0b1110_0000) >> 5
 }
 
 fn extract_cbor_type(i: &[u8]) -> IResult<&[u8], u8> {
@@ -101,7 +101,7 @@ fn peek_cbor_type(i: &[u8]) -> IResult<&[u8], u8> {
 /// This additional information can be a value,
 /// or the size of a value contained in the following bytes.
 const fn get_cbor_info(e: u8) -> u8 {
-    e & 0b000_11111
+    e & 0b0001_1111
 }
 
 fn extract_cbor_info(i: &[u8]) -> IResult<&[u8], u8> {
@@ -261,7 +261,7 @@ pub fn parse_cbor_string_array(
             };
 
             String::from_utf8(elem.to_owned())
-                .map_err(|e| ResponseVerificationError::Utf8ConversionError(e))
+                .map_err(ResponseVerificationError::Utf8ConversionError)
         })
         .collect::<Result<_, _>>()
 }

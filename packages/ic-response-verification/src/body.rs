@@ -21,7 +21,7 @@ fn body_from_decoder<D: Read>(mut decoder: D) -> Option<Vec<u8>> {
         let bytes = decoder.read(&mut buffer).ok()?;
 
         if bytes == 0 {
-            return Some(decoded.into());
+            return Some(decoded);
         }
 
         decoded.extend_from_slice(&buffer[..bytes]);
@@ -32,7 +32,7 @@ fn body_from_decoder<D: Read>(mut decoder: D) -> Option<Vec<u8>> {
         return None;
     }
 
-    Some(decoded.into())
+    Some(decoded)
 }
 
 #[cfg(test)]
