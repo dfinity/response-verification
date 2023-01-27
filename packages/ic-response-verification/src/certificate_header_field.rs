@@ -16,7 +16,7 @@ impl<'a> CertificateHeaderField<'a> {
             return Some(CertificateHeaderField(name, value));
         }
 
-        return None;
+        None
     }
 }
 

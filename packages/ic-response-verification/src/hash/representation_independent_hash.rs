@@ -1,4 +1,5 @@
 use crate::hash::hash;
+use ic_certification::hash_tree::Sha256Digest;
 use sha2::{Digest, Sha256};
 
 pub enum Value {
@@ -10,7 +11,7 @@ pub enum Value {
 /// UTF-8 strings or numbers as values.
 ///
 /// [`Representation Independent Hash`]: https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map
-pub fn representation_independent_hash(map: &Vec<(String, Value)>) -> [u8; 32] {
+pub fn representation_independent_hash(map: &[(String, Value)]) -> Sha256Digest {
     let mut hashes: Vec<_> = map
         .iter()
         .map(|(key, value)| (hash(key.as_bytes()), hash_value(value)))
@@ -27,7 +28,7 @@ pub fn representation_independent_hash(map: &Vec<(String, Value)>) -> [u8; 32] {
     hasher.finalize().into()
 }
 
-fn hash_value(value: &Value) -> [u8; 32] {
+fn hash_value(value: &Value) -> Sha256Digest {
     match value {
         Value::String(value) => hash(value.as_bytes()),
         Value::Number(value) => {

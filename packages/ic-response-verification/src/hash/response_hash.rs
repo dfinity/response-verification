@@ -1,6 +1,7 @@
 use crate::hash::hash;
 use crate::hash::representation_independent_hash::{representation_independent_hash, Value};
 use crate::types::{Response, ResponseCertification};
+use ic_certification::hash_tree::Sha256Digest;
 
 const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
 const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
@@ -73,30 +74,31 @@ pub fn filter_response_headers(
     response_headers
 }
 
-pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeaders) -> [u8; 32] {
+pub fn response_headers_hash(
+    status_code: &u64,
+    response_headers: &ResponseHeaders,
+) -> Sha256Digest {
     let mut headers_to_verify: Vec<(String, Value)> = response_headers
         .headers
         .iter()
         .filter_map(|(header_name, header_value)| {
-            return Some((
+            Some((
                 header_name.to_string(),
                 Value::String(String::from(header_value)),
-            ));
+            ))
         })
         .collect();
 
-    if !response_headers.certificate_expression.is_none() {
+    if let Some(certificate_expression) = &response_headers.certificate_expression {
         headers_to_verify.push((
-            CERTIFICATE_EXPRESSION_HEADER_NAME
-                .to_ascii_lowercase()
-                .into(),
-            Value::String(response_headers.certificate_expression.clone().unwrap()),
+            CERTIFICATE_EXPRESSION_HEADER_NAME.to_ascii_lowercase(),
+            Value::String(certificate_expression.clone()),
         ));
     }
 
     headers_to_verify.push((
         RESPONSE_STATUS_PSEUDO_HEADER_NAME.into(),
-        Value::Number(status_code.clone()),
+        Value::Number(*status_code),
     ));
 
     representation_independent_hash(&headers_to_verify)
@@ -105,8 +107,8 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
 pub fn response_hash(
     response: &Response,
     response_certification: &ResponseCertification,
-) -> [u8; 32] {
-    let filtered_headers = filter_response_headers(&response, &response_certification);
+) -> Sha256Digest {
+    let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
         response_headers_hash(&response.status_code.into(), &filtered_headers),
         hash(&response.body),

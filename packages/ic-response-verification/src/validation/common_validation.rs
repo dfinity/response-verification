@@ -59,7 +59,7 @@ impl VerifyCertificate<()> for Certificate<'_> {
         };
         let key = extract_der(der_key)?;
 
-        match core_verify(&sig, &msg, &key) {
+        match core_verify(sig, &msg, &key) {
             BLS_OK => Ok(()),
             _ => Err(ResponseVerificationError::CertificateVerificationFailed),
         }
@@ -72,7 +72,7 @@ impl VerifyCertificate<Vec<u8>> for Delegation {
         canister_id: &[u8],
         root_public_key: &[u8],
     ) -> ResponseVerificationResult<Vec<u8>> {
-        let cert: Certificate = Certificate::from_cbor(self.certificate.clone())?;
+        let cert: Certificate = Certificate::from_cbor(&self.certificate)?;
         cert.verify(canister_id, root_public_key)?;
 
         let LookupResult::Found(canister_range) = cert.tree.lookup_path(&[
@@ -83,7 +83,7 @@ impl VerifyCertificate<Vec<u8>> for Delegation {
             return Err(ResponseVerificationError::CertificateSubnetCanisterRangesNotFound);
         };
 
-        let ranges: Vec<(Principal, Principal)> = parse_cbor_principals_array(&canister_range)?;
+        let ranges: Vec<(Principal, Principal)> = parse_cbor_principals_array(canister_range)?;
         if !principal_is_within_ranges(&Principal::from_slice(canister_id), &ranges[..]) {
             // the certificate is not authorized to answer calls for this canister
             return Err(ResponseVerificationError::CertificatePrincipalOutOfRange);
@@ -94,7 +94,7 @@ impl VerifyCertificate<Vec<u8>> for Delegation {
             self.subnet_id.clone().into(),
             "public_key".into(),
         ]) else {
-            return Err(ResponseVerificationError::CertificateSubnetPublicKeyNotFound)
+            return Err(ResponseVerificationError::CertificateSubnetPublicKeyNotFound);
         };
 
         Ok(subnet_public_key.into())
@@ -108,11 +108,11 @@ pub fn validate_certificate_time(
 ) -> ResponseVerificationResult {
     let time_path = ["time".into()];
 
-    let LookupResult::Found(encoded_certificate_time) = certificate.tree.lookup_path(&time_path) else {
+    let LookupResult::Found(mut encoded_certificate_time) = certificate.tree.lookup_path(&time_path) else {
         return Err(ResponseVerificationError::MissingTimePathInTree);
     };
 
-    let certificate_time = leb128::read::unsigned(&mut encoded_certificate_time.as_ref())
+    let certificate_time = leb128::read::unsigned(&mut encoded_certificate_time)
         .map_err(|_| ResponseVerificationError::LebDecodingOverflow)?
         as u128;
     let max_certificate_time = current_time_ns + allowed_certificate_time_offset;
@@ -156,7 +156,7 @@ pub fn validate_tree(canister_id: &[u8], certificate: &Certificate, tree: &HashT
         return false;
     }
 
-    return true;
+    true
 }
 
 #[cfg(test)]
@@ -190,11 +190,11 @@ mod tests {
 
     #[test]
     fn verify_certificate() {
-        let certificate_header = CertificateHeader::from("certificate=:2dn3o2R0cmVlgwGDAYMBgwJIY2FuaXN0ZXKDAkoAAAAAAAAABwEBgwGDAYMBgwJOY2VydGlmaWVkX2RhdGGCA1gg2e9+GWTYWw6giMkxjJE7dxUuFMOmoEJ30FFRTOYmZ+6CBFgg/VtZRZdYyK/sr3KF2jWeS1rblF+4ajwfDv2ZbCGpaTiCBFgg6HKEMFmYn9j0sFHRxCCDNXWTLnDMbw4tDvk9Rh2gPymCBFggKBqd8UfSTdcsbnzQLZPXVYsJLM6dc/fi+RlcW9D/WJGCBFgggAG4QoPuBpdUD9ifMs40Cvn9vn0wahLjSTMOBsMV4iCCBFggoawiEDD+DnBTi5j9NjLHMWHFAlWaVk4+26+ulwFUYJ6DAYIEWCALLxLPg6ijOWkcDTm+OEMs7hpk2o44mLtpr9tpcII8XoMCRHRpbWWCA0mvsY3usNqMlRdpc2lnbmF0dXJlWDCGny0r7KOVEzQsoU4URu/jteB+cO4uw8x59WgP3akcM4hQZ2FLVtbWwKgX2OXKBBVqZGVsZWdhdGlvbqJpc3VibmV0X2lkWB1D3K8RgNuC/acIzjrHoDpgYKveE+lUbGDozOZdAmtjZXJ0aWZpY2F0ZVkCbtnZ96JkdHJlZYMBggRYIOdSJxF174WaX2n7+PrVTskgyInEKI4+qd19HkTmpD4ugwGDAkZzdWJuZXSDAYMBgwGCBFggJn/lURG1bjw5dVMuozc/e3Lp+CBy/o5gftNEhkeKWzmDAYIEWCBGanAobPms6YAcpT4ir27gWaCU/WBJhgbUhLaFQFgwfYMBgwGCBFggiy9sFQeK5NO5NHCRXKU+NzMn836nS6G4F32Ya7ebMa6DAlgdQ9yvEYDbgv2nCM46x6A6YGCr3hPpVGxg6MzmXQKDAYMCT2NhbmlzdGVyX3Jhbmdlc4IDWDLZ2feCgkoAAAAAAAAABwEBSgAAAAAAAAAHAQGCSgAAAAACEAAAAQFKAAAAAAIf//8BAYMCSnB1YmxpY19rZXmCA1iFMIGCMB0GDSsGAQQBgtx8BQMBAgEGDCsGAQQBgtx8BQMCAQNhAIZ1tjSkPjlyYjjP45yVGLw+MiXLb1qEeb/PK2CPum+FJNy4DzWorkS0fyYvCmYg1BJ58G/gxTpzn8ygGkiSb+ZRo1GbWzKf++zJ8MuQiwmN0+iEXPuZxWN54EmsRl7IBoIEWCCHzSE2R03mBIh5w7cCAFNWUXA9yXLKy5T6Bl/+LuY2ioIEWCBKHXbAjmQuPbaYLmZTvoxzbydaJKwiEINDCy1bRBznVIIEWCAthWu6e2yAFxzo5dEhu35EULNWWmRNkTXp/liEKBwfuYMCRHRpbWWCA0m10ovcy4SWlBdpc2lnbmF0dXJlWDCt6yOQsJ6yXcx8WbPabC32P4fss5zCAYh1/Jal1encJWqqxbAD9Svz7bsCIYWs1Ec=:, tree=:2dn3gwGDAktodHRwX2Fzc2V0c4MBgwGDAkEvggNYIHhMD4Jak4qn9HFYfN98d5b4KPk2JJXiuchJDyIyNZvbggRYINfNCmz1KiBw3FH+HXtqhweIiHGeFoScdIw15/x7aflcggRYIFgrUyEzZkbUjG+L8ZEzM7tOv2XAn/v4IHwBLh9UBxJhggRYICEzSyZoHXIg49LX3LI6iczbGx4ETrNeu+SR9m1AgNB4:");
+        let certificate_header = CertificateHeader::from("certificate=:2dn3o2R0cmVlgwGDAYMBgwJIY2FuaXN0ZXKDAkoAAAAAAAAABwEBgwGDAYMBgwJOY2VydGlmaWVkX2RhdGGCA1gg2e9+GWTYWw6giMkxjJE7dxUuFMOmoEJ30FFRTOYmZ+6CBFgg/VtZRZdYyK/sr3KF2jWeS1rblF+4ajwfDv2ZbCGpaTiCBFgg6HKEMFmYn9j0sFHRxCCDNXWTLnDMbw4tDvk9Rh2gPymCBFggKBqd8UfSTdcsbnzQLZPXVYsJLM6dc/fi+RlcW9D/WJGCBFgggAG4QoPuBpdUD9ifMs40Cvn9vn0wahLjSTMOBsMV4iCCBFggoawiEDD+DnBTi5j9NjLHMWHFAlWaVk4+26+ulwFUYJ6DAYIEWCALLxLPg6ijOWkcDTm+OEMs7hpk2o44mLtpr9tpcII8XoMCRHRpbWWCA0mvsY3usNqMlRdpc2lnbmF0dXJlWDCGny0r7KOVEzQsoU4URu/jteB+cO4uw8x59WgP3akcM4hQZ2FLVtbWwKgX2OXKBBVqZGVsZWdhdGlvbqJpc3VibmV0X2lkWB1D3K8RgNuC/acIzjrHoDpgYKveE+lUbGDozOZdAmtjZXJ0aWZpY2F0ZVkCbtnZ96JkdHJlZYMBggRYIOdSJxF174WaX2n7+PrVTskgyInEKI4+qd19HkTmpD4ugwGDAkZzdWJuZXSDAYMBgwGCBFggJn/lURG1bjw5dVMuozc/e3Lp+CBy/o5gftNEhkeKWzmDAYIEWCBGanAobPms6YAcpT4ir27gWaCU/WBJhgbUhLaFQFgwfYMBgwGCBFggiy9sFQeK5NO5NHCRXKU+NzMn836nS6G4F32Ya7ebMa6DAlgdQ9yvEYDbgv2nCM46x6A6YGCr3hPpVGxg6MzmXQKDAYMCT2NhbmlzdGVyX3Jhbmdlc4IDWDLZ2feCgkoAAAAAAAAABwEBSgAAAAAAAAAHAQGCSgAAAAACEAAAAQFKAAAAAAIf//8BAYMCSnB1YmxpY19rZXmCA1iFMIGCMB0GDSsGAQQBgtx8BQMBAgEGDCsGAQQBgtx8BQMCAQNhAIZ1tjSkPjlyYjjP45yVGLw+MiXLb1qEeb/PK2CPum+FJNy4DzWorkS0fyYvCmYg1BJ58G/gxTpzn8ygGkiSb+ZRo1GbWzKf++zJ8MuQiwmN0+iEXPuZxWN54EmsRl7IBoIEWCCHzSE2R03mBIh5w7cCAFNWUXA9yXLKy5T6Bl/+LuY2ioIEWCBKHXbAjmQuPbaYLmZTvoxzbydaJKwiEINDCy1bRBznVIIEWCAthWu6e2yAFxzo5dEhu35EULNWWmRNkTXp/liEKBwfuYMCRHRpbWWCA0m10ovcy4SWlBdpc2lnbmF0dXJlWDCt6yOQsJ6yXcx8WbPabC32P4fss5zCAYh1/Jal1encJWqqxbAD9Svz7bsCIYWs1Ec=:, tree=:2dn3gwGDAktodHRwX2Fzc2V0c4MBgwGDAkEvggNYIHhMD4Jak4qn9HFYfN98d5b4KPk2JJXiuchJDyIyNZvbggRYINfNCmz1KiBw3FH+HXtqhweIiHGeFoScdIw15/x7aflcggRYIFgrUyEzZkbUjG+L8ZEzM7tOv2XAn/v4IHwBLh9UBxJhggRYICEzSyZoHXIg49LX3LI6iczbGx4ETrNeu+SR9m1AgNB4:").unwrap();
         let canister_id = Principal::from_text("rdmx6-jaaaa-aaaaa-aaadq-cai").unwrap();
         let certificate = certificate_header
             .certificate
-            .and_then(|certificate| Some(Certificate::from_cbor(certificate)))
+            .map(|certificate| Certificate::from_cbor(&certificate))
             .transpose()
             .unwrap()
             .unwrap();
@@ -207,11 +207,11 @@ mod tests {
     #[test]
     fn verify_certificate_should_fail() {
         let wrong_ic_key: &[u8; 133] = b"\x30\x81\x82\x30\x1d\x06\x0d\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x01\x02\x01\x06\x0c\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x02\x01\x03\x61\x00\x81\x4c\x0e\x6e\xc7\x1f\xab\x58\x3b\x08\xbd\x81\x37\x3c\x25\x5c\x3c\x37\x1b\x2e\x84\x86\x3c\x98\xa4\xf1\xe0\x8b\x74\x23\x5d\x14\xfb\x5d\x9c\x0c\xd5\x46\xd9\x68\x5f\x91\x3a\x0c\x0b\x2c\xc5\x34\x15\x83\xbf\x4b\x43\x92\xe4\x67\xdb\x96\xd6\x5b\x9b\xb4\xcb\x71\x71\x12\xf8\x47\x2e\x0d\x5a\x4d\x14\x50\x5f\xfd\x74\x84\xb0\x12\x91\x09\x1c\x5f\x87\xb9\x88\x83\x46\x3f\x98\x08\x1a\x0b\xaa\xae";
-        let certificate_header = CertificateHeader::from("certificate=:2dn3o2R0cmVlgwGDAYMBgwJIY2FuaXN0ZXKDAkoAAAAAAAAABwEBgwGDAYMBgwJOY2VydGlmaWVkX2RhdGGCA1gg2e9+GWTYWw6giMkxjJE7dxUuFMOmoEJ30FFRTOYmZ+6CBFgg/VtZRZdYyK/sr3KF2jWeS1rblF+4ajwfDv2ZbCGpaTiCBFgg6HKEMFmYn9j0sFHRxCCDNXWTLnDMbw4tDvk9Rh2gPymCBFggKBqd8UfSTdcsbnzQLZPXVYsJLM6dc/fi+RlcW9D/WJGCBFgggAG4QoPuBpdUD9ifMs40Cvn9vn0wahLjSTMOBsMV4iCCBFggoawiEDD+DnBTi5j9NjLHMWHFAlWaVk4+26+ulwFUYJ6DAYIEWCALLxLPg6ijOWkcDTm+OEMs7hpk2o44mLtpr9tpcII8XoMCRHRpbWWCA0mvsY3usNqMlRdpc2lnbmF0dXJlWDCGny0r7KOVEzQsoU4URu/jteB+cO4uw8x59WgP3akcM4hQZ2FLVtbWwKgX2OXKBBVqZGVsZWdhdGlvbqJpc3VibmV0X2lkWB1D3K8RgNuC/acIzjrHoDpgYKveE+lUbGDozOZdAmtjZXJ0aWZpY2F0ZVkCbtnZ96JkdHJlZYMBggRYIOdSJxF174WaX2n7+PrVTskgyInEKI4+qd19HkTmpD4ugwGDAkZzdWJuZXSDAYMBgwGCBFggJn/lURG1bjw5dVMuozc/e3Lp+CBy/o5gftNEhkeKWzmDAYIEWCBGanAobPms6YAcpT4ir27gWaCU/WBJhgbUhLaFQFgwfYMBgwGCBFggiy9sFQeK5NO5NHCRXKU+NzMn836nS6G4F32Ya7ebMa6DAlgdQ9yvEYDbgv2nCM46x6A6YGCr3hPpVGxg6MzmXQKDAYMCT2NhbmlzdGVyX3Jhbmdlc4IDWDLZ2feCgkoAAAAAAAAABwEBSgAAAAAAAAAHAQGCSgAAAAACEAAAAQFKAAAAAAIf//8BAYMCSnB1YmxpY19rZXmCA1iFMIGCMB0GDSsGAQQBgtx8BQMBAgEGDCsGAQQBgtx8BQMCAQNhAIZ1tjSkPjlyYjjP45yVGLw+MiXLb1qEeb/PK2CPum+FJNy4DzWorkS0fyYvCmYg1BJ58G/gxTpzn8ygGkiSb+ZRo1GbWzKf++zJ8MuQiwmN0+iEXPuZxWN54EmsRl7IBoIEWCCHzSE2R03mBIh5w7cCAFNWUXA9yXLKy5T6Bl/+LuY2ioIEWCBKHXbAjmQuPbaYLmZTvoxzbydaJKwiEINDCy1bRBznVIIEWCAthWu6e2yAFxzo5dEhu35EULNWWmRNkTXp/liEKBwfuYMCRHRpbWWCA0m10ovcy4SWlBdpc2lnbmF0dXJlWDCt6yOQsJ6yXcx8WbPabC32P4fss5zCAYh1/Jal1encJWqqxbAD9Svz7bsCIYWs1Ec=:, tree=:2dn3gwGDAktodHRwX2Fzc2V0c4MBgwGDAkEvggNYIHhMD4Jak4qn9HFYfN98d5b4KPk2JJXiuchJDyIyNZvbggRYINfNCmz1KiBw3FH+HXtqhweIiHGeFoScdIw15/x7aflcggRYIFgrUyEzZkbUjG+L8ZEzM7tOv2XAn/v4IHwBLh9UBxJhggRYICEzSyZoHXIg49LX3LI6iczbGx4ETrNeu+SR9m1AgNB4:");
+        let certificate_header = CertificateHeader::from("certificate=:2dn3o2R0cmVlgwGDAYMBgwJIY2FuaXN0ZXKDAkoAAAAAAAAABwEBgwGDAYMBgwJOY2VydGlmaWVkX2RhdGGCA1gg2e9+GWTYWw6giMkxjJE7dxUuFMOmoEJ30FFRTOYmZ+6CBFgg/VtZRZdYyK/sr3KF2jWeS1rblF+4ajwfDv2ZbCGpaTiCBFgg6HKEMFmYn9j0sFHRxCCDNXWTLnDMbw4tDvk9Rh2gPymCBFggKBqd8UfSTdcsbnzQLZPXVYsJLM6dc/fi+RlcW9D/WJGCBFgggAG4QoPuBpdUD9ifMs40Cvn9vn0wahLjSTMOBsMV4iCCBFggoawiEDD+DnBTi5j9NjLHMWHFAlWaVk4+26+ulwFUYJ6DAYIEWCALLxLPg6ijOWkcDTm+OEMs7hpk2o44mLtpr9tpcII8XoMCRHRpbWWCA0mvsY3usNqMlRdpc2lnbmF0dXJlWDCGny0r7KOVEzQsoU4URu/jteB+cO4uw8x59WgP3akcM4hQZ2FLVtbWwKgX2OXKBBVqZGVsZWdhdGlvbqJpc3VibmV0X2lkWB1D3K8RgNuC/acIzjrHoDpgYKveE+lUbGDozOZdAmtjZXJ0aWZpY2F0ZVkCbtnZ96JkdHJlZYMBggRYIOdSJxF174WaX2n7+PrVTskgyInEKI4+qd19HkTmpD4ugwGDAkZzdWJuZXSDAYMBgwGCBFggJn/lURG1bjw5dVMuozc/e3Lp+CBy/o5gftNEhkeKWzmDAYIEWCBGanAobPms6YAcpT4ir27gWaCU/WBJhgbUhLaFQFgwfYMBgwGCBFggiy9sFQeK5NO5NHCRXKU+NzMn836nS6G4F32Ya7ebMa6DAlgdQ9yvEYDbgv2nCM46x6A6YGCr3hPpVGxg6MzmXQKDAYMCT2NhbmlzdGVyX3Jhbmdlc4IDWDLZ2feCgkoAAAAAAAAABwEBSgAAAAAAAAAHAQGCSgAAAAACEAAAAQFKAAAAAAIf//8BAYMCSnB1YmxpY19rZXmCA1iFMIGCMB0GDSsGAQQBgtx8BQMBAgEGDCsGAQQBgtx8BQMCAQNhAIZ1tjSkPjlyYjjP45yVGLw+MiXLb1qEeb/PK2CPum+FJNy4DzWorkS0fyYvCmYg1BJ58G/gxTpzn8ygGkiSb+ZRo1GbWzKf++zJ8MuQiwmN0+iEXPuZxWN54EmsRl7IBoIEWCCHzSE2R03mBIh5w7cCAFNWUXA9yXLKy5T6Bl/+LuY2ioIEWCBKHXbAjmQuPbaYLmZTvoxzbydaJKwiEINDCy1bRBznVIIEWCAthWu6e2yAFxzo5dEhu35EULNWWmRNkTXp/liEKBwfuYMCRHRpbWWCA0m10ovcy4SWlBdpc2lnbmF0dXJlWDCt6yOQsJ6yXcx8WbPabC32P4fss5zCAYh1/Jal1encJWqqxbAD9Svz7bsCIYWs1Ec=:, tree=:2dn3gwGDAktodHRwX2Fzc2V0c4MBgwGDAkEvggNYIHhMD4Jak4qn9HFYfN98d5b4KPk2JJXiuchJDyIyNZvbggRYINfNCmz1KiBw3FH+HXtqhweIiHGeFoScdIw15/x7aflcggRYIFgrUyEzZkbUjG+L8ZEzM7tOv2XAn/v4IHwBLh9UBxJhggRYICEzSyZoHXIg49LX3LI6iczbGx4ETrNeu+SR9m1AgNB4:").unwrap();
         let canister_id = Principal::from_text("rdmx6-jaaaa-aaaaa-aaadq-cai").unwrap();
         let certificate = certificate_header
             .certificate
-            .and_then(|certificate| Some(Certificate::from_cbor(certificate)))
+            .map(|certificate| Certificate::from_cbor(&certificate))
             .transpose()
             .unwrap()
             .unwrap();
@@ -302,7 +302,7 @@ mod tests {
 
         let result = validate_tree(principal.as_slice(), &certificate, &tree);
 
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     #[test]
@@ -319,7 +319,7 @@ mod tests {
 
         let result = validate_tree(principal.as_slice(), &certificate, &tree);
 
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
@@ -338,7 +338,7 @@ mod tests {
 
         let result = validate_tree(principal.as_slice(), &certificate, &tree);
 
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
@@ -360,6 +360,6 @@ mod tests {
 
         let result = validate_tree(principal.as_slice(), &certificate, &tree);
 
-        assert_eq!(result, false);
+        assert!(!result);
     }
 }

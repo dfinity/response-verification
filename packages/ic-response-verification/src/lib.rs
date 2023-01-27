@@ -5,13 +5,11 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 #[cfg(target_arch = "wasm32")]
-extern crate console_error_panic_hook;
-
-#[cfg(target_arch = "wasm32")]
-use std::panic;
-
-#[cfg(target_arch = "wasm32")]
 use error::ResponseVerificationJsError;
+
+#[cfg(target_arch = "wasm32")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use crate::body::decode_body;
 use crate::hash::{filter_response_headers, hash};
@@ -65,7 +63,8 @@ pub fn verify_request_response_pair(
     max_cert_time_offset_ns: u64,
     ic_public_key: &[u8],
 ) -> Result<JsCertificationResult, ResponseVerificationJsError> {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
+    #[cfg(all(feature = "debug", target_arch = "wasm32"))]
+    console_error_panic_hook::set_once();
 
     let request = Request::from(JsValue::from(request));
     let response = Response::from(JsValue::from(response));
@@ -105,16 +104,16 @@ pub fn verify_request_response_pair_impl(
 
     for (name, value) in response.headers.iter() {
         if name.eq_ignore_ascii_case("Ic-Certificate") {
-            let certificate_header = CertificateHeader::from(value.as_str());
+            let certificate_header = CertificateHeader::from(value.as_str())?;
 
             tree = certificate_header
                 .tree
-                .and_then(|tree| Some(HashTree::from_cbor(tree)))
+                .map(|tree| HashTree::from_cbor(&tree))
                 .transpose()?;
 
             certificate = certificate_header
                 .certificate
-                .and_then(|certificate| Some(Certificate::from_cbor(certificate)))
+                .map(|certificate| Certificate::from_cbor(&certificate))
                 .transpose()?;
 
             version = certificate_header
@@ -123,7 +122,7 @@ pub fn verify_request_response_pair_impl(
 
             expr_path = certificate_header
                 .expr_path
-                .and_then(|expr_path| Some(parse_cbor_string_array(&expr_path, "expr_path")))
+                .map(|expr_path| parse_cbor_string_array(&expr_path, "expr_path"))
                 .transpose()?;
         }
 
@@ -216,17 +215,17 @@ fn v1_verification(
     match (tree, certificate) {
         (Some(tree), Some(certificate)) => {
             validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-            certificate.verify(&canister_id, &ic_public_key)?;
+            certificate.verify(canister_id, ic_public_key)?;
 
             let request_uri = &request.get_uri()?;
             let decoded_body = decode_body(&response.body, &encoding).unwrap();
             let decoded_body_sha = hash(decoded_body.as_slice());
-            let valid_tree = validate_tree(&canister_id, &certificate, &tree);
-            let mut valid_body = validate_body(&tree, &request_uri, &decoded_body_sha);
+            let valid_tree = validate_tree(canister_id, &certificate, &tree);
+            let mut valid_body = validate_body(&tree, request_uri, &decoded_body_sha);
 
-            if !encoding.is_none() && !valid_body {
+            if encoding.is_some() && !valid_body {
                 let body_sha = hash(response.body.as_slice());
-                valid_body = validate_body(&tree, &request_uri, &body_sha);
+                valid_body = validate_body(&tree, request_uri, &body_sha);
             }
 
             let result = valid_tree && valid_body;
@@ -292,10 +291,11 @@ fn v2_verification(
         });
     };
 
-    let request_hash = match &certification.request_certification {
-        Some(request_certification) => Some(hash::request_hash(&request, request_certification)),
-        None => None,
-    };
+    let request_hash = certification
+        .request_certification
+        .as_ref()
+        .map(|request_certification| hash::request_hash(&request, request_certification))
+        .transpose()?;
 
     let body_hash = hash(&response.body);
     let response_headers =
@@ -318,7 +318,7 @@ fn v2_verification(
         response: Some(Response {
             status_code: response.status_code,
             headers: response_headers.headers,
-            body: response.body.clone(),
+            body: response.body,
         }),
     })
 }
