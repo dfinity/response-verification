@@ -234,7 +234,7 @@ fn v1_verification(
                 true => Some(Response {
                     status_code: response.status_code,
                     headers: Vec::new(),
-                    body: decoded_body,
+                    body: response.body,
                 }),
                 false => None,
             };

@@ -412,6 +412,26 @@ mod tests {
     }
 
     #[test]
+    fn validate_wildcard_expr_path_that_is_most_precise_path_available() {
+        let expr_path = vec!["assets".into(), "js".into(), "<*>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                label(
+                    "assets",
+                    label("js", label("<*>", empty())),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(result);
+    }
+
+    #[test]
     fn validate_expr_path_that_does_not_exist() {
         let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
