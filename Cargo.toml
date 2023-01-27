@@ -4,3 +4,8 @@ members = [
     "packages/ic-response-verification-tests",
     "examples/rust",
 ]
+
+[profile.release]
+opt-level = 'z'
+codegen-units = 1
+lto = true

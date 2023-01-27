@@ -1,5 +1,5 @@
 {
-  "checksum": "51d2d5284ab624f948f1afffb3f152a4f560750ac7bcb3c80d0891608364f959",
+  "checksum": "d8f5967490d2c0858bc16fb96034ce86e890fb0b4dbb354b9879abb8402f3303",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -2936,8 +2936,18 @@
           "allow_alt_compress",
           "default",
           "fallback_separator",
-          "std"
+          "std",
+          "wasm-bindgen"
         ],
+        "deps": {
+          "common": [
+            {
+              "id": "wasm-bindgen 0.2.83",
+              "target": "wasm_bindgen"
+            }
+          ],
+          "selects": {}
+        },
         "edition": "2018",
         "version": "4.2.2"
       },

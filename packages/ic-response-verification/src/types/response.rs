@@ -7,7 +7,7 @@ const RESPONSE: &'static str = r#"
 interface Response {
     statusCode: number;
     headers: [string, string][];
-    body: Uint8Array;
+    body: Uint8Array | null;
 }
 "#;
 
