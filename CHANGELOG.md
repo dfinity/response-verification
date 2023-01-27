@@ -2,6 +2,8 @@
 
 ### Feat
 
+- use filter_response_headers function to return certified headers
+- check for more precise expr_path matches in the tree
 - filter and return response headers based on certificate expression
 - verify request & response hashes in tree
 - Verify ic certificate with root public key
