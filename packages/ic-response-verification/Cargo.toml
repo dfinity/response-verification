@@ -3,11 +3,14 @@ name = "ic-response-verification"
 version = "0.0.0"
 edition = "2021"
 
+[features]
+debug = []
+
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[features]
-debug = []
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [dependencies]
 base64 = "0.13.0"

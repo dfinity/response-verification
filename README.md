@@ -1,23 +1,5 @@
 # Response Verification
 
-## Usage
-
-### In the browser
-
-Before executing any functions, the library needs to be initialized using the default import.
-
-```typescript
-import initResponseVerification, {
-  sayHello,
-} from '@dfinity/response-verification';
-
-window.addEventListener('load', async () => {
-  await initResponseVerification();
-
-  console.log(sayHello());
-});
-```
-
 ## Examples
 
 - [NodeJS](./examples/nodejs/README.md)
@@ -31,7 +13,6 @@ window.addEventListener('load', async () => {
 
 - [Install pre-commit](https://pre-commit.com/#installation)
 - [Install commitizen](https://commitizen-tools.github.io/commitizen/#installation)
-- [Install Bazelisk](https://github.com/bazelbuild/bazelisk)
 - [Install Rust](https://www.rust-lang.org/learn/get-started)
 - [Install wasm-pack](https://rustwasm.github.io/wasm-pack/installer)
 
