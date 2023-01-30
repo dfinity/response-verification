@@ -65,7 +65,7 @@ pub fn validate_expr_path(
 }
 
 pub fn validate_expr_hash<'a>(
-    expr_path: &Vec<String>,
+    expr_path: &[String],
     expr_hash: &Sha256Digest,
     tree: &'a HashTree,
 ) -> Option<HashTree<'a>> {
