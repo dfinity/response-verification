@@ -3,7 +3,7 @@ name = "ic-response-verification"
 description = "Client side response verification for the Internet Computer"
 version = "0.0.0"
 authors = ["DFINITY Stiftung"]
-license-file = "LICENSE"
+license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://docs.rs/ic-response-verification"
 homepage = "https://github.com/dfinity/response-verification#readme"
@@ -11,7 +11,7 @@ repository = "https://github.com/dfinity/response-verification"
 categories = ["api-bindings", "authentication", "cryptography", "wasm"]
 keywords = ["internet", "computer", "icp", "dfinity", "response", "verification", "certification"]
 edition = "2021"
-include = ["src", "Cargo.toml", "LICENSE", "README.md"]
+include = ["src", "Cargo.toml", "README.md"]
 
 [features]
 debug = []
