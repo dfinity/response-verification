@@ -19,6 +19,7 @@ add_release_files() {
     cp ./packages/ic-response-verification-wasm/package.json ./pkg/
     cp ./packages/ic-response-verification-wasm/package-lock.json ./pkg/
     cp ./packages/ic-response-verification-wasm/README.md ./pkg/
+    cp ./packages/ic-response-verification-wasm/LICENSE ./pkg/
 }
 
 add_debug_files() {
