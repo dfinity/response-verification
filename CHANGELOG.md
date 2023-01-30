@@ -37,6 +37,7 @@
 
 ### Fix
 
+- fixed incorrect parameter type of validate_expr_hash function
 - validate against encoded and decoded body sha
 - hash encoded body for v2 response verification instead of decoded body
 - fixes cargo lock duplicate entry for ic-certification
@@ -67,6 +68,7 @@
 
 ### Perf
 
+- improve wasm binary size
 - add binaryen wasm opt support
 
 ## 0.0.0 (2022-09-29)
