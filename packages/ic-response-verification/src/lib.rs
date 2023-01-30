@@ -1,5 +1,5 @@
 //! # Response Verification
-//! 
+//!
 //! Response verification on the [Internet Computer](https://dfinity.org) is the process of
 //! verifying that a canister response from a replica has gone through consensus with other replicas
 //! hosting the same canister.
@@ -75,6 +75,8 @@ extern "C" {
     pub type JsResponse;
 }
 
+/// The primary entry point for verifying a request and response pair. This will verify the response
+/// with respect to the request, according the [Response Verification Spec]().
 #[cfg(target_arch = "wasm32")]
 #[wasm_bindgen(js_name = verifyRequestResponsePair)]
 pub fn verify_request_response_pair(

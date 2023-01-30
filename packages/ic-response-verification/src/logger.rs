@@ -17,6 +17,7 @@ extern "C" {
     pub fn error_impl(s: &str);
 }
 
+/// Logs a message to the console
 #[macro_export]
 #[cfg(target_arch = "wasm32")]
 macro_rules! log {
@@ -26,6 +27,7 @@ macro_rules! log {
     )
 }
 
+/// Logs a warning to the console
 #[macro_export]
 #[cfg(target_arch = "wasm32")]
 macro_rules! warn {
@@ -35,6 +37,7 @@ macro_rules! warn {
     )
 }
 
+/// Logs a trace to the console
 #[macro_export]
 #[cfg(target_arch = "wasm32")]
 macro_rules! trace {
@@ -44,6 +47,7 @@ macro_rules! trace {
     )
 }
 
+/// Logs an error to the console
 #[macro_export]
 #[cfg(target_arch = "wasm32")]
 macro_rules! error {
