@@ -1,3 +1,23 @@
+//! # Response Verification
+//! 
+//! Response verification on the [Internet Computer](https://dfinity.org) is the process of
+//! verifying that a canister response from a replica has gone through consensus with other replicas
+//! hosting the same canister.
+//!
+//! This package encapsulates the protocol for such verification. It is used by the
+//! [Service Worker](https://github.com/dfinity/ic/tree/master/typescript/service-worker) and
+//! [ICX Proxy](https://github.com/dfinity/ic/tree/master/rs/boundary_node/icx_proxy) and may be
+//! used by other implementations of the
+//! [HTTP Gateway Protocol](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway)
+//! in the future.
+
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    rustdoc::broken_intra_doc_links,
+    rustdoc::private_intra_doc_links
+)]
+
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
@@ -37,7 +57,9 @@ mod logger;
 mod test_utils;
 mod validation;
 
+/// The minimum verification version supported by this package.
 pub const MIN_VERIFICATION_VERSION: u8 = 1;
+/// The maximum verification version supported by this package.
 pub const MAX_VERIFICATION_VERSION: u8 = 2;
 
 #[cfg(target_arch = "wasm32")]
@@ -86,6 +108,8 @@ pub fn verify_request_response_pair(
 #[cfg(not(target_arch = "wasm32"))]
 pub use verify_request_response_pair_impl as verify_request_response_pair;
 
+/// The primary entry point for verifying a request and response pair. This will verify the response
+/// with respect to the request, according the [Response Verification Spec]().
 pub fn verify_request_response_pair_impl(
     request: Request,
     response: Response,
