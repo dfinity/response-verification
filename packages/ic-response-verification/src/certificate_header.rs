@@ -134,7 +134,10 @@ mod tests {
 
         let result = CertificateHeader::from(header.as_str()).expect_err("Expected an error");
 
-        assert!(matches!(result, ResponseVerificationError::ParseIntError(_)));
+        assert!(matches!(
+            result,
+            ResponseVerificationError::ParseIntError(_)
+        ));
     }
 
     #[test]
