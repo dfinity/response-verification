@@ -3,7 +3,7 @@
   "description": "Client side response verification for the Internet Computer",
   "version": "0.0.0",
   "author": "DFINITY Stiftung",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "Apache-2.0",
   "repository": "github:dfinity/response-verification",
   "bugs": "https://github.com/dfinity/response-verification/issues",
   "keywords": [
