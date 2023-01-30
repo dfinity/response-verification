@@ -45,3 +45,9 @@ Format rust files.
 ```shell
 cargo fmt -p ic-response-verification
 ```
+
+## Build docs
+
+```shell
+cargo doc -p ic-response-verification --no-deps --open
+```

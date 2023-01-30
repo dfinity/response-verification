@@ -2,8 +2,12 @@ use crate::hash::hash;
 use ic_certification::hash_tree::Sha256Digest;
 use sha2::{Digest, Sha256};
 
+/// Represents a value to be hashed. Only UTF-8 strings and numbers are currently supported.
+#[derive(Debug)]
 pub enum Value {
+    /// An UTF-8 string to be hashed.
     String(String),
+    /// A number to be hashed.
     Number(u64),
 }
 

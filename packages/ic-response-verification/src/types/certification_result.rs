@@ -11,9 +11,14 @@ interface CertificationResult {
 }
 "#;
 
+/// Result of verifying the provided request/response pair's certification.
 #[derive(Debug, Eq, PartialEq)]
 pub struct CertificationResult {
+    /// True if verification was successful, false otherwise.
     pub passed: bool,
+    /// Response object including the status code, body and headers that were included in the
+    /// certification and passed verification. If verification failed then this object will be
+    /// empty.
     pub response: Option<Response>,
 }
 

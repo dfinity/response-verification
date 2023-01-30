@@ -3,6 +3,10 @@ use crate::hash::representation_independent_hash::{representation_independent_ha
 use crate::types::{Request, RequestCertification};
 use ic_certification::hash_tree::Sha256Digest;
 
+/// Calculates the
+/// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+/// of [crate::types::Request] according to [crate::types::RequestCertification] returned from
+/// [crate::cel::cel_to_certification].
 pub fn request_hash(
     request: &Request,
     request_certification: &RequestCertification,

@@ -13,16 +13,19 @@ interface Request {
 }
 "#;
 
-/// Represents a Request from the IC
+/// Represents a Request from the [Internet Computer](https://dfinity.org).
 #[derive(Debug, PartialEq, Eq)]
 pub struct Request {
+    /// The HTTP method of the request, i.e. "GET".
     pub method: String,
+    /// The URL of the request, i.e. "/".
     pub url: String,
+    /// The HTTP headers of the request, i.e. \[\["Host", "rdmx6-jaaaa-aaaaa-aaadq-cai.ic0.app"\]\]
     pub headers: Vec<(String, String)>,
 }
 
 impl Request {
-    pub fn get_uri(&self) -> ResponseVerificationResult<Uri> {
+    pub(crate) fn get_uri(&self) -> ResponseVerificationResult<Uri> {
         self.url
             .parse::<Uri>()
             .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))

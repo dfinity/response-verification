@@ -7,12 +7,19 @@ const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
 const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
 const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
+/// Representation of response headers filtered by [filter_response_headers].
+#[derive(Debug)]
 pub struct ResponseHeaders {
+    /// Filtered headers
     pub headers: Vec<(String, String)>,
+    /// IC-Certificate header
     pub certificate: Option<String>,
+    /// IC-Certificate-Expression header
     pub certificate_expression: Option<String>,
 }
 
+/// Filters headers of [crate::types::Response] according to [crate::types::ResponseCertification]
+/// returned from [crate::cel::cel_to_certification].
 pub fn filter_response_headers(
     response: &Response,
     response_certification: &ResponseCertification,
@@ -74,6 +81,9 @@ pub fn filter_response_headers(
     response_headers
 }
 
+/// Calculates the
+/// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+/// of [ResponseHeaders] that have been filtered with [filter_response_headers].
 pub fn response_headers_hash(
     status_code: &u64,
     response_headers: &ResponseHeaders,
@@ -103,7 +113,10 @@ pub fn response_headers_hash(
 
     representation_independent_hash(&headers_to_verify)
 }
-
+/// Calculates the
+/// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+/// of a [crate::types::Response] according to [crate::types::ResponseCertification] returned from
+/// [crate::cel::cel_to_certification].
 pub fn response_hash(
     response: &Response,
     response_certification: &ResponseCertification,
