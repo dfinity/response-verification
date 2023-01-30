@@ -10,7 +10,6 @@ interface Request {
     method: String;
     url: String;
     headers: [string, string][];
-    body: Uint8Array;
 }
 "#;
 

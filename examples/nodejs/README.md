@@ -2,22 +2,29 @@
 
 ## Setup
 
-Install NPM modules:
-
-```shell
-npm install
-```
-
+From the root of this repository,
 Build the `@dfinity/response-verification` package:
 
 ```shell
-bazel build //packages/ic-response-verification-wasm:lib
+./scripts/package.sh
 ```
 
 Link `@dfinity/response-verification` globally:
 
 ```shell
-pushd ../../bazel-bin/packages/ic-response-verification-wasm/lib && sudo npm link && popd
+pushd ./pkg && sudo npm link && popd
+```
+
+Change into this project's directory:
+
+```
+cd examples/nodejs
+```
+
+Install NPM modules:
+
+```shell
+npm install
 ```
 
 Link `@dfinity/response-verification` in this project:

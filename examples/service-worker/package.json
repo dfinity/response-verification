@@ -15,5 +15,8 @@
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0",
     "webpack-dev-server": "^4.11.1"
+  },
+  "dependencies": {
+    "@dfinity/principal": "^0.15.3"
   }
 }

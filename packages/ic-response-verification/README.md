@@ -3,19 +3,39 @@
 ## Build
 
 ```shell
-cargo build
+cargo build -p ic-response-verification
 ```
 
 ## Test
 
 ```shell
-cargo test
+cargo test -p ic-response-verification
 ```
 
 ## Wasm Test
 
 ```
-wasm-pack test --node
+wasm-pack test --node packages/ic-response-verification
+```
+
+## Wasm Build
+
+```
+./scripts/package.sh
+```
+
+## Link NPM package
+
+From the root of this repository:
+
+```
+pushd pkg && sudo npm link && popd
+```
+
+From another project:
+
+```shell
+npm link @dfinity/response-verification
 ```
 
 ## Format
@@ -23,5 +43,5 @@ wasm-pack test --node
 Format rust files.
 
 ```shell
-cargo fmt
+cargo fmt -p ic-response-verification
 ```

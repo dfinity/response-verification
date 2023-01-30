@@ -12,14 +12,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Bazel
-        uses: bazelbuild/setup-bazelisk@v2
-
-      - name: Setup Bazel Cache
+      - name: Setup Cargo Cache
         uses: actions/cache@v3
         with:
-          path: '~/.cache/bazel'
-          key: bazel
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup NodeJS
         uses: actions/setup-node@v3
@@ -30,6 +32,9 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Bump Version
         id: cz
@@ -68,7 +73,7 @@ jobs:
         run: cargo publish --dry-run -p ic-response-verification
 
       - name: Create NPM package release
-        run: bazel run //packages/ic-response-verification-wasm:lib.pack
+        run: ./scripts/package.sh
 
       - name: Create Github release
         uses: ncipollo/release-action@v1
