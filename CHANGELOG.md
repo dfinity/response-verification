@@ -45,6 +45,7 @@
 
 ### Refactor
 
+- migrate from bazel to wasm-pack
 - move certificate verification logic to acommodate for code split
 - remove debug log used for rust examples
 - use miracl_core_bls12381 crate for bls verification to reduce wasm size
