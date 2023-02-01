@@ -3,6 +3,8 @@ commitizen:
   tag_format: $version
   version: 0.0.0
   version_files:
-    - ic-response-verification-rs/Cargo.toml:version
-    - ic-response-verification-ts/package.json:version
+    - packages/ic-response-verification/Cargo.toml:version
+    - packages/ic-response-verification-tests/Cargo.toml:version
+    - packages/ic-response-verification-test-utils/Cargo.toml:version
+    - packages/ic-response-verification-wasm/package.json:version
   update_changelog_on_bump: true

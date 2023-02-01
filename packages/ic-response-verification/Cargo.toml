@@ -47,3 +47,7 @@ wasm-bindgen-test = "0.3"
 ic-certification = { git = "https://github.com/dfinity/agent-rs", rev = "815ee1f" }
 candid = "0.8.4"
 serde = "1.0.152"
+ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils" }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }

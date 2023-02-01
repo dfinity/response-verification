@@ -24,6 +24,10 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      # Needed because of the IC monorepo dependencies
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
         with:

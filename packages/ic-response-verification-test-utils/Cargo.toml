@@ -1,0 +1,15 @@
+[package]
+name = "ic-response-verification-test-utils"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+base64 = "0.21.0"
+hex = "0.4.3"
+ic-certification-test-utils = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-crypto = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-base-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-certified-map = "0.3.2"
+ic-certification = { git = "https://github.com/dfinity/agent-rs", rev = "815ee1f" }
+sha256 = "1.1.1"
