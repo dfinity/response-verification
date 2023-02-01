@@ -2,6 +2,7 @@
 members = [
     "packages/ic-response-verification",
     "packages/ic-response-verification-tests",
+    "packages/ic-response-verification-test-utils",
     "examples/rust",
 ]
 
