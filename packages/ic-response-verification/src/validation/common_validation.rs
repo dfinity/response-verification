@@ -166,8 +166,8 @@ mod tests {
     use ic_certification::hash_tree::HashTree;
     use ic_crypto_tree_hash::{flatmap, Label, LabeledTree};
     use ic_response_verification_test_utils::{
-        create_canister_id, create_certificate, create_certified_data,
-        create_custom_tree_certificate, AssetTree, CreateCertificateOptions,
+        create_canister_id, create_certified_data, AssetTree, CanisterData, CertificateBuilder,
+        CertificateData,
     };
     use std::ops::{Add, Sub};
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -180,23 +180,13 @@ mod tests {
         time.duration_since(UNIX_EPOCH).unwrap().as_nanos()
     }
 
-    fn leb_encode_timestamp(timestamp: u128) -> [u8; 1024] {
-        let mut buf = [0; 1024];
-        let mut writable = &mut buf[..];
-        leb128::write::unsigned(&mut writable, timestamp as u64).unwrap();
-
-        buf
-    }
-
     #[test]
     fn verify_certificate() {
         let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
-        let (_, root_key, cbor_encoded_certificate) =
-            create_certificate(Some(CreateCertificateOptions {
-                canister_id: Some(canister_id),
-                certified_data: None,
-                certificate_time: None,
-            }));
+        let (_, root_key, cbor_encoded_certificate) = CertificateBuilder::new(
+            CertificateData::CanisterData(CanisterData::default().with_canister_id(canister_id)),
+        )
+        .build();
 
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
 
@@ -207,11 +197,10 @@ mod tests {
     fn verify_certificate_should_fail() {
         let wrong_ic_key: &[u8] = b"\x30\x81\x82\x30\x1d\x06\x0d\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x01\x02\x01\x06\x0c\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x02\x01\x03\x61\x00\x81\x4c\x0e\x6e\xc7\x1f\xab\x58\x3b\x08\xbd\x81\x37\x3c\x25\x5c\x3c\x37\x1b\x2e\x84\x86\x3c\x98\xa4\xf1\xe0\x8b\x74\x23\x5d\x14\xfb\x5d\x9c\x0c\xd5\x46\xd9\x68\x5f\x91\x3a\x0c\x0b\x2c\xc5\x34\x15\x83\xbf\x4b\x43\x92\xe4\x67\xdb\x96\xd6\x5b\x9b\xb4\xcb\x71\x71\x12\xf8\x47\x2e\x0d\x5a\x4d\x14\x50\x5f\xfd\x74\x84\xb0\x12\x91\x09\x1c\x5f\x87\xb9\x88\x83\x46\x3f\x98\x08\x1a\x0b\xaa\xae";
         let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
-        let (_, _, cbor_encoded_certificate) = create_certificate(Some(CreateCertificateOptions {
-            canister_id: Some(canister_id),
-            certified_data: None,
-            certificate_time: None,
-        }));
+        let (_, _, cbor_encoded_certificate) = CertificateBuilder::new(
+            CertificateData::CanisterData(CanisterData::default().with_canister_id(canister_id)),
+        )
+        .build();
 
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
 
@@ -228,12 +217,10 @@ mod tests {
         let current_time = SystemTime::now();
         let current_timestamp = get_timestamp(current_time);
 
-        let certificate_options = CreateCertificateOptions {
-            certificate_time: Some(current_timestamp),
-            canister_id: None,
-            certified_data: None,
-        };
-        let (_, _, cbor_encoded_certificate) = create_certificate(Some(certificate_options));
+        let (_, _, cbor_encoded_certificate) =
+            CertificateBuilder::new(CertificateData::CanisterData(CanisterData::default()))
+                .with_time(current_timestamp)
+                .build();
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
 
         validate_certificate_time(&certificate, &current_timestamp, &MAX_CERT_TIME_OFFSET_NS)
@@ -248,12 +235,10 @@ mod tests {
         let future_time = current_time.add(Duration::new(301, 0));
         let future_timestamp = get_timestamp(future_time);
 
-        let certificate_options = CreateCertificateOptions {
-            certificate_time: Some(future_timestamp),
-            canister_id: None,
-            certified_data: None,
-        };
-        let (_, _, cbor_encoded_certificate) = create_certificate(Some(certificate_options));
+        let (_, _, cbor_encoded_certificate) =
+            CertificateBuilder::new(CertificateData::CanisterData(CanisterData::default()))
+                .with_time(future_timestamp)
+                .build();
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
 
         assert!(matches!(
@@ -271,12 +256,10 @@ mod tests {
         let past_time = current_time.sub(Duration::new(301, 0));
         let past_timestamp = get_timestamp(past_time);
 
-        let certificate_options = CreateCertificateOptions {
-            certificate_time: Some(past_timestamp),
-            canister_id: None,
-            certified_data: None,
-        };
-        let (_, _, cbor_encoded_certificate) = create_certificate(Some(certificate_options));
+        let (_, _, cbor_encoded_certificate) =
+            CertificateBuilder::new(CertificateData::CanisterData(CanisterData::default()))
+                .with_time(past_timestamp)
+                .build();
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
 
         assert!(matches!(
@@ -292,12 +275,12 @@ mod tests {
         let tree = AssetTree::default();
         let certified_data = tree.get_certified_data();
 
-        let certificate_options = CreateCertificateOptions {
-            certificate_time: None,
-            canister_id: Some(canister_id),
-            certified_data: Some(certified_data),
-        };
-        let (_, _, cbor_encoded_certificate) = create_certificate(Some(certificate_options));
+        let (_, _, cbor_encoded_certificate) =
+            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
+                canister_id,
+                certified_data,
+            }))
+            .build();
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 
@@ -314,12 +297,12 @@ mod tests {
             "8160c07b45d617dba08a20eaa71ace28b5962965034b7539e42ebdb80da729a9",
         );
 
-        let certificate_options = CreateCertificateOptions {
-            certificate_time: None,
-            canister_id: Some(canister_id),
-            certified_data: Some(certified_data),
-        };
-        let (_, _, cbor_encoded_certificate) = create_certificate(Some(certificate_options));
+        let (_, _, cbor_encoded_certificate) =
+            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
+                canister_id,
+                certified_data,
+            }))
+            .build();
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 
@@ -335,12 +318,12 @@ mod tests {
         let tree = AssetTree::default();
         let certified_data = tree.get_certified_data();
 
-        let certificate_options = CreateCertificateOptions {
-            certificate_time: None,
-            canister_id: Some(other_canister_id),
-            certified_data: Some(certified_data),
-        };
-        let (_, _, cbor_encoded_certificate) = create_certificate(Some(certificate_options));
+        let (_, _, cbor_encoded_certificate) =
+            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
+                canister_id: other_canister_id,
+                certified_data,
+            }))
+            .build();
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 
@@ -364,7 +347,8 @@ mod tests {
                 ])
             ]),
         ]);
-        let (_, _, cbor_encoded_certificate) = create_custom_tree_certificate(certificate_tree);
+        let (_, _, cbor_encoded_certificate) =
+            CertificateBuilder::new(CertificateData::CustomTree(certificate_tree)).build();
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 

@@ -1,6 +1,5 @@
 use crate::hash::hash;
-use crate::hash_from_hex;
-use ic_certification_test_utils::serialize_to_cbor;
+use crate::{hash_from_hex, serialize_to_cbor};
 use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree, RbTree};
 use ic_crypto_tree_hash::Digest;
 
