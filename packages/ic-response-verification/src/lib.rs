@@ -37,22 +37,21 @@ use crate::types::CertificationResult;
 use crate::validation::{validate_expr_hash, validate_expr_path, VerifyCertificate};
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
-use error::ResponseVerificationError;
-use error::ResponseVerificationResult;
 use ic_certification::hash_tree::Sha256Digest;
 use ic_certification::{Certificate, HashTree};
 use types::{Certification, Request, Response};
 use validation::{validate_body, validate_certificate_time, validate_hashes, validate_tree};
 
 pub mod cel;
+pub mod error;
 pub mod hash;
 pub mod types;
+pub use error::*;
 
 mod body;
 mod cbor;
 mod certificate_header;
 mod certificate_header_field;
-mod error;
 mod logger;
 mod test_utils;
 mod validation;
@@ -299,9 +298,9 @@ fn v2_verification(
     };
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-    certificate.verify(&canister_id, &ic_public_key)?;
+    certificate.verify(canister_id, ic_public_key)?;
 
-    if !validate_tree(&canister_id, &certificate, &tree)
+    if !validate_tree(canister_id, &certificate, &tree)
         || !validate_expr_path(&expr_path, &request_uri, &tree)
     {
         return Ok(CertificationResult {

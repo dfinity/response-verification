@@ -1,10 +1,14 @@
+//! Various error types for response verification failure scenarios
+
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 use crate::cel;
 
+/// Convenience type that represents the Result of performing response verification
 pub type ResponseVerificationResult<T = ()> = Result<T, ResponseVerificationError>;
 
+/// The primary container for response verification errors
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseVerificationError {
     /// The URL was malformed and could not be parsed correctly
@@ -19,18 +23,25 @@ pub enum ResponseVerificationError {
     #[error(r#"Failed to parse certificate: "{0}""#)]
     MalformedCertificate(String),
 
+    /// The certificate was expected to have a "time" path, but it was missing
     #[error(r#"Certificate is missing the "time" path"#)]
     MissingTimePathInTree,
 
+    /// The certificate's time was too far in the future
     #[error("Certificate time is too far in the future. Received {certificate_time:?}, expected {max_certificate_time:?} or earlier")]
     CertificateTimeTooFarInTheFuture {
+        /// The actual certificate time
         certificate_time: u128,
+        /// The maximum expected certificate time
         max_certificate_time: u128,
     },
 
+    /// The certificate's time was too far in the past
     #[error("Certificate time is too far in the past. Received {certificate_time:?}, expected {min_certificate_time:?} or later")]
     CertificateTimeTooFarInThePast {
+        /// The actual certificate time
         certificate_time: u128,
+        /// The minimum expected certificate time
         min_certificate_time: u128,
     },
 
@@ -38,10 +49,14 @@ pub enum ResponseVerificationError {
     #[error(r#"Invalid cbor: "{0}""#)]
     MalformedCbor(String),
 
+    /// The Cbor parser expected a node of a certain type but found a different type
     #[error(r#"Expected node with name {node_name:?} to have type {expected_type:?}, found {found_type:?}"#)]
     UnexpectedCborNodeType {
+        /// The name of the node with the incorrect type
         node_name: String,
+        /// The expected type of the node
         expected_type: String,
+        /// The actual type of the node
         found_type: String,
     },
 
@@ -49,48 +64,74 @@ pub enum ResponseVerificationError {
     #[error(r#"Invalid pruned data: "{0}""#)]
     IncorrectPrunedDataLength(#[from] std::array::TryFromSliceError),
 
+    /// Encountered an overflow error while decoding leb encoded timestamp
     #[error("Overflow while decoding leb")]
     LebDecodingOverflow,
 
+    /// Error converting UTF-8 string
     #[error(r#"Error converting UTF8 string bytes: "{0}""#)]
     Utf8ConversionError(#[from] std::string::FromUtf8Error),
 
+    /// An unsupported verification version was requested
     #[error(r#"The requested verification version {requested_version:?} is not supported, the current supported range is {min_supported_version:?}-{max_supported_version:?}"#)]
     UnsupportedVerificationVersion {
+        /// The minimum supported verification version
         min_supported_version: u8,
+        /// The maximum supported verification version
         max_supported_version: u8,
+        /// The actual requested verification version
         requested_version: u8,
     },
 
+    /// Error parsing CEL expression
     #[error("Cel parser error")]
     CelError(#[from] cel::CelParserError),
 
+    /// Unexpected public key length
     #[error(
         r#"BLS DER-encoded public key must be {expected} bytes long, but is {actual} bytes long"#
     )]
-    DerKeyLengthMismatch { expected: usize, actual: usize },
+    DerKeyLengthMismatch {
+        /// Expected size of the public key
+        expected: usize,
+        /// Actual size of the public key
+        actual: usize,
+    },
 
+    /// Unexpected public key prefix
     #[error("BLS DER-encoded public key is invalid. Expected the following prefix: {expected:?}, but got {actual:?}")]
-    DerPrefixMismatch { expected: Vec<u8>, actual: Vec<u8> },
+    DerPrefixMismatch {
+        /// Expected public key prefix
+        expected: Vec<u8>,
+        /// Actual public key prefix
+        actual: Vec<u8>,
+    },
 
+    /// Failed to verify the certificate
     #[error("Certificate verification failed")]
     CertificateVerificationFailed,
 
+    /// Certificate is for a different canister
     #[error("Certificate verification failed with principal out of range")]
     CertificatePrincipalOutOfRange,
 
+    /// Certificate delegation is missing the required public key
     #[error("Certificate verification subnet public key not found")]
     CertificateSubnetPublicKeyNotFound,
 
+    /// Certificate delegation is missing the required canister range
     #[error("Certificate verification subnet canister ranges not found")]
     CertificateSubnetCanisterRangesNotFound,
 
+    /// Certificate delegation canister range was not correctly CBOR encoded
     #[error("Invalid cbor canister ranges")]
     MalformedCborCanisterRanges,
 
+    /// Error decoding base64
     #[error("Base64 decoding error")]
     Base64DecodingError(#[from] base64::DecodeError),
 
+    /// Error parsing int
     #[error("Error parsing int")]
     ParseIntError(#[from] std::num::ParseIntError),
 }
