@@ -166,19 +166,15 @@ mod tests {
     use ic_certification::hash_tree::HashTree;
     use ic_crypto_tree_hash::{flatmap, Label, LabeledTree};
     use ic_response_verification_test_utils::{
-        create_canister_id, create_certified_data, AssetTree, CanisterData, CertificateBuilder,
-        CertificateData,
+        create_canister_id, create_certified_data, get_current_timestamp, get_timestamp, AssetTree,
+        CanisterData, CertificateBuilder, CertificateData,
     };
     use std::ops::{Add, Sub};
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use std::time::{Duration, SystemTime};
 
     static CANISTER_ID: &str = "r7inp-6aaaa-aaaaa-aaabq-cai";
     static OTHER_CANISTER_ID: &str = "rdmx6-jaaaa-aaaaa-aaadq-cai";
     const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000; // 5 min
-
-    fn get_timestamp(time: SystemTime) -> u128 {
-        time.duration_since(UNIX_EPOCH).unwrap().as_nanos()
-    }
 
     #[test]
     fn verify_certificate() {
@@ -214,8 +210,7 @@ mod tests {
 
     #[test]
     fn validate_certificate_time_with_suitable_time() {
-        let current_time = SystemTime::now();
-        let current_timestamp = get_timestamp(current_time);
+        let current_timestamp = get_current_timestamp();
 
         let (_, _, cbor_encoded_certificate) =
             CertificateBuilder::new(CertificateData::CanisterData(CanisterData::default()))
@@ -229,10 +224,9 @@ mod tests {
 
     #[test]
     fn validate_certificate_time_with_time_too_far_in_the_future() {
-        let current_time = SystemTime::now();
-        let current_timestamp = get_timestamp(current_time);
+        let current_timestamp = get_current_timestamp();
 
-        let future_time = current_time.add(Duration::new(301, 0));
+        let future_time = SystemTime::now().add(Duration::new(301, 0));
         let future_timestamp = get_timestamp(future_time);
 
         let (_, _, cbor_encoded_certificate) =
@@ -250,10 +244,9 @@ mod tests {
 
     #[test]
     fn validate_certificate_time_with_time_too_far_in_the_past() {
-        let current_time = SystemTime::now();
-        let current_timestamp = get_timestamp(current_time);
+        let current_timestamp = get_current_timestamp();
 
-        let past_time = current_time.sub(Duration::new(301, 0));
+        let past_time = SystemTime::now().sub(Duration::new(301, 0));
         let past_timestamp = get_timestamp(past_time);
 
         let (_, _, cbor_encoded_certificate) =

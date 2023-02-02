@@ -1,4 +1,4 @@
-use crate::{leb_encode_timestamp, serialize_to_cbor, AssetTree};
+use crate::{base64_encode, leb_encode_timestamp, serialize_to_cbor, AssetTree};
 use ic_crypto_internal_seed::Seed;
 use ic_crypto_internal_threshold_sig_bls12381::api::{
     combine_signatures, combined_public_key, generate_threshold_key, sign_message,
@@ -31,8 +31,17 @@ pub fn create_canister_id(canister_id: &str) -> CanisterId {
     CanisterId::from_str(canister_id).unwrap()
 }
 
-pub fn create_certificate_header(tree: &String, certificate: &String) -> String {
-    format!("certificate=:{}:, tree=:{}:", certificate, tree)
+pub fn create_certificate_header<T>(certificate: &T, tree: &T) -> String
+where
+    T: AsRef<[u8]>,
+{
+    let base64_encoded_certificate = base64_encode(certificate);
+    let base64_encoded_tree = base64_encode(tree);
+
+    format!(
+        "certificate=:{}:, tree=:{}:",
+        base64_encoded_certificate, base64_encoded_tree
+    )
 }
 
 const DEFAULT_CERTIFICATE_TIME: u128 = 1651142233000005031;
