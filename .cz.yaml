@@ -7,4 +7,5 @@ commitizen:
     - packages/ic-response-verification-tests/Cargo.toml:version
     - packages/ic-response-verification-test-utils/Cargo.toml:version
     - packages/ic-response-verification-wasm/package.json:version
+    - packages/ic-response-verification-wasm/Cargo.toml:version
   update_changelog_on_bump: true

@@ -1,9 +1,10 @@
 use crate::error::{ResponseVerificationError, ResponseVerificationResult};
 use http::Uri;
-#[cfg(target_arch = "wasm32")]
+
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 use wasm_bindgen::{prelude::*, JsCast};
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(typescript_custom_section)]
 const REQUEST: &'static str = r#"
 interface Request {
@@ -32,7 +33,7 @@ impl Request {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 impl From<JsValue> for Request {
     fn from(req: JsValue) -> Self {
         use js_sys::{Array, JsString, Object};
@@ -83,7 +84,7 @@ impl From<JsValue> for Request {
     }
 }
 
-#[cfg(all(target_arch = "wasm32", test))]
+#[cfg(all(target_arch = "wasm32", feature = "js", test))]
 mod tests {
     use super::*;
     use js_sys::JSON;

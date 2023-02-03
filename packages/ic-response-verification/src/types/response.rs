@@ -1,7 +1,7 @@
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 use wasm_bindgen::{prelude::*, JsCast};
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(typescript_custom_section)]
 const RESPONSE: &'static str = r#"
 interface Response {
@@ -22,7 +22,7 @@ pub struct Response {
     pub body: Vec<u8>,
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 impl From<Response> for JsValue {
     fn from(response: Response) -> Self {
         use js_sys::{Array, Number, Object, Uint8Array};
@@ -47,7 +47,7 @@ impl From<Response> for JsValue {
     }
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 impl From<JsValue> for Response {
     fn from(resp: JsValue) -> Self {
         use js_sys::{Array, JsString, Number, Object, Uint8Array};
@@ -94,7 +94,7 @@ impl From<JsValue> for Response {
     }
 }
 
-#[cfg(all(target_arch = "wasm32", test))]
+#[cfg(all(target_arch = "wasm32", feature = "js", test))]
 mod tests {
     use super::*;
     use js_sys::JSON;
