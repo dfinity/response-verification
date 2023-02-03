@@ -1,6 +1,6 @@
 .idea
-/.cargo
-/target
+.cargo
+target
 .DS_Store
 /tmp
 /pkg

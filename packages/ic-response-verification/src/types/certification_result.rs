@@ -1,8 +1,9 @@
 use crate::types::Response;
-#[cfg(target_arch = "wasm32")]
+
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 use wasm_bindgen::prelude::*;
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(typescript_custom_section)]
 const CERTIFICATION_RESULT_TYPE: &'static str = r#"
 interface CertificationResult {
@@ -22,7 +23,7 @@ pub struct CertificationResult {
     pub response: Option<Response>,
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 impl From<CertificationResult> for JsValue {
     fn from(certification_result: CertificationResult) -> Self {
         use js_sys::{Array, Boolean, Object};
@@ -39,7 +40,7 @@ impl From<CertificationResult> for JsValue {
     }
 }
 
-#[cfg(all(target_arch = "wasm32", test))]
+#[cfg(all(target_arch = "wasm32", feature = "js", test))]
 mod tests {
     use crate::types::{CertificationResult, Response};
     use js_sys::JSON;

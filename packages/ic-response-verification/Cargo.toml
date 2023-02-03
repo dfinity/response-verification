@@ -14,20 +14,17 @@ edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
 [features]
-debug = []
+debug = ["log/max_level_trace", "log/release_max_level_trace"]
+js = ["dep:wasm-bindgen", "dep:js-sys"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[package.metadata.wasm-pack.profile.release]
-wasm-opt = ["-Oz", "--enable-mutable-globals"]
-
 [dependencies]
 base64 = "0.13.0"
-console_error_panic_hook = "0.1.7"
 nom = "7.1.1"
-js-sys = "0.3"
-wasm-bindgen = "0.2.83"
+js-sys = { version = "0.3", optional = true }
+wasm-bindgen = { version = "0.2.83", optional = true }
 thiserror = "1.0.37"
 sha2 = "0.10.6"
 http = "0.2.8"
@@ -37,7 +34,7 @@ miracl_core_bls12381 = { version = "4.2.2", default_features = false, features =
 flate2 = "1.0.24"
 leb128 = "0.2.5"
 candid = "0.8.4"
-wee_alloc = "0.4.5"
+log = { version = "0.4.17", features = ["max_level_off", "release_max_level_off"] }
 
 [dev-dependencies]
 hex = "0.4.3"

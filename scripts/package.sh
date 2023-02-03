@@ -1,11 +1,11 @@
 build_release_packages() {
-    wasm-pack build --target web --out-name web --out-dir ../../pkg/web --release packages/ic-response-verification
-    wasm-pack build --target nodejs --out-name nodejs --out-dir ../../pkg/nodejs --release packages/ic-response-verification
+    wasm-pack build --target web --out-name web --out-dir ../../pkg/web --release packages/ic-response-verification-wasm
+    wasm-pack build --target nodejs --out-name nodejs --out-dir ../../pkg/nodejs --release packages/ic-response-verification-wasm
 }
 
 build_debug_packages() {
-    wasm-pack build --target web --out-name web --out-dir ../../pkg/debug/web --profiling packages/ic-response-verification -- --features "debug"
-    wasm-pack build --target nodejs --out-name nodejs --out-dir ../../pkg/debug/nodejs --profiling packages/ic-response-verification -- --features "debug"
+    wasm-pack build --target web --out-name web --out-dir ../../pkg/debug/web --profiling packages/ic-response-verification-wasm -- --features "debug"
+    wasm-pack build --target nodejs --out-name nodejs --out-dir ../../pkg/debug/nodejs --profiling packages/ic-response-verification-wasm -- --features "debug"
 }
 
 delete_generated_files() {
@@ -25,6 +25,7 @@ add_release_files() {
 add_debug_files() {
     cp ./packages/ic-response-verification-wasm/package.json ./pkg/debug/
     cp ./packages/ic-response-verification-wasm/package-lock.json ./pkg/debug/
+    cp ./packages/ic-response-verification-wasm/LICENSE ./pkg/debug/
 }
 
 build_release_packages

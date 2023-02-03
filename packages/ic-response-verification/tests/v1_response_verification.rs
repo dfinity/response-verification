@@ -3,7 +3,11 @@ mod tests {
     use ic_response_verification::types::{Request, Response};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification::ResponseVerificationError;
-    use ic_response_verification_test_utils::{create_canister_id, create_certificate_header, get_current_timestamp, get_timestamp, AssetTree, CanisterData, CertificateBuilder, CertificateData, create_certified_data};
+    use ic_response_verification_test_utils::{
+        create_canister_id, create_certificate_header, create_certified_data,
+        get_current_timestamp, get_timestamp, AssetTree, CanisterData, CertificateBuilder,
+        CertificateData,
+    };
     use std::ops::{Add, Sub};
     use std::time::{Duration, SystemTime};
 
@@ -218,8 +222,9 @@ mod tests {
         let path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certificate_time =
-            get_timestamp(SystemTime::now().add(Duration::new(300, MAX_CERT_TIME_OFFSET_NS as u32)));
+        let certificate_time = get_timestamp(
+            SystemTime::now().add(Duration::new(300, MAX_CERT_TIME_OFFSET_NS as u32)),
+        );
         let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
 
         let mut asset_tree = AssetTree::new();
@@ -273,8 +278,9 @@ mod tests {
         let path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certificate_time =
-            get_timestamp(SystemTime::now().sub(Duration::new(300, MAX_CERT_TIME_OFFSET_NS as u32)));
+        let certificate_time = get_timestamp(
+            SystemTime::now().sub(Duration::new(300, MAX_CERT_TIME_OFFSET_NS as u32)),
+        );
         let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
 
         let mut asset_tree = AssetTree::new();
@@ -287,8 +293,8 @@ mod tests {
                 canister_id,
                 certified_data,
             }))
-                .with_time(certificate_time)
-                .build();
+            .with_time(certificate_time)
+            .build();
 
         let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
 
@@ -341,8 +347,8 @@ mod tests {
                 canister_id: other_canister_id,
                 certified_data,
             }))
-                .with_time(current_time)
-                .build();
+            .with_time(current_time)
+            .build();
 
         let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
 
@@ -365,7 +371,8 @@ mod tests {
             current_time,
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(!result.passed);
         assert!(result.response.is_none());
@@ -390,8 +397,8 @@ mod tests {
                 canister_id,
                 certified_data,
             }))
-                .with_time(current_time)
-                .build();
+            .with_time(current_time)
+            .build();
 
         let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
 
@@ -414,7 +421,8 @@ mod tests {
             current_time,
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(!result.passed);
         assert!(result.response.is_none());
@@ -437,8 +445,8 @@ mod tests {
                 canister_id,
                 certified_data,
             }))
-                .with_time(current_time)
-                .build();
+            .with_time(current_time)
+            .build();
 
         let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
 
@@ -461,7 +469,8 @@ mod tests {
             current_time,
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(!result.passed);
         assert!(result.response.is_none());

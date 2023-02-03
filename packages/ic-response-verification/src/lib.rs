@@ -18,19 +18,6 @@
     rustdoc::private_intra_doc_links
 )]
 
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
-
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::JsCast;
-
-#[cfg(target_arch = "wasm32")]
-use error::ResponseVerificationJsError;
-
-#[cfg(target_arch = "wasm32")]
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
 use crate::body::decode_body;
 use crate::hash::{filter_response_headers, hash};
 use crate::types::CertificationResult;
@@ -52,7 +39,6 @@ mod body;
 mod cbor;
 mod certificate_header;
 mod certificate_header_field;
-mod logger;
 mod test_utils;
 mod validation;
 
@@ -61,57 +47,9 @@ pub const MIN_VERIFICATION_VERSION: u8 = 1;
 /// The maximum verification version supported by this package.
 pub const MAX_VERIFICATION_VERSION: u8 = 2;
 
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(typescript_type = "CertificationResult")]
-    pub type JsCertificationResult;
-
-    #[wasm_bindgen(typescript_type = "Request")]
-    pub type JsRequest;
-
-    #[wasm_bindgen(typescript_type = "Response")]
-    pub type JsResponse;
-}
-
 /// The primary entry point for verifying a request and response pair. This will verify the response
 /// with respect to the request, according the [Response Verification Spec]().
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen(js_name = verifyRequestResponsePair)]
 pub fn verify_request_response_pair(
-    request: JsRequest,
-    response: JsResponse,
-    canister_id: &[u8],
-    current_time_ns: u64,
-    max_cert_time_offset_ns: u64,
-    ic_public_key: &[u8],
-) -> Result<JsCertificationResult, ResponseVerificationJsError> {
-    #[cfg(all(feature = "debug", target_arch = "wasm32"))]
-    console_error_panic_hook::set_once();
-
-    let request = Request::from(JsValue::from(request));
-    let response = Response::from(JsValue::from(response));
-
-    verify_request_response_pair_impl(
-        request,
-        response,
-        canister_id,
-        current_time_ns as u128,
-        max_cert_time_offset_ns as u128,
-        ic_public_key,
-    )
-    .map(|certification_result| {
-        JsValue::from(certification_result).unchecked_into::<JsCertificationResult>()
-    })
-    .map_err(|e| ResponseVerificationJsError::from(e))
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-pub use verify_request_response_pair_impl as verify_request_response_pair;
-
-/// The primary entry point for verifying a request and response pair. This will verify the response
-/// with respect to the request, according the [Response Verification Spec]().
-pub fn verify_request_response_pair_impl(
     request: Request,
     response: Response,
     canister_id: &[u8],

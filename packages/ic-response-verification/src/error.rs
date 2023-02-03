@@ -1,6 +1,6 @@
 //! Various error types for response verification failure scenarios
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 use wasm_bindgen::prelude::*;
 
 use crate::cel;
@@ -136,46 +136,72 @@ pub enum ResponseVerificationError {
     ParseIntError(#[from] std::num::ParseIntError),
 }
 
-#[cfg(target_arch = "wasm32")]
+/// JS Representation of the ResponseVerificationError code
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(js_name = ResponseVerificationErrorCode)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ResponseVerificationJsErrorCode {
+    /// The URL was malformed and could not be parsed correctly
     MalformedUrl,
+    /// The hash tree was malformed and could not be parsed correctly
     MalformedHashTree,
+    /// The certificate was malformed and could not be parsed correctly
     MalformedCertificate,
+    /// The certificate was expected to have a "time" path, but it was missing
     MissingTimePathInTree,
+    /// The certificate's time was too far in the future
     CertificateTimeTooFarInTheFuture,
+    /// The certificate's time was too far in the past
     CertificateTimeTooFarInThePast,
+    /// The CBOR was malformed and could not be parsed correctly
     MalformedCbor,
+    /// The Cbor parser expected a node of a certain type but found a different type
     UnexpectedCborNodeType,
+    /// The hash tree pruned data was not the correct length
     IncorrectPrunedDataLength,
+    /// Encountered an overflow error while decoding leb encoded timestamp
     LebDecodingOverflow,
+    /// Error converting UTF-8 string
     Utf8ConversionError,
+    /// An unsupported verification version was requested
     UnsupportedVerificationVersion,
+    /// Error parsing CEL expression
     CelError,
+    /// Unexpected public key length
     DerKeyLengthMismatch,
+    /// Unexpected public key prefix
     DerPrefixMismatch,
+    /// Failed to verify the certificate
     CertificateVerificationFailed,
+    /// Certificate is for a different canister
     CertificatePrincipalOutOfRange,
+    /// Certificate delegation is missing the required public key
     CertificateSubnetPublicKeyNotFound,
+    /// Certificate delegation is missing the required canister range
     CertificateSubnetCanisterRangesNotFound,
+    /// Certificate delegation canister range was not correctly CBOR encoded
     MalformedCborCanisterRanges,
+    /// Error decoding base64
     Base64DecodingError,
+    /// Error parsing int
     ParseIntError,
 }
 
-#[cfg(target_arch = "wasm32")]
+/// JS Representation of the ResponseVerificationError
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(inspectable, js_name = ResponseVerificationError)]
 #[derive(Debug, Eq, PartialEq)]
 pub struct ResponseVerificationJsError {
+    /// Error code as an enum
     #[wasm_bindgen(readonly)]
     pub code: ResponseVerificationJsErrorCode,
 
+    /// Stringified error message
     #[wasm_bindgen(getter_with_clone, readonly)]
     pub message: String,
 }
 
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 impl From<ResponseVerificationError> for ResponseVerificationJsError {
     fn from(error: ResponseVerificationError) -> ResponseVerificationJsError {
         let code = match error {
@@ -253,7 +279,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
     }
 }
 
-#[cfg(all(target_arch = "wasm32", test))]
+#[cfg(all(target_arch = "wasm32", feature = "js", test))]
 mod tests {
     use super::*;
     use crate::{cel::CelParserError, test_utils::test_utils::hex_decode};
