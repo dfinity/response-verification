@@ -8,6 +8,6 @@ hex = "0.4.3"
 http = "0.2.8"
 ic-agent = "0.23.0"
 ic-utils = "0.23.0"
-tokio = { version = "1.24.1", features = ["full"] }
+tokio = { version = "1.24.2", features = ["full"] }
 ic-response-verification = { path = "../ic-response-verification" }
 anyhow = "1.0.68"
