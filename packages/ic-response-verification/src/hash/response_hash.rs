@@ -4,7 +4,7 @@ use crate::types::{Response, ResponseCertification};
 use ic_certification::hash_tree::Sha256Digest;
 
 const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
-const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-Certificate-Expression";
+const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-CertificateExpression";
 const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
 /// Representation of response headers filtered by [filter_response_headers].
@@ -14,7 +14,7 @@ pub struct ResponseHeaders {
     pub headers: Vec<(String, String)>,
     /// IC-Certificate header
     pub certificate: Option<String>,
-    /// IC-Certificate-Expression header
+    /// IC-CertificateExpression header
     pub certificate_expression: Option<String>,
 }
 
@@ -207,7 +207,7 @@ mod tests {
         ]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let expected_hash =
-            hex::decode("f3f918d36368b615b6e2c01a80e9ca95193d09d039b95977c9741579b09f1725")
+            hex::decode("3393250e3cedc30408dcb7e8963898c3d7549b8a0b76496b82fdfeae99c2ac78")
                 .unwrap();
 
         let result = response_hash(&response, &response_certification);
@@ -224,7 +224,7 @@ mod tests {
             status_code: 200,
             headers: vec![
                 (
-                    "IC-Certificate-Expression".into(),
+                    "IC-CertificateExpression".into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -247,7 +247,7 @@ mod tests {
         ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let expected_hash =
-            hex::decode("592bdfe001adca2d48f0372a2d6bbdc561a6806719710dc8d393f8f89f14a25b")
+            hex::decode("a2ffb50ef8971650c2fb46c0a2788b7d5ac5a027d635175e8e06b419ce6c4cda")
                 .unwrap();
 
         let result = response_hash(&response, &response_certification);
@@ -264,7 +264,7 @@ mod tests {
             status_code: 200,
             headers: vec![
                 (
-                    "IC-Certificate-Expression".into(),
+                    "IC-CertificateExpression".into(),
                     remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -289,7 +289,7 @@ mod tests {
         ]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let expected_hash =
-            hex::decode("9f90f9e9cc067e1071d4a5e1de415bc261d536a50772fbad2440ccc8494470c2")
+            hex::decode("eac859a99d5bd7b71f46dbacecff4aaa0a7a7131802c136a77a76c8e018af5f7")
                 .unwrap();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
@@ -308,7 +308,7 @@ mod tests {
             headers: vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
                 (
-                    "IC-Certificate-Expression".into(),
+                    "IC-CertificateExpression".into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -336,7 +336,7 @@ mod tests {
         ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let expected_hash =
-            hex::decode("80d1666b9b5f377fafc98ac68e4a9b5514956995937a54e0b50e63b21d9c5bfa")
+            hex::decode("d618f70bf2578d5a672374ffbaade3910e858384f42d01ac2863946ab596bcac")
                 .unwrap();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
@@ -355,7 +355,7 @@ mod tests {
             headers: vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
                 (
-                    "IC-Certificate-Expression".into(),
+                    "IC-CertificateExpression".into(),
                     remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -388,7 +388,7 @@ mod tests {
             headers: vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
                 (
-                    "IC-Certificate-Expression".into(),
+                    "IC-CertificateExpression".into(),
                     remove_whitespace(cel_expression),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),

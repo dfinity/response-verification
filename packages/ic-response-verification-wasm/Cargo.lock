@@ -1041,9 +1041,10 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "base64 0.21.0",
+ "candid",
  "console_error_panic_hook",
  "ic-response-verification",
  "ic-response-verification-test-utils",

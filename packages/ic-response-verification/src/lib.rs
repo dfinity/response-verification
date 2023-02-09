@@ -89,7 +89,7 @@ pub fn verify_request_response_pair(
                 .transpose()?;
         }
 
-        if name.eq_ignore_ascii_case("Ic-Certificate-Expression") {
+        if name.eq_ignore_ascii_case("Ic-CertificateExpression") {
             certification = cel::cel_to_certification(value)?;
             expr_hash = Some(hash(value.as_bytes()));
         }

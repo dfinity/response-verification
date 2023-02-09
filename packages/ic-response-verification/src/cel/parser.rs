@@ -158,12 +158,15 @@ fn function<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 fn cel_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
 ) -> IResult<&'a str, CelValue, E> {
-    trim_whitespace(alt((
-        map(object, |(name, value)| CelValue::Object(name, value)),
-        map(function, |(name, value)| CelValue::Function(name, value)),
-        map(array, CelValue::Array),
-        map(string, CelValue::String),
-    )))(i)
+    context(
+        "cel_value",
+        trim_whitespace(alt((
+            map(object, |(name, value)| CelValue::Object(name, value)),
+            map(function, |(name, value)| CelValue::Function(name, value)),
+            map(array, CelValue::Array),
+            map(string, CelValue::String),
+        ))),
+    )(i)
 }
 
 pub fn parse_cel_expression(i: &str) -> CelParserResult<CelValue> {

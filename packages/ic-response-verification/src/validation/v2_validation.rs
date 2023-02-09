@@ -1,15 +1,13 @@
 use crate::types::Certification;
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Sha256Digest, HashTree, Label, SubtreeLookupResult};
+use std::borrow::Cow;
 
 fn path_from_parts<T>(parts: &[T]) -> Vec<Label>
 where
     T: AsRef<[u8]>,
 {
-    let mut path = vec![Label::from("http_expr")];
-    path.extend(parts.iter().map(Label::from));
-
-    path
+    parts.iter().map(Label::from).collect()
 }
 
 fn path_exists_in_tree(path: &Vec<Label>, tree: &HashTree) -> bool {
@@ -21,11 +19,8 @@ pub fn validate_expr_path(
     request_url: &http::Uri,
     tree: &HashTree,
 ) -> bool {
-    let mut request_url_parts = request_url
-        .path()
-        .split('/')
-        .filter(|e| !e.is_empty())
-        .collect::<Vec<_>>();
+    let mut request_url_parts = vec!["http_expr"];
+    request_url_parts.extend(request_url.path().split('/').filter(|e| !e.is_empty()));
 
     let certified_path = path_from_parts(expr_path);
     let mut request_url_path = path_from_parts(&request_url_parts);
@@ -48,17 +43,18 @@ pub fn validate_expr_path(
     if certified_path.eq(&request_url_path) {
         return true;
     }
+    request_url_path.pop();
 
     // recursively check for partial URL matches with wildcards that are more precise than the expr_path
-    while request_url_parts.len() >= expr_path.len() {
-        let mut paths = path_from_parts(&request_url_parts);
-        paths.push("<*>".into());
+    while request_url_path.len() >= expr_path.len() {
+        request_url_path.push("<*>".into());
 
-        if path_exists_in_tree(&paths, tree) {
+        if path_exists_in_tree(&request_url_path, tree) {
             return false;
         }
 
-        request_url_parts.pop();
+        request_url_path.pop(); // pop "<$>"
+        request_url_path.pop(); // pop the last segment of the path
     }
 
     true
@@ -98,7 +94,7 @@ pub fn validate_hashes(
 
     match expr_tree.lookup_subtree(&expr_tree_path) {
         SubtreeLookupResult::Found(res_tree) => {
-            HashTreeNode::from(res_tree).eq(&HashTreeNode::Empty())
+            HashTreeNode::from(res_tree).eq(&HashTreeNode::Leaf(Cow::from("".as_bytes())))
         }
         _ => false,
     }
@@ -113,7 +109,7 @@ mod tests {
         hash::hash,
         test_utils::test_utils::{create_pruned, remove_whitespace},
     };
-    use ic_certification::hash_tree::{empty, fork, label};
+    use ic_certification::hash_tree::{fork, label, leaf};
 
     const REQUEST_HASH: &str = "5fac69685533f0650991441a2b818e8ad5ab2fec51de8cfdbea1276135494815";
     const RESPONSE_HASH: &str = "07b7c729f4083db0e266fef3f8f5acf1315135605bf38884c07ebb59fbf91ce8";
@@ -147,7 +143,13 @@ mod tests {
         let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
         let request_hash = sha256_from_hex(REQUEST_HASH);
         let response_hash = sha256_from_hex(RESPONSE_HASH);
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -156,7 +158,7 @@ mod tests {
                     label(
                         "js",
                         label("app.js", label("<$>", label(expr_hash, fork(
-                            label(request_hash, label(response_hash, empty())),
+                            label(request_hash, label(response_hash, leaf(""))),
                             create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
                         )))),
                     ),
@@ -183,7 +185,13 @@ mod tests {
         let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
         let request_hash = sha256_from_hex(REQUEST_HASH);
         let response_hash = sha256_from_hex(RESPONSE_HASH);
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -197,7 +205,7 @@ mod tests {
                                 "<$>",
                                 label(
                                     expr_hash,
-                                    label(request_hash, label(response_hash, empty())),
+                                    label(request_hash, label(response_hash, leaf(""))),
                                 ),
                             ),
                         ),
@@ -225,7 +233,13 @@ mod tests {
         let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
         let request_hash = sha256_from_hex(REQUEST_HASH);
         let response_hash = sha256_from_hex(RESPONSE_HASH);
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -239,7 +253,7 @@ mod tests {
                                 "<$>",
                                 label(
                                     hex_decode("c5dbe9d11756d4a7b05e5c0e246035dedcd1e4e71bd1e726c4011940d811496b"),
-                                    label(request_hash, label(response_hash, empty())),
+                                    label(request_hash, label(response_hash, leaf(""))),
                                 ),
                             ),
                         ),
@@ -267,7 +281,13 @@ mod tests {
         let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
         let request_hash = sha256_from_hex(REQUEST_HASH);
         let response_hash = sha256_from_hex(RESPONSE_HASH);
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -277,7 +297,7 @@ mod tests {
                         "js",
                         label(
                             "app.js",
-                            label("<$>", label(expr_hash, label(response_hash, empty()))),
+                            label("<$>", label(expr_hash, label(response_hash, leaf("")))),
                         ),
                     ),
                 ),
@@ -303,7 +323,13 @@ mod tests {
         let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
         let request_hash = sha256_from_hex(REQUEST_HASH);
         let response_hash = sha256_from_hex(RESPONSE_HASH);
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -312,7 +338,7 @@ mod tests {
                     label(
                         "js",
                         label("app.js", label("<$>", label(expr_hash, fork(
-                            label(sha256_from_hex("236baceb3bbf1ad861a981807c4f7580344d8c7b25b7329be266c603ccc0f03e"), label(response_hash, empty())),
+                            label(sha256_from_hex("236baceb3bbf1ad861a981807c4f7580344d8c7b25b7329be266c603ccc0f03e"), label(response_hash, leaf(""))),
                             create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
                         )))),
                     ),
@@ -339,7 +365,13 @@ mod tests {
         let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
         let request_hash = sha256_from_hex(REQUEST_HASH);
         let response_hash = sha256_from_hex(RESPONSE_HASH);
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -348,7 +380,7 @@ mod tests {
                     label(
                         "js",
                         label("app.js", label("<$>", label(expr_hash, fork(
-                            label(request_hash, empty()),
+                            label(request_hash, leaf("")),
                             create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
                         )))),
                     ),
@@ -375,7 +407,13 @@ mod tests {
         let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
         let request_hash = sha256_from_hex(REQUEST_HASH);
         let response_hash = sha256_from_hex(RESPONSE_HASH);
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -384,7 +422,7 @@ mod tests {
                     label(
                         "js",
                         label("app.js", label("<$>", label(expr_hash, fork(
-                            label(request_hash, label(sha256_from_hex("02456594f95f4e8f35f14850d23bc05aa065ecc17eb4aeaff3c1819edaee0816"), empty())),
+                            label(request_hash, label(sha256_from_hex("02456594f95f4e8f35f14850d23bc05aa065ecc17eb4aeaff3c1819edaee0816"), leaf(""))),
                             create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
                         )))),
                     ),
@@ -409,7 +447,13 @@ mod tests {
     #[test]
     fn validate_expr_hash_no_certification() {
         let expr_hash = hash(remove_whitespace(NO_CERTIFICATION_CEL_EXPRESSION).as_bytes());
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -417,7 +461,7 @@ mod tests {
                     "assets",
                     label(
                         "js",
-                        label("app.js", label("<$>", label(expr_hash, empty()))),
+                        label("app.js", label("<$>", label(expr_hash, leaf("")))),
                     ),
                 ),
             ),
@@ -426,13 +470,19 @@ mod tests {
 
         let result = validate_expr_hash(&expr_path, &expr_hash, &tree);
 
-        assert_eq!(result, Some(empty()));
+        assert_eq!(result, Some(leaf("")));
     }
 
     #[test]
     fn validate_expr_hash_does_not_exist() {
         let expr_hash = hash(remove_whitespace(NO_CERTIFICATION_CEL_EXPRESSION).as_bytes());
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let tree = fork(
             label(
                 "http_expr",
@@ -440,7 +490,7 @@ mod tests {
                     "assets",
                     label(
                         "js",
-                        label("app.js", label("<$>", label(sha256_from_hex("02456594f95f4e8f35f14850d23bc05aa065ecc17eb4aeaff3c1819edaee0816"), empty()))),
+                        label("app.js", label("<$>", label(sha256_from_hex("02456594f95f4e8f35f14850d23bc05aa065ecc17eb4aeaff3c1819edaee0816"), leaf("")))),
                     ),
                 ),
             ),
@@ -454,14 +504,20 @@ mod tests {
 
     #[test]
     fn validate_expr_path_that_is_most_precise_path_available() {
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
         let tree = fork(
             label(
                 "http_expr",
                 label(
                     "assets",
-                    label("js", label("app.js", label("<$>", empty()))),
+                    label("js", label("app.js", label("<$>", leaf("")))),
                 ),
             ),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
@@ -474,12 +530,17 @@ mod tests {
 
     #[test]
     fn validate_wildcard_expr_path_that_is_most_precise_path_available() {
-        let expr_path = vec!["assets".into(), "js".into(), "<*>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "<*>".into(),
+        ];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
         let tree = fork(
             label(
                 "http_expr",
-                label("assets", label("js", label("<*>", empty()))),
+                label("assets", label("js", label("<*>", leaf("")))),
             ),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
@@ -491,12 +552,18 @@ mod tests {
 
     #[test]
     fn validate_expr_path_that_does_not_exist() {
-        let expr_path = vec!["assets".into(), "js".into(), "app.js".into(), "<$>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
         let tree = fork(
             label(
                 "http_expr",
-                label("assets", label("js", label("<*>", empty()))),
+                label("assets", label("js", label("<*>", leaf("")))),
             ),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
@@ -508,14 +575,19 @@ mod tests {
 
     #[test]
     fn validate_expr_path_that_has_more_precise_path_available() {
-        let expr_path = vec!["assets".into(), "js".into(), "<*>".into()];
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "<*>".into(),
+        ];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
         let tree = fork(
             label(
                 "http_expr",
                 label(
                     "assets",
-                    label("js", label("app.js", label("<$>", empty()))),
+                    label("js", label("app.js", label("<$>", leaf("")))),
                 ),
             ),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
@@ -528,12 +600,12 @@ mod tests {
 
     #[test]
     fn validate_expr_path_that_has_more_precise_wildcard_path_available() {
-        let expr_path = vec!["assets".into(), "<*>".into()];
+        let expr_path = vec!["http_expr".into(), "assets".into(), "<*>".into()];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
         let tree = fork(
             label(
                 "http_expr",
-                label("assets", label("js", label("<*>", empty()))),
+                label("assets", label("js", label("<*>", leaf("")))),
             ),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );

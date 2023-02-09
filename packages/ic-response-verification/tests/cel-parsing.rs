@@ -18,12 +18,12 @@ fn assert_parse_result(cel_expression: &str, expected_result: Option<Certificati
 #[test]
 fn parses_no_certification_expression() {
     let cel_expression = r#"
-            default_certification (
-              ValidationArgs {
+        default_certification (
+            ValidationArgs {
                 no_certification: Empty { }
-              }
-            )
-        "#;
+            }
+        )
+    "#;
     let expected_result = None;
 
     assert_parse_result(cel_expression, expected_result);
@@ -32,19 +32,19 @@ fn parses_no_certification_expression() {
 #[test]
 fn parses_no_request_certification_expression() {
     let cel_expression = r#"
-            default_certification (
-              ValidationArgs {
+        default_certification (
+            ValidationArgs {
                 certification: Certification {
-                  no_request_certification: Empty {},
-                  response_certification: ResponseCertification {
-                    response_header_exclusions: ResponseHeaderList {
-                      headers: ["Server","Date","X-Cache-Status"]
+                    no_request_certification: Empty {},
+                    response_certification: ResponseCertification {
+                        response_header_exclusions: ResponseHeaderList {
+                            headers: ["Server","Date","X-Cache-Status"]
+                        }
                     }
-                  }
                 }
-              }
-            )
-        "#;
+            }
+        )
+    "#;
     let expected_result = Some(Certification {
         request_certification: None,
         response_certification: ResponseCertification::HeaderExclusions(vec![
@@ -60,22 +60,22 @@ fn parses_no_request_certification_expression() {
 #[test]
 fn parses_full_certification_expression() {
     let cel_expression = r#"
-            default_certification (
-                ValidationArgs {
-                    certification: Certification {
-                        request_certification: RequestCertification {
-                            certified_request_headers: ["host"],
-                            certified_query_parameters: ["filter"]
-                        },
-                        response_certification: ResponseCertification {
-                            certified_response_headers: ResponseHeaderList {
-                                headers: ["Content-Type","X-Frame-Options","Content-Security-Policy","Strict-Transport-Security","Referrer-Policy","Permissions-Policy"]
-                            }
+        default_certification (
+            ValidationArgs {
+                certification: Certification {
+                    request_certification: RequestCertification {
+                        certified_request_headers: ["host"],
+                        certified_query_parameters: ["filter"]
+                    },
+                    response_certification: ResponseCertification {
+                        certified_response_headers: ResponseHeaderList {
+                            headers: ["Content-Type","X-Frame-Options","Content-Security-Policy","Strict-Transport-Security","Referrer-Policy","Permissions-Policy"]
                         }
                     }
                 }
-            )
-        "#;
+            }
+        )
+    "#;
     let expected_result = Some(Certification {
         request_certification: Some(RequestCertification {
             certified_request_headers: vec!["host".into()],
