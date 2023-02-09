@@ -1,6 +1,8 @@
 use crate::agent::create_agent;
 use anyhow::{anyhow, Result};
 use ic_agent::export::Principal;
+use ic_agent::Agent;
+use ic_response_verification::types::{CertificationResult, Request, Response};
 use ic_utils::call::SyncCall;
 use ic_utils::interfaces::http_request::HeaderField;
 use ic_utils::interfaces::HttpRequestCanister;
@@ -34,23 +36,73 @@ async fn main() -> Result<()> {
         return Err(anyhow!("The canister_id arg was not provided: `cargo run [canister_id]`"));
     };
 
-    let ic_root_key = hex::decode(&env_ic_root_key).unwrap();
+    let root_key = hex::decode(&env_ic_root_key).unwrap();
     let agent = create_agent(replica_address.as_str())?;
+
+    v1_test(canister_id, &root_key, &agent).await?;
+    v2_test(canister_id, &root_key, &agent).await?;
+
+    Ok(())
+}
+
+async fn v1_test(canister_id: &str, root_key: &[u8], agent: &Agent) -> Result<()> {
+    let result = perform_test(canister_id, "GET", "/", None, root_key, agent).await?;
+    assert!(result.passed);
+
+    let result = perform_test(
+        canister_id,
+        "GET",
+        "/sample-asset.txt",
+        None,
+        root_key,
+        agent,
+    )
+    .await?;
+    assert!(result.passed);
+
+    Ok(())
+}
+
+async fn v2_test(canister_id: &str, root_key: &[u8], agent: &Agent) -> Result<()> {
+    let result = perform_test(canister_id, "GET", "/", Some(&2), root_key, agent).await?;
+    assert!(result.passed);
+
+    let result = perform_test(
+        canister_id,
+        "GET",
+        "/sample-asset.txt",
+        Some(&2),
+        root_key,
+        agent,
+    )
+    .await?;
+    assert!(result.passed);
+
+    Ok(())
+}
+
+async fn perform_test(
+    canister_id: &str,
+    http_method: &str,
+    path: &str,
+    certificate_version: Option<&u128>,
+    root_key: &[u8],
+    agent: &Agent,
+) -> Result<CertificationResult> {
     let canister_id = Principal::from_text(canister_id)?;
-    let canister_id_bytes = canister_id.as_slice();
-    let canister_interface = HttpRequestCanister::create(&agent, canister_id);
+    let canister_interface = HttpRequestCanister::create(agent, canister_id);
 
     let (response,) = canister_interface
-        .http_request("GET", "/", [], &[])
+        .http_request(http_method, path, [], &[], certificate_version)
         .call()
         .await?;
 
-    let request = ic_response_verification::types::Request {
+    let request = Request {
         method: "GET".into(),
         headers: vec![],
-        url: "/".into(),
+        url: path.into(),
     };
-    let response = ic_response_verification::types::Response {
+    let response = Response {
         headers: response
             .headers
             .iter()
@@ -65,13 +117,11 @@ async fn main() -> Result<()> {
     let result = ic_response_verification::verify_request_response_pair(
         request,
         response,
-        canister_id_bytes,
+        canister_id.as_slice(),
         current_time_ns,
         max_cert_time_offset_ns,
-        &ic_root_key,
+        root_key,
     )?;
 
-    assert!(result.passed);
-
-    Ok(())
+    Ok(result)
 }

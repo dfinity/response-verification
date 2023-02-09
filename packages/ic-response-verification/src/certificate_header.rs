@@ -5,7 +5,7 @@ use crate::{
 use log::warn;
 
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct CertificateHeader {
     pub certificate: Option<Vec<u8>>,
     pub tree: Option<Vec<u8>>,
@@ -94,7 +94,6 @@ fn parse_int_header(value: &str) -> ResponseVerificationResult<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::error::ResponseVerificationError;
     use crate::test_utils::test_utils::{
         cbor_encode, create_certificate, create_encoded_header_field, create_header_field,
         create_tree,
@@ -132,12 +131,17 @@ mod tests {
         ]
         .join(",");
 
-        let result = CertificateHeader::from(header.as_str()).expect_err("Expected an error");
+        let result = CertificateHeader::from(header.as_str()).unwrap();
 
-        assert!(matches!(
+        assert_eq!(
             result,
-            ResponseVerificationError::ParseIntError(_)
-        ));
+            CertificateHeader {
+                certificate: None,
+                expr_path: None,
+                tree: None,
+                version: None,
+            }
+        );
     }
 
     #[test]

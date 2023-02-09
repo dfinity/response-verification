@@ -1,19 +1,23 @@
+GIT_BRANCH="TT-47-response-verification-extend-the-certified-assets-library"
+
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
-  SDK_REPO_DIR="$(pwd)/tmp/sdk"
+  SDK_REPO_DIR="$(pwd)/../sdk/"
 
-  if [ -d "$SDK_REPO_DIR" ]; then
-    echo "SDK repo already cloned, updating..."
+ if [ -d "$SDK_REPO_DIR" ]; then
+   echo "SDK repo already cloned, updating..."
 
-    pushd "$SDK_REPO_DIR" || clean_exit
-    git fetch
-    git pull
-    popd || clean_exit
-  else
-    echo "SDK repo not cloned yet, cloning..."
+   pushd "$SDK_REPO_DIR" || clean_exit
+   git fetch
+   git checkout "$GIT_BRANCH"
+   echo git checkout "$GIT_BRANCH"
+   git pull
+   popd || clean_exit
+ else
+   echo "SDK repo not cloned yet, cloning..."
 
-    git clone "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
-  fi
+   git clone -b "$GIT_BRANCH" "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
+ fi
 
 }
 
@@ -41,11 +45,11 @@ dfx_start() {
     clean_exit
   fi
 
-  "$DFX" start --background
+  "$DFX" start --clean --background --log file --logfile "$SDK_REPO_DIR/replica.log" -vv
 
   DFX_REPLICA_PORT=$("$DFX" info replica-port)
   DFX_REPLICA_ADDRESS="http://localhost:$DFX_REPLICA_PORT"
-  IC_ROOT_KEY=$($DFX ping $DFX_REPLICA_ADDRESS | sed -n 's/.*"root_key": \(.*\)/\1/p' | sed 's/[][,]//g' | xargs printf "%02x")
+  IC_ROOT_KEY=$($DFX ping "$DFX_REPLICA_ADDRESS" | sed -n 's/.*"root_key": \(.*\)/\1/p' | sed 's/[][,]//g' | xargs printf "%02x")
 
   echo "DFX local replica running at $DFX_REPLICA_ADDRESS."
 }
@@ -108,7 +112,7 @@ run_e2e_tests() {
     clean_exit
   fi
 
-  IC_ROOT_KEY=$IC_ROOT_KEY DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- $DFX_CANISTER_ID || clean_exit
+  IC_ROOT_KEY=$IC_ROOT_KEY DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_CANISTER_ID" || clean_exit
 }
 
 download_sdk_repo
