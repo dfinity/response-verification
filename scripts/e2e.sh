@@ -1,4 +1,4 @@
-GIT_BRANCH="TT-47-response-verification-extend-the-certified-assets-library"
+SDK_GIT_BRANCH="TT-47-response-verification-extend-the-certified-assets-library"
 
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
@@ -9,14 +9,14 @@ download_sdk_repo() {
 
    pushd "$SDK_REPO_DIR" || clean_exit
    git fetch
-   git checkout "$GIT_BRANCH"
-   echo git checkout "$GIT_BRANCH"
+   git checkout "$SDK_GIT_BRANCH"
+   echo git checkout "$SDK_GIT_BRANCH"
    git pull
    popd || clean_exit
  else
    echo "SDK repo not cloned yet, cloning..."
 
-   git clone -b "$GIT_BRANCH" "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
+   git clone -b "$SDK_GIT_BRANCH" "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
  fi
 
 }
