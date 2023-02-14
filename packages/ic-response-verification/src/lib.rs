@@ -181,7 +181,7 @@ fn v1_verification(
             certificate.verify(canister_id, ic_public_key)?;
 
             let request_uri = &request.get_uri()?;
-            let decoded_body = decode_body(&response.body, &encoding).unwrap();
+            let decoded_body = decode_body(&response.body, &encoding)?;
             let decoded_body_sha = hash(decoded_body.as_slice());
             let valid_tree = validate_tree(canister_id, &certificate, &tree);
             let mut valid_body = validate_body(&tree, request_uri, &decoded_body_sha);
