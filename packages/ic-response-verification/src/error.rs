@@ -27,6 +27,14 @@ pub enum ResponseVerificationError {
     #[error(r#"Certificate is missing the "time" path"#)]
     MissingTimePathInTree,
 
+    /// The provided response body exceeded the 10mb limit
+    #[error(r#"The response body is too large, the current limit is 10mb"#)]
+    ResponseBodyTooLarge,
+
+    /// Error converting UTF-8 string
+    #[error(r#"IO error: "{0}""#)]
+    IoError(#[from] std::io::Error),
+
     /// The certificate's time was too far in the future
     #[error("Certificate time is too far in the future. Received {certificate_time:?}, expected {max_certificate_time:?} or earlier")]
     CertificateTimeTooFarInTheFuture {
@@ -158,6 +166,10 @@ pub enum ResponseVerificationJsErrorCode {
     MalformedCertificate,
     /// The certificate was expected to have a "time" path, but it was missing
     MissingTimePathInTree,
+    /// The provided response body exceeded the 10mb limit
+    ResponseBodyTooLarge,
+    /// Error converting UTF-8 string
+    IoError,
     /// The certificate's time was too far in the future
     CertificateTimeTooFarInTheFuture,
     /// The certificate's time was too far in the past
@@ -227,6 +239,12 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             }
             ResponseVerificationError::MissingTimePathInTree => {
                 ResponseVerificationJsErrorCode::MissingTimePathInTree
+            }
+            ResponseVerificationError::ResponseBodyTooLarge => {
+                ResponseVerificationJsErrorCode::ResponseBodyTooLarge
+            }
+            ResponseVerificationError::IoError(_) => {
+                ResponseVerificationJsErrorCode::IoError
             }
             ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. } => {
                 ResponseVerificationJsErrorCode::CertificateTimeTooFarInTheFuture
@@ -363,6 +381,38 @@ mod tests {
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::MissingTimePathInTree,
                 message: r#"Certificate is missing the "time" path"#.into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_response_body_too_large() {
+        let error = ResponseVerificationError::ResponseBodyTooLarge;
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::ResponseBodyTooLarge,
+                message: r#"The response body is too large, the current limit is 10mb"#.into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_io_error() {
+        let inner_error = std::fs::File::open("foo.txt").expect_err("Expected error");
+
+        let error = ResponseVerificationError::IoError(inner_error);
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::IoError,
+                message: format!(r#"IO error: "{}""#, inner_error.to_string()),
             }
         )
     }
