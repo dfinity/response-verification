@@ -47,7 +47,7 @@ mod tests {
             headers: vec![("IC-Certificate".into(), certificate_header)],
         };
         let expected_response = Response {
-            status_code: response.status_code,
+            status_code: 0,
             body: response.body.clone(),
             headers: vec![],
         };
@@ -100,7 +100,7 @@ mod tests {
             headers: vec![("IC-Certificate".into(), certificate_header)],
         };
         let expected_response = Response {
-            status_code: response.status_code,
+            status_code: 0,
             body: response.body.clone(),
             headers: vec![],
         };

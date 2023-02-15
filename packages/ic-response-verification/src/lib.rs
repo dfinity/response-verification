@@ -194,7 +194,7 @@ fn v1_verification(
             let result = valid_tree && valid_body;
             let certified_response = match result {
                 true => Some(Response {
-                    status_code: response.status_code,
+                    status_code: 0,
                     headers: Vec::new(),
                     body: response.body,
                 }),
@@ -276,12 +276,17 @@ fn v2_verification(
         &certification,
     );
 
-    Ok(CertificationResult {
-        passed: are_hashes_valid,
-        response: Some(Response {
+    let response = match are_hashes_valid {
+        true => Some(Response {
             status_code: response.status_code,
             headers: response_headers.headers,
             body: response.body,
         }),
+        false => None,
+    };
+
+    Ok(CertificationResult {
+        passed: are_hashes_valid,
+        response,
     })
 }
