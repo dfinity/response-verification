@@ -4,6 +4,7 @@ import initResponseVerification, {
   Response,
   ResponseVerificationError,
   ResponseVerificationErrorCode,
+  getMinVerificationVersion,
 } from "@dfinity/response-verification";
 import { Principal } from "@dfinity/principal";
 
@@ -56,7 +57,8 @@ window.addEventListener("load", async () => {
       canister_id,
       current_time_ns,
       max_cert_time_offset_ns,
-      fromHex(IC_ROOT_KEY)
+      fromHex(IC_ROOT_KEY),
+      getMinVerificationVersion(),
     );
   
     console.log("Result", result);

@@ -1,6 +1,6 @@
 use candid::{CandidType, Decode, Deserialize, Principal};
 use ic_response_verification::types::{Request, Response};
-use ic_response_verification::verify_request_response_pair;
+use ic_response_verification::{verify_request_response_pair, MIN_VERIFICATION_VERSION};
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
 struct HttpRequest {
@@ -60,6 +60,7 @@ fn main() {
         current_time_ns,
         max_cert_time_offset_ns,
         ic_root_key,
+        MIN_VERIFICATION_VERSION,
     );
 
     println!("Result: {:?}", result);
