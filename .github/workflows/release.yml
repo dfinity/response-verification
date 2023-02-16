@@ -1,11 +1,24 @@
 name: Release
 
-on: workflow_dispatch
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*.*.*"
 
 jobs:
-  bump_version:
-    name: Bump version
+  check_tag:
+    name: Check Tag
+    run: |
+      if [[ ${{ github.event.ref }} =~ ^refs/tags/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "match=true" >> $GITHUB_OUTPUT
+      fi
+
+  release:
+    name: Release
     runs-on: ubuntu-latest
+    if: jobs.check_tag.outputs.match == "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -21,7 +34,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles("**/Cargo.lock") }}
 
       - name: Setup NodeJS
         uses: actions/setup-node@v3
@@ -36,39 +49,6 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: Bump Version
-        id: cz
-        uses: commitizen-tools/commitizen-action@master
-        with:
-          changelog_increment_filename: RELEASE_NOTES.md
-          commit: false
-          push: false
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Print Version
-        run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
-
-      - name: Update Cargo.lock
-        run: cargo build -p ic-response-verification
-
-      - name: Update package-lock.json
-        run: npm i --package-lock-only
-        working-directory: packages/ic-response-verification-wasm
-
-      - name: Commit and Push changes to repository
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: 'bump: release ${{ steps.cz.outputs.version }}'
-          commit_options: '--no-verify --signoff'
-          file_pattern: >
-            .cz.yaml
-            CHANGELOG.md
-            packages/ic-response-verification/Cargo.toml
-            packages/ic-response-verification/Cargo.lock
-            packages/ic-response-verification/package.json
-            packages/ic-response-verification/package-lock.json
-          tagging_message: '${{ steps.cz.outputs.version }}'
-
       - name: Create Cargo crate release
         run: cargo publish --dry-run -p ic-response-verification
 
@@ -81,6 +61,6 @@ jobs:
           artifacts: >
             packages/ic-response-verification/target/package/ic-response-verification-${{ steps.cz.outputs.version }}.crate
             dfinity-response-verification-${{ steps.cz.outputs.version }}.tgz
-          bodyFile: 'RELEASE_NOTES.md'
-          tag: '${{ steps.cz.outputs.version }}'
-          commit: 'main'
+          bodyFile: "RELEASE_NOTES.md"
+          tag: "${{ steps.cz.outputs.version }}"
+          commit: "main"
