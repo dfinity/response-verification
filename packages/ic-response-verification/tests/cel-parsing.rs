@@ -1,9 +1,6 @@
 use ic_response_verification::cel::cel_to_certification;
 use ic_response_verification::types::{Certification, RequestCertification, ResponseCertification};
-
-fn remove_whitespace(s: &str) -> String {
-    s.chars().filter(|c| !c.is_whitespace()).collect()
-}
+use ic_response_verification_test_utils::remove_whitespace;
 
 fn assert_parse_result(cel_expression: &str, expected_result: Option<Certification>) {
     let minified_cel_expression = &remove_whitespace(cel_expression);
