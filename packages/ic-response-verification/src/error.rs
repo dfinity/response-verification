@@ -83,6 +83,15 @@ pub enum ResponseVerificationError {
         requested_version: u8,
     },
 
+    /// Mismatch between the minimum requested version and the actual requested version
+    #[error(r#"The requested verification version {requested_version:?} is lower than the minimum requested version {min_requested_verification_version:?}"#)]
+    RequestedVerificationVersionMismatch {
+        /// The minimum version that will be requested
+        min_requested_verification_version: u8,
+        /// The actual requested version
+        requested_version: u8,
+    },
+
     /// Error parsing CEL expression
     #[error("Cel parser error")]
     CelError(#[from] cel::CelParserError),
@@ -165,6 +174,8 @@ pub enum ResponseVerificationJsErrorCode {
     Utf8ConversionError,
     /// An unsupported verification version was requested
     UnsupportedVerificationVersion,
+    /// Mismatch between the minimum requested version and the actual requested version
+    RequestedVerificationVersionMismatch,
     /// Error parsing CEL expression
     CelError,
     /// Unexpected public key length
@@ -240,6 +251,9 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             }
             ResponseVerificationError::UnsupportedVerificationVersion { .. } => {
                 ResponseVerificationJsErrorCode::UnsupportedVerificationVersion
+            }
+            ResponseVerificationError::RequestedVerificationVersionMismatch { .. } => {
+                ResponseVerificationJsErrorCode::RequestedVerificationVersionMismatch
             }
             ResponseVerificationError::DerPrefixMismatch { .. } => {
                 ResponseVerificationJsErrorCode::DerPrefixMismatch
@@ -496,6 +510,24 @@ mod tests {
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::UnsupportedVerificationVersion,
                 message: r#"The requested verification version 42 is not supported, the current supported range is 1-2"#.into(),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_verification_version_mismatch() {
+        let error = ResponseVerificationError::RequestedVerificationVersionMismatch {
+            min_requested_verification_version: 2,
+            requested_version: 1,
+        };
+
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::RequestedVerificationVersionMismatch,
+                message: r#"The requested verification version 1 is lower than the minimum requested version 2"#.into(),
             }
         )
     }

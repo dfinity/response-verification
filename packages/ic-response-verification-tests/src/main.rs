@@ -121,6 +121,7 @@ async fn perform_test(
         current_time_ns,
         max_cert_time_offset_ns,
         root_key,
+        ic_response_verification::MIN_VERIFICATION_VERSION,
     )?;
 
     Ok(result)

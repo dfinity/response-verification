@@ -56,6 +56,7 @@ pub fn verify_request_response_pair(
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
     ic_public_key: &[u8],
+    min_requested_verification_version: u8,
 ) -> ResponseVerificationResult<CertificationResult> {
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
@@ -97,6 +98,15 @@ pub fn verify_request_response_pair(
         if name.eq_ignore_ascii_case("Content-Encoding") {
             encoding = Some(value.into());
         }
+    }
+
+    if version < min_requested_verification_version {
+        return Err(
+            ResponseVerificationError::RequestedVerificationVersionMismatch {
+                requested_version: version,
+                min_requested_verification_version,
+            },
+        );
     }
 
     verification(
