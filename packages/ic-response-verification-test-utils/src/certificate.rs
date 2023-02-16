@@ -31,16 +31,26 @@ pub fn create_canister_id(canister_id: &str) -> CanisterId {
     CanisterId::from_str(canister_id).unwrap()
 }
 
-pub fn create_certificate_header<T>(certificate: &T, tree: &T) -> String
-where
-    T: AsRef<[u8]>,
-{
-    let base64_encoded_certificate = base64_encode(certificate);
-    let base64_encoded_tree = base64_encode(tree);
+pub fn create_certificate_header<T: AsRef<[u8]>>(certificate: &T, tree: &T) -> String {
+    let certificate = base64_encode(certificate);
+    let tree = base64_encode(tree);
+
+    format!("certificate=:{}:, tree=:{}:", certificate, tree)
+}
+
+pub fn create_versioned_certificate_header<T: AsRef<[u8]>>(
+    certificate: &T,
+    tree: &T,
+    expr_path: &T,
+    version: u8,
+) -> String {
+    let certificate = base64_encode(certificate);
+    let tree = base64_encode(tree);
+    let expr_path = base64_encode(expr_path);
 
     format!(
-        "certificate=:{}:, tree=:{}:",
-        base64_encoded_certificate, base64_encoded_tree
+        "certificate=:{}:, tree=:{}:, expr_path=:{}:, version={}",
+        certificate, tree, expr_path, version
     )
 }
 
