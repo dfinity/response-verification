@@ -24,7 +24,7 @@ extern "C" {
 
 #[wasm_bindgen(js_name = getMinVerificationVersion)]
 pub fn get_min_verification_version() -> u8 {
-        return MIN_VERIFICATION_VERSION;
+    return MIN_VERIFICATION_VERSION;
 }
 
 #[wasm_bindgen(js_name = getMaxVerificationVersion)]
