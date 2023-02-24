@@ -1,12 +1,15 @@
+use crate::{ResponseVerificationError, ResponseVerificationResult};
 use flate2::read::{DeflateDecoder, GzDecoder};
 use std::io::Read;
-use crate::{ResponseVerificationError, ResponseVerificationResult};
 
 // The limit of a buffer we should decompress ~10mb.
 const MAX_CHUNK_SIZE_TO_DECOMPRESS: usize = 1_024;
 const MAX_CHUNKS_TO_DECOMPRESS: usize = 10_240;
 
-pub fn decode_body(body: &Vec<u8>, encoding: &Option<String>) -> ResponseVerificationResult<Vec<u8>> {
+pub fn decode_body(
+    body: &Vec<u8>,
+    encoding: &Option<String>,
+) -> ResponseVerificationResult<Vec<u8>> {
     return match encoding.as_deref() {
         Some("gzip") => body_from_decoder(GzDecoder::new(body.as_slice())),
         Some("deflate") => body_from_decoder(DeflateDecoder::new(body.as_slice())),
@@ -75,7 +78,8 @@ mod tests {
 
     #[test]
     fn fail_decoding_large_body() {
-        const LARGE_BODY_SIZE: usize = (MAX_CHUNK_SIZE_TO_DECOMPRESS * MAX_CHUNKS_TO_DECOMPRESS) + 1;
+        const LARGE_BODY_SIZE: usize =
+            (MAX_CHUNK_SIZE_TO_DECOMPRESS * MAX_CHUNKS_TO_DECOMPRESS) + 1;
         let body = vec![0; LARGE_BODY_SIZE];
 
         let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());

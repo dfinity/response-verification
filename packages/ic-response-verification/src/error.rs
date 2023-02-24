@@ -243,9 +243,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::ResponseBodyTooLarge => {
                 ResponseVerificationJsErrorCode::ResponseBodyTooLarge
             }
-            ResponseVerificationError::IoError(_) => {
-                ResponseVerificationJsErrorCode::IoError
-            }
+            ResponseVerificationError::IoError(_) => ResponseVerificationJsErrorCode::IoError,
             ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. } => {
                 ResponseVerificationJsErrorCode::CertificateTimeTooFarInTheFuture
             }
