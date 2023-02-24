@@ -798,7 +798,7 @@ dependencies = [
 [[package]]
 name = "ic-certification"
 version = "0.23.0"
-source = "git+https://github.com/dfinity/agent-rs?rev=815ee1f#815ee1f523d498d8777a8941acf1a6042f959afc"
+source = "git+https://github.com/dfinity/agent-rs?rev=9d7be5ffe3570ab77dda1aa70ee530854e64cd1a#9d7be5ffe3570ab77dda1aa70ee530854e64cd1a"
 dependencies = [
  "hex",
  "sha2 0.10.6",
@@ -1044,7 +1044,6 @@ name = "ic-response-verification-wasm"
 version = "0.0.0"
 dependencies = [
  "base64 0.21.0",
- "candid",
  "console_error_panic_hook",
  "ic-response-verification",
  "ic-response-verification-test-utils",

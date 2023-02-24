@@ -1052,7 +1052,7 @@ dependencies = [
 [[package]]
 name = "ic-agent"
 version = "0.23.0"
-source = "git+https://github.com/dfinity/agent-rs?branch=nathan/add-certificate-version-to-http-canister-interface#46394a0e35dd98dad72bd1a0f0d8b17b7f063557"
+source = "git+https://github.com/dfinity/agent-rs?rev=9d7be5ffe3570ab77dda1aa70ee530854e64cd1a#9d7be5ffe3570ab77dda1aa70ee530854e64cd1a"
 dependencies = [
  "async-trait",
  "backoff",
@@ -1065,7 +1065,7 @@ dependencies = [
  "http",
  "http-body",
  "hyper-rustls",
- "ic-certification 0.23.0 (git+https://github.com/dfinity/agent-rs?branch=nathan/add-certificate-version-to-http-canister-interface)",
+ "ic-certification",
  "ic-verify-bls-signature",
  "k256",
  "leb128",
@@ -1132,18 +1132,7 @@ dependencies = [
 [[package]]
 name = "ic-certification"
 version = "0.23.0"
-source = "git+https://github.com/dfinity/agent-rs?branch=nathan/add-certificate-version-to-http-canister-interface#46394a0e35dd98dad72bd1a0f0d8b17b7f063557"
-dependencies = [
- "hex",
- "serde",
- "serde_bytes",
- "sha2 0.10.6",
-]
-
-[[package]]
-name = "ic-certification"
-version = "0.23.0"
-source = "git+https://github.com/dfinity/agent-rs?rev=815ee1f#815ee1f523d498d8777a8941acf1a6042f959afc"
+source = "git+https://github.com/dfinity/agent-rs?rev=9d7be5ffe3570ab77dda1aa70ee530854e64cd1a#9d7be5ffe3570ab77dda1aa70ee530854e64cd1a"
 dependencies = [
  "hex",
  "serde",
@@ -1354,7 +1343,7 @@ dependencies = [
  "flate2",
  "hex",
  "http",
- "ic-certification 0.23.0 (git+https://github.com/dfinity/agent-rs?rev=815ee1f)",
+ "ic-certification",
  "ic-crypto-tree-hash",
  "ic-response-verification-test-utils",
  "js-sys",
@@ -1481,7 +1470,7 @@ dependencies = [
 [[package]]
 name = "ic-utils"
 version = "0.23.0"
-source = "git+https://github.com/dfinity/agent-rs?branch=nathan/add-certificate-version-to-http-canister-interface#46394a0e35dd98dad72bd1a0f0d8b17b7f063557"
+source = "git+https://github.com/dfinity/agent-rs?rev=9d7be5ffe3570ab77dda1aa70ee530854e64cd1a#9d7be5ffe3570ab77dda1aa70ee530854e64cd1a"
 dependencies = [
  "async-trait",
  "candid",
