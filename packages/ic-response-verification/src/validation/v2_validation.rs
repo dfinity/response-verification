@@ -18,6 +18,13 @@ pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &
     let mut request_url_parts = vec!["http_expr"];
     request_url_parts.extend(request_url.path().split('/').filter(|e| !e.is_empty()));
 
+    // make sure to treat a request for a directory and a file as different paths
+    // i.e. /app is not the same as /app/
+    // we do this by inserting an empty space for directory paths
+    if request_url.path().ends_with('/') {
+        request_url_parts.push("");
+    }
+
     let mut certified_path = path_from_parts(expr_path);
     let mut request_url_path = path_from_parts(&request_url_parts);
 
@@ -529,6 +536,20 @@ mod tests {
     }
 
     #[test]
+    fn validation_expr_path_with_trailing_slash() {
+        let expr_path = vec!["http_expr".into(), "app".into(), "".into(), "<$>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/app/").unwrap();
+        let tree = fork(
+            label("http_expr", label("app", label("", label("<$>", leaf(""))))),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(result);
+    }
+
+    #[test]
     fn validate_wildcard_expr_path_that_is_most_precise_path_available() {
         let expr_path = vec![
             "http_expr".into(),
@@ -603,11 +624,7 @@ mod tests {
 
     #[test]
     fn validate_expr_path_where_more_specific_path_is_pruned() {
-        let expr_path = vec![
-            "http_expr".into(),
-            "assets".into(),
-            "<*>".into(),
-        ];
+        let expr_path = vec!["http_expr".into(), "assets".into(), "<*>".into()];
         let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
         let tree = fork(
             label(
@@ -616,7 +633,9 @@ mod tests {
                     "assets",
                     fork(
                         label("<*>", leaf("")),
-                        create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+                        create_pruned(
+                            "c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3",
+                        ),
                     ),
                 ),
             ),
