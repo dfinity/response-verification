@@ -38,6 +38,8 @@
 
 ### Fix
 
+- update agent-rs package
+- spec incompatibilities
 - fixed incorrect parameter type of validate_expr_hash function
 - validate against encoded and decoded body sha
 - hash encoded body for v2 response verification instead of decoded body
@@ -46,6 +48,7 @@
 
 ### Refactor
 
+- update GIT_BRANCH variable to more specific name
 - migrate from bazel to wasm-pack
 - move certificate verification logic to acommodate for code split
 - remove debug log used for rust examples
