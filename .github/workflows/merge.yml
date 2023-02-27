@@ -38,4 +38,5 @@ jobs:
           title: "Update changelog"
           commit-message: "chore: update changelog"
           branch: "chore/update-changelog"
+          branch-suffix: "short-commit-hash"
           reviewers: "@dfinity/trust"
