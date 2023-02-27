@@ -2,31 +2,18 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - "*.*.*"
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  check_tag:
-    name: Check Tag
-    runs-on: ubuntu-latest
-    outputs:
-      match: ${{ steps.check_tag.outputs.match }}
-    steps:
-      - name: Check Tag
-        id: check_tag
-        run: |
-          if [[ ${{ github.event.ref }} =~ ^refs/tags/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "match=true" >> $GITHUB_OUTPUT
-          fi
-
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: check_tag
-    if: needs.check_tag.outputs.match == "true"
     steps:
+      - name: Exit if not on main branch
+        if: endsWith(github.ref, 'main') == false
+        run: exit -1
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
