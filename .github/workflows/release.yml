@@ -10,10 +10,13 @@ on:
 jobs:
   check_tag:
     name: Check Tag
-    run: |
-      if [[ ${{ github.event.ref }} =~ ^refs/tags/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-        echo "match=true" >> $GITHUB_OUTPUT
-      fi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Tag
+        run: |
+          if [[ ${{ github.event.ref }} =~ ^refs/tags/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "match=true" >> $GITHUB_OUTPUT
+          fi
 
   release:
     name: Release
@@ -34,7 +37,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles("**/Cargo.lock") }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Setup NodeJS
         uses: actions/setup-node@v3
