@@ -9,6 +9,7 @@ mod tests {
     };
 
     const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000;
+    const MIN_REQUESTED_VERIFICATION_VERSION: u8 = 2;
 
     #[test]
     fn no_certification_passes_verification() {
@@ -77,6 +78,7 @@ mod tests {
             current_time,
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
+            MIN_REQUESTED_VERIFICATION_VERSION,
         )
         .unwrap();
 
