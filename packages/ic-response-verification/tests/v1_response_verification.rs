@@ -1,6 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
-    use ic_response_verification::types::{Request, Response};
+    use ic_response_verification::types::{CertifiedResponse, Request, Response};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification::ResponseVerificationError;
     use ic_response_verification_test_utils::{
@@ -46,8 +46,8 @@ mod tests {
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
         };
-        let expected_response = Response {
-            status_code: 0,
+        let expected_response = CertifiedResponse {
+            status_code: None,
             body: response.body.clone(),
             headers: vec![],
         };
@@ -99,8 +99,8 @@ mod tests {
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
         };
-        let expected_response = Response {
-            status_code: 0,
+        let expected_response = CertifiedResponse {
+            status_code: None,
             body: response.body.clone(),
             headers: vec![],
         };

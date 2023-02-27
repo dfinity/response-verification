@@ -15,7 +15,7 @@ cargo test -p ic-response-verification
 ## Wasm Test
 
 ```
-wasm-pack test --node packages/ic-response-verification
+wasm-pack test --node packages/ic-response-verification --features=js
 ```
 
 ## Wasm Build
