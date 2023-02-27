@@ -11,7 +11,7 @@ interface Response {
 }
 "#;
 
-/// Represents a Response from the [Internet Computer](https://dfinity.org).
+/// Represents a Response from the [Internet Computer](https://internetcomputer.org).
 #[derive(Debug, PartialEq, Eq)]
 pub struct Response {
     /// The HTTP status code of the response, i.e. 200.
@@ -20,31 +20,6 @@ pub struct Response {
     pub headers: Vec<(String, String)>,
     /// The body of the request as a candid decoded blob, i.e.  \[60, 33, 100, 111, 99\]
     pub body: Vec<u8>,
-}
-
-#[cfg(all(target_arch = "wasm32", feature = "js"))]
-impl From<Response> for JsValue {
-    fn from(response: Response) -> Self {
-        use js_sys::{Array, Number, Object, Uint8Array};
-
-        let status_code = Number::from(response.status_code);
-        let body = Uint8Array::from(response.body.as_slice());
-
-        let headers = Array::new();
-        for (k, v) in response.headers.iter() {
-            let value = JsValue::from(v);
-            headers.push(&Array::of2(&k.into(), &value.into()));
-        }
-
-        let status_code_entry = Array::of2(&JsValue::from("statusCode"), &status_code);
-        let body_entry = Array::of2(&JsValue::from("body"), &body);
-        let headers_entry = Array::of2(&JsValue::from("headers"), &headers);
-        let js_response =
-            Object::from_entries(&Array::of3(&status_code_entry, &body_entry, &headers_entry))
-                .unwrap();
-
-        JsValue::from(js_response)
-    }
 }
 
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
@@ -98,20 +73,19 @@ impl From<JsValue> for Response {
 mod tests {
     use super::*;
     use js_sys::JSON;
-    use wasm_bindgen::JsValue;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     #[wasm_bindgen_test]
     fn request_from() {
         let v = JSON::parse(
             r#"{
-    "statusCode": 200,
-    "body": [0, 1, 2, 3, 4, 5, 6],
-    "headers": [
-        ["header1", "header1val"],
-        ["header2", "header2val"]
-    ]
-}"#,
+                "statusCode": 200,
+                "body": [0, 1, 2, 3, 4, 5, 6],
+                "headers": [
+                    ["header1", "header1val"],
+                    ["header2", "header2val"]
+                ]
+            }"#,
         )
         .expect("failed to parse JSON");
         let r = Response::from(v);
@@ -126,37 +100,6 @@ mod tests {
                     ("header2".into(), "header2val".into()),
                 ],
             }
-        );
-    }
-
-    #[wasm_bindgen_test]
-    fn serialize_response_with_headers() {
-        let expected =
-            r#"{"statusCode":200,"body":{"0":0,"1":1,"2":2},"headers":[["header1","header1val"]]}"#;
-
-        assert_eq!(
-            JSON::stringify(&JsValue::from(Response {
-                status_code: 200,
-                body: vec![0, 1, 2],
-                headers: vec![("header1".into(), "header1val".into()),],
-            }))
-            .unwrap(),
-            expected
-        );
-    }
-
-    #[wasm_bindgen_test]
-    fn serialize_response_with_empty_headers() {
-        let expected = r#"{"statusCode":200,"body":{"0":0,"1":1,"2":2},"headers":[]}"#;
-
-        assert_eq!(
-            JSON::stringify(&JsValue::from(Response {
-                status_code: 200,
-                body: vec![0, 1, 2],
-                headers: vec![],
-            }))
-            .unwrap(),
-            expected
         );
     }
 }

@@ -20,7 +20,7 @@
 
 use crate::body::decode_body;
 use crate::hash::{filter_response_headers, hash};
-use crate::types::CertificationResult;
+use crate::types::{CertificationResult, CertifiedResponse};
 use crate::validation::{validate_expr_hash, validate_expr_path, VerifyCertificate};
 use cbor::{certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array};
 use certificate_header::CertificateHeader;
@@ -203,8 +203,8 @@ fn v1_verification(
 
             let result = valid_tree && valid_body;
             let certified_response = match result {
-                true => Some(Response {
-                    status_code: 0,
+                true => Some(CertifiedResponse {
+                    status_code: None,
                     headers: Vec::new(),
                     body: response.body,
                 }),
@@ -287,8 +287,8 @@ fn v2_verification(
     );
 
     let response = match are_hashes_valid {
-        true => Some(Response {
-            status_code: response.status_code,
+        true => Some(CertifiedResponse {
+            status_code: Some(response.status_code),
             headers: response_headers.headers,
             body: response.body,
         }),

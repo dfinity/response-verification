@@ -15,3 +15,7 @@ pub use response::*;
 /// Types to represent the result of verifying a request/response pair's certification.
 pub mod certification_result;
 pub use certification_result::*;
+
+/// Types to represent a certified response that clients can use to determine which parts of a response are safe to use.
+pub mod certified_response;
+pub use certified_response::*;
