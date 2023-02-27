@@ -11,8 +11,11 @@ jobs:
   check_tag:
     name: Check Tag
     runs-on: ubuntu-latest
+    outputs:
+      match: ${{ steps.check_tag.outputs.match }}
     steps:
       - name: Check Tag
+        id: check_tag
         run: |
           if [[ ${{ github.event.ref }} =~ ^refs/tags/[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "match=true" >> $GITHUB_OUTPUT
@@ -21,7 +24,8 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
-    if: jobs.check_tag.outputs.match == "true"
+    needs: check_tag
+    if: needs.check_tag.outputs.match == "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
