@@ -1,4 +1,4 @@
-use crate::{hash, serialize_to_cbor, NestedTree};
+use crate::{serialize_to_cbor, NestedTree};
 use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree};
 use ic_crypto_tree_hash::Digest;
 
@@ -37,8 +37,9 @@ impl From<String> for ExprTreeKey {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ExprTree {
-    tree: NestedTree<ExprTreeKey, Hash>,
+    tree: NestedTree<ExprTreeKey, Vec<u8>>,
 }
 
 impl Default for ExprTree {
@@ -54,10 +55,8 @@ impl ExprTree {
         }
     }
 
-    pub fn insert(&mut self, path: &[ExprTreeKey], body: &str) {
-        let body_hash = hash(body);
-
-        self.tree.insert(&path, body_hash)
+    pub fn insert(&mut self, path: &[ExprTreeKey]) {
+        self.tree.insert(&path, b"".to_vec())
     }
 
     pub fn serialize_to_cbor(&self, path: &[ExprTreeKey]) -> Vec<u8> {
