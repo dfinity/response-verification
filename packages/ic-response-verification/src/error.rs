@@ -401,6 +401,7 @@ mod tests {
     #[wasm_bindgen_test]
     fn error_into_io_error() {
         let inner_error = std::fs::File::open("foo.txt").expect_err("Expected error");
+        let error_msg = inner_error.to_string();
 
         let error = ResponseVerificationError::IoError(inner_error);
 
@@ -410,7 +411,7 @@ mod tests {
             result,
             ResponseVerificationJsError {
                 code: ResponseVerificationJsErrorCode::IoError,
-                message: format!(r#"IO error: "{}""#, inner_error.to_string()),
+                message: format!(r#"IO error: "{}""#, error_msg),
             }
         )
     }
