@@ -34,6 +34,13 @@ pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &
         return true;
     }
 
+    // at this point there are no more valid exact paths,
+    // so if the certified_path ends with an exact path delimiter,
+    // validation fails
+    if certified_path.ends_with(&[Label::from("<$>")]) {
+        return false;
+    }
+
     // if the expr_path does not match full URL and the full URL exists in the tree
     // then validation fails
     if path_might_exist_in_tree(&request_url_path, tree) {
@@ -47,8 +54,7 @@ pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &
         return true;
     }
     request_url_path.pop(); // pop "<*>"
-
-    certified_path.pop(); // pop "<$>" or "<*>"
+    certified_path.pop(); // pop "<*>"
 
     // recursively check for partial URL matches with wildcards that are more precise than the expr_path
     while request_url_path.len() > certified_path.len() {
@@ -592,6 +598,28 @@ mod tests {
         let result = validate_expr_path(&expr_path, &request_uri, &tree);
 
         assert!(result);
+    }
+
+    #[test]
+    fn validate_expr_path_that_exists_but_does_not_match_request() {
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "<$>".into(),
+        ];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                label("assets", label("js", label("<$>", leaf("")))),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(!result);
     }
 
     #[test]
