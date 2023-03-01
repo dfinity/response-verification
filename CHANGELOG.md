@@ -39,6 +39,7 @@
 
 ### Fix
 
+- do not panic if response body is too large
 - response returned as certified even when verification fails
 - do not allow exact match requests that are a subset of the request URL path
 - handling of trailing slashes in request and expression paths
