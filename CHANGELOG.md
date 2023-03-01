@@ -39,6 +39,8 @@
 
 ### Fix
 
+- do not panic if response body is too large
+- response returned as certified even when verification fails
 - do not allow exact match requests that are a subset of the request URL path
 - handling of trailing slashes in request and expression paths
 - add mising expr_path validation checks
@@ -52,6 +54,7 @@
 
 ### Refactor
 
+- return None for uncertified status_code instead of 0
 - update GIT_BRANCH variable to more specific name
 - migrate from bazel to wasm-pack
 - move certificate verification logic to acommodate for code split
