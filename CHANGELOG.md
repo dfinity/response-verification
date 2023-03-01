@@ -2,6 +2,7 @@
 
 ### Feat
 
+- allow consumers to specify the minimum verification version
 - add JS feature to hide web wasm features
 - validate no certification cel expression
 - use filter_response_headers function to return certified headers
