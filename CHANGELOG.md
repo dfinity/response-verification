@@ -2,6 +2,7 @@
 
 ### Feat
 
+- allow consumers to specify the minimum verification version
 - add JS feature to hide web wasm features
 - validate no certification cel expression
 - use filter_response_headers function to return certified headers
@@ -38,6 +39,10 @@
 
 ### Fix
 
+- response returned as certified even when verification fails
+- do not allow exact match requests that are a subset of the request URL path
+- handling of trailing slashes in request and expression paths
+- add mising expr_path validation checks
 - update agent-rs package
 - spec incompatibilities
 - fixed incorrect parameter type of validate_expr_hash function
@@ -48,6 +53,7 @@
 
 ### Refactor
 
+- return None for uncertified status_code instead of 0
 - update GIT_BRANCH variable to more specific name
 - migrate from bazel to wasm-pack
 - move certificate verification logic to acommodate for code split
