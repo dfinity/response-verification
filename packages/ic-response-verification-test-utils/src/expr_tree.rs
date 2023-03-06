@@ -56,7 +56,7 @@ impl ExprTree {
     }
 
     pub fn insert(&mut self, path: &[ExprTreeKey]) {
-        self.tree.insert(&path, b"".to_vec())
+        self.tree.insert(path, b"".to_vec())
     }
 
     pub fn serialize_to_cbor(&self, path: &[ExprTreeKey]) -> Vec<u8> {
@@ -81,7 +81,7 @@ pub fn create_expr_tree_path(
     res_hash: Option<&Hash>,
 ) -> Vec<ExprTreeKey> {
     let mut path: Vec<ExprTreeKey> = vec![];
-    path.extend(expr_path.into_iter().map(|e| ExprTreeKey::from(*e)));
+    path.extend(expr_path.iter().map(|e| ExprTreeKey::from(*e)));
 
     path.push(expr_hash.as_slice().into());
     if let Some(req_hash) = req_hash {
