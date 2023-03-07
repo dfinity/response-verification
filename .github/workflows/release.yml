@@ -34,6 +34,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          registry-url: "https://registry.npmjs.org"
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
@@ -43,11 +44,11 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: Create Cargo crate release
-        run: cargo publish --dry-run -p ic-response-verification
-
-      - name: Create NPM package release
+      - name: Create NPM package
         run: ./scripts/package.sh
+
+      - name: Pack NPM package
+        run: npm pack ./pkg
 
       - name: Create Github release
         uses: ncipollo/release-action@v1
@@ -58,3 +59,13 @@ jobs:
           bodyFile: "RELEASE_NOTES.md"
           tag: "${{ steps.cz.outputs.version }}"
           commit: "main"
+
+      - name: Release ic-response-verification Cargo crate
+        run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
+      - name: Release @dfinity/response-verification NPM package
+        run: npm publish ./pkg
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
