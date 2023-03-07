@@ -39,6 +39,7 @@
 
 ### Fix
 
+- apply release profile to wasm crate properly
 - do not panic if response body is too large
 - response returned as certified even when verification fails
 - do not allow exact match requests that are a subset of the request URL path
