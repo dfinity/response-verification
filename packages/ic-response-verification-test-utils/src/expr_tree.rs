@@ -86,6 +86,8 @@ pub fn create_expr_tree_path(
     path.push(expr_hash.as_slice().into());
     if let Some(req_hash) = req_hash {
         path.push(req_hash.as_slice().into());
+    } else {
+        path.push("".into());
     }
 
     if let Some(res_hash) = res_hash {

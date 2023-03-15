@@ -102,6 +102,8 @@ pub fn validate_hashes(
     let mut expr_tree_path: Vec<Label> = vec![];
     if let (Some(_), Some(request_hash)) = (&certification.request_certification, request_hash) {
         expr_tree_path.push(request_hash.into());
+    } else {
+        expr_tree_path.push("".into());
     }
     expr_tree_path.push(response_hash.into());
 
