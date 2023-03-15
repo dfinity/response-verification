@@ -330,7 +330,6 @@ mod tests {
 
         let mut expr_tree = ExprTree::new();
         expr_tree.insert(&expr_tree_path);
-        println!("expr_tree: {:?}", expr_tree);
         let certified_data = expr_tree.get_certified_data();
         let tree_cbor = expr_tree.serialize_to_cbor(&expr_tree_path);
 
