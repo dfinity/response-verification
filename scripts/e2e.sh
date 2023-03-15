@@ -2,23 +2,22 @@ SDK_GIT_BRANCH="TT-47-response-verification-extend-the-certified-assets-library"
 
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
-  SDK_REPO_DIR="$(pwd)/../sdk/"
+  SDK_REPO_DIR="$(pwd)/tmp/sdk"
 
- if [ -d "$SDK_REPO_DIR" ]; then
-   echo "SDK repo already cloned, updating..."
+  if [ -d "$SDK_REPO_DIR" ]; then
+    echo "SDK repo already cloned, updating..."
 
-   pushd "$SDK_REPO_DIR" || clean_exit
-   git fetch
-   git checkout "$SDK_GIT_BRANCH"
-   echo git checkout "$SDK_GIT_BRANCH"
-   git pull
-   popd || clean_exit
- else
-   echo "SDK repo not cloned yet, cloning..."
+    pushd "$SDK_REPO_DIR" || clean_exit
+    git fetch
+    git checkout "$SDK_GIT_BRANCH"
+    echo git checkout "$SDK_GIT_BRANCH"
+    git pull
+    popd || clean_exit
+  else
+    echo "SDK repo not cloned yet, cloning..."
 
-   git clone -b "$SDK_GIT_BRANCH" "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
- fi
-
+    git clone -b "$SDK_GIT_BRANCH" "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
+  fi
 }
 
 build_dfx() {
