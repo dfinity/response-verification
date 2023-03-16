@@ -2,6 +2,7 @@
 
 ### Feat
 
+- update tree representation when request certification is skipped
 - allow consumers to specify the minimum verification version
 - add JS feature to hide web wasm features
 - validate no certification cel expression
