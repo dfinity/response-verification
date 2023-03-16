@@ -8,15 +8,17 @@ download_sdk_repo() {
     echo "SDK repo already cloned, updating..."
 
     pushd "$SDK_REPO_DIR" || clean_exit
+    git reset --hard
+    git clean -fxd -e target
     git fetch
     git checkout "$SDK_GIT_BRANCH"
-    echo git checkout "$SDK_GIT_BRANCH"
     git pull
     popd || clean_exit
   else
     echo "SDK repo not cloned yet, cloning..."
 
-    git clone -b "$SDK_GIT_BRANCH" "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
+    git clone "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
+    git checkout "$SDK_GIT_BRANCH"
   fi
 }
 
