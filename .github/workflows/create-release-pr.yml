@@ -37,7 +37,6 @@ jobs:
         id: cz
         uses: commitizen-tools/commitizen-action@master
         with:
-          changelog_increment_filename: RELEASE_NOTES.md
           commit: false
           push: false
           github_token: ${{ secrets.GITHUB_TOKEN }}
