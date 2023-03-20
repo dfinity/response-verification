@@ -37,6 +37,9 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Setup Commitizen
+        run: pip install commitizen==2.42.1
+
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
@@ -45,6 +48,9 @@ jobs:
 
       - name: Pack NPM package
         run: npm pack ./pkg
+
+      - name: Generate release notes
+        run: cz changelog ${{ github.ref_name }} --file-name RELEASE_NOTES.md
 
       - name: Create Github release
         uses: ncipollo/release-action@v1
