@@ -56,7 +56,22 @@ jobs:
         uses: peter-evans/create-pull-request@v4
         with:
           title: "Release ${{ steps.cz.outputs.version }}"
-          body: "After merging this PR, tag the merge commit with `${{ steps.cz.outputs.version }}`."
+          body: |
+            After merging this PR, tag the merge commit with:
+            ```shell
+              git tag ${{ steps.cz.outputs.version }}
+              git push origin ${{ steps.cz.outputs.version }}
+            ```
           commit-message: "chore: release ${{ steps.cz.outputs.version }}"
           branch: "release/${{ steps.cz.outputs.version }}"
-          reviewers: "@dfinity/trust"
+          team-reviewers: "@dfinity/trust"
+          add-paths: |
+            .cz.yaml
+            CHANGELOG.md
+            Cargo.lock
+            packages/ic-response-verification/Cargo.toml
+            packages/ic-response-verification-tests/Cargo.toml
+            packages/ic-response-verification-test-utils/Cargo.toml
+            packages/ic-response-verification-wasm/package.json
+            packages/ic-response-verification-wasm/package-lock.json
+            packages/ic-response-verification-wasm/Cargo.toml
