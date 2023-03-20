@@ -56,10 +56,10 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: >
-            packages/ic-response-verification/target/package/ic-response-verification-${{ steps.cz.outputs.version }}.crate
-            dfinity-response-verification-${{ steps.cz.outputs.version }}.tgz
+            packages/ic-response-verification/target/package/ic-response-verification-${{ github.ref_name }}.crate
+            dfinity-response-verification-${{ github.ref_name }}.tgz
           bodyFile: "RELEASE_NOTES.md"
-          tag: "${{ steps.cz.outputs.version }}"
+          tag: "${{ github.ref_name }}"
           commit: "main"
 
       - name: Release ic-response-verification Cargo crate

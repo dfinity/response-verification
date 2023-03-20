@@ -63,7 +63,6 @@ jobs:
             ```
           commit-message: "chore: release ${{ steps.cz.outputs.version }}"
           branch: "release/${{ steps.cz.outputs.version }}"
-          team-reviewers: "@dfinity/trust"
           add-paths: |
             .cz.yaml
             CHANGELOG.md
