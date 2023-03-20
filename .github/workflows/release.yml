@@ -58,7 +58,7 @@ jobs:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
       - name: Release @dfinity/response-verification NPM package
-        run: npm publish ./pkg
+        run: npm publish ./pkg --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
