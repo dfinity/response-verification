@@ -52,16 +52,6 @@ jobs:
       - name: Generate release notes
         run: cz changelog ${{ github.ref_name }} --file-name RELEASE_NOTES.md
 
-      - name: Create Github release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: >
-            packages/ic-response-verification/target/package/ic-response-verification-${{ github.ref_name }}.crate
-            dfinity-response-verification-${{ github.ref_name }}.tgz
-          bodyFile: "RELEASE_NOTES.md"
-          tag: "${{ github.ref_name }}"
-          commit: "main"
-
       - name: Release ic-response-verification Cargo crate
         run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
         env:
@@ -71,3 +61,13 @@ jobs:
         run: npm publish ./pkg
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Github release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: >
+            target/package/ic-response-verification-${{ github.ref_name }}.crate
+            dfinity-response-verification-${{ github.ref_name }}.tgz
+          bodyFile: "RELEASE_NOTES.md"
+          tag: "${{ github.ref_name }}"
+          commit: "main"
