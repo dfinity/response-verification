@@ -9,7 +9,7 @@ documentation = "https://docs.rs/ic-response-verification"
 homepage = "https://github.com/dfinity/response-verification#readme"
 repository = "https://github.com/dfinity/response-verification"
 categories = ["api-bindings", "authentication", "cryptography", "wasm"]
-keywords = ["internet", "computer", "icp", "dfinity", "response", "verification", "certification"]
+keywords = ["internet-computer", "icp", "dfinity", "response-verification", "certification"]
 edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 

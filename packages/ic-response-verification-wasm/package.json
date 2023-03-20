@@ -7,12 +7,10 @@
   "repository": "github:dfinity/response-verification",
   "bugs": "https://github.com/dfinity/response-verification/issues",
   "keywords": [
-    "internet",
-    "computer",
+    "internet-computer",
     "icp",
     "dfinity",
-    "response",
-    "verification",
+    "response-verification",
     "certification"
   ],
   "main": "./nodejs/nodejs.js",
