@@ -489,6 +489,49 @@ mod tests {
     }
 
     #[test]
+    fn validate_sibling_expr_hash() {
+        let no_certification_expr_hash =
+            hash(remove_whitespace(NO_CERTIFICATION_CEL_EXPRESSION).as_bytes());
+        let expr_hash = hash(remove_whitespace(CEL_EXPRESSION).as_bytes());
+        let expr_path = vec![
+            "http_expr".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
+        let tree = fork(
+            label(
+                "http_expr",
+                label(
+                    "assets",
+                    label(
+                        "js",
+                        label(
+                            "app.js",
+                            label(
+                                "<$>",
+                                fork(
+                                    label(expr_hash, leaf("")),
+                                    label(no_certification_expr_hash, leaf("")),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
+        );
+
+        let result = validate_expr_hash(&expr_path, &expr_hash, &tree);
+        let no_certification_result =
+            validate_expr_hash(&expr_path, &no_certification_expr_hash, &tree);
+
+        assert_eq!(result, Some(leaf("")));
+        assert_eq!(no_certification_result, Some(leaf("")));
+    }
+
+    #[test]
     fn validate_expr_hash_does_not_exist() {
         let expr_hash = hash(remove_whitespace(NO_CERTIFICATION_CEL_EXPRESSION).as_bytes());
         let expr_path = vec![
@@ -710,6 +753,32 @@ mod tests {
             label(
                 "http_expr",
                 label("assets", label("js", label("<*>", leaf("")))),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(!result);
+    }
+
+    #[test]
+    fn validate_expr_path_that_does_not_begin_with_http_expr() {
+        let expr_path = vec![
+            "http_assets".into(),
+            "assets".into(),
+            "js".into(),
+            "app.js".into(),
+            "<$>".into(),
+        ];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label(
+                "http_assets",
+                label(
+                    "assets",
+                    label("js", label("app.js", label("<$>", leaf("")))),
+                ),
             ),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
