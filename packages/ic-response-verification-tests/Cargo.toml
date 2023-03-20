@@ -6,8 +6,8 @@ edition = "2021"
 [dependencies]
 hex = "0.4.3"
 http = "0.2.8"
-ic-agent = { git = "https://github.com/dfinity/agent-rs", rev = "9d7be5ffe3570ab77dda1aa70ee530854e64cd1a" }
-ic-utils = { git = "https://github.com/dfinity/agent-rs", rev = "9d7be5ffe3570ab77dda1aa70ee530854e64cd1a" } 
+ic-agent = "0.23.1"
+ic-utils = "0.23.1"
 tokio = { version = "1.24.2", features = ["full"] }
 ic-response-verification = { path = "../ic-response-verification", features = ["debug"] }
 anyhow = "1.0.68"

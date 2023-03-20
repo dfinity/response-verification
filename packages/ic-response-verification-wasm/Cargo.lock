@@ -797,8 +797,9 @@ dependencies = [
 
 [[package]]
 name = "ic-certification"
-version = "0.23.0"
-source = "git+https://github.com/dfinity/agent-rs?rev=9d7be5ffe3570ab77dda1aa70ee530854e64cd1a#9d7be5ffe3570ab77dda1aa70ee530854e64cd1a"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e9580095f8d8abb9f69b77c63756c68bd570bb9d9aa725c242c2fdc7abdb9d6"
 dependencies = [
  "hex",
  "sha2 0.10.6",
@@ -1000,7 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "base64 0.13.1",
  "candid",
@@ -1019,7 +1020,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "base64 0.21.0",
  "getrandom",
@@ -1041,7 +1042,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "0.0.0"
+version = "0.1.0"
 dependencies = [
  "base64 0.21.0",
  "console_error_panic_hook",

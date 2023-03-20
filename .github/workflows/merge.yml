@@ -38,6 +38,5 @@ jobs:
           commit-message: "chore: update changelog"
           branch: "chore/update-changelog"
           branch-suffix: "short-commit-hash"
-          team-reviewers: "@dfinity/trust"
           add-paths: |
             CHANGELOG.md
