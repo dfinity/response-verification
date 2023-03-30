@@ -10,11 +10,39 @@ where
     parts.iter().map(Label::from).collect()
 }
 
-fn path_might_exist_in_tree(path: &Vec<Label>, tree: &HashTree) -> bool {
+fn path_might_exist_in_tree(path: &[Label], tree: &HashTree) -> bool {
     !matches!(tree.lookup_subtree(path), SubtreeLookupResult::Absent)
 }
 
+fn path_exists_in_tree(path: &[Label], tree: &HashTree) -> bool {
+    matches!(tree.lookup_subtree(path), SubtreeLookupResult::Found(_))
+}
+
+fn is_wildcard_path_valid_for_request_path(
+    wildcard_path: &[Label],
+    request_path: &[Label],
+) -> bool {
+    if request_path.starts_with(wildcard_path) {
+        return true;
+    }
+
+    if wildcard_path.ends_with(&["".into()]) {
+        return request_path.starts_with(&wildcard_path[..wildcard_path.len() - 1]);
+    }
+
+    false
+}
+
+fn expr_path_has_valid_suffix(expr_path: &[String]) -> bool {
+    expr_path.ends_with(&["<$>".to_string()]) || expr_path.ends_with(&["<*>".to_string()])
+}
+
 pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &HashTree) -> bool {
+    // if a path does not end with a valid delimiter then it is invalid
+    if !expr_path_has_valid_suffix(expr_path) {
+        return false;
+    }
+
     let mut request_url_parts = vec!["http_expr"];
     request_url_parts.extend(request_url.path().split('/').filter(|e| !e.is_empty()));
 
@@ -25,52 +53,64 @@ pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &
         request_url_parts.push("");
     }
 
-    let mut certified_path = path_from_parts(expr_path);
+    let original_path = path_from_parts(expr_path);
+    let mut potential_path = path_from_parts(expr_path);
     let mut request_url_path = path_from_parts(&request_url_parts);
 
     // if the expr_path matches the full URL, there can't be a more precise path in the tree
     request_url_path.push("<$>".into());
-    if certified_path.eq(&request_url_path) {
-        return true;
+    if potential_path.eq(&request_url_path) {
+        return path_exists_in_tree(&original_path, tree);
     }
 
     // at this point there are no more valid exact paths,
-    // so if the certified_path ends with an exact path delimiter,
-    // validation fails
-    if certified_path.ends_with(&[Label::from("<$>")]) {
+    // so validation fails if the certified_path ends with an exact path suffix,
+    if potential_path.ends_with(&[Label::from("<$>")]) {
         return false;
     }
 
-    // if the expr_path does not match full URL and the full URL exists in the tree
-    // then validation fails
+    // validation fails if the expr_path does not match full URL and the full URL exists in the tree
     if path_might_exist_in_tree(&request_url_path, tree) {
         return false;
     }
     request_url_path.pop(); // pop "<$>"
 
-    // if the expr_path matches the full URL with a wildcard, there can't be a more precise path in the tree
+    // if the expr_path matches the full URL with a wildcard
+    // there can't be a more precise path in the tree
     request_url_path.push("<*>".into());
-    if certified_path.eq(&request_url_path) {
-        return true;
+    if potential_path.eq(&request_url_path) {
+        return path_exists_in_tree(&original_path, tree);
     }
     request_url_path.pop(); // pop "<*>"
-    certified_path.pop(); // pop "<*>"
+    potential_path.pop(); // pop "<*>"
+
+    if !is_wildcard_path_valid_for_request_path(&potential_path, &request_url_path) {
+        return false;
+    }
 
     // recursively check for partial URL matches with wildcards that are more precise than the expr_path
-    while request_url_path.len() > certified_path.len() {
+    while request_url_path.len() > potential_path.len() {
+        // check wildcard
         request_url_path.push("<*>".into());
-
         if path_might_exist_in_tree(&request_url_path, tree) {
             return false;
         }
-
         request_url_path.pop(); // pop "<*>"
+
+        // check trailing slash wildcard
+        request_url_path.push("".into());
+        if path_might_exist_in_tree(&request_url_path, tree) {
+            return false;
+        }
+        request_url_path.pop(); // pop "<*>"
+        request_url_path.pop(); // pop ""
+
         request_url_path.pop(); // pop the last segment of the path
     }
 
-    // once we have reduced the request URL to the same size as the certified path,
-    // we expect them to be equal, otherwise the provided_path is not valid
-    certified_path.eq(&request_url_path)
+    // if we haven't found a more specific path in the tree,
+    // then the provided path is valid if it exists in the tree
+    path_exists_in_tree(&original_path, tree)
 }
 
 pub fn validate_expr_hash<'a>(
@@ -623,6 +663,49 @@ mod tests {
     }
 
     #[test]
+    fn validate_trailing_slash_wildcard_expr_path_that_is_most_precise_path_available() {
+        let expr_path = vec!["http_expr".into(), "app".into(), "".into(), "<*>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/app/not-existing").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                label(
+                    "app",
+                    fork(label("", label("<*>", leaf(""))), label("<$>", leaf(""))),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(result);
+    }
+
+    #[test]
+    fn validate_trailing_slash_wildcard_expr_path_that_is_not_most_precise_path_available() {
+        let expr_path = vec!["http_expr".into(), "".into(), "<*>".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/app/not-existing").unwrap();
+        let tree = fork(
+            label(
+                "http_expr",
+                fork(
+                    label(
+                        "app",
+                        fork(label("", label("<*>", leaf(""))), label("<$>", leaf(""))),
+                    ),
+                    label("", label("<*>", leaf(""))),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(!result);
+    }
+
+    #[test]
     fn validate_expr_path_that_does_not_exist() {
         let expr_path = vec![
             "http_expr".into(),
@@ -642,7 +725,7 @@ mod tests {
 
         let result = validate_expr_path(&expr_path, &request_uri, &tree);
 
-        assert!(result);
+        assert!(!result);
     }
 
     #[test]
@@ -780,6 +863,20 @@ mod tests {
                     label("js", label("app.js", label("<$>", leaf("")))),
                 ),
             ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+
+        assert!(!result);
+    }
+
+    #[test]
+    fn validate_expr_path_that_does_not_end_with_valid_suffix() {
+        let expr_path = vec!["http_expr".into(), "assets".into()];
+        let request_uri = http::Uri::try_from("https://dapp.com/assets/js/app.js").unwrap();
+        let tree = fork(
+            label("http_expr", label("<*>", leaf(""))),
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
