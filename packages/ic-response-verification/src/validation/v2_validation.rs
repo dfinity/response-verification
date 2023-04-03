@@ -882,6 +882,191 @@ mod tests {
         assert!(!result);
     }
 
+    #[test]
+    fn validate_various_expr_paths() {
+        let tree_a_b_slash = fork(
+            label(
+                "http_expr",
+                fork(
+                    fork(
+                        label("", label("<*>",leaf(""))),
+                        label("<*>", leaf(""))
+                    ),
+                    label("a",
+                          fork(
+                              fork(
+                                  label("",label("<*>", leaf(""))),
+                                  label("<*>", leaf("")),
+                              ),
+                              label("b",
+                                    fork(
+                                        label("",label("<*>", leaf(""))),
+                                        label("<*>", leaf("")),
+                                    ),
+                              )
+                          ),
+                    ),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let tree_a_b = fork(
+            label(
+                "http_expr",
+                fork(
+                    fork(
+                        label("", label("<*>",leaf(""))),
+                        label("<*>", leaf(""))
+                    ),
+                    label("a",
+                          fork(
+                              fork(
+                                  label("",label("<*>", leaf(""))),
+                                  label("<*>", leaf("")),
+                              ),
+                              label("b", label("<*>", leaf("")),
+                              )
+                          ),
+                    ),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let tree_a_slash = fork(
+            label(
+                "http_expr",
+                fork(
+                    fork(
+                        label("", label("<*>",leaf(""))),
+                        label("<*>", leaf(""))
+                    ),
+                    label("a",
+                          fork(
+                              label("",label("<*>", leaf(""))),
+                              label("<*>", leaf("")),
+                          ),
+                    ),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let tree_a = fork(
+            label(
+                "http_expr",
+                fork(
+                    fork(
+                        label("", label("<*>",leaf(""))),
+                        label("<*>", leaf(""))
+                    ),
+                    label("a",label("<*>", leaf("")),
+                    ),
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let tree_slash = fork(
+            label(
+                "http_expr",
+                fork(
+                    label("", label("<*>",leaf(""))),
+                    label("<*>", leaf(""))
+                ),
+            ),
+            create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
+        );
+
+        let tree_star = label("http_expr",label("<*>", leaf("")));
+
+        // validations that should be successful
+        for (request_uri, mut path, tree) in [
+            ("/a/b", vec!["a", "b", "<*>"], tree_a_b_slash.clone()),
+            ("/a/b/", vec!["a", "b", "", "<*>"], tree_a_b_slash.clone()),
+
+            ("/a/b", vec!["a", "b", "<*>"], tree_a_b.clone()),
+            ("/a/b/", vec!["a", "b", "<*>"], tree_a_b.clone()),
+
+            ("/a/b", vec!["a", "", "<*>"], tree_a_slash.clone()),
+            ("/a/b/", vec!["a", "", "<*>"], tree_a_slash.clone()),
+
+            ("/a/b", vec!["a", "<*>"], tree_a.clone()),
+            ("/a/b/", vec!["a", "<*>"], tree_a.clone()),
+
+            ("/a/b", vec!["", "<*>"], tree_slash.clone()),
+            ("/a/b/", vec!["", "<*>"], tree_slash.clone()),
+
+            ("/a/b", vec!["<*>"], tree_star.clone()),
+            ("/a/b/", vec!["<*>"], tree_star.clone()),
+
+            ("/", vec!["", "<*>"], tree_a_b_slash.clone()),
+            ("/", vec!["<*>"], tree_star.clone()),
+        ] {
+            path.insert(0,"http_expr");
+            let expr_path: Vec<String> = path.iter().map(|x| x.to_string()).collect();
+            let result = validate_expr_path(&expr_path, &http::Uri::try_from(request_uri).unwrap(), &tree);
+            assert!(result);
+        }
+
+        // validations that should fail
+        for (request_uri, mut path, tree) in [
+            ("/a/b", vec!["a", "", "<*>"], tree_a_b_slash.clone()),
+            ("/a/b/", vec!["a", "b", "<*>"], tree_a_b_slash.clone()),
+
+            ("/a/b", vec!["a", "", "<*>"], tree_a_b.clone()),
+            ("/a/b/", vec!["a", "", "<*>"], tree_a_b.clone()),
+            ("/a/b/", vec!["a", "b", "", "<*>"], tree_a_b.clone()),
+
+            ("/a/b", vec!["a", "<*>"], tree_a_slash.clone()),
+            ("/a/b", vec!["a", "b", "<*>"], tree_a_slash.clone()),
+            ("/a/b/", vec!["a", "<*>"], tree_a_slash.clone()),
+            ("/a/b/", vec!["a", "b", "<*>"], tree_a_slash.clone()),
+            ("/a/b/", vec!["a", "b", "", "<*>"], tree_a_slash.clone()),
+
+            ("/a/b", vec!["", "<*>"], tree_a.clone()),
+            ("/a/b", vec!["a", "", "<*>"], tree_a.clone()),
+            ("/a/b", vec!["a", "b", "<*>"], tree_a.clone()),
+            ("/a/b/", vec!["", "<*>"], tree_a.clone()),
+            ("/a/b/", vec!["a", "", "<*>"], tree_a.clone()),
+            ("/a/b/", vec!["a", "b", "<*>"], tree_a.clone()),
+            ("/a/b/", vec!["a", "b", "", "<*>"], tree_a.clone()),
+
+            ("/a/b", vec!["<*>"], tree_slash.clone()),
+            ("/a/b", vec!["a", "<*>"], tree_slash.clone()),
+            ("/a/b", vec!["a", "", "<*>"], tree_slash.clone()),
+            ("/a/b", vec!["a", "b", "<*>"], tree_slash.clone()),
+            ("/a/b/", vec!["<*>"], tree_slash.clone()),
+            ("/a/b/", vec!["a", "<*>"], tree_slash.clone()),
+            ("/a/b/", vec!["a", "", "<*>"], tree_slash.clone()),
+            ("/a/b/", vec!["a", "b", "<*>"], tree_slash.clone()),
+            ("/a/b/", vec!["a", "b", "", "<*>"], tree_slash.clone()),
+
+            ("/a/b", vec!["", "<*>"], tree_star.clone()),
+            ("/a/b", vec!["a", "<*>"], tree_star.clone()),
+            ("/a/b", vec!["a", "", "<*>"], tree_star.clone()),
+            ("/a/b", vec!["a", "b", "<*>"], tree_star.clone()),
+            ("/a/b/", vec!["", "<*>"], tree_star.clone()),
+            ("/a/b/", vec!["a", "<*>"], tree_star.clone()),
+            ("/a/b/", vec!["a", "", "<*>"], tree_star.clone()),
+            ("/a/b/", vec!["a", "b", "<*>"], tree_star.clone()),
+            ("/a/b/", vec!["a", "b", "", "<*>"], tree_star.clone()),
+
+            ("/", vec!["<*>"], tree_a_b_slash.clone()),
+            ("/", vec!["", "<*>"], tree_star.clone()),
+            ("/", vec!["a", "<*>"], tree_a_b_slash.clone()),
+
+            ("/a/b", vec!["a", "c", "<*>"], tree_a_b_slash.clone()),
+            ("/a/b", vec!["c", "b", "<*>"], tree_a_b_slash.clone()),
+        ] {
+            path.insert(0,"http_expr");
+            let expr_path: Vec<String> = path.iter().map(|x| x.to_string()).collect();
+            let result = validate_expr_path(&expr_path, &http::Uri::try_from(request_uri).unwrap(), &tree);
+            assert!(!result);
+        }
+    }
+
     fn create_certification() -> Certification {
         Certification {
             request_certification: Some(RequestCertification {
