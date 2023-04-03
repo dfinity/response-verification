@@ -89,7 +89,7 @@ pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &
     }
 
     // recursively check for partial URL matches with wildcards that are more precise than the expr_path
-    while request_url_path.len() > potential_path.len() {
+    while request_url_path.len() > potential_path.len() || request_url_path.last() != potential_path.last()  {
         // check wildcard
         request_url_path.push("<*>".into());
         if path_might_exist_in_tree(&request_url_path, tree) {
@@ -97,15 +97,12 @@ pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &
         }
         request_url_path.pop(); // pop "<*>"
 
-        // check trailing slash wildcard
-        request_url_path.push("".into());
-        if path_might_exist_in_tree(&request_url_path, tree) {
-            return false;
+        if request_url_path.ends_with(&[Label::from("")]) {
+            request_url_path.pop(); // pop empty string
+        } else {
+            request_url_path.pop(); // pop the last segment of the path
+            request_url_path.push("".into()); // append empty string to check trailing slash
         }
-        request_url_path.pop(); // pop "<*>"
-        request_url_path.pop(); // pop ""
-
-        request_url_path.pop(); // pop the last segment of the path
     }
 
     // if we haven't found a more specific path in the tree,
