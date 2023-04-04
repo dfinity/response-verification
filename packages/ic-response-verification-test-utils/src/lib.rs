@@ -21,3 +21,6 @@ pub use expr_tree::*;
 
 mod utils;
 pub use utils::*;
+
+mod v2_certificate_fixture;
+pub use v2_certificate_fixture::*;
