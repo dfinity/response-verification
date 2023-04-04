@@ -72,6 +72,7 @@ mod tests {
 
         assert!(result.passed);
         assert_eq!(result.response, None);
+        assert_eq!(result.verification_version, 2);
     }
 
     #[test]
@@ -148,6 +149,7 @@ mod tests {
 
         assert!(result.passed);
         assert_eq!(result.response, Some(expected_response));
+        assert_eq!(result.verification_version, 2);
     }
 
     #[test]
@@ -232,6 +234,7 @@ mod tests {
 
         assert!(result.passed);
         assert_eq!(result.response, Some(expected_response));
+        assert_eq!(result.verification_version, 2);
     }
 
     #[test]
@@ -314,6 +317,7 @@ mod tests {
 
         assert!(result.passed);
         assert_eq!(result.response, Some(expected_response));
+        assert_eq!(result.verification_version, 2);
     }
 
     fn create_happy_path_fixture(
