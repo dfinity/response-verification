@@ -1,10 +1,7 @@
 use base64::{engine::general_purpose, Engine as _};
 use serde::Serialize;
 
-pub fn base64_encode<T>(data: &T) -> String
-where
-    T: AsRef<[u8]>,
-{
+pub fn base64_encode(data: &[u8]) -> String {
     general_purpose::STANDARD.encode(data)
 }
 
