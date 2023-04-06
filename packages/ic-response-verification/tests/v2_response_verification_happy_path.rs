@@ -5,7 +5,7 @@ mod tests {
     use ic_response_verification::types::{CertifiedResponse, Request, Response};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification_test_utils::{
-        create_canister_id, create_v2_fixture, get_current_timestamp, remove_whitespace, V2Fixture,
+        create_v2_fixture, get_current_timestamp, remove_whitespace, V2Fixture,
     };
 
     const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000;
@@ -16,7 +16,6 @@ mod tests {
         let path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
         let expr_path = ["", "<$>"];
         let cel_expr = remove_whitespace(
             r#"
@@ -45,14 +44,8 @@ mod tests {
         let V2Fixture {
             root_key,
             certificate_header,
-        } = create_v2_fixture(
-            &cel_expr,
-            &expr_path,
-            &canister_id,
-            &current_time,
-            None,
-            None,
-        );
+            canister_id,
+        } = create_v2_fixture(&cel_expr, &expr_path, &current_time, None, None);
 
         response
             .headers
@@ -79,7 +72,6 @@ mod tests {
         let path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
         let expr_path = ["", "<$>"];
         let cel_expr = remove_whitespace(
             r#"
@@ -119,10 +111,10 @@ mod tests {
         let V2Fixture {
             root_key,
             certificate_header,
+            canister_id,
         } = create_v2_fixture(
             &cel_expr,
             &expr_path,
-            &canister_id,
             &current_time,
             None,
             Some(&response_hash),
@@ -159,7 +151,6 @@ mod tests {
         let path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
         let expr_path = ["", "<$>"];
         let cel_expr = remove_whitespace(
             r#"
@@ -207,10 +198,10 @@ mod tests {
         let V2Fixture {
             root_key,
             certificate_header,
+            canister_id,
         } = create_v2_fixture(
             &cel_expr,
             &expr_path,
-            &canister_id,
             &current_time,
             Some(&request_hash),
             Some(&response_hash),
@@ -247,7 +238,6 @@ mod tests {
         let path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
         let expr_path = ["", "<$>"];
         let cel_expr = remove_whitespace(
             r#"
@@ -290,10 +280,10 @@ mod tests {
         let V2Fixture {
             root_key,
             certificate_header,
+            canister_id,
         } = create_v2_fixture(
             &cel_expr,
             &expr_path,
-            &canister_id,
             &current_time,
             None,
             Some(&response_hash),
