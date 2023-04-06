@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- add verification version to certification result
+
 ## 0.1.1 (2023-04-04)
 
 ### Fix
