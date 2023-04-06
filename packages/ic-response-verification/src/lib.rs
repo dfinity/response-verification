@@ -214,11 +214,13 @@ fn v1_verification(
             Ok(CertificationResult {
                 passed: result,
                 response: certified_response,
+                verification_version: 1,
             })
         }
         _ => Ok(CertificationResult {
             passed: false,
             response: None,
+            verification_version: 1,
         }),
     }
 }
@@ -242,6 +244,7 @@ fn v2_verification(
         return Ok(CertificationResult {
             passed: false,
             response: None,
+            verification_version: 2,
         });
     };
 
@@ -254,6 +257,7 @@ fn v2_verification(
         return Ok(CertificationResult {
             passed: false,
             response: None,
+            verification_version: 2,
         });
     };
 
@@ -261,6 +265,7 @@ fn v2_verification(
         return Ok(CertificationResult {
             passed: validate_expr_hash(&expr_path, &expr_hash, &tree).is_some(),
             response: None,
+            verification_version: 2,
         });
     };
 
@@ -298,5 +303,6 @@ fn v2_verification(
     Ok(CertificationResult {
         passed: are_hashes_valid,
         response,
+        verification_version: 2,
     })
 }

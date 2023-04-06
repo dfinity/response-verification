@@ -69,7 +69,7 @@ mod tests {
             JSON::stringify(&JsValue::from(CertifiedResponse {
                 status_code: Some(200),
                 body: vec![0, 1, 2],
-                headers: vec![("header1".into(), "header1val".into()),],
+                headers: vec![("header1".into(), "header1val".into())],
             }))
             .unwrap(),
             expected
@@ -99,7 +99,7 @@ mod tests {
             JSON::stringify(&JsValue::from(CertifiedResponse {
                 status_code: None,
                 body: vec![0, 1, 2],
-                headers: vec![("header1".into(), "header1val".into()),],
+                headers: vec![("header1".into(), "header1val".into())],
             }))
             .unwrap(),
             expected

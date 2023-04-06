@@ -66,7 +66,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: >
-            target/package/ic-response-verification-${{ github.ref_name }}.crate
+            target/package/ic-response-verification-${{ github.ref_name }}.crate,
             dfinity-response-verification-${{ github.ref_name }}.tgz
           bodyFile: "RELEASE_NOTES.md"
           tag: "${{ github.ref_name }}"
