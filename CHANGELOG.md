@@ -1,3 +1,5 @@
+## Unreleased
+
 ## 0.1.1 (2023-04-04)
 
 ### Fix
@@ -92,5 +94,3 @@
 
 - improve wasm binary size
 - add binaryen wasm opt support
-
-## 0.0.0 (2022-09-29)
