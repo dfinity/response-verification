@@ -1,3 +1,4 @@
+use ic_base_types::{PrincipalId, SubnetId};
 use ic_certified_map::Hash;
 use ic_crypto_tree_hash::Digest;
 use ic_types::CanisterId;
@@ -25,7 +26,7 @@ pub fn create_v2_tree_fixture(
     let mut expr_tree = ExprTree::new();
     expr_tree.insert(&expr_tree_path);
     let certified_data = expr_tree.get_certified_data();
-    let tree_cbor = expr_tree.serialize_to_cbor(&expr_tree_path);
+    let tree_cbor = expr_tree.witness_and_serialize_to_cbor(&expr_tree_path);
 
     V2TreeFixture {
         tree_cbor,
@@ -36,24 +37,33 @@ pub fn create_v2_tree_fixture(
 pub struct V2CertificateFixture {
     pub root_key: Vec<u8>,
     pub certificate_cbor: Vec<u8>,
+    pub canister_id: CanisterId,
 }
 
 pub fn create_v2_certificate_fixture(
-    canister_id: &CanisterId,
     certified_data: &Digest,
     current_time: &u128,
 ) -> V2CertificateFixture {
+    let canister_id = CanisterId::from_u64(5);
+    let lower_canister_id = CanisterId::from_u64(0);
+    let higher_canister_id = CanisterId::from_u64(10);
+
     let (_, root_key, certificate_cbor) =
         CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-            canister_id: *canister_id,
+            canister_id,
             certified_data: certified_data.clone(),
         }))
         .with_time(*current_time)
+        .with_delegation(CertificateBuilder::new(CertificateData::SubnetData {
+            subnet_id: SubnetId::from(PrincipalId::new_subnet_test_id(123)),
+            canister_id_ranges: vec![(lower_canister_id, higher_canister_id)],
+        }))
         .build();
 
     V2CertificateFixture {
         root_key,
         certificate_cbor,
+        canister_id,
     }
 }
 
@@ -74,12 +84,12 @@ pub fn create_v2_header(expr_path: &[&str], certificate_cbor: &[u8], tree_cbor: 
 pub struct V2Fixture {
     pub root_key: Vec<u8>,
     pub certificate_header: String,
+    pub canister_id: CanisterId,
 }
 
 pub fn create_v2_fixture(
     cel_expr: &str,
     expr_path: &[&str],
-    canister_id: &CanisterId,
     current_time: &u128,
     req_hash: Option<&Hash>,
     res_hash: Option<&Hash>,
@@ -92,12 +102,14 @@ pub fn create_v2_fixture(
     let V2CertificateFixture {
         root_key,
         certificate_cbor,
-    } = create_v2_certificate_fixture(canister_id, &certified_data, current_time);
+        canister_id,
+    } = create_v2_certificate_fixture(&certified_data, current_time);
 
     let certificate_header = create_v2_header(expr_path, &certificate_cbor, &tree_cbor);
 
     V2Fixture {
         root_key,
         certificate_header,
+        canister_id,
     }
 }

@@ -59,9 +59,15 @@ impl ExprTree {
         self.tree.insert(path, b"".to_vec())
     }
 
-    pub fn serialize_to_cbor(&self, path: &[ExprTreeKey]) -> Vec<u8> {
+    pub fn witness_and_serialize_to_cbor(&self, path: &[ExprTreeKey]) -> Vec<u8> {
         let tree = self.tree.witness(path);
         let labeled_tree = labeled(LABEL_EXPR, tree);
+
+        serialize_to_cbor::<HashTree>(&labeled_tree)
+    }
+
+    pub fn serialize_to_cbor(&self) -> Vec<u8> {
+        let labeled_tree = labeled(LABEL_EXPR, self.tree.as_hash_tree());
 
         serialize_to_cbor::<HashTree>(&labeled_tree)
     }
