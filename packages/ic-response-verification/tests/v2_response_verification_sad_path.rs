@@ -334,8 +334,6 @@ mod tests {
             MIN_REQUESTED_VERIFICATION_VERSION,
         );
 
-        println!("Result: {:#?}", result);
-
         assert!(result.is_err());
     }
 }

@@ -1404,6 +1404,7 @@ name = "ic-response-verification-test-utils"
 version = "0.2.1"
 dependencies = [
  "base64 0.21.0",
+ "flate2",
  "getrandom",
  "hex",
  "ic-base-types",

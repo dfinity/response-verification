@@ -23,3 +23,4 @@ serde = { version = "1.0.152", features = ["derive"]}
 # https://docs.rs/getrandom/latest/getrandom/#webassembly-support
 rand = "0.8.5"
 getrandom = { version = "0.2.8", features = ["js"] }
+flate2 = "1.0.25"
