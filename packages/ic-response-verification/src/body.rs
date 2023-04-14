@@ -1,10 +1,8 @@
-use crate::{ResponseVerificationError, ResponseVerificationResult};
+use crate::ResponseVerificationResult;
 use flate2::read::{DeflateDecoder, GzDecoder};
 use std::io::Read;
 
-// The limit of a buffer we should decompress ~10mb.
 const MAX_CHUNK_SIZE_TO_DECOMPRESS: usize = 1_024;
-const MAX_CHUNKS_TO_DECOMPRESS: usize = 10_240;
 
 pub fn decode_body(
     body: &Vec<u8>,
@@ -21,7 +19,7 @@ fn body_from_decoder<D: Read>(mut decoder: D) -> ResponseVerificationResult<Vec<
     let mut decoded = Vec::new();
     let mut buffer = [0u8; MAX_CHUNK_SIZE_TO_DECOMPRESS];
 
-    for _ in 0..MAX_CHUNKS_TO_DECOMPRESS {
+    loop {
         let bytes = decoder.read(&mut buffer)?;
 
         if bytes == 0 {
@@ -30,12 +28,6 @@ fn body_from_decoder<D: Read>(mut decoder: D) -> ResponseVerificationResult<Vec<
 
         decoded.extend_from_slice(&buffer[..bytes]);
     }
-
-    if decoder.bytes().next().is_some() {
-        return Err(ResponseVerificationError::ResponseBodyTooLarge);
-    }
-
-    Ok(decoded)
 }
 
 #[cfg(test)]
@@ -74,23 +66,5 @@ mod tests {
         let result = decode_body(&encoded_body, &Some("deflate".into())).unwrap();
 
         assert_eq!(result.as_slice(), BODY);
-    }
-
-    #[test]
-    fn fail_decoding_large_body() {
-        const LARGE_BODY_SIZE: usize =
-            (MAX_CHUNK_SIZE_TO_DECOMPRESS * MAX_CHUNKS_TO_DECOMPRESS) + 1;
-        let body = vec![0; LARGE_BODY_SIZE];
-
-        let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
-        encoder.write_all(&body).unwrap();
-        let encoded_body = encoder.finish().unwrap();
-
-        let result = decode_body(&encoded_body, &Some("deflate".into()));
-
-        assert!(matches!(
-            result,
-            Err(ResponseVerificationError::ResponseBodyTooLarge),
-        ));
     }
 }
