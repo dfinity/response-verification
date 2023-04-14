@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Fix
+
+- do not throw an error when body is larger than 10mb, body size should be limited by consumers
+
 ## 0.2.0 (2023-04-14)
 
 ### Feat
