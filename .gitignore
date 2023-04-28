@@ -1,6 +1,7 @@
 .idea
 .cargo
 target
+node_modules
 .DS_Store
 /tmp
 /pkg
