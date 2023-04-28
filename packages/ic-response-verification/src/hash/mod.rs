@@ -1,7 +1,20 @@
+//! Utilities for calculating
+//! [Representation Independent Hashes](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+//! of [crate::Request] and [crate::Response] objects.
+
+mod representation_independent_hash;
+pub use representation_independent_hash::*;
+
+mod request_hash;
+pub use request_hash::*;
+
+mod response_hash;
+pub use response_hash::*;
+
 use ic_certification::hash_tree::Sha256Digest;
 use sha2::{Digest, Sha256};
 
-pub fn hash(data: &[u8]) -> Sha256Digest {
+pub(crate) fn hash(data: &[u8]) -> Sha256Digest {
     let mut hasher = Sha256::new();
     hasher.update(data);
     hasher.finalize().into()

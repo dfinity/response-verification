@@ -1,4 +1,4 @@
-use crate::ResponseVerificationResult;
+use crate::error::ResponseVerificationResult;
 use flate2::read::{DeflateDecoder, GzDecoder};
 use std::io::Read;
 
