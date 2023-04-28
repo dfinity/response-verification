@@ -1,7 +1,5 @@
-use crate::{
-    certificate_header_field::CertificateHeaderField,
-    error::{ResponseVerificationError, ResponseVerificationResult},
-};
+use super::certificate_header_field::CertificateHeaderField;
+use crate::error::{ResponseVerificationError, ResponseVerificationResult};
 use log::warn;
 
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.

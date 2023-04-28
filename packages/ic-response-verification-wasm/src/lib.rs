@@ -1,4 +1,4 @@
-use ic_response_verification::error::ResponseVerificationJsError;
+use ic_response_verification::ResponseVerificationJsError;
 use ic_response_verification::types::CertificationResult;
 use ic_response_verification::types::Request;
 use ic_response_verification::types::Response;

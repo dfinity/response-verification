@@ -1001,7 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64 0.13.1",
  "candid",
@@ -1020,9 +1020,10 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64 0.21.0",
+ "flate2",
  "getrandom",
  "hex",
  "ic-base-types",
@@ -1042,7 +1043,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "base64 0.21.0",
  "console_error_panic_hook",

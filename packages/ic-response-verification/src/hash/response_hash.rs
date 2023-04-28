@@ -91,11 +91,11 @@ pub fn response_headers_hash(
     let mut headers_to_verify: Vec<(String, Value)> = response_headers
         .headers
         .iter()
-        .filter_map(|(header_name, header_value)| {
-            Some((
+        .map(|(header_name, header_value)| {
+            (
                 header_name.to_string(),
                 Value::String(String::from(header_value)),
-            ))
+            )
         })
         .collect();
 
