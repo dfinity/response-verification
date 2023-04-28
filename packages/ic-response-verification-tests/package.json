@@ -1,0 +1,16 @@
+{
+  "name": "ic-response-verification-tests",
+  "version": "0.2.1",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@dfinity/agent": "^0.15.5",
+    "@dfinity/principal": "^0.15.5",
+    "@types/isomorphic-fetch": "^0.0.36",
+    "isomorphic-fetch": "^3.0.0",
+    "ts-node": "^10.9.1"
+  }
+}

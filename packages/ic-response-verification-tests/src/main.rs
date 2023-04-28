@@ -28,55 +28,38 @@ async fn main() -> Result<()> {
         return Err(anyhow!("The `DFX_REPLICA_ADDRESS` env variable not provided`"));
     };
 
-    let Ok(env_ic_root_key) = env::var("IC_ROOT_KEY") else {
-        return Err(anyhow!("The `IC_ROOT_KEY` env variable not provided"));
-    };
-
     let Some(canister_id) = args.get(1) else {
         return Err(anyhow!("The canister_id arg was not provided: `cargo run [canister_id]`"));
     };
 
-    let root_key = hex::decode(&env_ic_root_key).unwrap();
-    let agent = create_agent(replica_address.as_str())?;
+    let agent = create_agent(replica_address.as_str()).await?;
 
-    v1_test(canister_id, &root_key, &agent).await?;
-    v2_test(canister_id, &root_key, &agent).await?;
-
-    Ok(())
-}
-
-async fn v1_test(canister_id: &str, root_key: &[u8], agent: &Agent) -> Result<()> {
-    let result = perform_test(canister_id, "GET", "/", None, root_key, agent).await?;
-    assert!(result.passed);
-
-    let result = perform_test(
-        canister_id,
-        "GET",
-        "/sample-asset.txt",
-        None,
-        root_key,
-        agent,
-    )
-    .await?;
-    assert!(result.passed);
+    v1_test(canister_id, &agent).await?;
+    v2_test(canister_id, &agent).await?;
 
     Ok(())
 }
 
-async fn v2_test(canister_id: &str, root_key: &[u8], agent: &Agent) -> Result<()> {
-    let result = perform_test(canister_id, "GET", "/", Some(&2), root_key, agent).await?;
+async fn v1_test(canister_id: &str, agent: &Agent) -> Result<()> {
+    let result = perform_test(canister_id, "GET", "/", None, agent).await?;
     assert!(result.passed);
+    assert_eq!(result.verification_version, 1);
 
-    let result = perform_test(
-        canister_id,
-        "GET",
-        "/sample-asset.txt",
-        Some(&2),
-        root_key,
-        agent,
-    )
-    .await?;
+    let result = perform_test(canister_id, "GET", "/sample-asset.txt", None, agent).await?;
     assert!(result.passed);
+    assert_eq!(result.verification_version, 1);
+
+    Ok(())
+}
+
+async fn v2_test(canister_id: &str, agent: &Agent) -> Result<()> {
+    let result = perform_test(canister_id, "GET", "/", Some(&2), agent).await?;
+    assert!(result.passed);
+    assert_eq!(result.verification_version, 2);
+
+    let result = perform_test(canister_id, "GET", "/sample-asset.txt", Some(&2), agent).await?;
+    assert!(result.passed);
+    assert_eq!(result.verification_version, 2);
 
     Ok(())
 }
@@ -85,8 +68,7 @@ async fn perform_test(
     canister_id: &str,
     http_method: &str,
     path: &str,
-    certificate_version: Option<&u128>,
-    root_key: &[u8],
+    certificate_version: Option<&u16>,
     agent: &Agent,
 ) -> Result<CertificationResult> {
     let canister_id = Principal::from_text(canister_id)?;
@@ -120,7 +102,7 @@ async fn perform_test(
         canister_id.as_slice(),
         current_time_ns,
         max_cert_time_offset_ns,
-        root_key,
+        agent.read_root_key()?.as_slice(),
         ic_response_verification::MIN_VERIFICATION_VERSION,
     )?;
 

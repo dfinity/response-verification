@@ -1086,9 +1086,8 @@ dependencies = [
 
 [[package]]
 name = "ic-agent"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be07f057f6dceda429489507b5aba02c21a3b2ca9dc2dd161c17c4c5a1ac7d84"
+version = "0.23.2"
+source = "git+https://github.com/dfinity/agent-rs.git#56b3e4b69f31b3694e2287a8852c12d2017e8e06"
 dependencies = [
  "async-trait",
  "backoff",
@@ -1097,12 +1096,14 @@ dependencies = [
  "byteorder",
  "candid",
  "futures-util",
+ "getrandom",
  "hex",
  "http",
  "http-body",
  "hyper-rustls",
- "ic-certification",
+ "ic-certification 0.23.2",
  "ic-verify-bls-signature",
+ "js-sys",
  "k256",
  "leb128",
  "mime",
@@ -1116,11 +1117,16 @@ dependencies = [
  "serde",
  "serde_bytes",
  "serde_cbor",
+ "serde_repr",
  "sha2 0.10.6",
  "simple_asn1",
  "thiserror",
+ "time 0.3.17",
  "tokio",
  "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
@@ -1170,6 +1176,17 @@ name = "ic-certification"
 version = "0.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7e9580095f8d8abb9f69b77c63756c68bd570bb9d9aa725c242c2fdc7abdb9d6"
+dependencies = [
+ "hex",
+ "serde",
+ "serde_bytes",
+ "sha2 0.10.6",
+]
+
+[[package]]
+name = "ic-certification"
+version = "0.23.2"
+source = "git+https://github.com/dfinity/agent-rs.git#56b3e4b69f31b3694e2287a8852c12d2017e8e06"
 dependencies = [
  "hex",
  "serde",
@@ -1380,7 +1397,7 @@ dependencies = [
  "flate2",
  "hex",
  "http",
- "ic-certification",
+ "ic-certification 0.23.1",
  "ic-certified-map",
  "ic-crypto-tree-hash",
  "ic-response-verification-test-utils",
@@ -1431,7 +1448,7 @@ dependencies = [
  "http",
  "ic-agent",
  "ic-response-verification",
- "ic-utils 0.23.1",
+ "ic-utils 0.23.2",
  "tokio",
 ]
 
@@ -1510,9 +1527,8 @@ dependencies = [
 
 [[package]]
 name = "ic-utils"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a554f29262af74a6785c7641b9d377d36ab84c3eb44e4449fcfae85c6966ab81"
+version = "0.23.2"
+source = "git+https://github.com/dfinity/agent-rs.git#56b3e4b69f31b3694e2287a8852c12d2017e8e06"
 dependencies = [
  "async-trait",
  "candid",
@@ -1589,6 +1605,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -2523,6 +2542,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_repr"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcec881020c684085e55a25f7fd888954d56609ef363479dc5a1305eb0d40cab"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.12",
+]
+
+[[package]]
 name = "serde_urlencoded"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2838,6 +2868,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a561bf4617eebd33bca6434b988f39ed798e527f51a1e797d0ee4f61c0a38376"
 dependencies = [
  "itoa",
+ "js-sys",
  "serde",
  "time-core",
  "time-macros",

@@ -1,4 +1,4 @@
-SDK_GIT_BRANCH="TT-47-response-verification-extend-the-certified-assets-library"
+SDK_GIT_BRANCH="master"
 
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
@@ -50,7 +50,6 @@ dfx_start() {
 
   DFX_REPLICA_PORT=$("$DFX" info replica-port)
   DFX_REPLICA_ADDRESS="http://localhost:$DFX_REPLICA_PORT"
-  IC_ROOT_KEY=$($DFX ping "$DFX_REPLICA_ADDRESS" | sed -n 's/.*"root_key": \(.*\)/\1/p' | sed 's/[][,]//g' | xargs printf "%02x")
 
   echo "DFX local replica running at $DFX_REPLICA_ADDRESS."
 }
@@ -108,16 +107,18 @@ run_e2e_tests() {
     clean_exit
   fi
 
-  if [ -z "$IC_ROOT_KEY" ]; then
-    echo "IC_ROOT_KEY must be defined!"
-    clean_exit
-  fi
+  DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_CANISTER_ID" || clean_exit
 
-  IC_ROOT_KEY=$IC_ROOT_KEY DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_CANISTER_ID" || clean_exit
+  ./scripts/package.sh
+  pushd ./packages/ic-response-verification-tests || clean_exit
+  npm ci
+  DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS npx ts-node ./wasm-tests/main.ts -- "$DFX_CANISTER_ID" || clean_exit
+  popd || clean_exit
 }
 
 download_sdk_repo
 build_dfx
+./scripts/package.sh
 dfx_start
 deploy_dfx_project
 run_e2e_tests

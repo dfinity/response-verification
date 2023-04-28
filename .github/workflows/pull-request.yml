@@ -80,6 +80,9 @@ jobs:
         with:
           toolchain: stable
 
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
       - name: e2e tests
         run: ./scripts/e2e.sh
 
