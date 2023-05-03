@@ -73,3 +73,4 @@ jobs:
             packages/ic-response-verification-wasm/package.json
             packages/ic-response-verification-wasm/package-lock.json
             packages/ic-response-verification-wasm/Cargo.toml
+            packages/ic-representation-independent-hash/Cargo.toml
