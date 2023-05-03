@@ -57,6 +57,11 @@ jobs:
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
+      - name: Release ic-representation-independent-hash Cargo crate
+        run: cargo publish -p ic-representation-independent-hash --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
       - name: Release @dfinity/response-verification NPM package
         run: npm publish ./pkg --access public
         env:
@@ -67,6 +72,7 @@ jobs:
         with:
           artifacts: >
             target/package/ic-response-verification-${{ github.ref_name }}.crate,
+            target/package/ic-representation-independent-hash-${{ github.ref_name }}.crate,
             dfinity-response-verification-${{ github.ref_name }}.tgz
           bodyFile: "RELEASE_NOTES.md"
           tag: "${{ github.ref_name }}"
