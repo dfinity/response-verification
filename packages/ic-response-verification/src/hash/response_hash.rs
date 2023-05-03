@@ -1,7 +1,6 @@
-use crate::hash::hash;
-use crate::hash::representation_independent_hash::{representation_independent_hash, Value};
 use crate::types::{Response, ResponseCertification};
 use ic_certification::hash_tree::Sha256Digest;
+use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
 const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-CertificateExpression";

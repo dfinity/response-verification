@@ -157,13 +157,11 @@ pub fn validate_hashes(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::test_utils::{create_pruned, remove_whitespace};
     use crate::test_utils::test_utils::{hex_decode, sha256_from_hex};
     use crate::types::{RequestCertification, ResponseCertification};
-    use crate::{
-        hash::hash,
-        test_utils::test_utils::{create_pruned, remove_whitespace},
-    };
     use ic_certification::hash_tree::{fork, label, leaf};
+    use ic_representation_independent_hash::hash;
 
     const REQUEST_HASH: &str = "5fac69685533f0650991441a2b818e8ad5ab2fec51de8cfdbea1276135494815";
     const RESPONSE_HASH: &str = "07b7c729f4083db0e266fef3f8f5acf1315135605bf38884c07ebb59fbf91ce8";

@@ -3,6 +3,7 @@ members = [
     "packages/ic-response-verification",
     "packages/ic-response-verification-tests",
     "packages/ic-response-verification-test-utils",
+    "packages/ic-representation-independent-hash",
     "examples/rust",
 ]
 exclude = ["packages/ic-response-verification-wasm"]

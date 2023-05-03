@@ -3,6 +3,7 @@
 ### Refactor
 
 - high level mod structure
+- split out representation independent hash into its own crate
 
 ## 0.2.1 (2023-04-14)
 

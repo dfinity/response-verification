@@ -1389,6 +1389,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-representation-independent-hash"
+version = "0.2.1"
+dependencies = [
+ "hex",
+ "leb128",
+ "sha2 0.10.6",
+]
+
+[[package]]
 name = "ic-response-verification"
 version = "0.2.1"
 dependencies = [
@@ -1400,6 +1409,7 @@ dependencies = [
  "ic-certification 0.23.1",
  "ic-certified-map",
  "ic-crypto-tree-hash",
+ "ic-representation-independent-hash",
  "ic-response-verification-test-utils",
  "ic-types",
  "js-sys",

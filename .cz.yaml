@@ -11,3 +11,4 @@ commitizen:
   - packages/ic-response-verification-test-utils/Cargo.toml:version
   - packages/ic-response-verification-wasm/package.json:version
   - packages/ic-response-verification-wasm/Cargo.toml:version
+  - packages/ic-representation-independent-hash/Cargo.toml:version

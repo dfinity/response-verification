@@ -4,7 +4,7 @@ use crate::cbor::{
     certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array,
 };
 use crate::error::{ResponseVerificationError, ResponseVerificationResult};
-use crate::hash::{filter_response_headers, hash};
+use crate::hash::filter_response_headers;
 use crate::types::{Certification, Request, Response};
 use crate::types::{CertificationResult, CertifiedResponse};
 use crate::validation::{validate_body, validate_certificate_time, validate_hashes, validate_tree};
@@ -12,6 +12,7 @@ use crate::validation::{validate_expr_hash, validate_expr_path, VerifyCertificat
 use crate::{cel, hash};
 use ic_certification::hash_tree::Sha256Digest;
 use ic_certification::{Certificate, HashTree};
+use ic_representation_independent_hash::hash;
 
 /// The minimum verification version supported by this package.
 pub const MIN_VERIFICATION_VERSION: u8 = 1;

@@ -26,10 +26,8 @@ pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        hash::hash,
-        test_utils::test_utils::{create_tree, CreateTreeOptions},
-    };
+    use crate::test_utils::test_utils::{create_tree, CreateTreeOptions};
+    use ic_representation_independent_hash::hash;
 
     static CANISTER_ID: &str = "r7inp-6aaaa-aaaaa-aaabq-cai";
 
