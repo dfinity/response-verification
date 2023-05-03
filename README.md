@@ -15,7 +15,7 @@ This package encapsulates the protocol for such verification. It is used by [the
 
 ## Contributing
 
-This repository is currently not accepting external contributions, but this will change in the near future once the code base stabilizes.
+Check out our [contribution guidelines](./.github/CONTRIBUTING.md).
 
 ### Setup
 
