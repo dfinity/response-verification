@@ -1,7 +1,7 @@
 use crate::error::ResponseVerificationResult;
-use crate::hash::representation_independent_hash::{representation_independent_hash, Value};
 use crate::types::{Request, RequestCertification};
 use ic_certification::hash_tree::Sha256Digest;
+use ic_representation_independent_hash::{representation_independent_hash, Value};
 
 /// Calculates the
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
