@@ -101,9 +101,8 @@ mod tests {
 
     #[test]
     fn hash_bytes() {
-        let map: Vec<(String, Value)> = vec![
-            ("bytes".into(), Value::Bytes(vec![0x01, 0x02, 0x03, 0x04])),
-        ];
+        let map: Vec<(String, Value)> =
+            vec![("bytes".into(), Value::Bytes(vec![0x01, 0x02, 0x03, 0x04]))];
         let expected_hash =
             hex::decode("546729666d96a712bd94f902a0388e33f9a19a335c35bc3d95b0221a4a574455")
                 .unwrap();
