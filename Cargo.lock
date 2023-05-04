@@ -1390,7 +1390,7 @@ dependencies = [
 
 [[package]]
 name = "ic-representation-independent-hash"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "hex",
  "leb128",
@@ -1399,7 +1399,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "base64 0.13.1",
  "candid",
@@ -1428,7 +1428,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "base64 0.21.0",
  "flate2",
@@ -1451,7 +1451,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-tests"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "hex",
