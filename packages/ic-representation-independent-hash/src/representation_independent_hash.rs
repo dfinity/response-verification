@@ -1,13 +1,14 @@
 use crate::{hash, Sha256Digest};
 use sha2::{Digest, Sha256};
 
-/// Represents a value to be hashed. Only UTF-8 strings and numbers are currently supported.
+/// Represents a value to be hashed. Only UTF-8 strings, bytes and unsigned numbers are currently supported.
 #[derive(Debug, Clone)]
 pub enum Value {
     /// An UTF-8 string to be hashed.
     String(String),
     /// A number to be hashed.
     Number(u64),
+    Bytes(Vec<u8>),
 }
 
 /// A partial implementation of [`Representation Independent Hash`] that only supports
@@ -34,6 +35,7 @@ pub fn representation_independent_hash(map: &[(String, Value)]) -> Sha256Digest 
 fn hash_value(value: &Value) -> Sha256Digest {
     match value {
         Value::String(value) => hash(value.as_bytes()),
+        Value::Bytes(value) => hash(&value),
         Value::Number(value) => {
             let mut hasher = Sha256::new();
             leb128::write::unsigned(&mut hasher, value.to_owned()).unwrap();
@@ -95,5 +97,19 @@ mod tests {
         let reordered_result = representation_independent_hash(&reordered_map);
 
         assert_eq!(result, reordered_result);
+    }
+
+    #[test]
+    fn hash_bytes() {
+        let map: Vec<(String, Value)> = vec![
+            ("bytes".into(), Value::Bytes(vec![0x01, 0x02, 0x03, 0x04])),
+        ];
+        let expected_hash =
+            hex::decode("546729666d96a712bd94f902a0388e33f9a19a335c35bc3d95b0221a4a574455")
+                .unwrap();
+
+        let result = representation_independent_hash(&map);
+
+        assert_eq!(result, expected_hash.as_slice());
     }
 }
