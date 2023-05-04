@@ -52,13 +52,13 @@ jobs:
       - name: Generate release notes
         run: cz changelog ${{ github.ref_name }} --file-name RELEASE_NOTES.md
 
-      - name: Release ic-response-verification Cargo crate
-        run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
+      - name: Release ic-representation-independent-hash Cargo crate
+        run: cargo publish -p ic-representation-independent-hash --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
-      - name: Release ic-representation-independent-hash Cargo crate
-        run: cargo publish -p ic-representation-independent-hash --token ${CRATES_TOKEN}
+      - name: Release ic-response-verification Cargo crate
+        run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
