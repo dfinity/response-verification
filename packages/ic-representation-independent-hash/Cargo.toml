@@ -9,7 +9,7 @@ documentation = "https://docs.rs/ic-representation-independent-hash"
 homepage = "https://github.com/dfinity/response-verification#readme"
 repository = "https://github.com/dfinity/response-verification"
 categories = ["cryptography", "hash"]
-keywords = ["internet-computer", "icp", "dfinity", "representation", "independent", "hash"]
+keywords = ["icp", "dfinity", "representation", "independent", "hash"]
 edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
