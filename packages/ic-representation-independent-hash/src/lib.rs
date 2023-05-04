@@ -2,6 +2,14 @@
 //! [Representation Independent Hashes](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
 //! of [crate::Request] and [crate::Response] objects.
 
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    rustdoc::broken_intra_doc_links,
+    rustdoc::private_intra_doc_links
+)]
+
+/// Type alias for a SHA-256 hash.
 pub type Sha256Digest = [u8; 32];
 
 mod representation_independent_hash;
@@ -9,6 +17,7 @@ pub use representation_independent_hash::*;
 
 use sha2::{Digest, Sha256};
 
+/// Calculates the SHA-256 hash of the given slice.
 pub fn hash(data: &[u8]) -> Sha256Digest {
     let mut hasher = Sha256::new();
     hasher.update(data);
