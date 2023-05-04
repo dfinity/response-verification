@@ -8,6 +8,7 @@ pub enum Value {
     String(String),
     /// A number to be hashed.
     Number(u64),
+    /// Bytes to be hashed.
     Bytes(Vec<u8>),
 }
 
