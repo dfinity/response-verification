@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- **hash**: add support for byte values
+
 ### Refactor
 
 - **hash**: move representation independent hash into its own crate
