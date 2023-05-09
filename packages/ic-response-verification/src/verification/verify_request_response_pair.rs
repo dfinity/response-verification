@@ -5,8 +5,7 @@ use crate::cbor::{
 };
 use crate::error::{ResponseVerificationError, ResponseVerificationResult};
 use crate::hash::filter_response_headers;
-use crate::types::{Certification, Request, Response};
-use crate::types::{CertificationResult, CertifiedResponse};
+use crate::types::{Certification, Request, Response, VerificationResult, VerifiedResponse};
 use crate::validation::{validate_body, validate_certificate_time, validate_hashes, validate_tree};
 use crate::validation::{validate_expr_hash, validate_expr_path, VerifyCertificate};
 use crate::{cel, hash};
@@ -29,7 +28,7 @@ pub fn verify_request_response_pair(
     max_cert_time_offset_ns: u128,
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
-) -> ResponseVerificationResult<CertificationResult> {
+) -> ResponseVerificationResult<VerificationResult> {
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
     let mut certificate: Option<Certificate> = None;
@@ -112,7 +111,7 @@ fn verification(
     expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
     ic_public_key: &[u8],
-) -> ResponseVerificationResult<CertificationResult> {
+) -> ResponseVerificationResult<VerificationResult> {
     match version {
         1 => v1_verification(
             request,
@@ -156,7 +155,7 @@ fn v1_verification(
     certificate: Option<Certificate>,
     encoding: Option<String>,
     ic_public_key: &[u8],
-) -> ResponseVerificationResult<CertificationResult> {
+) -> ResponseVerificationResult<VerificationResult> {
     match (tree, certificate) {
         (Some(tree), Some(certificate)) => {
             validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
@@ -174,24 +173,21 @@ fn v1_verification(
             }
 
             let result = valid_tree && valid_body;
-            let certified_response = match result {
-                true => Some(CertifiedResponse {
-                    status_code: None,
-                    headers: Vec::new(),
-                    body: response.body,
+            match result {
+                true => Ok(VerificationResult::Passed {
+                    response: Some(VerifiedResponse {
+                        status_code: None,
+                        headers: Vec::new(),
+                        body: response.body,
+                    }),
+                    verification_version: 1,
                 }),
-                false => None,
-            };
-
-            Ok(CertificationResult {
-                passed: result,
-                response: certified_response,
-                verification_version: 1,
-            })
+                false => Ok(VerificationResult::Failed {
+                    verification_version: 1,
+                }),
+            }
         }
-        _ => Ok(CertificationResult {
-            passed: false,
-            response: None,
+        _ => Ok(VerificationResult::Failed {
             verification_version: 1,
         }),
     }
@@ -209,13 +205,11 @@ fn v2_verification(
     expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
     ic_public_key: &[u8],
-) -> ResponseVerificationResult<CertificationResult> {
+) -> ResponseVerificationResult<VerificationResult> {
     let request_uri = request.get_uri()?;
 
     let (Some(expr_path), Some(expr_hash), Some(tree), Some(certificate)) = (expr_path, expr_hash, tree, certificate) else {
-        return Ok(CertificationResult {
-            passed: false,
-            response: None,
+        return Ok(VerificationResult::Failed {
             verification_version: 2,
         });
     };
@@ -226,19 +220,21 @@ fn v2_verification(
     if !validate_tree(canister_id, &certificate, &tree)
         || !validate_expr_path(&expr_path, &request_uri, &tree)
     {
-        return Ok(CertificationResult {
-            passed: false,
-            response: None,
+        return Ok(VerificationResult::Failed {
             verification_version: 2,
         });
     };
 
     let Some(certification) = certification else {
-        return Ok(CertificationResult {
-            passed: validate_expr_hash(&expr_path, &expr_hash, &tree).is_some(),
-            response: None,
-            verification_version: 2,
-        });
+        return match validate_expr_hash(&expr_path, &expr_hash, &tree).is_some() {
+            true => Ok(VerificationResult::Passed {
+                response: None,
+                verification_version: 2,
+            }),
+            false => Ok(VerificationResult::Failed {
+                verification_version: 2
+            })
+        };
     };
 
     let request_hash = certification
@@ -263,18 +259,17 @@ fn v2_verification(
         &certification,
     );
 
-    let response = match are_hashes_valid {
-        true => Some(CertifiedResponse {
-            status_code: Some(response.status_code),
-            headers: response_headers.headers,
-            body: response.body,
+    match are_hashes_valid {
+        true => Ok(VerificationResult::Passed {
+            response: Some(VerifiedResponse {
+                status_code: Some(response.status_code),
+                headers: response_headers.headers,
+                body: response.body,
+            }),
+            verification_version: 2,
         }),
-        false => None,
-    };
-
-    Ok(CertificationResult {
-        passed: are_hashes_valid,
-        response,
-        verification_version: 2,
-    })
+        false => Ok(VerificationResult::Failed {
+            verification_version: 2,
+        }),
+    }
 }

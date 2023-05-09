@@ -1000,14 +1000,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-representation-independent-hash"
+version = "0.3.0"
+dependencies = [
+ "leb128",
+ "sha2 0.10.6",
+]
+
+[[package]]
 name = "ic-response-verification"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "base64 0.13.1",
  "candid",
  "flate2",
  "http",
  "ic-certification",
+ "ic-representation-independent-hash",
  "js-sys",
  "leb128",
  "log",
@@ -1020,7 +1029,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "base64 0.21.0",
  "flate2",
@@ -1043,7 +1052,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "base64 0.21.0",
  "console_error_panic_hook",

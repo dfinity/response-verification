@@ -3,8 +3,8 @@ use wasm_bindgen::prelude::*;
 
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(typescript_custom_section)]
-const RESPONSE: &'static str = r#"
-interface CertifiedResponse {
+const VERIFIED_RESPONSE: &'static str = r#"
+interface VerifiedResponse {
     statusCode?: number;
     headers: [string, string][];
     body: Uint8Array;
@@ -13,7 +13,7 @@ interface CertifiedResponse {
 
 /// Represents a certified Response from the [Internet Computer](https://internetcomputer.org).
 #[derive(Debug, PartialEq, Eq)]
-pub struct CertifiedResponse {
+pub struct VerifiedResponse {
     /// The HTTP status code of the response, i.e. 200.
     pub status_code: Option<u16>,
     /// The HTTP headers of the request, i.e. \[\["Ic-Certificate", "certificate=:2dn3o2R0cmVlgw=:, tree=:2dn3gwGDA:"\]\]
@@ -23,8 +23,8 @@ pub struct CertifiedResponse {
 }
 
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
-impl From<CertifiedResponse> for JsValue {
-    fn from(response: CertifiedResponse) -> Self {
+impl From<VerifiedResponse> for JsValue {
+    fn from(response: VerifiedResponse) -> Self {
         use js_sys::{Array, Number, Object, Uint8Array};
 
         let body = Uint8Array::from(response.body.as_slice());
@@ -66,7 +66,7 @@ mod tests {
             r#"{"statusCode":200,"body":{"0":0,"1":1,"2":2},"headers":[["header1","header1val"]]}"#;
 
         assert_eq!(
-            JSON::stringify(&JsValue::from(CertifiedResponse {
+            JSON::stringify(&JsValue::from(VerifiedResponse {
                 status_code: Some(200),
                 body: vec![0, 1, 2],
                 headers: vec![("header1".into(), "header1val".into())],
@@ -81,7 +81,7 @@ mod tests {
         let expected = r#"{"statusCode":200,"body":{"0":0,"1":1,"2":2},"headers":[]}"#;
 
         assert_eq!(
-            JSON::stringify(&JsValue::from(CertifiedResponse {
+            JSON::stringify(&JsValue::from(VerifiedResponse {
                 status_code: Some(200),
                 body: vec![0, 1, 2],
                 headers: vec![],
@@ -96,7 +96,7 @@ mod tests {
         let expected = r#"{"body":{"0":0,"1":1,"2":2},"headers":[["header1","header1val"]]}"#;
 
         assert_eq!(
-            JSON::stringify(&JsValue::from(CertifiedResponse {
+            JSON::stringify(&JsValue::from(VerifiedResponse {
                 status_code: None,
                 body: vec![0, 1, 2],
                 headers: vec![("header1".into(), "header1val".into())],

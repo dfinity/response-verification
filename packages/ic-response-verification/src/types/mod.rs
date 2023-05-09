@@ -13,9 +13,9 @@ mod response;
 pub use response::*;
 
 /// Types to represent the result of verifying a request/response pair's certification.
-mod certification_result;
-pub use certification_result::*;
+mod verification_result;
+pub use verification_result::*;
 
 /// Types to represent a certified response that clients can use to determine which parts of a response are safe to use.
-mod certified_response;
-pub use certified_response::*;
+mod verified_response;
+pub use verified_response::*;

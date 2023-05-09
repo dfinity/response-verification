@@ -1,6 +1,8 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
-    use ic_response_verification::types::{CertifiedResponse, Request, Response};
+    use ic_response_verification::types::{
+        Request, Response, VerificationResult, VerifiedResponse,
+    };
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification::ResponseVerificationError;
     use ic_response_verification_test_utils::{
@@ -47,7 +49,7 @@ mod tests {
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
         };
-        let expected_response = CertifiedResponse {
+        let expected_response = VerifiedResponse {
             status_code: None,
             body: response.body.clone(),
             headers: vec![],
@@ -64,9 +66,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(result.passed);
-        assert_eq!(result.response, Some(expected_response));
-        assert_eq!(result.verification_version, 1);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 1 && response == Some(expected_response)
+        ));
     }
 
     #[test]
@@ -102,7 +108,7 @@ mod tests {
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
         };
-        let expected_response = CertifiedResponse {
+        let expected_response = VerifiedResponse {
             status_code: None,
             body: response.body.clone(),
             headers: vec![],
@@ -119,9 +125,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(result.passed);
-        assert_eq!(result.response, Some(expected_response));
-        assert_eq!(result.verification_version, 1);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 1 && response == Some(expected_response)
+        ));
     }
 
     #[test]
@@ -169,9 +179,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert!(result.response.is_none());
-        assert_eq!(result.verification_version, 1);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 1
+        ));
     }
 
     #[test]
@@ -385,9 +398,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert!(result.response.is_none());
-        assert_eq!(result.verification_version, 1);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 1
+        ));
     }
 
     #[test]
@@ -437,9 +453,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert!(result.response.is_none());
-        assert_eq!(result.verification_version, 1);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 1
+        ));
     }
 
     #[test]
@@ -487,9 +506,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert!(result.response.is_none());
-        assert_eq!(result.verification_version, 1);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 1
+        ));
     }
 
     #[test]

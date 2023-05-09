@@ -36,7 +36,7 @@ pub fn representation_independent_hash(map: &[(String, Value)]) -> Sha256Digest 
 fn hash_value(value: &Value) -> Sha256Digest {
     match value {
         Value::String(value) => hash(value.as_bytes()),
-        Value::Bytes(value) => hash(&value),
+        Value::Bytes(value) => hash(value),
         Value::Number(value) => {
             let mut hasher = Sha256::new();
             leb128::write::unsigned(&mut hasher, value.to_owned()).unwrap();

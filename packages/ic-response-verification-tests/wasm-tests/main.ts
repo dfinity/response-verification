@@ -1,5 +1,5 @@
 import {
-  CertificationResult,
+  VerificationResult,
   Request,
   Response,
   getMinVerificationVersion,
@@ -97,7 +97,7 @@ async function performTest(
   certificateVersion: number | null,
   agent: Agent,
   actor: ActorSubclass<_SERVICE>
-): Promise<CertificationResult> {
+): Promise<VerificationResult> {
   let httpRequest: HttpRequest = {
     method,
     body: new Uint8Array(),
