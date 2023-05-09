@@ -2,7 +2,9 @@
 mod tests {
     use ic_response_verification::cel::cel_to_certification;
     use ic_response_verification::hash::{request_hash, response_hash};
-    use ic_response_verification::types::{CertifiedResponse, Request, Response};
+    use ic_response_verification::types::{
+        Request, Response, VerificationResult, VerifiedResponse,
+    };
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification_test_utils::{
         create_v2_fixture, get_current_timestamp, remove_whitespace, V2Fixture,
@@ -62,9 +64,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(result.passed);
-        assert_eq!(result.response, None);
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 2 && response.is_none()
+        ));
     }
 
     #[test]
@@ -135,15 +141,19 @@ mod tests {
         )
         .unwrap();
 
-        let expected_response = CertifiedResponse {
+        let expected_response = VerifiedResponse {
             status_code: Some(200),
             body: body.as_bytes().to_vec(),
             headers: vec![("cache-control".into(), "max-age=604800".into())],
         };
 
-        assert!(result.passed);
-        assert_eq!(result.response, Some(expected_response));
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 2 && response == Some(expected_response)
+        ));
     }
 
     #[test]
@@ -222,15 +232,19 @@ mod tests {
         )
         .unwrap();
 
-        let expected_response = CertifiedResponse {
+        let expected_response = VerifiedResponse {
             status_code: Some(200),
             body: body.as_bytes().to_vec(),
             headers: vec![("cache-control".into(), "max-age=604800".into())],
         };
 
-        assert!(result.passed);
-        assert_eq!(result.response, Some(expected_response));
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 2 && response == Some(expected_response)
+        ));
     }
 
     #[test]
@@ -304,7 +318,7 @@ mod tests {
         )
         .unwrap();
 
-        let expected_response = CertifiedResponse {
+        let expected_response = VerifiedResponse {
             status_code: Some(200),
             body: body.as_bytes().to_vec(),
             headers: vec![
@@ -313,8 +327,12 @@ mod tests {
             ],
         };
 
-        assert!(result.passed);
-        assert_eq!(result.response, Some(expected_response));
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 2 && response == Some(expected_response)
+        ));
     }
 }

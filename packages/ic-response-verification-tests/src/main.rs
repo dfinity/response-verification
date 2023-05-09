@@ -2,7 +2,7 @@ use crate::agent::create_agent;
 use anyhow::{anyhow, Result};
 use ic_agent::export::Principal;
 use ic_agent::Agent;
-use ic_response_verification::types::{CertificationResult, Request, Response};
+use ic_response_verification::types::{Request, Response, VerificationResult};
 use ic_utils::call::SyncCall;
 use ic_utils::interfaces::http_request::HeaderField;
 use ic_utils::interfaces::HttpRequestCanister;
@@ -42,24 +42,44 @@ async fn main() -> Result<()> {
 
 async fn v1_test(canister_id: &str, agent: &Agent) -> Result<()> {
     let result = perform_test(canister_id, "GET", "/", None, agent).await?;
-    assert!(result.passed);
-    assert_eq!(result.verification_version, 1);
+    assert!(matches!(
+        result,
+        VerificationResult::Passed {
+            verification_version,
+            response: _,
+        } if verification_version == 1
+    ));
 
     let result = perform_test(canister_id, "GET", "/sample-asset.txt", None, agent).await?;
-    assert!(result.passed);
-    assert_eq!(result.verification_version, 1);
+    assert!(matches!(
+        result,
+        VerificationResult::Passed {
+            verification_version,
+            response: _,
+        } if verification_version == 1
+    ));
 
     Ok(())
 }
 
 async fn v2_test(canister_id: &str, agent: &Agent) -> Result<()> {
     let result = perform_test(canister_id, "GET", "/", Some(&2), agent).await?;
-    assert!(result.passed);
-    assert_eq!(result.verification_version, 2);
+    assert!(matches!(
+        result,
+        VerificationResult::Passed {
+            verification_version,
+            response: _,
+        } if verification_version == 2
+    ));
 
     let result = perform_test(canister_id, "GET", "/sample-asset.txt", Some(&2), agent).await?;
-    assert!(result.passed);
-    assert_eq!(result.verification_version, 2);
+    assert!(matches!(
+        result,
+        VerificationResult::Passed {
+            verification_version,
+            response: _,
+        } if verification_version == 2
+    ));
 
     Ok(())
 }
@@ -70,7 +90,7 @@ async fn perform_test(
     path: &str,
     certificate_version: Option<&u16>,
     agent: &Agent,
-) -> Result<CertificationResult> {
+) -> Result<VerificationResult> {
     let canister_id = Principal::from_text(canister_id)?;
     let canister_interface = HttpRequestCanister::create(agent, canister_id);
 

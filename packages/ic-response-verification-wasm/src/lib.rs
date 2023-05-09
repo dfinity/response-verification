@@ -1,5 +1,5 @@
 use ic_response_verification::ResponseVerificationJsError;
-use ic_response_verification::types::CertificationResult;
+use ic_response_verification::types::VerificationResult;
 use ic_response_verification::types::Request;
 use ic_response_verification::types::Response;
 use ic_response_verification::verify_request_response_pair as verify_request_response_pair_impl;
@@ -12,8 +12,8 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(typescript_type = "CertificationResult")]
-    pub type JsCertificationResult;
+    #[wasm_bindgen(typescript_type = "VerificationResult")]
+    pub type JsVerificationResult;
 
     #[wasm_bindgen(typescript_type = "Request")]
     pub type JsRequest;
@@ -43,7 +43,7 @@ pub fn verify_request_response_pair(
     max_cert_time_offset_ns: u64,
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
-) -> Result<JsCertificationResult, ResponseVerificationJsError> {
+) -> Result<JsVerificationResult, ResponseVerificationJsError> {
     #[cfg(feature = "debug")]
     console_error_panic_hook::set_once();
 
@@ -62,8 +62,8 @@ pub fn verify_request_response_pair(
         ic_public_key,
         min_requested_verification_version,
     )
-    .map(|certification_result| {
-        JsValue::from(CertificationResult::from(certification_result)).unchecked_into::<JsCertificationResult>()
+    .map(|verification_result| {
+        JsValue::from(VerificationResult::from(verification_result)).unchecked_into::<JsVerificationResult>()
     })
     .map_err(|e| ResponseVerificationJsError::from(e))
 }

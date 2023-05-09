@@ -11,7 +11,7 @@ mod tests {
         etag_certificate_tree, index_js_response, not_found_response, redirect_response,
     };
     use ic_response_verification::{
-        types::{CertifiedResponse, Request, Response},
+        types::{Request, Response, VerificationResult, VerifiedResponse},
         verify_request_response_pair,
     };
     use ic_response_verification_test_utils::{
@@ -67,7 +67,7 @@ mod tests {
             &expr_tree.serialize_to_cbor(),
         );
 
-        let expected_certified_response = CertifiedResponse {
+        let expected_certified_response = VerifiedResponse {
             body: expected_response.body.clone(),
             headers: expected_response
                 .headers
@@ -94,9 +94,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(result.passed);
-        assert_eq!(result.response, Some(expected_certified_response));
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 2 && response == Some(expected_certified_response)
+        ));
     }
 
     #[rstest]
@@ -175,9 +179,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert_eq!(result.response, None);
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 2
+        ));
     }
 
     #[rstest]
@@ -209,7 +216,7 @@ mod tests {
             &expr_tree.serialize_to_cbor(),
         );
 
-        let expected_certified_response = CertifiedResponse {
+        let expected_certified_response = VerifiedResponse {
             body: expected_response.body.clone(),
             headers: expected_response
                 .headers
@@ -236,9 +243,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(result.passed);
-        assert_eq!(result.response, Some(expected_certified_response));
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Passed {
+                verification_version,
+                response,
+            } if verification_version == 2 && response == Some(expected_certified_response)
+        ));
     }
 
     #[rstest]
@@ -276,9 +287,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert_eq!(result.response, None);
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 2
+        ));
     }
 }
 

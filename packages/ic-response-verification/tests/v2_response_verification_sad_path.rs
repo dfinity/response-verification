@@ -8,7 +8,7 @@ mod tests {
     use ic_response_verification::{
         cel::cel_to_certification,
         hash::{request_hash, response_hash},
-        types::{Request, Response},
+        types::{Request, Response, VerificationResult},
         verify_request_response_pair,
     };
     use ic_response_verification_test_utils::{
@@ -75,9 +75,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert_eq!(result.response, None);
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 2
+        ));
     }
 
     #[rstest]
@@ -139,9 +142,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert_eq!(result.response, None);
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 2
+        ));
     }
 
     #[rstest]
@@ -208,9 +214,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert_eq!(result.response, None);
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 2
+        ));
     }
 
     #[rstest]
@@ -282,9 +291,12 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!result.passed);
-        assert_eq!(result.response, None);
-        assert_eq!(result.verification_version, 2);
+        assert!(matches!(
+            result,
+            VerificationResult::Failed {
+                verification_version,
+            } if verification_version == 2
+        ));
     }
 
     #[rstest]

@@ -1,4 +1,4 @@
-SDK_GIT_BRANCH="master"
+SDK_GIT_BRANCH="a764b79eee440dd68f3e49cd782279676a2c59c7"
 
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
@@ -18,7 +18,9 @@ download_sdk_repo() {
     echo "SDK repo not cloned yet, cloning..."
 
     git clone "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
+    pushd "$SDK_REPO_DIR" || clean_exit
     git checkout "$SDK_GIT_BRANCH"
+    popd || clean_exit
   fi
 }
 
