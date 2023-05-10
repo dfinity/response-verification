@@ -1,5 +1,13 @@
 ## Unreleased
 
+### BREAKING CHANGE
+
+- re #TT-205
+
+### Feat
+
+- return a more specific type for verification result
+
 ## 0.3.0 (2023-05-04)
 
 ### Feat
