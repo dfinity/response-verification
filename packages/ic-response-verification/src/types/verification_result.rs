@@ -13,6 +13,7 @@ type VerificationResult = {
 } | {
   passed: false;
   verificationVersion: number;
+  reason: ResponseVerificationError;
 }
 "#;
 
@@ -45,6 +46,7 @@ impl From<VerificationResult> for JsValue {
         let result = match verification_result {
             VerificationResult::Failed {
                 verification_version,
+                reason,
             } => {
                 let passed = Boolean::from(false);
                 let passed_entry = Array::of2(&JsValue::from("passed"), &passed.into());
@@ -53,8 +55,15 @@ impl From<VerificationResult> for JsValue {
                 let verification_version_entry =
                     Array::of2(&JsValue::from("verificationVersion"), &verification_version);
 
-                Object::from_entries(&Array::of2(&passed_entry, &verification_version_entry))
-                    .unwrap()
+                let reason = JsValue::from(reason);
+                let reason_entry = Array::of2(&JsValue::from("reason"), &reason.into());
+
+                Object::from_entries(&Array::of3(
+                    &passed_entry,
+                    &verification_version_entry,
+                    &reason_entry,
+                ))
+                .unwrap()
             }
             VerificationResult::Passed {
                 verification_version,
