@@ -147,6 +147,34 @@ pub enum ResponseVerificationError {
     /// Error parsing int
     #[error("Error parsing int")]
     ParseIntError(#[from] std::num::ParseIntError),
+
+    /// The tree has different root hash from the expected value in the certified variables
+    #[error("Invalid tree root hash")]
+    InvalidTree,
+
+    /// The CEL expression path is invalid
+    #[error("Invalid expression path")]
+    InvalidExpressionPath,
+
+    /// The response body was a mismatch from the expected values in the tree
+    #[error("Invalid response body")]
+    InvalidResponseBody,
+
+    /// The response hashes were a mismatch from the expected values in the tree
+    #[error("Invalid response hashes")]
+    InvalidResponseHashes,
+
+    /// The certificate was missing from the response headers
+    #[error("Certificate not found")]
+    MissingCertificate,
+
+    /// The tree was missing from the response headers
+    #[error("Tree not found")]
+    MissingTree,
+
+    /// The certification values could not be found in the response headers
+    #[error("Certification values not found")]
+    MissingCertification,
 }
 
 /// JS Representation of the ResponseVerificationError code

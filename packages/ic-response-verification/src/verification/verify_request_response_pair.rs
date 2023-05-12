@@ -113,7 +113,7 @@ fn verification(
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<VerificationResult> {
     match version {
-        1 => v1_verification(
+        1 => match v1_verification(
             request,
             response,
             canister_id,
@@ -123,8 +123,14 @@ fn verification(
             certificate,
             encoding,
             ic_public_key,
-        ),
-        2 => v2_verification(
+        ) {
+            Err(failed_reason) => Ok(VerificationResult::Failed {
+                verification_version: 1,
+                reason: failed_reason,
+            }),
+            result => result,
+        },
+        2 => match v2_verification(
             request,
             response,
             canister_id,
@@ -136,7 +142,13 @@ fn verification(
             expr_hash,
             certification,
             ic_public_key,
-        ),
+        ) {
+            Err(failed_reason) => Ok(VerificationResult::Failed {
+                verification_version: 2,
+                reason: failed_reason,
+            }),
+            result => result,
+        },
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
             min_supported_version: MIN_VERIFICATION_VERSION,
             max_supported_version: MAX_VERIFICATION_VERSION,
@@ -164,32 +176,33 @@ fn v1_verification(
             let request_uri = &request.get_uri()?;
             let decoded_body = decode_body(&response.body, &encoding)?;
             let decoded_body_sha = hash(decoded_body.as_slice());
-            let valid_tree = validate_tree(canister_id, &certificate, &tree);
-            let mut valid_body = validate_body(&tree, request_uri, &decoded_body_sha);
 
+            if !validate_tree(canister_id, &certificate, &tree) {
+                return Err(ResponseVerificationError::InvalidTree);
+            }
+
+            let mut valid_body = validate_body(&tree, request_uri, &decoded_body_sha);
             if encoding.is_some() && !valid_body {
                 let body_sha = hash(response.body.as_slice());
                 valid_body = validate_body(&tree, request_uri, &body_sha);
             }
 
-            let result = valid_tree && valid_body;
-            match result {
-                true => Ok(VerificationResult::Passed {
-                    response: Some(VerifiedResponse {
-                        status_code: None,
-                        headers: Vec::new(),
-                        body: response.body,
-                    }),
-                    verification_version: 1,
-                }),
-                false => Ok(VerificationResult::Failed {
-                    verification_version: 1,
-                }),
+            if !valid_body {
+                return Err(ResponseVerificationError::InvalidResponseBody);
             }
+
+            Ok(VerificationResult::Passed {
+                response: Some(VerifiedResponse {
+                    status_code: None,
+                    headers: Vec::new(),
+                    body: response.body,
+                }),
+                verification_version: 1,
+            })
         }
-        _ => Ok(VerificationResult::Failed {
-            verification_version: 1,
-        }),
+        (None, Some(_certificate)) => Err(ResponseVerificationError::MissingCertificate),
+        (Some(_tree), None) => Err(ResponseVerificationError::MissingTree),
+        _ => Err(ResponseVerificationError::MissingCertification),
     }
 }
 
@@ -209,21 +222,19 @@ fn v2_verification(
     let request_uri = request.get_uri()?;
 
     let (Some(expr_path), Some(expr_hash), Some(tree), Some(certificate)) = (expr_path, expr_hash, tree, certificate) else {
-        return Ok(VerificationResult::Failed {
-            verification_version: 2,
-        });
+        return Err(ResponseVerificationError::MissingCertification);
     };
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
     certificate.verify(canister_id, ic_public_key)?;
 
-    if !validate_tree(canister_id, &certificate, &tree)
-        || !validate_expr_path(&expr_path, &request_uri, &tree)
-    {
-        return Ok(VerificationResult::Failed {
-            verification_version: 2,
-        });
-    };
+    if !validate_tree(canister_id, &certificate, &tree) {
+        return Err(ResponseVerificationError::InvalidTree);
+    }
+
+    if !validate_expr_path(&expr_path, &request_uri, &tree) {
+        return Err(ResponseVerificationError::InvalidExpressionPath);
+    }
 
     let Some(certification) = certification else {
         return match validate_expr_hash(&expr_path, &expr_hash, &tree).is_some() {
@@ -231,9 +242,7 @@ fn v2_verification(
                 response: None,
                 verification_version: 2,
             }),
-            false => Ok(VerificationResult::Failed {
-                verification_version: 2
-            })
+            false => Err(ResponseVerificationError::InvalidExpressionPath)
         };
     };
 
@@ -268,8 +277,6 @@ fn v2_verification(
             }),
             verification_version: 2,
         }),
-        false => Ok(VerificationResult::Failed {
-            verification_version: 2,
-        }),
+        false => Err(ResponseVerificationError::InvalidResponseHashes),
     }
 }
