@@ -9,7 +9,7 @@ mod tests {
         cel::cel_to_certification,
         hash::{request_hash, response_hash},
         types::{Request, Response, VerificationResult},
-        verify_request_response_pair,
+        verify_request_response_pair, ResponseVerificationError,
     };
     use ic_response_verification_test_utils::{
         create_expr_tree_path, create_v2_certificate_fixture, create_v2_fixture, create_v2_header,
@@ -79,7 +79,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 2
+                reason,
+            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidResponseHashes)
         ));
     }
 
@@ -146,7 +147,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 2
+                reason,
+            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidResponseHashes)
         ));
     }
 
@@ -218,7 +220,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 2
+                reason,
+            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidExpressionPath)
         ));
     }
 
@@ -295,7 +298,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 2
+                reason,
+            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidExpressionPath)
         ));
     }
 
@@ -344,9 +348,12 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        ).unwrap();
 
-        assert!(result.is_err());
+        assert!(matches!(result, VerificationResult::Failed {
+            verification_version,
+            reason: _,
+        } if verification_version == 2))
     }
 }
 

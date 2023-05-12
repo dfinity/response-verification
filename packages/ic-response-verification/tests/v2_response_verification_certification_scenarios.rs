@@ -183,6 +183,7 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
+                reason: _,
             } if verification_version == 2
         ));
     }
@@ -291,6 +292,7 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
+                reason: _
             } if verification_version == 2
         ));
     }
