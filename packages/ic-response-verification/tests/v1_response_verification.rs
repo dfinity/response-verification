@@ -183,7 +183,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 1
+                reason
+            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidResponseBody)
         ));
     }
 
@@ -230,11 +231,14 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        ).unwrap();
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::CertificateVerificationFailed)
+            VerificationResult::Failed {
+                verification_version,
+                reason
+            } if verification_version == 1 && matches!(reason, ResponseVerificationError::CertificateVerificationFailed)
         ));
     }
 
@@ -283,15 +287,18 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        ).unwrap();
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::CertificateTimeTooFarInTheFuture {
+            VerificationResult::Failed {
+                verification_version,
+                reason
+            } if verification_version == 1 && matches!(reason, ResponseVerificationError::CertificateTimeTooFarInTheFuture {
                 certificate_time,
                 max_certificate_time
-            }) if certificate_time == certificate_time &&
-                max_certificate_time == current_time + MAX_CERT_TIME_OFFSET_NS
+            } if certificate_time == certificate_time &&
+            max_certificate_time == current_time + MAX_CERT_TIME_OFFSET_NS)
         ));
     }
 
@@ -340,15 +347,21 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        ).unwrap();
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::CertificateTimeTooFarInThePast {
-                certificate_time,
-                min_certificate_time
-            }) if certificate_time == certificate_time &&
-                min_certificate_time == current_time - MAX_CERT_TIME_OFFSET_NS
+            VerificationResult::Failed {
+                verification_version,
+                reason,
+            } if verification_version == 1 && matches!(
+                reason,
+                ResponseVerificationError::CertificateTimeTooFarInThePast {
+                    certificate_time,
+                    min_certificate_time
+                } if certificate_time == certificate_time &&
+                    min_certificate_time == current_time - MAX_CERT_TIME_OFFSET_NS
+            )
         ));
     }
 
@@ -402,7 +415,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 1
+                reason,
+            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidTree)
         ));
     }
 
@@ -457,7 +471,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 1
+                reason,
+            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidTree)
         ));
     }
 
@@ -510,7 +525,8 @@ mod tests {
             result,
             VerificationResult::Failed {
                 verification_version,
-            } if verification_version == 1
+                reason,
+            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidResponseBody)
         ));
     }
 
