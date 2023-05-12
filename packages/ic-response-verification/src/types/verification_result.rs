@@ -1,4 +1,4 @@
-use crate::types::VerifiedResponse;
+use crate::{types::VerifiedResponse, ResponseVerificationError};
 
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
 use wasm_bindgen::prelude::*;
@@ -32,6 +32,8 @@ pub enum VerificationResult {
     Failed {
         /// The version of verification that was used to verify the response
         verification_version: u16,
+        /// The reason why the verification of the response has failed
+        reason: ResponseVerificationError,
     },
 }
 
