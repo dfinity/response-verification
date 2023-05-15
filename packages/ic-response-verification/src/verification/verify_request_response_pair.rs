@@ -200,8 +200,8 @@ fn v1_verification(
                 verification_version: 1,
             })
         }
-        (None, Some(_certificate)) => Err(ResponseVerificationError::MissingCertificate),
-        (Some(_tree), None) => Err(ResponseVerificationError::MissingTree),
+        (None, Some(_certificate)) => Err(ResponseVerificationError::MissingTree),
+        (Some(_tree), None) => Err(ResponseVerificationError::MissingCertificate),
         _ => Err(ResponseVerificationError::MissingCertification),
     }
 }
@@ -221,8 +221,22 @@ fn v2_verification(
 ) -> ResponseVerificationResult<VerificationResult> {
     let request_uri = request.get_uri()?;
 
-    let (Some(expr_path), Some(expr_hash), Some(tree), Some(certificate)) = (expr_path, expr_hash, tree, certificate) else {
-        return Err(ResponseVerificationError::MissingCertification);
+    let (expr_path, expr_hash, certificate, tree) = match (expr_path, expr_hash, certificate, tree)
+    {
+        (Some(expr_path), Some(expr_hash), Some(certificate), Some(tree)) => {
+            (expr_path, expr_hash, certificate, tree)
+        }
+        (Some(_), Some(_), Some(_), None) => return Err(ResponseVerificationError::MissingTree),
+        (Some(_), Some(_), None, Some(_)) => {
+            return Err(ResponseVerificationError::MissingCertificate)
+        }
+        (Some(_), None, Some(_), Some(_)) => {
+            return Err(ResponseVerificationError::MissingCertificateExpression)
+        }
+        (None, Some(_), Some(_), Some(_)) => {
+            return Err(ResponseVerificationError::MissingCertificateExpressionPath)
+        }
+        _ => return Err(ResponseVerificationError::MissingCertification),
     };
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
