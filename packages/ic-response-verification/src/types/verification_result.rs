@@ -4,7 +4,7 @@ use crate::{types::VerifiedResponse, ResponseVerificationError};
 use wasm_bindgen::prelude::*;
 
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
-use crate::{ResponseVerificationJsError};
+use crate::ResponseVerificationJsError;
 
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(typescript_custom_section)]
@@ -58,7 +58,6 @@ impl From<VerificationResult> for JsValue {
                 let verification_version_entry =
                     Array::of2(&JsValue::from("verificationVersion"), &verification_version);
 
-
                 let reason = JsValue::from(ResponseVerificationJsError::from(reason));
                 let reason_entry = Array::of2(&JsValue::from("reason"), &reason.into());
 
@@ -98,8 +97,8 @@ impl From<VerificationResult> for JsValue {
 
 #[cfg(all(target_arch = "wasm32", feature = "js", test))]
 mod tests {
-    use crate::ResponseVerificationError;
     use crate::types::{VerificationResult, VerifiedResponse};
+    use crate::ResponseVerificationError;
     use js_sys::JSON;
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::wasm_bindgen_test;
