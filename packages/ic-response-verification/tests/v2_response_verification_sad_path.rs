@@ -348,7 +348,8 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(matches!(result, VerificationResult::Failed {
             verification_version,

@@ -332,9 +332,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::ParseIntError(_) => {
                 ResponseVerificationJsErrorCode::ParseIntError
             }
-            ResponseVerificationError::InvalidTree => {
-                ResponseVerificationJsErrorCode::InvalidTree
-            }
+            ResponseVerificationError::InvalidTree => ResponseVerificationJsErrorCode::InvalidTree,
             ResponseVerificationError::InvalidExpressionPath => {
                 ResponseVerificationJsErrorCode::InvalidExpressionPath
             }
@@ -347,9 +345,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::MissingCertificate => {
                 ResponseVerificationJsErrorCode::MissingCertificate
             }
-            ResponseVerificationError::MissingTree => {
-                ResponseVerificationJsErrorCode::MissingTree
-            }
+            ResponseVerificationError::MissingTree => ResponseVerificationJsErrorCode::MissingTree,
             ResponseVerificationError::MissingCertification => {
                 ResponseVerificationJsErrorCode::MissingCertification
             }
