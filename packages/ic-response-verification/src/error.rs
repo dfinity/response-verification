@@ -230,6 +230,20 @@ pub enum ResponseVerificationJsErrorCode {
     Base64DecodingError,
     /// Error parsing int
     ParseIntError,
+    /// The tree has different root hash from the expected value in the certified variables
+    InvalidTree,
+    /// The CEL expression path is invalid
+    InvalidExpressionPath,
+    /// The response body was a mismatch from the expected values in the tree
+    InvalidResponseBody,
+    /// The response hashes were a mismatch from the expected values in the tree
+    InvalidResponseHashes,
+    /// The certificate was missing from the response headers
+    MissingCertificate,
+    /// The tree was missing from the response headers
+    MissingTree,
+    /// The certification values could not be found in the response headers
+    MissingCertification,
 }
 
 /// JS Representation of the ResponseVerificationError
@@ -317,6 +331,27 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             }
             ResponseVerificationError::ParseIntError(_) => {
                 ResponseVerificationJsErrorCode::ParseIntError
+            }
+            ResponseVerificationError::InvalidTree => {
+                ResponseVerificationJsErrorCode::InvalidTree
+            }
+            ResponseVerificationError::InvalidExpressionPath => {
+                ResponseVerificationJsErrorCode::InvalidExpressionPath
+            }
+            ResponseVerificationError::InvalidResponseBody => {
+                ResponseVerificationJsErrorCode::InvalidResponseBody
+            }
+            ResponseVerificationError::InvalidResponseHashes => {
+                ResponseVerificationJsErrorCode::InvalidResponseHashes
+            }
+            ResponseVerificationError::MissingCertificate => {
+                ResponseVerificationJsErrorCode::MissingCertificate
+            }
+            ResponseVerificationError::MissingTree => {
+                ResponseVerificationJsErrorCode::MissingTree
+            }
+            ResponseVerificationError::MissingCertification => {
+                ResponseVerificationJsErrorCode::MissingCertification
             }
         };
         let message = error.to_string();
