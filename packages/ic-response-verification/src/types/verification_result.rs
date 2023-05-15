@@ -4,6 +4,9 @@ use crate::{types::VerifiedResponse, ResponseVerificationError};
 use wasm_bindgen::prelude::*;
 
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
+use crate::{ResponseVerificationJsError};
+
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
 #[wasm_bindgen(typescript_custom_section)]
 const VERIFICATION_RESULT: &'static str = r#"
 type VerificationResult = {
@@ -55,7 +58,8 @@ impl From<VerificationResult> for JsValue {
                 let verification_version_entry =
                     Array::of2(&JsValue::from("verificationVersion"), &verification_version);
 
-                let reason = JsValue::from(reason);
+
+                let reason = JsValue::from(ResponseVerificationJsError::from(reason));
                 let reason_entry = Array::of2(&JsValue::from("reason"), &reason.into());
 
                 Object::from_entries(&Array::of3(
@@ -94,6 +98,7 @@ impl From<VerificationResult> for JsValue {
 
 #[cfg(all(target_arch = "wasm32", feature = "js", test))]
 mod tests {
+    use crate::ResponseVerificationError;
     use crate::types::{VerificationResult, VerifiedResponse};
     use js_sys::JSON;
     use wasm_bindgen::JsValue;
@@ -133,11 +138,12 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn serialize_failed_verification_result() {
-        let expected = r#"{"passed":false,"verificationVersion":2}"#;
+        let expected = r#"{"passed":false,"verificationVersion":2,"reason":{"code":27,"message":"Invalid response hashes"}}"#;
 
         assert_eq!(
             JSON::stringify(&JsValue::from(VerificationResult::Failed {
                 verification_version: 2,
+                reason: ResponseVerificationError::InvalidResponseHashes
             }))
             .unwrap(),
             expected
