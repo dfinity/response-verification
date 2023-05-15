@@ -799,4 +799,130 @@ mod tests {
             }
         )
     }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_tree_error() {
+        let error = ResponseVerificationError::InvalidTree;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::InvalidTree,
+                message: format!(r#"Invalid tree root hash"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_expression_path_error() {
+        let error = ResponseVerificationError::InvalidExpressionPath;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::InvalidExpressionPath,
+                message: format!(r#"Invalid expression path"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_response_body_error() {
+        let error = ResponseVerificationError::InvalidResponseBody;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::InvalidResponseBody,
+                message: format!(r#"Invalid response body"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_response_hashes_error() {
+        let error = ResponseVerificationError::InvalidResponseHashes;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::InvalidResponseHashes,
+                message: format!(r#"Invalid response hashes"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_missing_certificate_error() {
+        let error = ResponseVerificationError::MissingCertificate;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MissingCertificate,
+                message: format!(r#"Certificate not found"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_missing_tree_error() {
+        let error = ResponseVerificationError::MissingTree;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MissingTree,
+                message: format!(r#"Tree not found"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_missing_certificate_expr_path_error() {
+        let error = ResponseVerificationError::MissingCertificateExpressionPath;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MissingCertificateExpressionPath,
+                message: format!(r#"Certificate expression path not found"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_missing_certificate_expr_error() {
+        let error = ResponseVerificationError::MissingCertificateExpression;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MissingCertificateExpression,
+                message: format!(r#"Certificate expression not found"#),
+            }
+        )
+    }
+
+    #[wasm_bindgen_test]
+    fn error_into_invalid_missing_certification_error() {
+        let error = ResponseVerificationError::MissingCertification;
+        let result = ResponseVerificationJsError::from(error);
+
+        assert_eq!(
+            result,
+            ResponseVerificationJsError {
+                code: ResponseVerificationJsErrorCode::MissingCertification,
+                message: format!(r#"Certification values not found"#),
+            }
+        )
+    }
 }
