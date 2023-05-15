@@ -164,13 +164,21 @@ pub enum ResponseVerificationError {
     #[error("Invalid response hashes")]
     InvalidResponseHashes,
 
-    /// The certificate was missing from the response headers
+    /// The certificate was missing from the certification header
     #[error("Certificate not found")]
     MissingCertificate,
 
-    /// The tree was missing from the response headers
+    /// The tree was missing from the certification header
     #[error("Tree not found")]
     MissingTree,
+
+    /// The certificate expression path was missing from the certification header
+    #[error("Certificate expression path not found")]
+    MissingCertificateExpressionPath,
+
+    /// The certificate expression was missing from the response headers
+    #[error("Certificate expression not found")]
+    MissingCertificateExpression,
 
     /// The certification values could not be found in the response headers
     #[error("Certification values not found")]
@@ -238,10 +246,14 @@ pub enum ResponseVerificationJsErrorCode {
     InvalidResponseBody,
     /// The response hashes were a mismatch from the expected values in the tree
     InvalidResponseHashes,
-    /// The certificate was missing from the response headers
+    /// The certificate was missing from the certification header
     MissingCertificate,
-    /// The tree was missing from the response headers
+    /// The tree was missing from the certification header
     MissingTree,
+    /// The certificate expression path was missing from the certification header
+    MissingCertificateExpressionPath,
+    /// The certificate expression was missing from the response headers
+    MissingCertificateExpression,
     /// The certification values could not be found in the response headers
     MissingCertification,
 }
@@ -346,6 +358,12 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
                 ResponseVerificationJsErrorCode::MissingCertificate
             }
             ResponseVerificationError::MissingTree => ResponseVerificationJsErrorCode::MissingTree,
+            ResponseVerificationError::MissingCertificateExpressionPath => {
+                ResponseVerificationJsErrorCode::MissingCertificateExpressionPath
+            }
+            ResponseVerificationError::MissingCertificateExpression => {
+                ResponseVerificationJsErrorCode::MissingCertificateExpression
+            }
             ResponseVerificationError::MissingCertification => {
                 ResponseVerificationJsErrorCode::MissingCertification
             }
