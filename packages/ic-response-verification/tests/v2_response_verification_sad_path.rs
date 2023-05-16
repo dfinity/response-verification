@@ -304,11 +304,26 @@ mod tests {
     }
 
     #[rstest]
-    #[case::invalid_root_key_certificate(invalid_root_key_certificate())]
-    #[case::expired_certificate(expired_certificate())]
-    #[case::future_certificate(future_certificate())]
-    #[case::wrong_canister_certificate(wrong_canister_certificate())]
-    fn invalid_certificate_fails_verification(#[case] fixture: (V2Fixture, u128, String)) {
+    #[case::invalid_root_key_certificate(
+        invalid_root_key_certificate(),
+        ResponseVerificationError::CertificateVerificationFailed
+    )]
+    #[case::expired_certificate(
+        expired_certificate(),
+        ResponseVerificationError::CertificateTimeTooFarInThePast  { certificate_time: 0, min_certificate_time: 0 }
+    )]
+    #[case::future_certificate(
+        future_certificate(),
+        ResponseVerificationError::CertificateTimeTooFarInTheFuture  { certificate_time: 0, max_certificate_time: 0 }
+    )]
+    #[case::wrong_canister_certificate(
+        wrong_canister_certificate(),
+        ResponseVerificationError::CertificatePrincipalOutOfRange
+    )]
+    fn invalid_certificate_fails_verification(
+        #[case] fixture: (V2Fixture, u128, String),
+        #[case] expected_failure: ResponseVerificationError,
+    ) {
         let (
             V2Fixture {
                 root_key,
@@ -353,8 +368,14 @@ mod tests {
 
         assert!(matches!(result, VerificationResult::Failed {
             verification_version,
-            reason: _,
-        } if verification_version == 2))
+            ref reason,
+        } if verification_version == 2 && match (reason, expected_failure) {
+            (ResponseVerificationError::CertificateVerificationFailed, ResponseVerificationError::CertificateVerificationFailed) => true,
+            (ResponseVerificationError::CertificatePrincipalOutOfRange, ResponseVerificationError::CertificatePrincipalOutOfRange) => true,
+            (ResponseVerificationError::CertificateTimeTooFarInThePast { .. }, ResponseVerificationError::CertificateTimeTooFarInThePast { .. }) => true,
+            (ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }, ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }) => true,
+            _ => false
+        }))
     }
 }
 
