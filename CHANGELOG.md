@@ -2,11 +2,18 @@
 
 ### BREAKING CHANGE
 
+- re #TT-79
 - re #TT-205
 
 ### Feat
 
+- Added verification failed reason to the js binding
 - return a more specific type for verification result
+
+### Refactor
+
+- Add more specific errors for verification version 2 failure
+- Standardize verification errors as reasons
 
 ## 0.3.0 (2023-05-04)
 
