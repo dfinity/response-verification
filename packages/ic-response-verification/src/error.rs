@@ -258,9 +258,27 @@ pub enum ResponseVerificationJsErrorCode {
     MissingCertification,
 }
 
+// This custom ts section is needed to properly add the error code as an enum,
+// the default value that wasm-bindgen adds is a number
+#[cfg(all(target_arch = "wasm32", feature = "js"))]
+#[wasm_bindgen(typescript_custom_section)]
+const TS_RESPONSE_VERIFICATION_ERROR: &'static str = r#"
+// JS Representation of the ResponseVerificationError
+export class ResponseVerificationError {
+    // Error code as an enum
+    code: ResponseVerificationErrorCode;
+    // Stringified error message
+    message: string;
+    // object representation of the error
+    toJSON(): Object;
+    // string representaton of this instance
+    toString(): string;
+    free(): void;
+}"#;
+
 /// JS Representation of the ResponseVerificationError
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
-#[wasm_bindgen(inspectable, js_name = ResponseVerificationError)]
+#[wasm_bindgen(inspectable, js_name = ResponseVerificationError, skip_typescript)]
 #[derive(Debug, Eq, PartialEq)]
 pub struct ResponseVerificationJsError {
     /// Error code as an enum
