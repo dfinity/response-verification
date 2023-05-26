@@ -112,6 +112,7 @@ async function performTest(
     headers: httpRequest.headers,
     method: httpRequest.method,
     url: httpRequest.url,
+    body: httpRequest.body,
   };
   let response: Response = {
     body: httpResponse.body,

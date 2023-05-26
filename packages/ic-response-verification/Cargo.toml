@@ -35,6 +35,7 @@ flate2 = "1.0.24"
 leb128 = "0.2.5"
 candid = "0.8.4"
 log = { version = "0.4.17", features = ["max_level_off", "release_max_level_off"] }
+hex = "0.4.3"
 
 [dev-dependencies]
 hex = "0.4.3"

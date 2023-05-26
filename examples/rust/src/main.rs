@@ -26,6 +26,7 @@ fn main() {
         method: "GET".into(),
         url: http_request.url,
         headers: http_request.headers,
+        body: vec![],
     };
     println!("***Request***");
     println!("Url: {:?}", request.url);

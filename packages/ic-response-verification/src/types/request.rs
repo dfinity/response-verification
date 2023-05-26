@@ -11,6 +11,7 @@ interface Request {
     method: String;
     url: String;
     headers: [string, string][];
+    body: Uint8Array;
 }
 "#;
 
@@ -23,6 +24,8 @@ pub struct Request {
     pub url: String,
     /// The HTTP headers of the request, i.e. \[\["Host", "rdmx6-jaaaa-aaaaa-aaadq-cai.ic0.app"\]\]
     pub headers: Vec<(String, String)>,
+    /// The body of the request as an array of bytes, i.e. \[60, 33, 100, 111, 99\]
+    pub body: Vec<u8>,
 }
 
 impl Request {
@@ -36,15 +39,17 @@ impl Request {
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
 impl From<JsValue> for Request {
     fn from(req: JsValue) -> Self {
-        use js_sys::{Array, JsString, Object};
+        use js_sys::{Array, JsString, Object, Uint8Array};
 
         let method_str = JsString::from("method");
         let url_str = JsString::from("url");
         let headers_str = JsString::from("headers");
+        let body_str = JsString::from("body");
 
         let mut method = String::from("");
         let mut url = String::from("");
         let mut headers = Vec::new();
+        let mut body = Vec::new();
 
         let req = Object::unchecked_from_js(req);
         for entry in Object::entries(&req).iter() {
@@ -74,12 +79,17 @@ impl From<JsValue> for Request {
                     headers.push((header_name, header_val))
                 }
             }
+
+            if k == body_str {
+                body = Uint8Array::unchecked_from_js(entry.get(1)).to_vec();
+            }
         }
 
         Self {
             method,
             url,
             headers,
+            body,
         }
     }
 }
@@ -94,13 +104,14 @@ mod tests {
     fn request_from() {
         let v = JSON::parse(
             r#"{
-    "method": "GET",
-    "url": "http://url.com",
-    "headers": [
-        ["header1", "header1val"],
-        ["header2", "header2val"]
-    ]
-}"#,
+                "method": "GET",
+                "url": "http://url.com",
+                "headers": [
+                    ["header1", "header1val"],
+                    ["header2", "header2val"]
+                ],
+                "body": [0, 1, 2, 3, 4, 5, 6]
+            }"#,
         )
         .expect("failed to parse JSON");
         let r = Request::from(v);
@@ -114,6 +125,7 @@ mod tests {
                     ("header1".into(), "header1val".into()),
                     ("header2".into(), "header2val".into()),
                 ],
+                body: vec![0, 1, 2, 3, 4, 5, 6],
             }
         );
     }
