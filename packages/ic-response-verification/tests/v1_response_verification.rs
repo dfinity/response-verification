@@ -42,6 +42,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -101,6 +102,7 @@ mod tests {
             url: "/".into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -160,6 +162,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -215,6 +218,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -272,6 +276,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -333,6 +338,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -395,6 +401,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -451,6 +458,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -505,6 +513,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {
@@ -559,6 +568,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
 
         let response = Response {

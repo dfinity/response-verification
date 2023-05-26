@@ -18,7 +18,7 @@ pub struct Response {
     pub status_code: u16,
     /// The HTTP headers of the request, i.e. \[\["Ic-Certificate", "certificate=:2dn3o2R0cmVlgw=:, tree=:2dn3gwGDA:"\]\]
     pub headers: Vec<(String, String)>,
-    /// The body of the request as a candid decoded blob, i.e.  \[60, 33, 100, 111, 99\]
+    /// The body of the request as an array of bytes, i.e. \[60, 33, 100, 111, 99\]
     pub body: Vec<u8>,
 }
 

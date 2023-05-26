@@ -33,6 +33,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
         let mut response = Response {
             status_code: 200,
@@ -102,6 +103,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
         let mut response = Response {
             status_code: 200,
@@ -192,6 +194,7 @@ mod tests {
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
             ],
+            body: vec![],
         };
         let mut response = Response {
             status_code: 200,
@@ -276,6 +279,7 @@ mod tests {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
+            body: vec![],
         };
         let mut response = Response {
             status_code: 200,

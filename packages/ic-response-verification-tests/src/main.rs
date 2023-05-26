@@ -103,6 +103,7 @@ async fn perform_test(
         method: "GET".into(),
         headers: vec![],
         url: path.into(),
+        body: vec![],
     };
     let response = Response {
         headers: response

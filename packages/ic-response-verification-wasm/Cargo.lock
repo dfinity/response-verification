@@ -1014,6 +1014,7 @@ dependencies = [
  "base64 0.13.1",
  "candid",
  "flate2",
+ "hex",
  "http",
  "ic-certification",
  "ic-representation-independent-hash",

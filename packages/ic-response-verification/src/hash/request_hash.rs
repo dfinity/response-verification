@@ -1,7 +1,7 @@
 use crate::error::ResponseVerificationResult;
 use crate::types::{Request, RequestCertification};
 use ic_certification::hash_tree::Sha256Digest;
-use ic_representation_independent_hash::{representation_independent_hash, Value};
+use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 /// Calculates the
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
@@ -26,7 +26,13 @@ pub fn request_hash(
         filtered_headers.push((":ic-cert-query".into(), Value::String(query_hash)))
     }
 
-    Ok(representation_independent_hash(&filtered_headers))
+    let concatenated_hashes = [
+        representation_independent_hash(&filtered_headers),
+        hash(&request.body),
+    ]
+    .concat();
+
+    Ok(hash(concatenated_hashes.as_slice()))
 }
 
 fn get_filtered_headers(
@@ -91,7 +97,7 @@ mod tests {
         };
         let request = create_request("https://ic0.app");
         let expected_hash =
-            hex::decode("acf45639fb32005e186bb68d4aefb5caf39c986ed32f620c278ef6eb0196e237")
+            hex::decode("10796453466efb3e333891136b8a5931269f77e40ead9d437fcee94a02fa833c")
                 .unwrap();
 
         let result = request_hash(&request, &request_certification).unwrap();
@@ -108,7 +114,7 @@ mod tests {
         let request =
             create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");
         let expected_hash =
-            hex::decode("213b9e222b01decd26d0db070808ca8d437d863ac5b8172f8149c40735e13f47")
+            hex::decode("3ade1c9054f05bc8bcebd3fd7b884078a6e67c63e5ac4a639fa46a47f5a955c9")
                 .unwrap();
 
         let result = request_hash(&request, &request_certification).unwrap();
@@ -161,6 +167,7 @@ mod tests {
                 ("Accept-Language".into(), "en-US".into()),
                 ("Host".into(), "https://ic0.app".into()),
             ],
+            body: vec![0, 1, 2, 3, 4, 5, 6],
         }
     }
 }

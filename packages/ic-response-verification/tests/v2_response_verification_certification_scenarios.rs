@@ -52,6 +52,7 @@ mod tests {
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
             ],
+            body: vec![],
         };
 
         let current_time = get_current_timestamp();
@@ -150,6 +151,7 @@ mod tests {
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
             ],
+            body: vec![],
         };
 
         let current_time = get_current_timestamp();
@@ -441,6 +443,7 @@ mod fixtures {
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
                 ("If-None-Match".into(), etag),
             ],
+            body: vec![],
         }
     }
 
@@ -473,6 +476,7 @@ mod fixtures {
                     "5fd924625f6ab16a19cc9807c7c506ae1813490e4ba675f843d5a10e0baacdb8".into(),
                 ),
             ],
+            body: vec![],
         }
     }
 
