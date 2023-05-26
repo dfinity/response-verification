@@ -120,7 +120,6 @@ pub fn response_hash(
     response: &Response,
     response_certification: &ResponseCertification,
 ) -> Sha256Digest {
-    // lower case the headers here
     let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
         response_headers_hash(&response.status_code.into(), &filtered_headers),
