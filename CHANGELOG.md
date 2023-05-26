@@ -10,6 +10,11 @@
 - Added verification failed reason to the js binding
 - return a more specific type for verification result
 
+### Fix
+
+- remove temporary comment
+- add missing request body hashing
+
 ### Refactor
 
 - Add more specific errors for verification version 2 failure
