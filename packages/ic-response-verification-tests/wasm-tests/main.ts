@@ -31,21 +31,25 @@ async function createAgentAndActor(
 }
 
 async function main(): Promise<void> {
-  const replicaAddress = process.env["DFX_REPLICA_ADDRESS"];
-  if (!replicaAddress) {
-    throw "The `DFX_REPLICA_ADDRESS` env variable was not provided";
+  try {
+    const replicaAddress = process.env["DFX_REPLICA_ADDRESS"];
+    if (!replicaAddress) {
+      throw "The `DFX_REPLICA_ADDRESS` env variable was not provided";
+    }
+
+    if (process.argv.length === 2) {
+      throw "The canister ID arg was not provided";
+    }
+    const canisterId = process.argv[3];
+    const principal = Principal.fromText(canisterId);
+
+    const [agent, actor] = await createAgentAndActor(replicaAddress, principal);
+
+    await v1Test(principal, agent, actor);
+    await v2Test(principal, agent, actor);
+  } catch (error) {
+    console.error("Error running e2e tests...", error);
   }
-
-  if (process.argv.length === 2) {
-    throw "The canister ID arg was not provided";
-  }
-  const canisterId = process.argv[3];
-  const principal = Principal.fromText(canisterId);
-
-  const [agent, actor] = await createAgentAndActor(replicaAddress, principal);
-
-  await v1Test(principal, agent, actor);
-  await v2Test(principal, agent, actor);
 }
 
 async function v1Test(

@@ -1,4 +1,4 @@
-SDK_GIT_BRANCH="a764b79eee440dd68f3e49cd782279676a2c59c7"
+SDK_GIT_BRANCH="master"
 
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
@@ -120,7 +120,6 @@ run_e2e_tests() {
 
 download_sdk_repo
 build_dfx
-./scripts/package.sh
 dfx_start
 deploy_dfx_project
 run_e2e_tests
