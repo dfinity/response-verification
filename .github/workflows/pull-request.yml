@@ -6,12 +6,14 @@ on:
       - main
 
 jobs:
-  build_and_test_rust:
-    name: Build and Test Rust
+  build_and_test:
+    name: Build and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-pnpm
 
       - name: Setup Cargo Cache
         uses: actions/cache@v3
@@ -32,23 +34,26 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: Build
+      - name: Build Cargo crates
         run: cargo build --release
 
-      - name: Build NPM package
-        run: ./scripts/package.sh
+      - name: Build NPM packages
+        run: pnpm build
 
-      - name: Test
+      - name: Test Cargo crates
         run: cargo test
 
       - name: Wasm test
         working-directory: packages/ic-response-verification
         run: wasm-pack test --node --features=js
 
-      - name: Lint
+      - name: Lint Rust
         run: cargo clippy
 
-      - name: Check Formatting
+      - name: Check Typescript formatting
+        run: pnpm run format:check
+
+      - name: Check Rust formatting
         run: cargo fmt --all -- --check
 
   e2e_tests:
@@ -57,6 +62,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-pnpm
 
       - name: Setup Cargo e2e Cache
         uses: actions/cache@v3
@@ -98,7 +105,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
       - name: Install Commitzen
         run: |

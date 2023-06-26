@@ -37,3 +37,10 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 - [Response Verification Rust Crate](./packages/ic-response-verification/README.md)
 - [Response Verification NPM Package](./packages/ic-response-verification-wasm/README.md)
 - [Response Verification e2e Tests](./packages/ic-response-verification-tests/README.md)
+
+## Commands
+
+| Project                          | Command                                                  | Description                                |
+| -------------------------------- | -------------------------------------------------------- | ------------------------------------------ |
+| All                              | `pnpm build`                                             | Build all NPM projects                     |
+| `@dfinity/response-verification` | `pnpm run --filter @dfinity/response-verification build` | Build the response verification JS library |

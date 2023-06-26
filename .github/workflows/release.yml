@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "[0-9]+.[0-9]+.[0-9]+"
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   release:
@@ -14,6 +14,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
+      - uses: ./.github/actions/setup-pnpm
 
       - name: Setup Cargo Cache
         uses: actions/cache@v3
@@ -30,7 +32,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Setup Rust
         uses: actions-rs/toolchain@v1
@@ -43,11 +45,11 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: Create NPM package
-        run: ./scripts/package.sh
+      - name: Build NPM packages
+        run: pnpm build
 
-      - name: Pack NPM package
-        run: npm pack ./pkg
+      - name: Pack @dfinity/response-verification NPM package
+        run: npm pack packages/ic-response-verification-wasm
 
       - name: Generate release notes
         run: cz changelog ${{ github.ref_name }} --file-name RELEASE_NOTES.md
@@ -63,7 +65,7 @@ jobs:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
       - name: Release @dfinity/response-verification NPM package
-        run: npm publish ./pkg --access public
+        run: npm publish packages/ic-response-verification-wasm --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -74,6 +76,6 @@ jobs:
             target/package/ic-response-verification-${{ github.ref_name }}.crate,
             target/package/ic-representation-independent-hash-${{ github.ref_name }}.crate,
             dfinity-response-verification-${{ github.ref_name }}.tgz
-          bodyFile: "RELEASE_NOTES.md"
-          tag: "${{ github.ref_name }}"
-          commit: "main"
+          bodyFile: 'RELEASE_NOTES.md'
+          tag: '${{ github.ref_name }}'
+          commit: 'main'

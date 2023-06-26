@@ -4,21 +4,21 @@ import {
   Response,
   getMinVerificationVersion,
   verifyRequestResponsePair,
-} from "../../../pkg";
+} from '@dfinity/response-verification';
 
-import fetch from "isomorphic-fetch";
-import { idlFactory } from "./http-interface/canister_http_interface";
+import fetch from 'isomorphic-fetch';
+import { idlFactory } from './http-interface/canister_http_interface';
 import {
   HttpRequest,
   _SERVICE,
-} from "./http-interface/canister_http_interface_types";
-import { HttpAgent, ActorSubclass, Actor, Agent } from "@dfinity/agent";
-import { Principal } from "@dfinity/principal";
-import assert from "node:assert";
+} from './http-interface/canister_http_interface_types';
+import { HttpAgent, ActorSubclass, Actor, Agent } from '@dfinity/agent';
+import { Principal } from '@dfinity/principal';
+import assert from 'node:assert';
 
 async function createAgentAndActor(
   gatewayUrl: string,
-  canisterId: Principal
+  canisterId: Principal,
 ): Promise<[HttpAgent, ActorSubclass<_SERVICE>]> {
   const agent = new HttpAgent({ host: gatewayUrl, fetch });
   await agent.fetchRootKey();
@@ -32,13 +32,13 @@ async function createAgentAndActor(
 
 async function main(): Promise<void> {
   try {
-    const replicaAddress = process.env["DFX_REPLICA_ADDRESS"];
+    const replicaAddress = process.env['DFX_REPLICA_ADDRESS'];
     if (!replicaAddress) {
-      throw "The `DFX_REPLICA_ADDRESS` env variable was not provided";
+      throw 'The `DFX_REPLICA_ADDRESS` env variable was not provided';
     }
 
     if (process.argv.length === 2) {
-      throw "The canister ID arg was not provided";
+      throw 'The canister ID arg was not provided';
     }
     const canisterId = process.argv[3];
     const principal = Principal.fromText(canisterId);
@@ -48,33 +48,33 @@ async function main(): Promise<void> {
     await v1Test(principal, agent, actor);
     await v2Test(principal, agent, actor);
   } catch (error) {
-    console.error("Error running e2e tests...", error);
+    console.error('Error running e2e tests...', error);
   }
 }
 
 async function v1Test(
   canisterId: Principal,
   agent: Agent,
-  actor: ActorSubclass<_SERVICE>
+  actor: ActorSubclass<_SERVICE>,
 ): Promise<void> {
   const resultOne = await performTest(
     canisterId,
-    "GET",
-    "/",
+    'GET',
+    '/',
     null,
     agent,
-    actor
+    actor,
   );
   assert(resultOne.passed);
   assert.equal(resultOne.verificationVersion, 1);
 
   const resultTwo = await performTest(
     canisterId,
-    "GET",
-    "/",
+    'GET',
+    '/',
     null,
     agent,
-    actor
+    actor,
   );
   assert(resultTwo.passed);
   assert.equal(resultTwo.verificationVersion, 1);
@@ -83,13 +83,13 @@ async function v1Test(
 async function v2Test(
   canisterId: Principal,
   agent: Agent,
-  actor: ActorSubclass<_SERVICE>
+  actor: ActorSubclass<_SERVICE>,
 ): Promise<void> {
-  const resultOne = await performTest(canisterId, "GET", "/", 2, agent, actor);
+  const resultOne = await performTest(canisterId, 'GET', '/', 2, agent, actor);
   assert(resultOne.passed);
   assert.equal(resultOne.verificationVersion, 2);
 
-  const resultTwo = await performTest(canisterId, "GET", "/", 2, agent, actor);
+  const resultTwo = await performTest(canisterId, 'GET', '/', 2, agent, actor);
   assert(resultTwo.passed);
   assert.equal(resultTwo.verificationVersion, 2);
 }
@@ -100,7 +100,7 @@ async function performTest(
   url: string,
   certificateVersion: number | null,
   agent: Agent,
-  actor: ActorSubclass<_SERVICE>
+  actor: ActorSubclass<_SERVICE>,
 ): Promise<VerificationResult> {
   let httpRequest: HttpRequest = {
     method,
@@ -128,7 +128,7 @@ async function performTest(
   const maxCertTimeOffsetNs = BigInt.asUintN(64, BigInt(300_000_000_000));
 
   if (!agent.rootKey) {
-    throw "Agent does not have root key";
+    throw 'Agent does not have root key';
   }
 
   return verifyRequestResponsePair(
@@ -138,7 +138,7 @@ async function performTest(
     currentTimeNs,
     maxCertTimeOffsetNs,
     new Uint8Array(agent.rootKey),
-    certificateVersion ?? getMinVerificationVersion()
+    certificateVersion ?? getMinVerificationVersion(),
   );
 }
 

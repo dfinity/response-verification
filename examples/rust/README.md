@@ -1,4 +1,4 @@
-# Cargo Example Project 
+# Cargo Example Project
 
 ## Run
 

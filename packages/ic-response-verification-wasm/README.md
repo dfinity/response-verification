@@ -18,44 +18,45 @@ import initResponseVerification, {
   verifyRequestResponsePair,
   ResponseVerificationError,
   ResponseVerificationErrorCode,
-} from "@dfinity/response-verification";
+} from '@dfinity/response-verification';
 
 // this is necessary for web, but not for NodeJS consumers
 await initResponseVerification();
 
 try {
-    const result = verifyRequestResponsePair(
-        request,
-        response,
-        canister_id,
-        current_time_ns,
-        max_cert_time_offset_ns,
-        fromHex(IC_ROOT_KEY)
-    );
+  const result = verifyRequestResponsePair(
+    request,
+    response,
+    canister_id,
+    current_time_ns,
+    max_cert_time_offset_ns,
+    fromHex(IC_ROOT_KEY),
+  );
 
-    // do something with the result
-    // `result.passed` will be true if verification succeeds, false otherwise, and
-    // `result.response` will contain the certified response object if verification was successful.
+  // do something with the result
+  // `result.passed` will be true if verification succeeds, false otherwise, and
+  // `result.response` will contain the certified response object if verification was successful.
 } catch (error) {
-    if (error instanceof ResponseVerificationError) {
-        switch (error.code) {
-            case ResponseVerificationErrorCode.MalformedCbor:
-              // the cbor returned from the replica was malformed.
-              // ...
-              break;
-              
-            case ResponseVerificationErrorCode.MalformedCertificate:
-              // the certificate returned from the replica was malformed.
-              // ...
-              break;
-            
-            // Other error cases...
-        }
+  if (error instanceof ResponseVerificationError) {
+    switch (error.code) {
+      case ResponseVerificationErrorCode.MalformedCbor:
+        // the cbor returned from the replica was malformed.
+        // ...
+        break;
+
+      case ResponseVerificationErrorCode.MalformedCertificate:
+        // the certificate returned from the replica was malformed.
+        // ...
+        break;
+
+      // Other error cases...
     }
+  }
 }
 ```
 
 See the following for working examples:
+
 - [Web](https://github.com/dfinity/response-verification/tree/main/examples/web)
 - [Service Worker](https://github.com/dfinity/response-verification/tree/main/examples/service-worker)
 - [NodeJS](https://github.com/dfinity/response-verification/tree/main/examples/nodejs)

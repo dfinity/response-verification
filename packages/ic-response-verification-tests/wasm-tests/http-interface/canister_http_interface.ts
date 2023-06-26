@@ -22,7 +22,7 @@ export const idlFactory: IDL.InterfaceFactory = ({ IDL }) => {
       callback: IDL.Func(
         [Token],
         [IDL.Opt(streamingCallbackHttpResponseType)],
-        ['query']
+        ['query'],
       ),
     }),
   });

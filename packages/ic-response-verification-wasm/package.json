@@ -13,7 +13,13 @@
     "response-verification",
     "certification"
   ],
-  "main": "./nodejs/nodejs.js",
-  "browser": "./web/web.js",
-  "types": "./web/web.d.ts"
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/nodejs/nodejs.js",
+  "browser": "./dist/web/web.js",
+  "types": "./dist/web/web.d.ts",
+  "scripts": {
+    "build": "../../scripts/package.sh . ./dist"
+  }
 }
