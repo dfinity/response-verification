@@ -1,40 +1,23 @@
 # Service Worker Example Project
 
+This project showcases how to use the `@dfinity/response-verification` package to perform response verification within a service worker. Also see the [Dfinity service worker](https://github.com/dfinity/ic/tree/master/typescript/service-worker) for a full working example.
+
 ## Gotchas
 
 When bundling a service worker with Webpack, the target needs to be set to `webworker`. Otherwise Webpack will transform the `import.meta.url` line from `wasm-bindgen` into `document.location.href`, which will break in a service worker context.
 
 ## Setup
 
-From the root of this repository,
+From the root of this repository, install NPM dependencies:
+
+```shell
+pnpm i
+```
+
 Build the `@dfinity/response-verification` package:
 
 ```shell
-./scripts/package.sh
-```
-
-Link `@dfinity/response-verification` globally:
-
-```shell
-pushd ./pkg && sudo npm link && popd
-```
-
-Change into this project's directory:
-
-```
-cd examples/service-worker
-```
-
-Install NPM modules:
-
-```shell
-npm install
-```
-
-Link `@dfinity/response-verification` in this project:
-
-```shell
-npm link @dfinity/response-verification
+pnpm run --filter @dfinity/response-verification build
 ```
 
 ## Run with Webpack Dev Server
@@ -42,7 +25,7 @@ npm link @dfinity/response-verification
 Run:
 
 ```shell
-npm start
+pnpm run --filter service-worker-example start
 ```
 
 ## Run with HTTP Server
@@ -50,11 +33,11 @@ npm start
 Bundle application:
 
 ```shell
-npm run build
+pnpm run --filter service-worker-example build
 ```
 
 Run:
 
 ```shell
-npm run start:http
+pnpm run --filter service-worker-example start:http
 ```

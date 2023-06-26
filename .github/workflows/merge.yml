@@ -18,7 +18,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
 
       - name: Install Commitzen
         run: |
@@ -34,9 +34,9 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          title: "Update changelog"
-          commit-message: "chore: update changelog"
-          branch: "chore/update-changelog"
-          branch-suffix: "short-commit-hash"
+          title: 'Update changelog'
+          commit-message: 'chore: update changelog'
+          branch: 'chore/update-changelog'
+          branch-suffix: 'short-commit-hash'
           add-paths: |
             CHANGELOG.md

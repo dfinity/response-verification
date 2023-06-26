@@ -78,7 +78,6 @@ deploy_dfx_project() {
   DFX_PROJECT_DIR="$(pwd)/packages/ic-response-verification-tests/dfx-project"
 
   pushd "$DFX_PROJECT_DIR" || clean_exit
-  npm i
   "$DFX" deploy
 
   echo "getting canister id..."
@@ -111,13 +110,13 @@ run_e2e_tests() {
 
   DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_CANISTER_ID" || clean_exit
 
-  ./scripts/package.sh
+  pnpm run --filter @dfinity/response-verification build || clean_exit
   pushd ./packages/ic-response-verification-tests || clean_exit
-  npm ci
   DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS npx ts-node ./wasm-tests/main.ts -- "$DFX_CANISTER_ID" || clean_exit
   popd || clean_exit
 }
 
+pnpm i --frozen-lockfile
 download_sdk_repo
 build_dfx
 dfx_start

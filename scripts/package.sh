@@ -1,35 +1,36 @@
+PKG_ROOT=$1
+OUT_DIR=$2
+
 build_release_packages() {
-    wasm-pack build --target web --out-name web --out-dir ../../pkg/web --release packages/ic-response-verification-wasm
-    wasm-pack build --target nodejs --out-name nodejs --out-dir ../../pkg/nodejs --release packages/ic-response-verification-wasm
+    wasm-pack build --target web --out-name web --out-dir $OUT_DIR/web --release $PKG_ROOT
+    wasm-pack build --target nodejs --out-name nodejs --out-dir $OUT_DIR/nodejs --release $PKG_ROOT
 }
 
 build_debug_packages() {
-    wasm-pack build --target web --out-name web --out-dir ../../pkg/debug/web --profiling packages/ic-response-verification-wasm -- --features "debug"
-    wasm-pack build --target nodejs --out-name nodejs --out-dir ../../pkg/debug/nodejs --profiling packages/ic-response-verification-wasm -- --features "debug"
+    wasm-pack build --target web --out-name web --out-dir $OUT_DIR/debug/dist/web --dev $PKG_ROOT -- --features "debug"
+    wasm-pack build --target nodejs --out-name nodejs --out-dir $OUT_DIR/debug/dist/nodejs --dev $PKG_ROOT -- --features "debug"
 }
 
 delete_generated_files() {
-    find ./pkg -name ".gitignore" -type f -delete
-    find ./pkg -name "README.md" -type f -delete
-    find ./pkg -name "package.json" -type f -delete
-    find ./pkg -name "package-lock.json" -type f -delete
+    find $OUT_DIR -name ".gitignore" -type f -delete
+    find $OUT_DIR -name "README.md" -type f -delete
+    find $OUT_DIR -name "package.json" -type f -delete
+    find $OUT_DIR -name "LICENSE" -type f -delete
 }
 
-add_release_files() {
-    cp ./packages/ic-response-verification-wasm/package.json ./pkg/
-    cp ./packages/ic-response-verification-wasm/package-lock.json ./pkg/
-    cp ./packages/ic-response-verification-wasm/README.md ./pkg/
-    cp ./packages/ic-response-verification-wasm/LICENSE ./pkg/
-}
+# add_release_files() {
+#     cp $PKG_ROOT/package.json $OUT_DIR/
+#     cp $PKG_ROOT/README.md $OUT_DIR/
+#     cp $PKG_ROOT/LICENSE $OUT_DIR/
+# }
 
 add_debug_files() {
-    cp ./packages/ic-response-verification-wasm/package.json ./pkg/debug/
-    cp ./packages/ic-response-verification-wasm/package-lock.json ./pkg/debug/
-    cp ./packages/ic-response-verification-wasm/LICENSE ./pkg/debug/
+    cp $PKG_ROOT/package.json $OUT_DIR/debug/
+    cp $PKG_ROOT/LICENSE $OUT_DIR/debug/
 }
 
 build_release_packages
 build_debug_packages
 delete_generated_files
-add_release_files
+# add_release_files
 add_debug_files

@@ -1,36 +1,19 @@
 # Web Example Project
 
+This project showcases how to use the `@dfinity/response-verification` package to perform response verification within a frontend web project.
+
 ## Setup
 
-From the root of this repository,
+From the root of this repository, install NPM dependencies:
+
+```shell
+pnpm i
+```
+
 Build the `@dfinity/response-verification` package:
 
 ```shell
-./scripts/package.sh
-```
-
-Link `@dfinity/response-verification` globally:
-
-```shell
-pushd ./pkg && sudo npm link && popd
-```
-
-Change into this project's directory:
-
-```
-cd examples/web
-```
-
-Install NPM modules:
-
-```shell
-npm install
-```
-
-Link `@dfinity/response-verification` in this project:
-
-```shell
-npm link @dfinity/response-verification
+pnpm run --filter @dfinity/response-verification build
 ```
 
 ## Run with Webpack Dev Server
@@ -38,7 +21,7 @@ npm link @dfinity/response-verification
 Run:
 
 ```shell
-npm start
+pnpm run --filter web-example start
 ```
 
 ## Run with HTTP Server
@@ -46,11 +29,11 @@ npm start
 Bundle application:
 
 ```shell
-npm run build
+pnpm run --filter web-example build
 ```
 
 Run:
 
 ```shell
-npm run start:http
+pnpm run --filter web-example start:http
 ```

@@ -5,26 +5,27 @@ import initResponseVerification, {
   ResponseVerificationError,
   ResponseVerificationErrorCode,
   getMinVerificationVersion,
-} from "@dfinity/response-verification";
-import { Principal } from "@dfinity/principal";
+} from '@dfinity/response-verification';
+import { Principal } from '@dfinity/principal';
 
 const request: Request = {
-  url: "/",
-  method: "GET",
-  headers: [["Host", "rdmx6-jaaaa-aaaaa-aaadq-cai.ic0.app"]],
+  url: '/',
+  method: 'GET',
+  headers: [['Host', 'rdmx6-jaaaa-aaaaa-aaadq-cai.ic0.app']],
+  body: new Uint8Array([]),
 };
 
 const IC_ROOT_KEY =
-  "308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d9685f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484b01291091c5f87b98883463f98091a0baaae";
+  '308182301d060d2b0601040182dc7c0503010201060c2b0601040182dc7c05030201036100814c0e6ec71fab583b08bd81373c255c3c371b2e84863c98a4f1e08b74235d14fb5d9c0cd546d9685f913a0c0b2cc5341583bf4b4392e467db96d65b9bb4cb717112f8472e0d5a4d14505ffd7484b01291091c5f87b98883463f98091a0baaae';
 
 function fromHex(hex: string): Uint8Array {
   const buffer = [...hex]
     .reduce((acc, curr, i) => {
       // tslint:disable-next-line:no-bitwise
-      acc[(i / 2) | 0] = (acc[(i / 2) | 0] || "") + curr;
+      acc[(i / 2) | 0] = (acc[(i / 2) | 0] || '') + curr;
       return acc;
     }, [] as string[])
-    .map((x) => Number.parseInt(x, 16));
+    .map(x => Number.parseInt(x, 16));
 
   return new Uint8Array(buffer);
 }
@@ -33,8 +34,8 @@ const response: Response = {
   statusCode: 200,
   headers: [
     [
-      "Ic-Certificate",
-      "certificate=:2dn3o2R0cmVlgwGDAYMBgwJIY2FuaXN0ZXKDAkoAAAAAAAAABwEBgwGDAYMBgwJOY2VydGlmaWVkX2RhdGGCA1gg2e9+GWTYWw6giMkxjJE7dxUuFMOmoEJ30FFRTOYmZ+6CBFgg/VtZRZdYyK/sr3KF2jWeS1rblF+4ajwfDv2ZbCGpaTiCBFgg6HKEMFmYn9j0sFHRxCCDNXWTLnDMbw4tDvk9Rh2gPymCBFggKBqd8UfSTdcsbnzQLZPXVYsJLM6dc/fi+RlcW9D/WJGCBFgggAG4QoPuBpdUD9ifMs40Cvn9vn0wahLjSTMOBsMV4iCCBFggoawiEDD+DnBTi5j9NjLHMWHFAlWaVk4+26+ulwFUYJ6DAYIEWCALLxLPg6ijOWkcDTm+OEMs7hpk2o44mLtpr9tpcII8XoMCRHRpbWWCA0mvsY3usNqMlRdpc2lnbmF0dXJlWDCGny0r7KOVEzQsoU4URu/jteB+cO4uw8x59WgP3akcM4hQZ2FLVtbWwKgX2OXKBBVqZGVsZWdhdGlvbqJpc3VibmV0X2lkWB1D3K8RgNuC/acIzjrHoDpgYKveE+lUbGDozOZdAmtjZXJ0aWZpY2F0ZVkCbtnZ96JkdHJlZYMBggRYIOdSJxF174WaX2n7+PrVTskgyInEKI4+qd19HkTmpD4ugwGDAkZzdWJuZXSDAYMBgwGCBFggJn/lURG1bjw5dVMuozc/e3Lp+CBy/o5gftNEhkeKWzmDAYIEWCBGanAobPms6YAcpT4ir27gWaCU/WBJhgbUhLaFQFgwfYMBgwGCBFggiy9sFQeK5NO5NHCRXKU+NzMn836nS6G4F32Ya7ebMa6DAlgdQ9yvEYDbgv2nCM46x6A6YGCr3hPpVGxg6MzmXQKDAYMCT2NhbmlzdGVyX3Jhbmdlc4IDWDLZ2feCgkoAAAAAAAAABwEBSgAAAAAAAAAHAQGCSgAAAAACEAAAAQFKAAAAAAIf//8BAYMCSnB1YmxpY19rZXmCA1iFMIGCMB0GDSsGAQQBgtx8BQMBAgEGDCsGAQQBgtx8BQMCAQNhAIZ1tjSkPjlyYjjP45yVGLw+MiXLb1qEeb/PK2CPum+FJNy4DzWorkS0fyYvCmYg1BJ58G/gxTpzn8ygGkiSb+ZRo1GbWzKf++zJ8MuQiwmN0+iEXPuZxWN54EmsRl7IBoIEWCCHzSE2R03mBIh5w7cCAFNWUXA9yXLKy5T6Bl/+LuY2ioIEWCBKHXbAjmQuPbaYLmZTvoxzbydaJKwiEINDCy1bRBznVIIEWCAthWu6e2yAFxzo5dEhu35EULNWWmRNkTXp/liEKBwfuYMCRHRpbWWCA0m10ovcy4SWlBdpc2lnbmF0dXJlWDCt6yOQsJ6yXcx8WbPabC32P4fss5zCAYh1/Jal1encJWqqxbAD9Svz7bsCIYWs1Ec=:, tree=:2dn3gwGDAktodHRwX2Fzc2V0c4MBgwGDAkEvggNYIHhMD4Jak4qn9HFYfN98d5b4KPk2JJXiuchJDyIyNZvbggRYINfNCmz1KiBw3FH+HXtqhweIiHGeFoScdIw15/x7aflcggRYIFgrUyEzZkbUjG+L8ZEzM7tOv2XAn/v4IHwBLh9UBxJhggRYICEzSyZoHXIg49LX3LI6iczbGx4ETrNeu+SR9m1AgNB4:",
+      'Ic-Certificate',
+      'certificate=:2dn3o2R0cmVlgwGDAYMBgwJIY2FuaXN0ZXKDAkoAAAAAAAAABwEBgwGDAYMBgwJOY2VydGlmaWVkX2RhdGGCA1gg2e9+GWTYWw6giMkxjJE7dxUuFMOmoEJ30FFRTOYmZ+6CBFgg/VtZRZdYyK/sr3KF2jWeS1rblF+4ajwfDv2ZbCGpaTiCBFgg6HKEMFmYn9j0sFHRxCCDNXWTLnDMbw4tDvk9Rh2gPymCBFggKBqd8UfSTdcsbnzQLZPXVYsJLM6dc/fi+RlcW9D/WJGCBFgggAG4QoPuBpdUD9ifMs40Cvn9vn0wahLjSTMOBsMV4iCCBFggoawiEDD+DnBTi5j9NjLHMWHFAlWaVk4+26+ulwFUYJ6DAYIEWCALLxLPg6ijOWkcDTm+OEMs7hpk2o44mLtpr9tpcII8XoMCRHRpbWWCA0mvsY3usNqMlRdpc2lnbmF0dXJlWDCGny0r7KOVEzQsoU4URu/jteB+cO4uw8x59WgP3akcM4hQZ2FLVtbWwKgX2OXKBBVqZGVsZWdhdGlvbqJpc3VibmV0X2lkWB1D3K8RgNuC/acIzjrHoDpgYKveE+lUbGDozOZdAmtjZXJ0aWZpY2F0ZVkCbtnZ96JkdHJlZYMBggRYIOdSJxF174WaX2n7+PrVTskgyInEKI4+qd19HkTmpD4ugwGDAkZzdWJuZXSDAYMBgwGCBFggJn/lURG1bjw5dVMuozc/e3Lp+CBy/o5gftNEhkeKWzmDAYIEWCBGanAobPms6YAcpT4ir27gWaCU/WBJhgbUhLaFQFgwfYMBgwGCBFggiy9sFQeK5NO5NHCRXKU+NzMn836nS6G4F32Ya7ebMa6DAlgdQ9yvEYDbgv2nCM46x6A6YGCr3hPpVGxg6MzmXQKDAYMCT2NhbmlzdGVyX3Jhbmdlc4IDWDLZ2feCgkoAAAAAAAAABwEBSgAAAAAAAAAHAQGCSgAAAAACEAAAAQFKAAAAAAIf//8BAYMCSnB1YmxpY19rZXmCA1iFMIGCMB0GDSsGAQQBgtx8BQMBAgEGDCsGAQQBgtx8BQMCAQNhAIZ1tjSkPjlyYjjP45yVGLw+MiXLb1qEeb/PK2CPum+FJNy4DzWorkS0fyYvCmYg1BJ58G/gxTpzn8ygGkiSb+ZRo1GbWzKf++zJ8MuQiwmN0+iEXPuZxWN54EmsRl7IBoIEWCCHzSE2R03mBIh5w7cCAFNWUXA9yXLKy5T6Bl/+LuY2ioIEWCBKHXbAjmQuPbaYLmZTvoxzbydaJKwiEINDCy1bRBznVIIEWCAthWu6e2yAFxzo5dEhu35EULNWWmRNkTXp/liEKBwfuYMCRHRpbWWCA0m10ovcy4SWlBdpc2lnbmF0dXJlWDCt6yOQsJ6yXcx8WbPabC32P4fss5zCAYh1/Jal1encJWqqxbAD9Svz7bsCIYWs1Ec=:, tree=:2dn3gwGDAktodHRwX2Fzc2V0c4MBgwGDAkEvggNYIHhMD4Jak4qn9HFYfN98d5b4KPk2JJXiuchJDyIyNZvbggRYINfNCmz1KiBw3FH+HXtqhweIiHGeFoScdIw15/x7aflcggRYIFgrUyEzZkbUjG+L8ZEzM7tOv2XAn/v4IHwBLh9UBxJhggRYICEzSyZoHXIg49LX3LI6iczbGx4ETrNeu+SR9m1AgNB4:',
     ],
   ],
   // prettier-ignore
@@ -42,13 +43,13 @@ const response: Response = {
 };
 
 const canister_id = Principal.fromText(
-  "rdmx6-jaaaa-aaaaa-aaadq-cai"
+  'rdmx6-jaaaa-aaaaa-aaadq-cai',
 ).toUint8Array();
 
 const current_time_ns = BigInt(1669202493944584367);
 const max_cert_time_offset_ns = BigInt(300_000_000_000);
 
-self.addEventListener("activate", async () => {
+self.addEventListener('activate', async () => {
   await initResponseVerification();
 
   try {
@@ -62,9 +63,9 @@ self.addEventListener("activate", async () => {
       getMinVerificationVersion(),
     );
 
-    console.log("Result", result);
+    console.log('Result', result);
   } catch (error) {
-    console.log("Error", error);
+    console.log('Error', error);
 
     if (error instanceof ResponseVerificationError) {
       switch (error.code) {
@@ -102,7 +103,7 @@ self.addEventListener("activate", async () => {
 
         case ResponseVerificationErrorCode.CertificateTimeTooFarInTheFuture:
           console.log(
-            `Certificate time too far in the future: ${error.message}`
+            `Certificate time too far in the future: ${error.message}`,
           );
           break;
       }

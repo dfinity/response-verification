@@ -1,0 +1,7 @@
+packages:
+  - 'packages/ic-response-verification-wasm'
+  - 'packages/ic-response-verification-tests'
+  - 'packages/ic-response-verification-tests/dfx-project'
+  - 'examples/nodejs'
+  - 'examples/service-worker'
+  - 'examples/web'

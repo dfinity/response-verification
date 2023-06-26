@@ -1,7 +1,10 @@
 .idea
 .cargo
+.dfx
 target
 dist
 node_modules
 .DS_Store
 /tmp
+
+pnpm-lock.yaml

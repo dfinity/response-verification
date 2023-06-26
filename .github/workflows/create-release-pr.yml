@@ -47,22 +47,18 @@ jobs:
       - name: Update Cargo.lock
         run: cargo build -p ic-response-verification
 
-      - name: Update package-lock.json
-        run: npm i --package-lock-only
-        working-directory: packages/ic-response-verification-wasm
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          title: "Release ${{ steps.cz.outputs.version }}"
+          title: 'Release ${{ steps.cz.outputs.version }}'
           body: |
             After merging this PR, tag the merge commit with:
             ```shell
               git tag ${{ steps.cz.outputs.version }}
               git push origin ${{ steps.cz.outputs.version }}
             ```
-          commit-message: "chore: release ${{ steps.cz.outputs.version }}"
-          branch: "release/${{ steps.cz.outputs.version }}"
+          commit-message: 'chore: release ${{ steps.cz.outputs.version }}'
+          branch: 'release/${{ steps.cz.outputs.version }}'
           add-paths: |
             .cz.yaml
             CHANGELOG.md
@@ -71,6 +67,5 @@ jobs:
             packages/ic-response-verification-tests/Cargo.toml
             packages/ic-response-verification-test-utils/Cargo.toml
             packages/ic-response-verification-wasm/package.json
-            packages/ic-response-verification-wasm/package-lock.json
             packages/ic-response-verification-wasm/Cargo.toml
             packages/ic-representation-independent-hash/Cargo.toml

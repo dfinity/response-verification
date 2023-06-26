@@ -14,14 +14,14 @@ cargo test -p ic-response-verification
 
 ## Wasm Test
 
-```
+```shell
 wasm-pack test --node packages/ic-response-verification --features=js
 ```
 
 ## Wasm Build
 
-```
-./scripts/package.sh
+```shell
+pnpm run --filter @dfinity/response-verification build
 ```
 
 ## Link NPM package
@@ -29,7 +29,7 @@ wasm-pack test --node packages/ic-response-verification --features=js
 From the root of this repository:
 
 ```
-pushd pkg && sudo npm link && popd
+pushd packages/ic-response-verification && sudo npm link && popd
 ```
 
 From another project:
