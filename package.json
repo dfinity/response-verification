@@ -12,6 +12,13 @@
     "npm": "please use pnpm"
   },
   "devDependencies": {
-    "prettier": "^2.8.8"
+    "prettier": "^2.8.8",
+    "@dfinity/agent": "~0.15.7",
+    "@dfinity/candid": "~0.15.7",
+    "@dfinity/principal": "~0.15.7",
+    "typescript": "^5.1.3",
+    "vite": "^4.3.9",
+    "vite-plugin-checker": "^0.6.1",
+    "vitest": "^0.32.2"
   }
 }

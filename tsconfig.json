@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    // compilation
+    "target": "ESNext",
+    "module": "ESNext",
+    "isolatedModules": true,
+    "preserveConstEnums": true,
+    "esModuleInterop": true,
+    // resolution
+    "baseUrl": ".",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    // type checking
+    "allowJs": false,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    // strictness
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}

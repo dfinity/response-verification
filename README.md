@@ -12,6 +12,7 @@ This package encapsulates the protocol for such verification. It is used by [the
 - [Rust](./examples/rust/README.md)
 - [Service Worker](./examples/service-worker/README.md)
 - [Web](./examples/web/README.md)
+- [Certified Counter](./examples/certified-counter/README.md)
 
 ## Contributing
 
@@ -23,6 +24,9 @@ Check out our [contribution guidelines](./.github/CONTRIBUTING.md).
 - [Install commitizen](https://commitizen-tools.github.io/commitizen/#installation)
 - [Install Rust](https://www.rust-lang.org/learn/get-started)
 - [Install wasm-pack](https://rustwasm.github.io/wasm-pack/installer)
+- [Install NodeJS](https://nodejs.org/en/download/)
+- [Install pnpm](https://pnpm.io/installation)
+- [Install DFX](https://internetcomputer.org/docs/current/developer-docs/setup/install)
 
 ### Making a Commit
 
@@ -34,13 +38,24 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 
 ### Sub Projects
 
-- [Response Verification Rust Crate](./packages/ic-response-verification/README.md)
-- [Response Verification NPM Package](./packages/ic-response-verification-wasm/README.md)
-- [Response Verification e2e Tests](./packages/ic-response-verification-tests/README.md)
+#### Response Verification
+
+- [Rust Crate](./packages/ic-response-verification/README.md)
+- [NPM Package](./packages/ic-response-verification-wasm/README.md)
+- [e2e Tests](./packages/ic-response-verification-tests/README.md)
+
+#### Certificate Verification
+
+- [NPM Package](./packages/certificate-verification-js/README.md)
+
+#### Miscellaneous
+
+- [Representation Independent Hash Rust Crate](./packages/ic-representation-independent-hash/README.md)
 
 ## Commands
 
-| Project                          | Command                                                  | Description                                |
-| -------------------------------- | -------------------------------------------------------- | ------------------------------------------ |
-| All                              | `pnpm build`                                             | Build all NPM projects                     |
+| Project                             | Command                                                     | Description                    |
+| ----------------------------------- | ----------------------------------------------------------- | ------------------------------ |
+| All                                 | `pnpm build`                                                | Build all NPM projects         |
+| `@dfinity/certification-test-utils` | `pnpm run --filter @dfinity/certification-test-utils build` | Build certification test utils |
 | `@dfinity/response-verification` | `pnpm run --filter @dfinity/response-verification build` | Build the response verification JS library |
