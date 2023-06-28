@@ -18,12 +18,6 @@ delete_generated_files() {
     find $OUT_DIR -name "LICENSE" -type f -delete
 }
 
-# add_release_files() {
-#     cp $PKG_ROOT/package.json $OUT_DIR/
-#     cp $PKG_ROOT/README.md $OUT_DIR/
-#     cp $PKG_ROOT/LICENSE $OUT_DIR/
-# }
-
 add_debug_files() {
     cp $PKG_ROOT/package.json $OUT_DIR/debug/
     cp $PKG_ROOT/LICENSE $OUT_DIR/debug/
@@ -32,5 +26,4 @@ add_debug_files() {
 build_release_packages
 build_debug_packages
 delete_generated_files
-# add_release_files
 add_debug_files
