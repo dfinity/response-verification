@@ -17,6 +17,8 @@
 
 ### Refactor
 
+- remove redundant package.sh code and setup-nodejs actions
+- migrate to PNPM workspace
 - Add more specific errors for verification version 2 failure
 - Standardize verification errors as reasons
 
