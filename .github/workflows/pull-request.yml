@@ -15,6 +15,8 @@ jobs:
 
       - uses: ./.github/actions/setup-pnpm
 
+      - uses: ./.github/actions/setup-dfx
+
       - name: Setup Cargo Cache
         uses: actions/cache@v3
         with:
@@ -36,6 +38,12 @@ jobs:
 
       - name: Build Cargo crates
         run: cargo build --release
+
+      - name: DFX prepare Certified Counter
+        working-directory: examples/certified-counter
+        run: |
+          dfx canister create --all
+          dfx generate backend
 
       - name: Build NPM packages
         run: pnpm build

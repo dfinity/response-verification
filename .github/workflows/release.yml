@@ -17,6 +17,8 @@ jobs:
 
       - uses: ./.github/actions/setup-pnpm
 
+      - uses: ./.github/actions/setup-dfx
+
       - name: Setup Cargo Cache
         uses: actions/cache@v3
         with:
@@ -38,6 +40,12 @@ jobs:
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: DFX prepare Certified Counter
+        working-directory: examples/certified-counter
+        run: |
+          dfx canister create --all
+          dfx generate backend
 
       - name: Build NPM packages
         run: pnpm build

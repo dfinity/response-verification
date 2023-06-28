@@ -3,6 +3,7 @@
 .dfx
 target
 dist
+declarations
 node_modules
 .DS_Store
 /tmp
