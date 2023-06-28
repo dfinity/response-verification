@@ -1,0 +1,23 @@
+{
+  "name": "certification-suite",
+  "private": true,
+  "scripts": {
+    "test": "pnpm run -r test",
+    "test:coverage": "pnpm run -r test:coverage",
+    "build": "pnpm run -r build",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint packages/certificate-verification-js",
+    "lint:fix": "npm run lint -- --fix"
+  },
+  "devDependencies": {
+    "@dfinity/agent": "~0.15.7",
+    "@dfinity/candid": "~0.15.7",
+    "@dfinity/principal": "~0.15.7",
+    "prettier": "^2.8.8",
+    "typescript": "^5.1.3",
+    "vite": "^4.3.9",
+    "vite-plugin-checker": "^0.6.1",
+    "vitest": "^0.32.2"
+  }
+}
