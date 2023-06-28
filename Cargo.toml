@@ -6,7 +6,13 @@ members = [
     "packages/ic-representation-independent-hash",
     "examples/rust",
 ]
-exclude = ["packages/ic-response-verification-wasm"]
+
+# https://github.com/rust-lang/cargo/issues/9406
+# these projects need wasm32-unknown-unknown as their target
+exclude = [
+    "examples/certified-counter/src/backend",
+    "packages/ic-response-verification-wasm"
+]
 
 [profile.release]
 lto = true

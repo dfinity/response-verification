@@ -1,0 +1,34 @@
+{
+  "name": "@dfinity/certificate-verification",
+  "description": "Client side certificate verification for the Internet Computer",
+  "version": "0.3.0",
+  "author": "DFINITY Stiftung",
+  "license": "Apache-2.0",
+  "repository": "github:dfinity/response-verification",
+  "bugs": "https://github.com/dfinity/response-verification/issues",
+  "keywords": [
+    "internet-computer",
+    "icp",
+    "dfinity",
+    "certificate",
+    "verification"
+  ],
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "dist/certificate-verification.js",
+  "module": "dist/certificate-verification.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "vite build && tsc -p ./tsconfig.types.json",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "@dfinity/agent": "~0.15.7",
+    "@dfinity/candid": "~0.15.7",
+    "@dfinity/principal": "~0.15.7"
+  }
+}

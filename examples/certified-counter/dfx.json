@@ -1,0 +1,20 @@
+{
+  "canisters": {
+    "backend": {
+      "candid": "src/backend/backend.did",
+      "package": "backend",
+      "type": "rust"
+    },
+    "frontend": {
+      "dependencies": ["backend"],
+      "frontend": {
+        "entrypoint": "src/frontend/src/index.html"
+      },
+      "source": ["src/frontend/assets", "dist/frontend/"],
+      "type": "assets"
+    }
+  },
+  "output_env_file": ".env",
+  "dfx": "0.14.1",
+  "version": 1
+}
