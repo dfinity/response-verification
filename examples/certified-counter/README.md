@@ -22,6 +22,12 @@ Create canisters:
 dfx canister create --all
 ```
 
+Generate backend canister bindings:
+
+```shell
+dfx generate backend
+```
+
 Back to the root of repository:
 
 ```shell

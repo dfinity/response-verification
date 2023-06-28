@@ -54,8 +54,8 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 
 ## Commands
 
-| Project                             | Command                                                     | Description                    |
-| ----------------------------------- | ----------------------------------------------------------- | ------------------------------ |
-| All                                 | `pnpm build`                                                | Build all NPM projects         |
-| `@dfinity/certification-test-utils` | `pnpm run --filter @dfinity/certification-test-utils build` | Build certification test utils |
-| `@dfinity/response-verification` | `pnpm run --filter @dfinity/response-verification build` | Build the response verification JS library |
+| Project                             | Command                                                     | Description                                |
+| ----------------------------------- | ----------------------------------------------------------- | ------------------------------------------ |
+| All                                 | `pnpm build`                                                | Build all NPM projects                     |
+| `@dfinity/certification-test-utils` | `pnpm run --filter @dfinity/certification-test-utils build` | Build certification test utils             |
+| `@dfinity/response-verification`    | `pnpm run --filter @dfinity/response-verification build`    | Build the response verification JS library |

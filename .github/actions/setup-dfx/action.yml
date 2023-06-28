@@ -1,0 +1,49 @@
+name: 'Setup DFX'
+description: Setup DFX
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get DFX version
+      shell: bash
+      run: echo "dfx_version=$(cat dfx.json | jq -r .dfx)" >> "$GITHUB_ENV"
+
+    - name: Cache DFX
+      uses: actions/cache@v3
+      with:
+        path: /usr/local/bin/dfx
+        key: dfx-cache-${{ env.dfx_version }}
+
+    - name: Install DFX
+      shell: bash
+      run: |
+        if command -v dfx
+        then
+          echo "DFX restored from cache"
+        else
+          echo "DFX not restored from cache, running install script:"
+          DFX_VERSION=${{ env.dfx_version }} sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+        fi
+        echo "DFX version"
+        dfx --version
+
+    - name: Configure DFX
+      shell: bash
+      run: |
+        mkdir -p $HOME/.config/dfx
+        cat <<EOF >$HOME/.config/dfx/networks.json
+        {
+          "local": {
+            "bind": "127.0.0.1:8080",
+            "type": "ephemeral",
+            "replica": {
+              "subnet_type": "system"
+            }
+          }
+        }
+        EOF
+
+    - name: Run DFX
+      shell: bash
+      run: |
+        dfx start --clean --background
