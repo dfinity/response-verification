@@ -1173,9 +1173,8 @@ dependencies = [
 
 [[package]]
 name = "ic-certification"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e9580095f8d8abb9f69b77c63756c68bd570bb9d9aa725c242c2fdc7abdb9d6"
+version = "0.23.2"
+source = "git+https://github.com/dfinity/agent-rs.git#56b3e4b69f31b3694e2287a8852c12d2017e8e06"
 dependencies = [
  "hex",
  "serde",
@@ -1185,8 +1184,9 @@ dependencies = [
 
 [[package]]
 name = "ic-certification"
-version = "0.23.2"
-source = "git+https://github.com/dfinity/agent-rs.git#56b3e4b69f31b3694e2287a8852c12d2017e8e06"
+version = "0.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce514ae665701b9d85d5fbba87d177befef83a808b92adf53e2496376303a910"
 dependencies = [
  "hex",
  "serde",
@@ -1406,7 +1406,7 @@ dependencies = [
  "flate2",
  "hex",
  "http",
- "ic-certification 0.23.1",
+ "ic-certification 0.24.1",
  "ic-certified-map",
  "ic-crypto-tree-hash",
  "ic-representation-independent-hash",
@@ -2502,9 +2502,9 @@ checksum = "58bc9567378fc7690d6b2addae4e60ac2eeea07becb2c64b9f218b53865cba2a"
 
 [[package]]
 name = "serde"
-version = "1.0.158"
+version = "1.0.164"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "771d4d9c4163ee138805e12c710dd365e4f44be8be0503cb1bb9eb989425d9c9"
+checksum = "9e8c8cf938e98f769bc164923b06dce91cea1751522f46f8466461af04c9027d"
 dependencies = [
  "serde_derive",
 ]
@@ -2530,9 +2530,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.158"
+version = "1.0.164"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e801c1712f48475582b7696ac71e0ca34ebb30e09338425384269d9717c62cad"
+checksum = "d9735b638ccc51c28bf6914d90a2e9725b377144fc612c49a611fddd1b631d68"
 dependencies = [
  "proc-macro2",
  "quote",

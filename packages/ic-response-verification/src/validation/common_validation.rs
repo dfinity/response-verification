@@ -44,7 +44,7 @@ pub trait VerifyCertificate<T> {
     fn verify(&self, canister_id: &[u8], root_public_key: &[u8]) -> ResponseVerificationResult<T>;
 }
 
-impl VerifyCertificate<()> for Certificate<'_> {
+impl VerifyCertificate<()> for Certificate {
     fn verify(&self, canister_id: &[u8], root_public_key: &[u8]) -> ResponseVerificationResult<()> {
         let sig = self.signature.as_slice();
 
@@ -76,9 +76,9 @@ impl VerifyCertificate<Vec<u8>> for Delegation {
         cert.verify(canister_id, root_public_key)?;
 
         let LookupResult::Found(canister_range) = cert.tree.lookup_path(&[
-            "subnet".into(),
-            self.subnet_id.clone().into(),
-            "canister_ranges".into(),
+            "subnet".as_bytes(),
+            self.subnet_id.as_ref(),
+            "canister_ranges".as_bytes(),
         ]) else {
             return Err(ResponseVerificationError::CertificateSubnetCanisterRangesNotFound);
         };
@@ -90,9 +90,9 @@ impl VerifyCertificate<Vec<u8>> for Delegation {
         }
 
         let LookupResult::Found(subnet_public_key) = cert.tree.lookup_path(&[
-            "subnet".into(),
-            self.subnet_id.clone().into(),
-            "public_key".into(),
+            "subnet".as_bytes(),
+            self.subnet_id.as_ref(),
+            "public_key".as_bytes(),
         ]) else {
             return Err(ResponseVerificationError::CertificateSubnetPublicKeyNotFound);
         };
@@ -106,7 +106,7 @@ pub fn validate_certificate_time(
     current_time_ns: &u128,
     allowed_certificate_time_offset: &u128,
 ) -> ResponseVerificationResult {
-    let time_path = ["time".into()];
+    let time_path = ["time".as_bytes()];
 
     let LookupResult::Found(mut encoded_certificate_time) = certificate.tree.lookup_path(&time_path) else {
         return Err(ResponseVerificationError::MissingTimePathInTree);
@@ -139,9 +139,9 @@ pub fn validate_certificate_time(
 
 pub fn validate_tree(canister_id: &[u8], certificate: &Certificate, tree: &HashTree) -> bool {
     let certified_data_path = [
-        "canister".into(),
-        canister_id.into(),
-        "certified_data".into(),
+        "canister".as_bytes(),
+        canister_id.as_ref(),
+        "certified_data".as_bytes(),
     ];
 
     let witness = match certificate.tree.lookup_path(&certified_data_path) {

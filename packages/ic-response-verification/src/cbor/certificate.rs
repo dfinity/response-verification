@@ -2,12 +2,12 @@ use crate::cbor::{hash_tree::parsed_cbor_to_tree, parse_cbor, CborValue};
 use crate::error::ResponseVerificationError;
 use ic_certification::{Certificate, Delegation};
 
-pub trait CertificateToCbor<'a> {
-    fn from_cbor(cbor: &[u8]) -> Result<Certificate<'a>, ResponseVerificationError>;
+pub trait CertificateToCbor {
+    fn from_cbor(cbor: &[u8]) -> Result<Certificate, ResponseVerificationError>;
 }
 
-impl<'a> CertificateToCbor<'a> for Certificate<'a> {
-    fn from_cbor(cbor: &[u8]) -> Result<Certificate<'a>, ResponseVerificationError> {
+impl CertificateToCbor for Certificate {
+    fn from_cbor(cbor: &[u8]) -> Result<Certificate, ResponseVerificationError> {
         let parsed_cbor = parse_cbor(cbor)
             .map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
 
@@ -15,9 +15,9 @@ impl<'a> CertificateToCbor<'a> for Certificate<'a> {
     }
 }
 
-fn parsed_cbor_to_certificate<'a>(
+fn parsed_cbor_to_certificate(
     parsed_cbor: CborValue,
-) -> Result<Certificate<'a>, ResponseVerificationError> {
+) -> Result<Certificate, ResponseVerificationError> {
     let CborValue::Map(map) = parsed_cbor else {
         return Err(ResponseVerificationError::MalformedCertificate(
             "Expected Map when parsing Certificate Cbor".into()

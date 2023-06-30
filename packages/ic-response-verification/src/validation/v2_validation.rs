@@ -1,13 +1,16 @@
 use crate::types::Certification;
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Sha256Digest, HashTree, Label, SubtreeLookupResult};
-use std::borrow::Cow;
 
 fn path_from_parts<T>(parts: &[T]) -> Vec<Label>
 where
     T: AsRef<[u8]>,
 {
-    parts.iter().map(Label::from).collect()
+    parts
+        .iter()
+        .map(|p| p.as_ref().to_vec())
+        .map(Label::from)
+        .collect()
 }
 
 fn path_might_exist_in_tree(path: &[Label], tree: &HashTree) -> bool {
@@ -116,7 +119,7 @@ pub fn validate_expr_hash<'a>(
     expr_path: &[String],
     expr_hash: &Sha256Digest,
     tree: &'a HashTree,
-) -> Option<HashTree<'a>> {
+) -> Option<HashTree> {
     let mut path = path_from_parts(expr_path);
     path.push(expr_hash.into());
 
@@ -148,7 +151,7 @@ pub fn validate_hashes(
 
     match expr_tree.lookup_subtree(&expr_tree_path) {
         SubtreeLookupResult::Found(res_tree) => {
-            HashTreeNode::from(res_tree).eq(&HashTreeNode::Leaf(Cow::from("".as_bytes())))
+            HashTreeNode::from(res_tree).eq(&HashTreeNode::Leaf("".as_bytes().to_vec()))
         }
         _ => false,
     }
