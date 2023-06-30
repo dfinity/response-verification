@@ -1,13 +1,13 @@
 export class CertificateVerificationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'CertificateVerificationError';
+    this.name = this.constructor.name;
   }
 }
 
 export class CertificateTimeError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'CertificateTimeError';
+    this.name = this.constructor.name;
   }
 }
