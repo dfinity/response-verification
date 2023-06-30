@@ -2,8 +2,8 @@ use http::Uri;
 use ic_certification::{hash_tree::Sha256Digest, HashTree, LookupResult};
 
 pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest) -> bool {
-    let asset_path = ["http_assets".into(), request_uri.path().into()];
-    let index_fallback_path = ["http_assets".into(), "/index.html".into()];
+    let asset_path = ["http_assets".as_bytes(), request_uri.path().as_bytes()];
+    let index_fallback_path = ["http_assets".as_bytes(), "/index.html".as_bytes()];
 
     let tree_sha = match tree.lookup_path(&asset_path) {
         LookupResult::Found(v) => v,

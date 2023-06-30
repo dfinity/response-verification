@@ -12,7 +12,7 @@ interface Response {
 "#;
 
 /// Represents a Response from the [Internet Computer](https://internetcomputer.org).
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Response {
     /// The HTTP status code of the response, i.e. 200.
     pub status_code: u16,

@@ -8,7 +8,7 @@ pub mod test_utils {
         pub body_sha: Option<&'a [u8]>,
     }
 
-    pub fn create_tree<'a>(options: Option<CreateTreeOptions>) -> HashTree<'a> {
+    pub fn create_tree(options: Option<CreateTreeOptions>) -> HashTree {
         const DEFAULT_PATH: &str = "/";
         let path = options
             .as_ref()
@@ -49,7 +49,7 @@ pub mod test_utils {
         pub certified_data: Option<&'a [u8]>,
     }
 
-    pub fn create_certificate<'a>(options: Option<CreateCertificateOptions>) -> Certificate<'a> {
+    pub fn create_certificate(options: Option<CreateCertificateOptions>) -> Certificate {
         let default_time = hex_decode("AFB18DEEB0DA8C9517");
         let time = options
             .as_ref()

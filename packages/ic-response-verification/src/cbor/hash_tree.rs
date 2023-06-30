@@ -5,12 +5,12 @@ use ic_certification::{
     HashTree,
 };
 
-pub trait HashTreeToCbor<'a> {
-    fn from_cbor(cbor: &[u8]) -> Result<HashTree<'a>, ResponseVerificationError>;
+pub trait HashTreeToCbor {
+    fn from_cbor(cbor: &[u8]) -> Result<HashTree, ResponseVerificationError>;
 }
 
-impl<'a> HashTreeToCbor<'a> for HashTree<'a> {
-    fn from_cbor(cbor: &[u8]) -> Result<HashTree<'a>, ResponseVerificationError> {
+impl HashTreeToCbor for HashTree {
+    fn from_cbor(cbor: &[u8]) -> Result<HashTree, ResponseVerificationError> {
         let parsed_cbor = parse_cbor(cbor)
             .map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
 
@@ -18,9 +18,7 @@ impl<'a> HashTreeToCbor<'a> for HashTree<'a> {
     }
 }
 
-pub fn parsed_cbor_to_tree<'a>(
-    parsed_cbor: &CborValue,
-) -> Result<HashTree<'a>, ResponseVerificationError> {
+pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> Result<HashTree, ResponseVerificationError> {
     if let CborValue::Array(mut cbor_tags) = parsed_cbor.to_owned() {
         cbor_tags.reverse();
 
@@ -100,22 +98,23 @@ mod tests {
         empty, fork, label, leaf, pruned, pruned_from_hex, Label, LookupResult,
     };
 
-    fn lookup_path<'a, P: AsRef<[&'static str]>>(
-        tree: &'a HashTree<'a>,
-        path: P,
-    ) -> LookupResult<'a> {
-        let path: Vec<Label> = path.as_ref().iter().map(|l| l.into()).collect();
+    fn lookup_path<'a, P: AsRef<[&'static str]>>(tree: &'a HashTree, path: P) -> LookupResult<'a> {
+        let path: Vec<Label<Vec<u8>>> = path
+            .as_ref()
+            .iter()
+            .map(|l| l.as_bytes().to_vec().into())
+            .collect();
 
         tree.lookup_path(&path)
     }
 
     #[test]
     fn works_with_simple_tree() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             label("label 1", empty()),
             fork(
                 pruned(*b"\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01\x01"),
-                leaf(&[1u8, 2, 3, 4, 5, 6]),
+                leaf(vec![1u8, 2, 3, 4, 5, 6]),
             ),
         );
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
@@ -131,18 +130,18 @@ mod tests {
     #[test]
     fn spec_example() {
         // This is the example straight from the spec.
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             fork(
                 label(
                     "a",
                     fork(
-                        fork(label("x", leaf(b"hello")), empty()),
-                        label("y", leaf(b"world")),
+                        fork(label("x", leaf(b"hello".to_vec())), empty()),
+                        label("y", leaf(b"world".to_vec())),
                     ),
                 ),
-                label("b", leaf(b"good")),
+                label("b", leaf(b"good".to_vec())),
             ),
-            fork(label("c", empty()), label("d", leaf(b"morning"))),
+            fork(label("c", empty()), label("d", leaf(b"morning".to_vec()))),
         );
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
@@ -156,7 +155,7 @@ mod tests {
     #[test]
     fn spec_example_pruned() {
         // This is the example straight from the spec.
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             fork(
                 label(
                     "a",
@@ -165,7 +164,7 @@ mod tests {
                             "1b4feff9bef8131788b0c9dc6dbad6e81e524249c879e9f10f71ce3749f5a638",
                         )
                         .unwrap(),
-                        label("y", leaf(b"world")),
+                        label("y", leaf(b"world".to_vec())),
                     ),
                 ),
                 label(
@@ -179,7 +178,7 @@ mod tests {
             fork(
                 pruned_from_hex("ec8324b8a1f1ac16bd2e806edba78006479c9877fed4eb464a25485465af601d")
                     .unwrap(),
-                label("d", leaf(b"morning")),
+                label("d", leaf(b"morning".to_vec())),
             ),
         );
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
@@ -205,7 +204,7 @@ mod tests {
 
     #[test]
     fn can_lookup_paths_1() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             label("label 1", empty()),
             fork(
                 pruned([1; 32]),
@@ -218,21 +217,39 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 0".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 1".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Unknown);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 0".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 1".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Absent);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
     }
 
     #[test]
     fn can_lookup_paths_2() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             label("label 1", empty()),
             fork(
                 fork(
@@ -245,21 +262,39 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 0".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 1".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Absent);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 0".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 1".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Unknown);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
     }
 
     #[test]
     fn can_lookup_paths_3() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             pruned([0; 32]),
             fork(
                 pruned([1; 32]),
@@ -272,19 +307,31 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Unknown);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Absent);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
     }
 
     #[test]
     fn can_lookup_paths_4() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             pruned([0; 32]),
             fork(
                 fork(
@@ -297,19 +344,31 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Unknown);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Unknown);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
     }
 
     #[test]
     fn can_lookup_paths_5() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             fork(
                 pruned([1; 32]),
                 fork(
@@ -322,21 +381,39 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Unknown);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 7".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 8".into()]), LookupResult::Absent);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 7".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 8".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
     }
 
     #[test]
     fn can_lookup_paths_6() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             fork(
                 fork(
                     label("label 3", leaf(vec![1, 2, 3, 4, 5, 6])),
@@ -349,21 +426,39 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Absent);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Unknown);
-        assert_eq!(tree.lookup_path(&["label 7".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 8".into()]), LookupResult::Absent);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 7".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 8".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
     }
 
     #[test]
     fn can_lookup_paths_7() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             fork(
                 pruned([1; 32]),
                 fork(
@@ -376,19 +471,31 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Unknown);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Unknown);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
     }
 
     #[test]
     fn can_lookup_paths_8() {
-        let original_tree = fork(
+        let original_tree: HashTree = fork(
             fork(
                 fork(
                     label("label 3", leaf(vec![1, 2, 3, 4, 5, 6])),
@@ -401,13 +508,25 @@ mod tests {
         let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
-        assert_eq!(tree.lookup_path(&["label 2".into()]), LookupResult::Absent);
         assert_eq!(
-            tree.lookup_path(&["label 3".into()]),
+            tree.lookup_path(&["label 2".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 3".as_bytes().to_vec()]),
             LookupResult::Found(&[1, 2, 3, 4, 5, 6])
         );
-        assert_eq!(tree.lookup_path(&["label 4".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 5".into()]), LookupResult::Absent);
-        assert_eq!(tree.lookup_path(&["label 6".into()]), LookupResult::Unknown);
+        assert_eq!(
+            tree.lookup_path(&["label 4".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 5".as_bytes().to_vec()]),
+            LookupResult::Absent
+        );
+        assert_eq!(
+            tree.lookup_path(&["label 6".as_bytes().to_vec()]),
+            LookupResult::Unknown
+        );
     }
 }
