@@ -74,43 +74,37 @@ async fn v1_test(canister_id: &str, agent: &Agent) -> Result<()> {
 }
 
 async fn v2_test(canister_id: &str, agent: &Agent) -> Result<()> {
-    let index_html = read_file("dist/frontend/index.html")?;
+    let test_cases = [
+        ["GET", "/index.html", "dist/frontend/index.html"], // load index.html when requesting /index.html
+        ["GET", "/", "dist/frontend/index.html"], // load index.html when requesting trailing slash
+        [
+            "GET",
+            "/sample-asset.txt",
+            "canisters/frontend/assets/sample-asset.txt",
+        ], // load sample text asset when requesting /sample-asset.txt
+        ["GET", "/index.js", "dist/frontend/index.js"], // load sample js asset when requesting /index.js
+        ["GET", "/not-found", "dist/frontend/index.html"], // fallback to index.html on not found path
+        ["GET", "/not/found", "dist/frontend/index.html"], // fallback to index.html on not found path
+        ["GET", "/a/b/not-found", "dist/frontend/index.html"], // fallback to index.html on not found path
+    ];
 
-    v2_index_html(canister_id, agent, &index_html).await?;
-    v2_index_html_trailing_slash(canister_id, agent, &index_html).await?;
-
-    v2_txt_asset(canister_id, agent).await?;
-    v2_js_asset(canister_id, agent).await?;
-
-    v2_not_found(canister_id, agent, &index_html).await?;
-    v2_nested_not_found(canister_id, agent, &index_html).await?;
-    v2_nested_not_found_with_sibling(canister_id, agent, &index_html).await?;
-
-    Ok(())
-}
-
-async fn v2_index_html(canister_id: &str, agent: &Agent, index_html: &[u8]) -> Result<()> {
-    let (result, response) =
-        perform_test(canister_id, "GET", "/index.html", Some(&2), agent).await?;
-
-    assert!(matches!(
-        result,
-        VerificationResult::Passed {
-            verification_version,
-            response: _,
-        } if verification_version == 2
-    ));
-    assert_eq!(index_html, response.body);
+    for [http_method, http_path, file_path] in test_cases.into_iter() {
+        // validates if the returned response is the same as the file content for the given path
+        v2_load_asset(canister_id, agent, http_method, http_path, file_path).await?;
+    }
 
     Ok(())
 }
 
-async fn v2_index_html_trailing_slash(
+async fn v2_load_asset(
     canister_id: &str,
     agent: &Agent,
-    index_html: &[u8],
+    http_method: &str,
+    path: &str,
+    file_path: &str,
 ) -> Result<()> {
-    let (result, response) = perform_test(canister_id, "GET", "/", Some(&2), agent).await?;
+    let asset = read_file(file_path)?;
+    let (result, response) = perform_test(canister_id, http_method, path, Some(&2), agent).await?;
 
     assert!(matches!(
         result,
@@ -119,94 +113,7 @@ async fn v2_index_html_trailing_slash(
             response: _,
         } if verification_version == 2
     ));
-    assert_eq!(index_html, response.body);
-
-    Ok(())
-}
-
-async fn v2_txt_asset(canister_id: &str, agent: &Agent) -> Result<()> {
-    let sample_asset = read_file("canisters/frontend/assets/sample-asset.txt")?;
-
-    let (result, response) =
-        perform_test(canister_id, "GET", "/sample-asset.txt", Some(&2), agent).await?;
-
-    assert!(matches!(
-        result,
-        VerificationResult::Passed {
-            verification_version,
-            response: _,
-        } if verification_version == 2
-    ));
-    assert_eq!(sample_asset, response.body);
-
-    Ok(())
-}
-
-async fn v2_js_asset(canister_id: &str, agent: &Agent) -> Result<()> {
-    let sample_asset = read_file("dist/frontend/index.js")?;
-
-    let (result, response) = perform_test(canister_id, "GET", "/index.js", Some(&2), agent).await?;
-
-    assert!(matches!(
-        result,
-        VerificationResult::Passed {
-            verification_version,
-            response: _,
-        } if verification_version == 2
-    ));
-    assert_eq!(sample_asset, response.body);
-
-    Ok(())
-}
-
-async fn v2_not_found(canister_id: &str, agent: &Agent, index_html: &[u8]) -> Result<()> {
-    let (result, response) =
-        perform_test(canister_id, "GET", "/not-found", Some(&2), agent).await?;
-
-    assert!(matches!(
-        result,
-        VerificationResult::Passed {
-            verification_version,
-            response: _,
-        } if verification_version == 2
-    ));
-    assert_eq!(index_html, response.body);
-
-    Ok(())
-}
-
-async fn v2_nested_not_found(canister_id: &str, agent: &Agent, index_html: &[u8]) -> Result<()> {
-    let (result, response) =
-        perform_test(canister_id, "GET", "/not/found", Some(&2), agent).await?;
-
-    assert!(matches!(
-        result,
-        VerificationResult::Passed {
-            verification_version,
-            response: _,
-        } if verification_version == 2
-    ));
-    assert_eq!(index_html, response.body);
-
-    Ok(())
-}
-
-async fn v2_nested_not_found_with_sibling(
-    canister_id: &str,
-    agent: &Agent,
-    index_html: &[u8],
-) -> Result<()> {
-    let (result, response) =
-        perform_test(canister_id, "GET", "/a/b/not-found", Some(&2), agent).await?;
-
-    assert!(matches!(
-        result,
-        VerificationResult::Passed {
-            verification_version,
-            response: _,
-        } if verification_version == 2
-    ));
-    assert_eq!(index_html, response.body);
+    assert_eq!(asset, response.body);
 
     Ok(())
 }
