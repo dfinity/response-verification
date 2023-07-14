@@ -17,6 +17,7 @@
 
 ### Refactor
 
+- updated v2 e2e test cases to reuse load asset logic
 - remove redundant package.sh code and setup-nodejs actions
 - migrate to PNPM workspace
 - Add more specific errors for verification version 2 failure
