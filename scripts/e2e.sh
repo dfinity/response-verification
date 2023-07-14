@@ -1,4 +1,4 @@
-SDK_GIT_BRANCH="update-replica-again"
+SDK_GIT_BRANCH="master"
 
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
