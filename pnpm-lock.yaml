@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 importers:
 
   .:
@@ -101,14 +105,14 @@ importers:
   packages/ic-response-verification-tests:
     dependencies:
       '@dfinity/agent':
-        specifier: ~0.15.7
-        version: 0.15.7(@dfinity/candid@0.15.7)(@dfinity/principal@0.15.7)(@types/node@20.3.1)(typescript@4.8.4)
+        specifier: ~0.18.0
+        version: 0.18.0(@dfinity/candid@0.18.0)(@dfinity/principal@0.18.0)
       '@dfinity/candid':
-        specifier: ~0.15.7
-        version: 0.15.7(@types/node@20.3.1)(typescript@4.8.4)
+        specifier: ~0.18.0
+        version: 0.18.0
       '@dfinity/principal':
-        specifier: ~0.15.7
-        version: 0.15.7(@types/node@20.3.1)(typescript@4.8.4)
+        specifier: ~0.18.0
+        version: 0.18.0
       '@dfinity/response-verification':
         specifier: workspace:*
         version: link:../ic-response-verification-wasm
@@ -139,7 +143,7 @@ importers:
         version: 5.76.0(webpack-cli@4.10.0)
       webpack-cli:
         specifier: ^4.10.0
-        version: 4.10.0(webpack-dev-server@4.11.1)(webpack@5.76.0)
+        version: 4.10.0(webpack@5.76.0)
 
   packages/ic-response-verification-wasm: {}
 
@@ -151,36 +155,22 @@ packages:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  /@dfinity/agent@0.15.7(@dfinity/candid@0.15.7)(@dfinity/principal@0.15.7)(@types/node@20.3.1)(typescript@4.8.4):
-    resolution: {integrity: sha512-w34yvlUTpPBG8nLOD0t/ao3k2xonOFq4QGvfJ1HiS/nIggdza/3xC3nLBszGrjVYWj1jqu8BLFvQXCAeWin75A==}
+  /@dfinity/agent@0.18.0(@dfinity/candid@0.18.0)(@dfinity/principal@0.18.0):
+    resolution: {integrity: sha512-6F4IX2jwRzZ4XuclI/uoscwyfWs3oOI1IZUVh7NpWmrEYEFDv9Xxp6vg6beAgVnrNjnohw+vbDSDg4Nih86Yrg==}
     peerDependencies:
-      '@dfinity/candid': ^0.15.7
-      '@dfinity/principal': ^0.15.7
+      '@dfinity/candid': ^0.18.0
+      '@dfinity/principal': ^0.18.0
     dependencies:
-      '@dfinity/candid': 0.15.7(@types/node@20.3.1)(typescript@4.8.4)
-      '@dfinity/principal': 0.15.7(@types/node@20.3.1)(typescript@4.8.4)
+      '@dfinity/candid': 0.18.0
+      '@dfinity/principal': 0.18.0
       base64-arraybuffer: 0.2.0
-      bignumber.js: 9.1.1
       borc: 2.1.2
       js-sha256: 0.9.0
       simple-cbor: 0.4.1
-      ts-node: 10.9.1(@types/node@20.3.1)(typescript@4.8.4)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - typescript
     dev: false
 
-  /@dfinity/candid@0.15.7(@types/node@20.3.1)(typescript@4.8.4):
-    resolution: {integrity: sha512-lTcjK/xrSyT7wvUQ2pApG+yklQAwxaofQ04D1IWv0/8gKbY0eUbh8G2w6+CypJ15Hb1CH24ijUj8nWdeX/z3jg==}
-    dependencies:
-      ts-node: 10.9.1(@types/node@20.3.1)(typescript@4.8.4)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - typescript
+  /@dfinity/candid@0.18.0:
+    resolution: {integrity: sha512-w6EcvVE5CZNu3ysjuflhOAsZ8MqVo1XDNe1Bp7/i0WqHUGlF1S4ZxHPun7AjZkNfTiZ3wcmlUjgZyfCgwTvPyA==}
     dev: false
 
   /@dfinity/principal@0.15.7(@types/node@20.3.1)(typescript@4.8.4):
@@ -193,6 +183,12 @@ packages:
       - '@swc/wasm'
       - '@types/node'
       - typescript
+    dev: false
+
+  /@dfinity/principal@0.18.0:
+    resolution: {integrity: sha512-TSnAzpken1UnO8JQN/7wTU2jY0Q+VEw+MKkrTmf8DVXx8bhMOE0Yq1RTsUWyqiE/qxGuQvLidc7kb15ygmx8ng==}
+    dependencies:
+      js-sha256: 0.9.0
     dev: false
 
   /@discoveryjs/json-ext@0.5.7:
@@ -550,6 +546,18 @@ packages:
     dependencies:
       envinfo: 7.9.0
       webpack-cli: 4.10.0(webpack-dev-server@4.11.1)(webpack@5.76.0)
+    dev: true
+
+  /@webpack-cli/serve@1.7.0(webpack-cli@4.10.0):
+    resolution: {integrity: sha512-oxnCNGj88fL+xzV+dacXs44HcDwf1ovs3AuEzvP7mqXw7fQntqIhQ1BRmynh4qEKQSSSRSWVyXRjmTbZIX9V2Q==}
+    peerDependencies:
+      webpack-cli: 4.x.x
+      webpack-dev-server: '*'
+    peerDependenciesMeta:
+      webpack-dev-server:
+        optional: true
+    dependencies:
+      webpack-cli: 4.10.0(webpack@5.76.0)
     dev: true
 
   /@webpack-cli/serve@1.7.0(webpack-cli@4.10.0)(webpack-dev-server@4.11.1):
@@ -2789,6 +2797,41 @@ packages:
       rechoir: 0.7.1
       webpack: 5.76.0(webpack-cli@4.10.0)
       webpack-dev-server: 4.11.1(webpack-cli@4.10.0)(webpack@5.76.0)
+      webpack-merge: 5.9.0
+    dev: true
+
+  /webpack-cli@4.10.0(webpack@5.76.0):
+    resolution: {integrity: sha512-NLhDfH/h4O6UOy+0LSso42xvYypClINuMNBVVzX4vX98TmTaTUxwRbXdhucbFMd2qLaCTcLq/PdYrvi8onw90w==}
+    engines: {node: '>=10.13.0'}
+    hasBin: true
+    peerDependencies:
+      '@webpack-cli/generators': '*'
+      '@webpack-cli/migrate': '*'
+      webpack: 4.x.x || 5.x.x
+      webpack-bundle-analyzer: '*'
+      webpack-dev-server: '*'
+    peerDependenciesMeta:
+      '@webpack-cli/generators':
+        optional: true
+      '@webpack-cli/migrate':
+        optional: true
+      webpack-bundle-analyzer:
+        optional: true
+      webpack-dev-server:
+        optional: true
+    dependencies:
+      '@discoveryjs/json-ext': 0.5.7
+      '@webpack-cli/configtest': 1.2.0(webpack-cli@4.10.0)(webpack@5.76.0)
+      '@webpack-cli/info': 1.5.0(webpack-cli@4.10.0)
+      '@webpack-cli/serve': 1.7.0(webpack-cli@4.10.0)
+      colorette: 2.0.20
+      commander: 7.2.0
+      cross-spawn: 7.0.3
+      fastest-levenshtein: 1.0.16
+      import-local: 3.1.0
+      interpret: 2.2.0
+      rechoir: 0.7.1
+      webpack: 5.76.0(webpack-cli@4.10.0)
       webpack-merge: 5.9.0
     dev: true
 

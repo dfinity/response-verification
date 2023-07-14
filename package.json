@@ -6,6 +6,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "engines": {
+    "node": "^18",
+    "pnpm": "^8",
+    "npm": "please use pnpm"
+  },
   "devDependencies": {
     "prettier": "^2.8.8"
   }
