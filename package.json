@@ -4,7 +4,8 @@
   "scripts": {
     "build": "pnpm run -r build",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "pnpm run -r test"
   },
   "engines": {
     "node": "^18",

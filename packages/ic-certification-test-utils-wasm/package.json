@@ -1,0 +1,25 @@
+{
+  "name": "@dfinity/certification-test-utils",
+  "description": "Utilities for testing applications that work with Internet Computer certification",
+  "version": "0.3.0",
+  "author": "DFINITY Stiftung",
+  "license": "Apache-2.0",
+  "repository": "github:dfinity/response-verification",
+  "bugs": "https://github.com/dfinity/response-verification/issues",
+  "keywords": [
+    "internet-computer",
+    "icp",
+    "dfinity",
+    "certification",
+    "test-utils"
+  ],
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/nodejs/nodejs.js",
+  "browser": "./dist/web/web.js",
+  "types": "./dist/web/web.d.ts",
+  "scripts": {
+    "build": "../../scripts/package.sh . ./dist"
+  }
+}

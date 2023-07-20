@@ -30,5 +30,8 @@
     "@dfinity/agent": "~0.15.7",
     "@dfinity/candid": "~0.15.7",
     "@dfinity/principal": "~0.15.7"
+  },
+  "devDependencies": {
+    "@dfinity/certification-test-utils": "workspace:*"
   }
 }

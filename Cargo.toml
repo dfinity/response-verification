@@ -11,7 +11,8 @@ members = [
 # these projects need wasm32-unknown-unknown as their target
 exclude = [
     "examples/certified-counter/src/backend",
-    "packages/ic-response-verification-wasm"
+    "packages/ic-response-verification-wasm",
+    "packages/ic-certification-test-utils-wasm",
 ]
 
 [profile.release]
