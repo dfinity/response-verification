@@ -48,6 +48,9 @@ jobs:
       - name: Build NPM packages
         run: pnpm build
 
+      - name: Test NPM packages
+        run: pnpm test
+
       - name: Test Cargo crates
         run: cargo test
 

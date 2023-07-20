@@ -4,10 +4,6 @@ description: Setup DFX
 runs:
   using: 'composite'
   steps:
-    - name: Get DFX version
-      shell: bash
-      run: echo "dfx_version=$(cat dfx.json | jq -r .dfx)" >> "$GITHUB_ENV"
-
     - name: Cache DFX
       uses: actions/cache@v3
       with:
@@ -22,7 +18,7 @@ runs:
           echo "DFX restored from cache"
         else
           echo "DFX not restored from cache, running install script:"
-          DFX_VERSION=${{ env.dfx_version }} sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
+          DFX_VERSION=0.14.2 sh -ci "$(curl -fsSL https://sdk.dfinity.org/install.sh)"
         fi
         echo "DFX version"
         dfx --version

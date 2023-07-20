@@ -9,13 +9,21 @@ import { Principal } from '@dfinity/principal';
 import { PipeArrayBuffer, lebDecode } from '@dfinity/candid';
 import { CertificateTimeError, CertificateVerificationError } from './error';
 
-export async function verifyCertification(
-  canisterId: Principal,
-  encodedCertificate: ArrayBuffer,
-  encodedTree: ArrayBuffer,
-  rootKey: ArrayBuffer,
-  maxCertificateTimeOffsetMs: number,
-): Promise<HashTree> {
+export interface CertificationParams {
+  canisterId: Principal;
+  encodedCertificate: ArrayBuffer;
+  encodedTree: ArrayBuffer;
+  rootKey: ArrayBuffer;
+  maxCertificateTimeOffsetMs: number;
+}
+
+export async function verifyCertification({
+  canisterId,
+  encodedCertificate,
+  encodedTree,
+  rootKey,
+  maxCertificateTimeOffsetMs,
+}: CertificationParams): Promise<HashTree> {
   const certificate = await Certificate.create({
     certificate: encodedCertificate,
     canisterId,

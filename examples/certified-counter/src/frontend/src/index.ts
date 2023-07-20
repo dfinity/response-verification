@@ -33,13 +33,13 @@ buttonElement.addEventListener('click', async event => {
 
   const agent = new HttpAgent();
   await agent.fetchRootKey();
-  const tree = await verifyCertification(
-    Principal.fromText(canisterId),
-    new Uint8Array(certificate).buffer,
-    new Uint8Array(witness).buffer,
-    agent.rootKey,
-    50000,
-  );
+  const tree = await verifyCertification({
+    canisterId: Principal.fromText(canisterId),
+    encodedCertificate: new Uint8Array(certificate).buffer,
+    encodedTree: new Uint8Array(witness).buffer,
+    rootKey: agent.rootKey,
+    maxCertificateTimeOffsetMs: 50000,
+  });
 
   const treeHash = lookup_path(['count'], tree);
   if (!treeHash) {
