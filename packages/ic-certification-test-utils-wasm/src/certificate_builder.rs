@@ -7,6 +7,7 @@ use crate::{
 };
 use ic_crypto_tree_hash::{LabeledTree, MixedHashTree};
 use ic_types::{
+    crypto::CombinedThresholdSig,
     messages::{Blob, Certificate, CertificateDelegation},
     CanisterId, PrincipalId, SubnetId,
 };
@@ -53,6 +54,7 @@ pub struct CertificateBuilder {
     time: Option<u128>,
     canister: CanisterData,
     subnet: Option<SubnetData>,
+    signature: Option<Blob>,
 }
 
 #[wasm_bindgen]
@@ -62,10 +64,6 @@ impl CertificateBuilder {
         canister_id: &str,
         certified_data: &[u8],
     ) -> CertificationTestResult<CertificateBuilder> {
-        console_error_panic_hook::set_once();
-        log::set_logger(&wasm_bindgen_console_logger::DEFAULT_LOGGER).unwrap();
-        log::set_max_level(log::LevelFilter::Info);
-
         let canister_id = CanisterId::from_str(canister_id)
             .map_err(|_| CertificationTestError::CanisterIdParsingFailed)?;
 
@@ -76,6 +74,7 @@ impl CertificateBuilder {
                 certified_data: certified_data.to_vec(),
             },
             subnet: None,
+            signature: None,
         })
     }
 
@@ -108,6 +107,15 @@ impl CertificateBuilder {
         self
     }
 
+    #[wasm_bindgen(js_name = withInvalidSignature)]
+    pub fn with_invalid_signature(mut self) -> Self {
+        let signature =
+            CombinedThresholdSig(b"invalid sig -----padding to get to 48 bytes-----".to_vec());
+        self.signature = Some(Blob(signature.0));
+
+        self
+    }
+
     pub fn build(self) -> CertificationTestResult<CertificateData> {
         let time = self.time.unwrap_or(DEFAULT_CERTIFICATE_TIME);
         let encoded_time = leb_encode_timestamp(time)?;
@@ -120,6 +128,7 @@ impl CertificateBuilder {
         let (keypair, tree, signature) = build_certificate(&tree)?;
         let delegation = None;
         let delegation_data = self.build_delegation(&keypair, &encoded_time)?;
+        let signature = self.signature.unwrap_or(signature);
 
         if let Some((delegation, keypair)) = delegation_data {
             let certificate = Certificate {
@@ -153,11 +162,11 @@ impl CertificateBuilder {
     }
 
     fn build_delegation(
-        self,
+        &self,
         delegatee_keypair: &KeyPair,
         encoded_time: &[u8],
     ) -> CertificationTestResult<Option<(CertificateDelegation, KeyPair)>> {
-        if let Some(subnet) = self.subnet {
+        if let Some(subnet) = &self.subnet {
             let tree = create_delegation_tree(
                 &delegatee_keypair.public_key,
                 encoded_time,
