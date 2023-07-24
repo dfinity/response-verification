@@ -7,6 +7,7 @@
 
 ### Feat
 
+- add test utils wasm package
 - add certificate verification JS library
 - Added verification failed reason to the js binding
 - return a more specific type for verification result
@@ -18,6 +19,7 @@
 
 ### Refactor
 
+- update verify certification params interface name
 - remove redundant npm pre scripts
 - updated v2 e2e test cases to reuse load asset logic
 - remove redundant package.sh code and setup-nodejs actions

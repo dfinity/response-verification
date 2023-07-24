@@ -24,6 +24,7 @@ export async function verifyCertification({
   rootKey,
   maxCertificateTimeOffsetMs,
 }: VerifyCertificationParams): Promise<HashTree> {
+  const nowMs = Date.now();
   const certificate = await Certificate.create({
     certificate: encodedCertificate,
     canisterId,
@@ -31,8 +32,8 @@ export async function verifyCertification({
   });
   const tree = Cbor.decode<HashTree>(encodedTree);
 
-  validateCertificateTime(certificate, maxCertificateTimeOffsetMs);
-  validateTree(tree, certificate, canisterId);
+  validateCertificateTime(certificate, maxCertificateTimeOffsetMs, nowMs);
+  await validateTree(tree, certificate, canisterId);
 
   return tree;
 }
@@ -40,12 +41,12 @@ export async function verifyCertification({
 function validateCertificateTime(
   certificate: Certificate,
   maxCertificateTimeOffsetMs: number,
+  nowMs: number,
 ): void {
   const certificateTimeNs = lebDecode(
     new PipeArrayBuffer(certificate.lookup(['time'])),
   );
   const certificateTimeMs = Number(certificateTimeNs / BigInt(1_000_000));
-  const nowMs = Date.now();
 
   if (certificateTimeMs - maxCertificateTimeOffsetMs > nowMs) {
     throw new CertificateTimeError(
