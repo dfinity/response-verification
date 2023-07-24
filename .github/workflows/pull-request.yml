@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+env:
+  SCCACHE_GHA_ENABLED: 'true'
+  RUSTC_WRAPPER: 'sccache'
+
 jobs:
   build_and_test:
     name: Build and Test
@@ -17,21 +21,8 @@ jobs:
 
       - uses: ./.github/actions/setup-dfx
 
-      - name: Setup Cargo Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -76,27 +67,14 @@ jobs:
 
       - uses: ./.github/actions/setup-pnpm
 
-      - name: Setup Cargo e2e Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-e2e-${{ hashFiles('**/Cargo.lock') }}
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
 
       - name: Setup e2e Deps Cache
         uses: actions/cache@v3
         with:
           path: tmp/
           key: ${{ runner.os }}-tmp
-
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
