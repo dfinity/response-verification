@@ -2,6 +2,10 @@ name: Create Release PR
 
 on: workflow_dispatch
 
+env:
+  SCCACHE_GHA_ENABLED: 'true'
+  RUSTC_WRAPPER: 'sccache'
+
 jobs:
   bump_version:
     name: Bump version
@@ -12,21 +16,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Cargo Cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
 
       - name: Bump Version
         id: cz

@@ -24,9 +24,26 @@ Check out our [contribution guidelines](./.github/CONTRIBUTING.md).
 - [Install commitizen](https://commitizen-tools.github.io/commitizen/#installation)
 - [Install Rust](https://www.rust-lang.org/learn/get-started)
 - [Install wasm-pack](https://rustwasm.github.io/wasm-pack/installer)
-- [Install NodeJS](https://nodejs.org/en/download/)
-- [Install pnpm](https://pnpm.io/installation)
+- [Install NVM](https://github.com/nvm-sh/nvm)
 - [Install DFX](https://internetcomputer.org/docs/current/developer-docs/setup/install)
+
+Install the correct version of NodeJS:
+
+```shell
+nvm install
+```
+
+Active the correct version of NodeJS:
+
+```shell
+nvm use
+```
+
+Install and activate the correct version of PNPM:
+
+```shell
+corepack enable
+```
 
 ### Making a Commit
 
