@@ -27,7 +27,7 @@ describe('verifyCertification', async () => {
     new Uint8Array([0, 0, 0, 0, 0, 0, 0, 1]),
   );
   const time = BigInt(Date.now());
-  const MAX_CERT_TIME_OFFSET_MS = 5000;
+  const MAX_CERT_TIME_OFFSET_MS = 300_000;
 
   it.each([
     {
@@ -38,21 +38,21 @@ describe('verifyCertification', async () => {
       scenario: 'with a delegation',
     },
     {
-      timeOverride: BigInt(Date.now() - 1000),
+      timeOverride: BigInt(Date.now() - 10_000),
       scenario: 'with a time in the past',
     },
     {
       withDelegation: true,
-      timeOverride: BigInt(Date.now() - 1000),
+      timeOverride: BigInt(Date.now() - 10_000),
       scenario: 'with a delegation and a time in the past',
     },
     {
-      timeOverride: BigInt(Date.now() + 1000),
+      timeOverride: BigInt(Date.now() + 10_000),
       scenario: 'with a time in the future',
     },
     {
       withDelegation: true,
-      timeOverride: BigInt(Date.now() + 1000),
+      timeOverride: BigInt(Date.now() + 10_000),
       scenario: 'with a delegation and a time in the future',
     },
   ])(
@@ -93,21 +93,21 @@ describe('verifyCertification', async () => {
       scenario: 'with a delegation and an invalid signature',
     },
     {
-      timeOverride: BigInt(Date.now() - MAX_CERT_TIME_OFFSET_MS - 1000),
+      timeOverride: BigInt(Date.now() - MAX_CERT_TIME_OFFSET_MS - 10_000),
       scenario: 'with a time too far in the past',
     },
     {
       withDelegation: true,
-      timeOverride: BigInt(Date.now() - MAX_CERT_TIME_OFFSET_MS - 1000),
+      timeOverride: BigInt(Date.now() - MAX_CERT_TIME_OFFSET_MS - 10_000),
       scenario: 'with a delegation a time too far in the past',
     },
     {
-      timeOverride: BigInt(Date.now() + MAX_CERT_TIME_OFFSET_MS + 1000),
+      timeOverride: BigInt(Date.now() + MAX_CERT_TIME_OFFSET_MS + 10_000),
       scenario: 'with a time too far in the future',
     },
     {
       withDelegation: true,
-      timeOverride: BigInt(Date.now() + MAX_CERT_TIME_OFFSET_MS + 1000),
+      timeOverride: BigInt(Date.now() + MAX_CERT_TIME_OFFSET_MS + 10_000),
       scenario: 'with a delegation a time too far in the future',
     },
     {
