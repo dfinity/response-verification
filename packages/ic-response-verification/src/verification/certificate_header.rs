@@ -1,5 +1,7 @@
+use base64::Engine;
 use super::certificate_header_field::CertificateHeaderField;
 use crate::error::{ResponseVerificationError, ResponseVerificationResult};
+use base64::engine::general_purpose::STANDARD as BASE64;
 use log::warn;
 
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.
@@ -80,7 +82,7 @@ impl CertificateHeader {
 }
 
 fn decode_base64_header(value: &str) -> ResponseVerificationResult<Vec<u8>> {
-    base64::decode(value).map_err(ResponseVerificationError::Base64DecodingError)
+    BASE64.decode(value).map_err(ResponseVerificationError::Base64DecodingError)
 }
 
 fn parse_int_header(value: &str) -> ResponseVerificationResult<u8> {
