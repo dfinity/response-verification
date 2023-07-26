@@ -32,6 +32,6 @@
     "@dfinity/principal": "~0.15.7"
   },
   "devDependencies": {
-    "@dfinity/certification-test-utils": "workspace:*"
+    "@dfinity/certification-testing": "workspace:*"
   }
 }
