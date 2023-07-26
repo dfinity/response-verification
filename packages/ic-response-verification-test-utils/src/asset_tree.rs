@@ -1,7 +1,6 @@
 use crate::hash::hash;
 use crate::{hash_from_hex, serialize_to_cbor};
 use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree, RbTree};
-use ic_crypto_tree_hash::Digest;
 
 const LABEL_ASSETS: &[u8] = b"http_assets";
 
@@ -43,18 +42,15 @@ impl AssetTree {
         serialize_to_cbor::<HashTree>(&labeled_tree)
     }
 
-    pub fn get_certified_data(&self) -> Digest {
+    pub fn get_certified_data(&self) -> [u8; 32] {
         let root_hash = self.tree.root_hash();
-        let labeled_tree = labeled_hash(LABEL_ASSETS, &root_hash);
 
-        Digest(labeled_tree)
+        labeled_hash(LABEL_ASSETS, &root_hash)
     }
 }
 
-pub fn create_certified_data(data: &str) -> Digest {
+pub fn create_certified_data(data: &str) -> [u8; 32] {
     let hash = hash_from_hex(data);
 
-    let labeled_tree = labeled_hash(LABEL_ASSETS, &hash);
-
-    Digest(labeled_tree)
+    labeled_hash(LABEL_ASSETS, &hash)
 }

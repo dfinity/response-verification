@@ -1,6 +1,6 @@
 packages:
   - 'packages/certificate-verification-js'
-  - 'packages/ic-certification-test-utils-wasm'
+  - 'packages/ic-certification-testing-wasm'
   - 'packages/ic-response-verification-wasm'
   - 'packages/ic-response-verification-tests'
   - 'packages/ic-response-verification-tests/dfx-project'

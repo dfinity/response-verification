@@ -1,12 +1,7 @@
-use wasm_bindgen::prelude::*;
-
 pub mod certificate_builder;
+pub use certificate_builder::*;
 
-mod certificate;
-mod encoding;
-mod error;
-mod signature;
-mod tree;
+use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(start)]
 pub fn main() {

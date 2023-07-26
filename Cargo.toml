@@ -1,10 +1,11 @@
 [workspace]
 members = [
-    "packages/ic-response-verification",
-    "packages/ic-response-verification-tests",
-    "packages/ic-response-verification-test-utils",
-    "packages/ic-representation-independent-hash",
     "examples/rust",
+    "packages/ic-certification-testing",
+    "packages/ic-representation-independent-hash",
+    "packages/ic-response-verification",
+    "packages/ic-response-verification-test-utils",
+    "packages/ic-response-verification-tests",
 ]
 
 # https://github.com/rust-lang/cargo/issues/9406
@@ -12,7 +13,7 @@ members = [
 exclude = [
     "examples/certified-counter/src/backend",
     "packages/ic-response-verification-wasm",
-    "packages/ic-certification-test-utils-wasm",
+    "packages/ic-certification-testing-wasm",
 ]
 
 [profile.release]

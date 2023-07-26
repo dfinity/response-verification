@@ -25,7 +25,13 @@ pub enum CertificationTestError {
     CanisterIdParsingFailed,
 
     #[error("could not encode public key")]
-    PublicKeyEncodingFailed
+    PublicKeyEncodingFailed,
+
+    #[error("one of canister params or a custom tree must be provided")]
+    CanisterParamsOrCustomTreeRequired,
+
+    #[error("only one of canister params or a custom tree may be provided")]
+    BothCanisterParamsAndCustomTreeProvided,
 }
 
 impl From<TreeHashError> for CertificationTestError {

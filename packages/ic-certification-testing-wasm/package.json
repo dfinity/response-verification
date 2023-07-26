@@ -1,5 +1,5 @@
 {
-  "name": "@dfinity/certification-test-utils",
+  "name": "@dfinity/certification-testing",
   "description": "Utilities for testing applications that work with Internet Computer certification",
   "version": "0.3.0",
   "author": "DFINITY Stiftung",

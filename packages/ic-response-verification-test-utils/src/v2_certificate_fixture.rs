@@ -1,16 +1,13 @@
-use ic_base_types::{PrincipalId, SubnetId};
-use ic_certified_map::Hash;
-use ic_crypto_tree_hash::Digest;
-use ic_types::CanisterId;
-
 use crate::{
-    create_expr_tree_path, create_versioned_certificate_header, hash, serialize_to_cbor,
-    CanisterData, CertificateBuilder, CertificateData, ExprTree,
+    create_expr_tree_path, create_versioned_certificate_header, hash, serialize_to_cbor, ExprTree,
 };
+use ic_certification_testing::{CertificateBuilder, CertificateData};
+use ic_certified_map::Hash;
+use ic_types::CanisterId;
 
 pub struct V2TreeFixture {
     pub tree_cbor: Vec<u8>,
-    pub certified_data: Digest,
+    pub certified_data: [u8; 32],
 }
 
 pub fn create_v2_tree_fixture(
@@ -41,28 +38,25 @@ pub struct V2CertificateFixture {
 }
 
 pub fn create_v2_certificate_fixture(
-    certified_data: &Digest,
+    certified_data: &[u8; 32],
     current_time: &u128,
 ) -> V2CertificateFixture {
     let canister_id = CanisterId::from_u64(5);
-    let lower_canister_id = CanisterId::from_u64(0);
-    let higher_canister_id = CanisterId::from_u64(10);
 
-    let (_, root_key, certificate_cbor) =
-        CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-            canister_id,
-            certified_data: certified_data.clone(),
-        }))
+    let CertificateData {
+        root_key,
+        certificate: _,
+        cbor_encoded_certificate,
+    } = CertificateBuilder::new(&canister_id.to_string(), certified_data)
+        .unwrap()
         .with_time(*current_time)
-        .with_delegation(CertificateBuilder::new(CertificateData::SubnetData {
-            subnet_id: SubnetId::from(PrincipalId::new_subnet_test_id(123)),
-            canister_id_ranges: vec![(lower_canister_id, higher_canister_id)],
-        }))
-        .build();
+        .with_delegation(123, vec![(0, 10)])
+        .build()
+        .unwrap();
 
     V2CertificateFixture {
         root_key,
-        certificate_cbor,
+        certificate_cbor: cbor_encoded_certificate,
         canister_id,
     }
 }

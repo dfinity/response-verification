@@ -6,21 +6,11 @@ edition = "2021"
 [dependencies]
 base64 = "0.21.0"
 hex = "0.4.3"
+ic-certification-testing = { path = "../ic-certification-testing", version = "0.3.0" }
 ic-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-base-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-internal-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-utils-threshold-sig-der = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
 ic-certified-map = "0.4.0"
 sha256 = "1.1.1"
 serde_cbor = "0.11.2"
 leb128 = "0.2.5"
 serde = { version = "1.0.152", features = ["derive"]}
-
-# https://github.com/rust-random/rand#wasm-support
-# https://docs.rs/getrandom/latest/getrandom/#webassembly-support
-rand = "0.8.5"
-getrandom = { version = "0.2.8", features = ["js"] }
 flate2 = "1.0.25"

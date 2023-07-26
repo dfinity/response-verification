@@ -1,5 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
+    use ic_certification_testing::{CertificateBuilder, CertificateData};
     use ic_response_verification::types::{
         Request, Response, VerificationResult, VerifiedResponse,
     };
@@ -7,8 +8,7 @@ mod tests {
     use ic_response_verification::ResponseVerificationError;
     use ic_response_verification_test_utils::{
         create_canister_id, create_certificate_header, create_certified_data,
-        get_current_timestamp, get_timestamp, AssetTree, CanisterData, CertificateBuilder,
-        CertificateData,
+        get_current_timestamp, get_timestamp, AssetTree,
     };
     use std::ops::{Add, Sub};
     use std::time::{Duration, SystemTime};
@@ -28,15 +28,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -88,15 +90,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: "/".into(),
@@ -148,15 +152,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -204,15 +210,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, _, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key: _,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -233,7 +241,7 @@ mod tests {
             canister_id.as_ref(),
             current_time,
             MAX_CERT_TIME_OFFSET_NS,
-            root_key,
+            &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
         )
         .unwrap();
@@ -262,15 +270,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(certificate_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -324,15 +334,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(certificate_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -387,15 +399,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id: other_canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&other_canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -444,15 +458,17 @@ mod tests {
         asset_tree.insert(path, body);
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -499,15 +515,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),
@@ -554,15 +572,17 @@ mod tests {
         let certified_data = asset_tree.get_certified_data();
         let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
 
-        let (_, root_key, certificate_cbor) =
-            CertificateBuilder::new(CertificateData::CanisterData(CanisterData {
-                canister_id,
-                certified_data,
-            }))
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
             .with_time(current_time)
-            .build();
+            .build()
+            .unwrap();
 
-        let certificate_header = create_certificate_header(&certificate_cbor, &tree_cbor);
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
         let request = Request {
             url: path.into(),

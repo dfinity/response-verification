@@ -13,20 +13,15 @@ use ic_types::{
 };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use wasm_bindgen::prelude::*;
 
 const DEFAULT_CERTIFICATE_TIME: u128 = 1651142233000005031;
 
-#[wasm_bindgen(inspectable, getter_with_clone)]
 #[derive(Debug, Clone)]
 pub struct CertificateData {
-    #[wasm_bindgen]
-    pub certificate: JsValue,
+    pub certificate: Certificate,
 
-    #[wasm_bindgen(js_name = rootKey)]
     pub root_key: Vec<u8>,
 
-    #[wasm_bindgen(js_name = cborEncodedCertificate)]
     pub cbor_encoded_certificate: Vec<u8>,
 }
 
@@ -43,23 +38,21 @@ struct SubnetData {
 }
 
 #[derive(Debug, Clone)]
-struct CanisterData {
+pub struct CanisterData {
     canister_id: CanisterId,
     certified_data: Vec<u8>,
 }
 
-#[wasm_bindgen(inspectable, getter_with_clone)]
 #[derive(Debug, Clone)]
 pub struct CertificateBuilder {
     time: Option<u128>,
-    canister: CanisterData,
+    canister: Option<CanisterData>,
     subnet: Option<SubnetData>,
     signature: Option<Blob>,
+    custom_tree: Option<LabeledTree<Vec<u8>>>,
 }
 
-#[wasm_bindgen]
 impl CertificateBuilder {
-    #[wasm_bindgen(constructor)]
     pub fn new(
         canister_id: &str,
         certified_data: &[u8],
@@ -69,26 +62,35 @@ impl CertificateBuilder {
 
         Ok(CertificateBuilder {
             time: None,
-            canister: CanisterData {
+            canister: Some(CanisterData {
                 canister_id,
                 certified_data: certified_data.to_vec(),
-            },
+            }),
             subnet: None,
             signature: None,
+            custom_tree: None,
         })
     }
 
-    #[wasm_bindgen(js_name = withDelegation)]
+    pub fn from_custom_tree(custom_tree: LabeledTree<Vec<u8>>) -> Self {
+        CertificateBuilder {
+            time: None,
+            canister: None,
+            subnet: None,
+            signature: None,
+            custom_tree: Some(custom_tree),
+        }
+    }
+
     pub fn with_delegation(
-        mut self,
+        &mut self,
         subnet_id: u64,
-        canister_id_ranges: Vec<JsValue>,
-    ) -> CertificationTestResult<CertificateBuilder> {
+        canister_id_ranges: Vec<(u64, u64)>,
+    ) -> &mut Self {
         let canister_id_ranges = canister_id_ranges
             .into_iter()
-            .map(|v| serde_wasm_bindgen::from_value::<CanisterIdRange>(v))
-            .map(|v| v.map(|v| (CanisterId::from_u64(v.low), CanisterId::from_u64(v.high))))
-            .collect::<Result<_, _>>()?;
+            .map(|(low, high)| (CanisterId::from_u64(low), CanisterId::from_u64(high)))
+            .collect();
 
         let subnet_id = SubnetId::from(PrincipalId::new_subnet_test_id(subnet_id));
 
@@ -97,18 +99,16 @@ impl CertificateBuilder {
             canister_id_ranges,
         });
 
-        Ok(self)
+        self
     }
 
-    #[wasm_bindgen(js_name = withTime)]
-    pub fn with_time(mut self, time: u64) -> Self {
-        self.time = Some(u128::from(time) * 1_000_000);
+    pub fn with_time(&mut self, time: u128) -> &mut Self {
+        self.time = Some(time);
 
         self
     }
 
-    #[wasm_bindgen(js_name = withInvalidSignature)]
-    pub fn with_invalid_signature(mut self) -> Self {
+    pub fn with_invalid_signature(&mut self) -> &mut Self {
         let signature =
             CombinedThresholdSig(b"invalid sig -----padding to get to 48 bytes-----".to_vec());
         self.signature = Some(Blob(signature.0));
@@ -116,31 +116,38 @@ impl CertificateBuilder {
         self
     }
 
-    pub fn build(self) -> CertificationTestResult<CertificateData> {
+    pub fn build(&self) -> CertificationTestResult<CertificateData> {
         let time = self.time.unwrap_or(DEFAULT_CERTIFICATE_TIME);
         let encoded_time = leb_encode_timestamp(time)?;
 
-        let tree = create_certificate_tree(
-            &self.canister.canister_id,
-            &self.canister.certified_data,
-            &encoded_time,
-        );
+        let tree = (match (&self.custom_tree, &self.canister) {
+            (Some(custom_tree), None) => Ok(custom_tree.clone()),
+            (None, Some(canister)) => Ok(create_certificate_tree(
+                &canister.canister_id,
+                &canister.certified_data,
+                &encoded_time,
+            )),
+            (Some(_), Some(_)) => {
+                Err(CertificationTestError::BothCanisterParamsAndCustomTreeProvided)
+            }
+            (None, None) => Err(CertificationTestError::CanisterParamsOrCustomTreeRequired),
+        })?;
+
         let (keypair, tree, signature) = build_certificate(&tree)?;
         let delegation = None;
         let delegation_data = self.build_delegation(&keypair, &encoded_time)?;
-        let signature = self.signature.unwrap_or(signature);
+        let signature = self.signature.as_ref().unwrap_or(&signature);
 
         if let Some((delegation, keypair)) = delegation_data {
             let certificate = Certificate {
                 tree,
-                signature,
+                signature: signature.clone(),
                 delegation: Some(delegation),
             };
-            let certificate_json = serde_wasm_bindgen::to_value(&certificate)?;
             let certificate_cbor = serialize_to_cbor(&certificate);
 
             return Ok(CertificateData {
-                certificate: certificate_json,
+                certificate,
                 root_key: keypair.public_key,
                 cbor_encoded_certificate: certificate_cbor,
             });
@@ -148,14 +155,14 @@ impl CertificateBuilder {
 
         let certificate = Certificate {
             tree,
-            signature,
+            signature: signature.clone(),
             delegation,
         };
-        let certificate_json = serde_wasm_bindgen::to_value(&certificate)?;
+
         let certificate_cbor = serialize_to_cbor(&certificate);
 
         return Ok(CertificateData {
-            certificate: certificate_json,
+            certificate,
             root_key: keypair.public_key,
             cbor_encoded_certificate: certificate_cbor,
         });

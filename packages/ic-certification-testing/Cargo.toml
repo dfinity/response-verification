@@ -1,5 +1,5 @@
 [package]
-name = "ic-certification-test-utils-wasm"
+name = "ic-certification-testing"
 description = "Utilities for testing applications that work with Internet Computer certification"
 version = "0.3.0"
 authors = ["DFINITY Stiftung"]
@@ -7,29 +7,26 @@ license = "Apache-2.0"
 edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
-[features]
-debug = []
-
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 leb128 = "0.2.5"
 thiserror = "1.0.43"
-wasm-bindgen = "0.2.83"
+wasm-bindgen = "0.2.87"
 js-sys = "0.3.64"
 console_error_panic_hook = "0.1.7"
 wasm-bindgen-console-logger = "0.1.1"
 log = "0.4.17"
 serde = { version = "1.0", features = ["derive"] }
-serde-wasm-bindgen = "0.4"
 serde_cbor = "0.11.2"
+serde-wasm-bindgen = "0.4"
 
-ic-types = { git = "https://github.com/dfinity/ic" }
-ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic" }
-ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic" }
-ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic" }
-ic-crypto-internal-types = { git = "https://github.com/dfinity/ic" }
+ic-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-crypto-internal-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
 
 # https://github.com/rust-random/rand#wasm-support
 # https://docs.rs/getrandom/latest/getrandom/#webassembly-support

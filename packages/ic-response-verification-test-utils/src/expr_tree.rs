@@ -1,6 +1,5 @@
 use crate::{serialize_to_cbor, NestedTree};
 use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree};
-use ic_crypto_tree_hash::Digest;
 
 const LABEL_EXPR: &[u8] = b"http_expr";
 
@@ -72,11 +71,10 @@ impl ExprTree {
         serialize_to_cbor::<HashTree>(&labeled_tree)
     }
 
-    pub fn get_certified_data(&self) -> Digest {
+    pub fn get_certified_data(&self) -> [u8; 32] {
         let root_hash = self.tree.root_hash();
-        let labeled_tree = labeled_hash(LABEL_EXPR, &root_hash);
 
-        Digest(labeled_tree)
+        labeled_hash(LABEL_EXPR, &root_hash)
     }
 }
 

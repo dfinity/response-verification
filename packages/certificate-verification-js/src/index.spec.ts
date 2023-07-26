@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HashTree, reconstruct, Cbor } from '@dfinity/agent';
-import { CertificateBuilder } from '@dfinity/certification-test-utils';
+import { CertificateBuilder } from '@dfinity/certification-testing';
 import { Principal } from '@dfinity/principal';
 import { createHash, webcrypto } from 'node:crypto';
 import { verifyCertification } from './index';

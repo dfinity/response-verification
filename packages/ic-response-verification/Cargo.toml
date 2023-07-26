@@ -49,3 +49,4 @@ ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "a533346f63
 ic-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
 ic-certified-map = "0.4.0"
 rstest = "0.18.1"
+ic-certification-testing = { path = "../ic-certification-testing" }
