@@ -1,14 +1,9 @@
-use ic_response_verification::ResponseVerificationJsError;
-use ic_response_verification::types::VerificationResult;
-use ic_response_verification::types::Request;
-use ic_response_verification::types::Response;
-use ic_response_verification::verify_request_response_pair as verify_request_response_pair_impl;
-use ic_response_verification::{ MIN_VERIFICATION_VERSION, MAX_VERIFICATION_VERSION };
-use wasm_bindgen::prelude::*;
-use wasm_bindgen::JsCast;
-
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+use ic_response_verification::{
+    types::{Request, Response, VerificationResult},
+    verify_request_response_pair as verify_request_response_pair_impl, ResponseVerificationJsError,
+    MAX_VERIFICATION_VERSION, MIN_VERIFICATION_VERSION,
+};
+use wasm_bindgen::{prelude::*, JsCast};
 
 #[wasm_bindgen]
 extern "C" {
@@ -44,10 +39,7 @@ pub fn verify_request_response_pair(
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
 ) -> Result<JsVerificationResult, ResponseVerificationJsError> {
-    #[cfg(feature = "debug")]
     console_error_panic_hook::set_once();
-
-    #[cfg(feature = "debug")]
     log::set_logger(&wasm_bindgen_console_logger::DEFAULT_LOGGER).unwrap();
 
     let request = Request::from(JsValue::from(request));
@@ -63,7 +55,8 @@ pub fn verify_request_response_pair(
         min_requested_verification_version,
     )
     .map(|verification_result| {
-        JsValue::from(VerificationResult::from(verification_result)).unchecked_into::<JsVerificationResult>()
+        JsValue::from(VerificationResult::from(verification_result))
+            .unchecked_into::<JsVerificationResult>()
     })
     .map_err(|e| ResponseVerificationJsError::from(e))
 }
