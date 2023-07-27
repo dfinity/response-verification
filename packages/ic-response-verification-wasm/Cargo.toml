@@ -8,7 +8,7 @@ edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
 [features]
-debug = ["dep:log", "dep:wasm-bindgen-console-logger", "ic-response-verification/debug"]
+debug = ["ic-response-verification/debug"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -26,9 +26,8 @@ ic-response-verification = { path = "../ic-response-verification", features = ["
 console_error_panic_hook = "0.1.7"
 js-sys = "0.3"
 wasm-bindgen = "0.2.83"
-wee_alloc = "0.4.5"
-log = { version = "0.4.17", optional = true }
-wasm-bindgen-console-logger = { version = "0.1.1", optional = true }
+log = "0.4.17"
+wasm-bindgen-console-logger = "0.1.1"
 
 [dev-dependencies]
 base64 = "0.21.0"
