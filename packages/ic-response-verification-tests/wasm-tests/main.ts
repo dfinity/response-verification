@@ -1,5 +1,5 @@
 import {
-  VerificationResult,
+  VerificationInfo,
   Request,
   Response,
   getMinVerificationVersion,
@@ -15,6 +15,7 @@ import {
 import { HttpAgent, ActorSubclass, Actor, Agent } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import assert from 'node:assert';
+import { exit } from 'process';
 
 async function createAgentAndActor(
   gatewayUrl: string,
@@ -49,6 +50,7 @@ async function main(): Promise<void> {
     await v2Test(principal, agent, actor);
   } catch (error) {
     console.error('Error running e2e tests...', error);
+    exit(1);
   }
 }
 
@@ -65,7 +67,6 @@ async function v1Test(
     agent,
     actor,
   );
-  assert(resultOne.passed);
   assert.equal(resultOne.verificationVersion, 1);
 
   const resultTwo = await performTest(
@@ -76,7 +77,6 @@ async function v1Test(
     agent,
     actor,
   );
-  assert(resultTwo.passed);
   assert.equal(resultTwo.verificationVersion, 1);
 }
 
@@ -86,11 +86,9 @@ async function v2Test(
   actor: ActorSubclass<_SERVICE>,
 ): Promise<void> {
   const resultOne = await performTest(canisterId, 'GET', '/', 2, agent, actor);
-  assert(resultOne.passed);
   assert.equal(resultOne.verificationVersion, 2);
 
   const resultTwo = await performTest(canisterId, 'GET', '/', 2, agent, actor);
-  assert(resultTwo.passed);
   assert.equal(resultTwo.verificationVersion, 2);
 }
 
@@ -101,7 +99,7 @@ async function performTest(
   certificateVersion: number | null,
   agent: Agent,
   actor: ActorSubclass<_SERVICE>,
-): Promise<VerificationResult> {
+): Promise<VerificationInfo> {
   let httpRequest: HttpRequest = {
     method,
     body: new Uint8Array(),

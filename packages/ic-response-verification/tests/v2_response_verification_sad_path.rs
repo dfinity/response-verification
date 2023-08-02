@@ -8,7 +8,7 @@ mod tests {
     use ic_response_verification::{
         cel::cel_to_certification,
         hash::{request_hash, response_hash},
-        types::{Request, Response, VerificationResult},
+        types::{Request, Response},
         verify_request_response_pair, ResponseVerificationError,
     };
     use ic_response_verification_test_utils::{
@@ -73,15 +73,11 @@ mod tests {
             fixtures::MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             fixtures::MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidResponseHashes)
+            Err(ResponseVerificationError::InvalidResponseHashes)
         ));
     }
 
@@ -142,15 +138,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidResponseHashes)
+            Err(ResponseVerificationError::InvalidResponseHashes)
         ));
     }
 
@@ -216,15 +208,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidExpressionPath)
+            Err(ResponseVerificationError::InvalidExpressionPath)
         ));
     }
 
@@ -295,15 +283,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidExpressionPath)
+            Err(ResponseVerificationError::InvalidExpressionPath)
         ));
     }
 
@@ -368,19 +352,17 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
-        assert!(matches!(result, VerificationResult::Failed {
-            verification_version,
-            ref reason,
-        } if verification_version == 2 && match (reason, expected_failure) {
-            (ResponseVerificationError::CertificateVerificationFailed, ResponseVerificationError::CertificateVerificationFailed) => true,
-            (ResponseVerificationError::CertificatePrincipalOutOfRange, ResponseVerificationError::CertificatePrincipalOutOfRange) => true,
-            (ResponseVerificationError::CertificateTimeTooFarInThePast { .. }, ResponseVerificationError::CertificateTimeTooFarInThePast { .. }) => true,
-            (ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }, ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }) => true,
-            _ => false
-        }))
+        assert!(
+            matches!(result, Err(ref failure) if match (failure, expected_failure) {
+                (ResponseVerificationError::CertificateVerificationFailed, ResponseVerificationError::CertificateVerificationFailed) => true,
+                (ResponseVerificationError::CertificatePrincipalOutOfRange, ResponseVerificationError::CertificatePrincipalOutOfRange) => true,
+                (ResponseVerificationError::CertificateTimeTooFarInThePast { .. }, ResponseVerificationError::CertificateTimeTooFarInThePast { .. }) => true,
+                (ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }, ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }) => true,
+                _ => false
+            })
+        )
     }
 }
 

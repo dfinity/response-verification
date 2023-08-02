@@ -140,7 +140,7 @@ pub fn validate_certificate_time(
 pub fn validate_tree(canister_id: &[u8], certificate: &Certificate, tree: &HashTree) -> bool {
     let certified_data_path = [
         "canister".as_bytes(),
-        canister_id.as_ref(),
+        canister_id,
         "certified_data".as_bytes(),
     ];
 

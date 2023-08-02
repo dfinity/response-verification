@@ -5,7 +5,7 @@ use crate::cbor::{
 };
 use crate::error::{ResponseVerificationError, ResponseVerificationResult};
 use crate::hash::filter_response_headers;
-use crate::types::{Certification, Request, Response, VerificationResult, VerifiedResponse};
+use crate::types::{Certification, Request, Response, VerificationInfo, VerifiedResponse};
 use crate::validation::{validate_body, validate_certificate_time, validate_hashes, validate_tree};
 use crate::validation::{validate_expr_hash, validate_expr_path, VerifyCertificate};
 use crate::{cel, hash};
@@ -28,7 +28,7 @@ pub fn verify_request_response_pair(
     max_cert_time_offset_ns: u128,
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
-) -> ResponseVerificationResult<VerificationResult> {
+) -> ResponseVerificationResult<VerificationInfo> {
     let mut encoding: Option<String> = None;
     let mut tree: Option<HashTree> = None;
     let mut certificate: Option<Certificate> = None;
@@ -111,9 +111,9 @@ fn verification(
     expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
     ic_public_key: &[u8],
-) -> ResponseVerificationResult<VerificationResult> {
+) -> ResponseVerificationResult<VerificationInfo> {
     match version {
-        1 => match v1_verification(
+        1 => v1_verification(
             request,
             response,
             canister_id,
@@ -123,14 +123,8 @@ fn verification(
             certificate,
             encoding,
             ic_public_key,
-        ) {
-            Err(failed_reason) => Ok(VerificationResult::Failed {
-                verification_version: 1,
-                reason: failed_reason,
-            }),
-            result => result,
-        },
-        2 => match v2_verification(
+        ),
+        2 => v2_verification(
             request,
             response,
             canister_id,
@@ -142,13 +136,7 @@ fn verification(
             expr_hash,
             certification,
             ic_public_key,
-        ) {
-            Err(failed_reason) => Ok(VerificationResult::Failed {
-                verification_version: 2,
-                reason: failed_reason,
-            }),
-            result => result,
-        },
+        ),
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
             min_supported_version: MIN_VERIFICATION_VERSION,
             max_supported_version: MAX_VERIFICATION_VERSION,
@@ -167,7 +155,7 @@ fn v1_verification(
     certificate: Option<Certificate>,
     encoding: Option<String>,
     ic_public_key: &[u8],
-) -> ResponseVerificationResult<VerificationResult> {
+) -> ResponseVerificationResult<VerificationInfo> {
     match (tree, certificate) {
         (Some(tree), Some(certificate)) => {
             validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
@@ -191,7 +179,7 @@ fn v1_verification(
                 return Err(ResponseVerificationError::InvalidResponseBody);
             }
 
-            Ok(VerificationResult::Passed {
+            Ok(VerificationInfo {
                 response: Some(VerifiedResponse {
                     status_code: None,
                     headers: Vec::new(),
@@ -218,7 +206,7 @@ fn v2_verification(
     expr_hash: Option<Sha256Digest>,
     certification: Option<Certification>,
     ic_public_key: &[u8],
-) -> ResponseVerificationResult<VerificationResult> {
+) -> ResponseVerificationResult<VerificationInfo> {
     let request_uri = request.get_uri()?;
 
     let (expr_path, expr_hash, certificate, tree) = match (expr_path, expr_hash, certificate, tree)
@@ -252,7 +240,7 @@ fn v2_verification(
 
     let Some(certification) = certification else {
         return match validate_expr_hash(&expr_path, &expr_hash, &tree).is_some() {
-            true => Ok(VerificationResult::Passed {
+            true => Ok(VerificationInfo {
                 response: None,
                 verification_version: 2,
             }),
@@ -283,7 +271,7 @@ fn v2_verification(
     );
 
     match are_hashes_valid {
-        true => Ok(VerificationResult::Passed {
+        true => Ok(VerificationInfo {
             response: Some(VerifiedResponse {
                 status_code: Some(response.status_code),
                 headers: response_headers.headers,

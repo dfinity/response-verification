@@ -115,10 +115,10 @@ pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &
     path_exists_in_tree(&original_path, tree)
 }
 
-pub fn validate_expr_hash<'a>(
+pub fn validate_expr_hash(
     expr_path: &[String],
     expr_hash: &Sha256Digest,
-    tree: &'a HashTree,
+    tree: &HashTree,
 ) -> Option<HashTree> {
     let mut path = path_from_parts(expr_path);
     path.push(expr_hash.into());

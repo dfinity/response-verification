@@ -11,7 +11,7 @@ mod tests {
         etag_certificate_tree, index_js_response, not_found_response, redirect_response,
     };
     use ic_response_verification::{
-        types::{Request, Response, VerificationResult, VerifiedResponse},
+        types::{Request, Response, VerificationInfo, VerifiedResponse},
         verify_request_response_pair, ResponseVerificationError,
     };
     use ic_response_verification_test_utils::{
@@ -97,7 +97,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_certified_response)
@@ -106,43 +106,42 @@ mod tests {
 
     #[rstest]
     // assert that the asset not found response is not accepted for assets outside the js folder
-    #[case::not_found_for_index_html_path(&"/", &["js",  "<*>"], not_found_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::not_found_for_not_found_path(&"/not-found", &["js",  "<*>"], not_found_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::not_found_for_not_found_trailing_slash_path(&"/not-found/", &["js",  "<*>"], not_found_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::not_found_for_nested_not_found_path(&"/not/found", &["js",  "<*>"], not_found_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::not_found_for_nested_not_found_trailing_slash_path(&"/not/found/", &["js",  "<*>"], not_found_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::not_found_for_old_path(&"/old-path", &["js",  "<*>"], not_found_response(), ResponseVerificationError::InvalidExpressionPath)]
+    #[case::not_found_for_index_html_path(&"/", &["js",  "<*>"], not_found_response())]
+    #[case::not_found_for_not_found_path(&"/not-found", &["js",  "<*>"], not_found_response())]
+    #[case::not_found_for_not_found_trailing_slash_path(&"/not-found/", &["js",  "<*>"], not_found_response())]
+    #[case::not_found_for_nested_not_found_path(&"/not/found", &["js",  "<*>"], not_found_response())]
+    #[case::not_found_for_nested_not_found_trailing_slash_path(&"/not/found/", &["js",  "<*>"], not_found_response())]
+    #[case::not_found_for_old_path(&"/old-path", &["js",  "<*>"], not_found_response())]
     // assert that the index html fallback response is not accepted for assets inside the js folder
-    #[case::index_html_for_js_path(&"/js/index.js", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::index_html_for_js_not_found_path(&"/js/not-found", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::index_html_for_js_not_found_trailing_slash_path(&"/js/not-found/", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::index_html_for_js_nested_not_found_path(&"/js/not/found", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::index_html_for_js_nested_not_found_trailing_slash_path(&"/js/not/found/", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::index_html_for_old_path(&"/old-path", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
+    #[case::index_html_for_js_path(&"/js/index.js", &["<*>"], index_html_response())]
+    #[case::index_html_for_js_not_found_path(&"/js/not-found", &["<*>"], index_html_response())]
+    #[case::index_html_for_js_not_found_trailing_slash_path(&"/js/not-found/", &["<*>"], index_html_response())]
+    #[case::index_html_for_js_nested_not_found_path(&"/js/not/found", &["<*>"], index_html_response())]
+    #[case::index_html_for_js_nested_not_found_trailing_slash_path(&"/js/not/found/", &["<*>"], index_html_response())]
+    #[case::index_html_for_old_path(&"/old-path", &["<*>"], index_html_response())]
     // assert that the redirect response is not accepted for incorrect paths
-    #[case::redirect_for_old_trailing_slash_path(&"/old-path/", &["old-path", "<$>"], redirect_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::redirect_for_index_html_path(&"/", &["old-path", "<$>"], redirect_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::redirect_for_not_found_path(&"/not-found", &["old-path", "<$>"], redirect_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::redirect_for_nested_not_found_path(&"/not/found", &["old-path", "<$>"], redirect_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::redirect_for_js_path(&"/js/index.js", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::redirect_for_js_not_found_path(&"/js/not-found", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::redirect_for_js_nested_not_found_path(&"/js/not/found", &["<*>"], index_html_response(), ResponseVerificationError::InvalidExpressionPath)]
+    #[case::redirect_for_old_trailing_slash_path(&"/old-path/", &["old-path", "<$>"], redirect_response())]
+    #[case::redirect_for_index_html_path(&"/", &["old-path", "<$>"], redirect_response())]
+    #[case::redirect_for_not_found_path(&"/not-found", &["old-path", "<$>"], redirect_response())]
+    #[case::redirect_for_nested_not_found_path(&"/not/found", &["old-path", "<$>"], redirect_response())]
+    #[case::redirect_for_js_path(&"/js/index.js", &["<*>"], index_html_response())]
+    #[case::redirect_for_js_not_found_path(&"/js/not-found", &["<*>"], index_html_response())]
+    #[case::redirect_for_js_nested_not_found_path(&"/js/not/found", &["<*>"], index_html_response())]
     // assert that encoded responses are accepted for the incorrect paths
-    #[case::identity_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_identity_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::gzip_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_gzip_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::deflate_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_deflate_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::identity_encoding_for_index_html_path(&"/", &["multi-encoded-path", "<$>"], content_encoding_identity_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::gzip_encoding_for_not_found_path(&"/not-found", &["multi-encoded-path", "<$>"], content_encoding_gzip_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::gzip_encoding_for_nested_not_found_path(&"/not/found", &["multi-encoded-path", "<$>"], content_encoding_gzip_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::deflate_encoding_for_js_path(&"/js/index.js", &["multi-encoded-path", "<$>"], content_encoding_deflate_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::deflate_encoding_for_js_not_found_path(&"/js/not-found", &["multi-encoded-path", "<$>"], content_encoding_deflate_response(), ResponseVerificationError::InvalidExpressionPath)]
-    #[case::deflate_encoding_for_nested_js_not_found_path(&"/js/not/found", &["multi-encoded-path", "<$>"], content_encoding_deflate_response(), ResponseVerificationError::InvalidExpressionPath)]
+    #[case::identity_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_identity_response())]
+    #[case::gzip_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_gzip_response())]
+    #[case::deflate_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
+    #[case::identity_encoding_for_index_html_path(&"/", &["multi-encoded-path", "<$>"], content_encoding_identity_response())]
+    #[case::gzip_encoding_for_not_found_path(&"/not-found", &["multi-encoded-path", "<$>"], content_encoding_gzip_response())]
+    #[case::gzip_encoding_for_nested_not_found_path(&"/not/found", &["multi-encoded-path", "<$>"], content_encoding_gzip_response())]
+    #[case::deflate_encoding_for_js_path(&"/js/index.js", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
+    #[case::deflate_encoding_for_js_not_found_path(&"/js/not-found", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
+    #[case::deflate_encoding_for_nested_js_not_found_path(&"/js/not/found", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
     fn certification_scenarios_fail_verification(
         #[from(certificate_tree)] expr_tree: ExprTree,
         #[case] req_path: &str,
         #[case] expr_path: &[&str],
         #[case] mut expected_response: Response,
-        #[case] expected_failure: ResponseVerificationError,
     ) {
         let request = Request {
             url: req_path.into(),
@@ -179,18 +178,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                ref reason,
-            } if verification_version == 2 && match (reason, expected_failure) {
-                (ResponseVerificationError::InvalidExpressionPath, ResponseVerificationError::InvalidExpressionPath) => true,
-                _ => false
-            }
+            Err(ResponseVerificationError::InvalidExpressionPath)
         ));
     }
 
@@ -252,7 +244,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_certified_response)
@@ -291,15 +283,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 2 && matches!(reason, ResponseVerificationError::InvalidResponseHashes)
+            Err(ResponseVerificationError::InvalidResponseHashes)
         ));
     }
 }
