@@ -7,6 +7,7 @@
 
 ### Feat
 
+- enable web logs and panic hook for response verification library
 - add test utils wasm package
 - add certificate verification JS library
 - Added verification failed reason to the js binding
