@@ -2,9 +2,7 @@
 mod tests {
     use ic_response_verification::cel::cel_to_certification;
     use ic_response_verification::hash::{request_hash, response_hash};
-    use ic_response_verification::types::{
-        Request, Response, VerificationResult, VerifiedResponse,
-    };
+    use ic_response_verification::types::{Request, Response, VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification_test_utils::{
         create_v2_fixture, get_current_timestamp, remove_whitespace, V2Fixture,
@@ -67,7 +65,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response.is_none()
@@ -151,7 +149,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_response)
@@ -243,7 +241,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_response)
@@ -333,7 +331,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_response)

@@ -1,9 +1,7 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
     use ic_certification_testing::{CertificateBuilder, CertificateData};
-    use ic_response_verification::types::{
-        Request, Response, VerificationResult, VerifiedResponse,
-    };
+    use ic_response_verification::types::{Request, Response, VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification::ResponseVerificationError;
     use ic_response_verification_test_utils::{
@@ -71,7 +69,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 1 && response == Some(expected_response)
@@ -133,7 +131,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            VerificationResult::Passed {
+            VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 1 && response == Some(expected_response)
@@ -185,15 +183,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason
-            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidResponseBody)
+            Err(ResponseVerificationError::InvalidResponseBody)
         ));
     }
 
@@ -243,15 +237,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason
-            } if verification_version == 1 && matches!(reason, ResponseVerificationError::CertificateVerificationFailed)
+            Err(ResponseVerificationError::CertificateVerificationFailed)
         ));
     }
 
@@ -303,19 +293,15 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason
-            } if verification_version == 1 && matches!(reason, ResponseVerificationError::CertificateTimeTooFarInTheFuture {
+            Err(ResponseVerificationError::CertificateTimeTooFarInTheFuture {
                 certificate_time,
                 max_certificate_time
-            } if certificate_time == certificate_time &&
-            max_certificate_time == current_time + MAX_CERT_TIME_OFFSET_NS)
+            }) if certificate_time == certificate_time &&
+            max_certificate_time == current_time + MAX_CERT_TIME_OFFSET_NS
         ));
     }
 
@@ -367,22 +353,15 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 1 && matches!(
-                reason,
-                ResponseVerificationError::CertificateTimeTooFarInThePast {
-                    certificate_time,
-                    min_certificate_time
-                } if certificate_time == certificate_time &&
-                    min_certificate_time == current_time - MAX_CERT_TIME_OFFSET_NS
-            )
+            Err(ResponseVerificationError::CertificateTimeTooFarInThePast {
+                certificate_time,
+                min_certificate_time
+            }) if certificate_time == certificate_time &&
+            min_certificate_time == current_time - MAX_CERT_TIME_OFFSET_NS
         ));
     }
 
@@ -432,15 +411,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidTree)
+            Err(ResponseVerificationError::InvalidTree)
         ));
     }
 
@@ -491,15 +466,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidTree)
+            Err(ResponseVerificationError::InvalidTree)
         ));
     }
 
@@ -548,15 +519,11 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        )
-        .unwrap();
+        );
 
         assert!(matches!(
             result,
-            VerificationResult::Failed {
-                verification_version,
-                reason,
-            } if verification_version == 1 && matches!(reason, ResponseVerificationError::InvalidResponseBody)
+            Err(ResponseVerificationError::InvalidResponseBody)
         ));
     }
 

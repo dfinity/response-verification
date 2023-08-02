@@ -2,6 +2,7 @@
 pub mod test_utils {
     use ic_certification::hash_tree::{fork, label, leaf, pruned_from_hex, Sha256Digest};
     use ic_certification::{Certificate, Delegation, HashTree};
+    use ic_response_verification_test_utils::base64_encode;
 
     pub struct CreateTreeOptions<'a> {
         pub path: Option<&'a str>,
@@ -136,7 +137,7 @@ pub mod test_utils {
     }
 
     pub fn create_encoded_header_field<T: AsRef<[u8]>>(name: &str, value: T) -> String {
-        let value = base64::encode(value);
+        let value = base64_encode(value.as_ref());
 
         create_header_field(name, &value)
     }

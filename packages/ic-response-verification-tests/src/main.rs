@@ -2,7 +2,7 @@ use crate::agent::create_agent;
 use anyhow::{anyhow, Result};
 use ic_agent::export::Principal;
 use ic_agent::Agent;
-use ic_response_verification::types::{Request, Response, VerificationResult};
+use ic_response_verification::types::{Request, Response, VerificationInfo};
 use ic_utils::call::SyncCall;
 use ic_utils::interfaces::http_request::HeaderField;
 use ic_utils::interfaces::HttpRequestCanister;
@@ -54,7 +54,7 @@ async fn v1_test(canister_id: &str, agent: &Agent) -> Result<()> {
     let (result, _response) = perform_test(canister_id, "GET", "/", None, agent).await?;
     assert!(matches!(
         result,
-        VerificationResult::Passed {
+        VerificationInfo {
             verification_version,
             response: _,
         } if verification_version == 1
@@ -64,7 +64,7 @@ async fn v1_test(canister_id: &str, agent: &Agent) -> Result<()> {
         perform_test(canister_id, "GET", "/sample-asset.txt", None, agent).await?;
     assert!(matches!(
         result,
-        VerificationResult::Passed {
+        VerificationInfo {
             verification_version,
             response: _,
         } if verification_version == 1
@@ -108,7 +108,7 @@ async fn v2_load_asset(
 
     assert!(matches!(
         result,
-        VerificationResult::Passed {
+        VerificationInfo {
             verification_version,
             response: _,
         } if verification_version == 2
@@ -124,7 +124,7 @@ async fn perform_test(
     path: &str,
     certificate_version: Option<&u16>,
     agent: &Agent,
-) -> Result<(VerificationResult, Response)> {
+) -> Result<(VerificationInfo, Response)> {
     let canister_id = Principal::from_text(canister_id)?;
     let canister_interface = HttpRequestCanister::create(agent, canister_id);
 

@@ -1,5 +1,5 @@
 use ic_response_verification::{
-    types::{Request, Response, VerificationResult},
+    types::{Request, Response, VerificationInfo},
     verify_request_response_pair as verify_request_response_pair_impl, ResponseVerificationJsError,
     MAX_VERIFICATION_VERSION, MIN_VERIFICATION_VERSION,
 };
@@ -7,8 +7,8 @@ use wasm_bindgen::{prelude::*, JsCast};
 
 #[wasm_bindgen]
 extern "C" {
-    #[wasm_bindgen(typescript_type = "VerificationResult")]
-    pub type JsVerificationResult;
+    #[wasm_bindgen(typescript_type = "VerificationInfo")]
+    pub type JsVerificationInfo;
 
     #[wasm_bindgen(typescript_type = "Request")]
     pub type JsRequest;
@@ -27,6 +27,13 @@ pub fn get_max_verification_version() -> u8 {
     return MAX_VERIFICATION_VERSION;
 }
 
+#[wasm_bindgen(start)]
+pub fn main() {
+    console_error_panic_hook::set_once();
+    log::set_logger(&wasm_bindgen_console_logger::DEFAULT_LOGGER).unwrap();
+    log::set_max_level(log::LevelFilter::Trace);
+}
+
 /// The primary entry point for verifying a request and response pair. This will verify the response
 /// with respect to the request, according the [Response Verification Spec]().
 #[wasm_bindgen(js_name = verifyRequestResponsePair)]
@@ -38,10 +45,7 @@ pub fn verify_request_response_pair(
     max_cert_time_offset_ns: u64,
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
-) -> Result<JsVerificationResult, ResponseVerificationJsError> {
-    console_error_panic_hook::set_once();
-    log::set_logger(&wasm_bindgen_console_logger::DEFAULT_LOGGER).unwrap();
-
+) -> Result<JsVerificationInfo, ResponseVerificationJsError> {
     let request = Request::from(JsValue::from(request));
     let response = Response::from(JsValue::from(response));
 
@@ -55,8 +59,8 @@ pub fn verify_request_response_pair(
         min_requested_verification_version,
     )
     .map(|verification_result| {
-        JsValue::from(VerificationResult::from(verification_result))
-            .unchecked_into::<JsVerificationResult>()
+        JsValue::from(VerificationInfo::from(verification_result))
+            .unchecked_into::<JsVerificationInfo>()
     })
     .map_err(|e| ResponseVerificationJsError::from(e))
 }

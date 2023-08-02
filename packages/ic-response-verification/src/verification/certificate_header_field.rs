@@ -52,6 +52,7 @@ mod tests {
     use crate::test_utils::test_utils::{
         cbor_encode, create_certificate, create_encoded_header_field,
     };
+    use ic_response_verification_test_utils::base64_encode;
 
     #[test]
     fn certificate_header_field_parses_valid_field() {
@@ -63,7 +64,7 @@ mod tests {
             CertificateHeaderField::from(header_field.as_str()).unwrap();
 
         assert_eq!(result_name, name);
-        assert_eq!(result_value, base64::encode(value));
+        assert_eq!(result_value, base64_encode(&value));
     }
 
     #[test]
@@ -99,7 +100,7 @@ mod tests {
     fn certificate_header_field_does_not_parse_invalid_field() {
         let name = "certificate";
         let value = cbor_encode(&create_certificate(None));
-        let value = base64::encode(value);
+        let value = base64_encode(&value);
 
         let header_field = format!("{}:{}", name, value);
 
