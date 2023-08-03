@@ -2,11 +2,13 @@
 
 ### BREAKING CHANGE
 
+- re #TT-80
 - re #TT-79
 - re #TT-205
 
 ### Feat
 
+- always return a result/exception when response verification fails
 - enable web logs and panic hook for response verification library
 - add test utils wasm package
 - add certificate verification JS library
