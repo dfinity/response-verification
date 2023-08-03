@@ -42,7 +42,8 @@ jobs:
         run: pnpm build
 
       - name: Pack @dfinity/response-verification NPM package
-        run: npm pack packages/ic-response-verification-wasm
+        working-directory: packages/ic-response-verification-wasm
+        run: npm pack --pack-destination ../../
 
       - name: Generate release notes
         run: cz changelog ${{ github.ref_name }} --file-name RELEASE_NOTES.md
@@ -58,7 +59,8 @@ jobs:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
       - name: Release @dfinity/response-verification NPM package
-        run: npm publish packages/ic-response-verification-wasm --access public
+        working-directory: packages/ic-response-verification-wasm
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
