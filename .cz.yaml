@@ -3,16 +3,16 @@ commitizen:
   name: cz_conventional_commits
   tag_format: $version
   update_changelog_on_bump: true
-  version: 0.3.0
+  version: 1.0.0
   version_files:
-    - packages/certificate-verification-js/package.json:version
-    - packages/ic-certification-testing/Cargo.toml:version
-    - packages/ic-certification-testing-wasm/Cargo.toml:version
-    - packages/ic-certification-testing-wasm/package.json:version
-    - packages/ic-representation-independent-hash/Cargo.toml:version
-    - packages/ic-response-verification/Cargo.toml:version
-    - packages/ic-response-verification-test-utils/Cargo.toml:version
-    - packages/ic-response-verification-tests/Cargo.toml:version
-    - packages/ic-response-verification-tests/package.json:version
-    - packages/ic-response-verification-wasm/package.json:version
-    - packages/ic-response-verification-wasm/Cargo.toml:version
+  - packages/certificate-verification-js/package.json:version
+  - packages/ic-certification-testing/Cargo.toml:version
+  - packages/ic-certification-testing-wasm/Cargo.toml:version
+  - packages/ic-certification-testing-wasm/package.json:version
+  - packages/ic-representation-independent-hash/Cargo.toml:version
+  - packages/ic-response-verification/Cargo.toml:version
+  - packages/ic-response-verification-test-utils/Cargo.toml:version
+  - packages/ic-response-verification-tests/Cargo.toml:version
+  - packages/ic-response-verification-tests/package.json:version
+  - packages/ic-response-verification-wasm/package.json:version
+  - packages/ic-response-verification-wasm/Cargo.toml:version
