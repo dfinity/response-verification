@@ -77,6 +77,69 @@ mod tests {
     }
 
     #[test]
+    fn standard_certification_with_encoded_url_passes_verification() {
+        let path = "/sample-asset.txt";
+        let encoded_path = "/%73ample-asset.txt";
+        let body = "Hello World!";
+        let current_time = get_current_timestamp();
+        let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
+
+        let mut asset_tree = AssetTree::new();
+        asset_tree.insert(path, body);
+        let certified_data = asset_tree.get_certified_data();
+        let tree_cbor = asset_tree.serialize_to_cbor(Some(path));
+
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
+            .unwrap()
+            .with_time(current_time)
+            .build()
+            .unwrap();
+
+        let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
+
+        let request = Request {
+            url: encoded_path.into(),
+            method: "GET".into(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let response = Response {
+            status_code: 200,
+            body: body.as_bytes().to_vec(),
+            headers: vec![("IC-Certificate".into(), certificate_header)],
+        };
+        let expected_response = VerifiedResponse {
+            status_code: None,
+            body: response.body.clone(),
+            headers: vec![],
+        };
+
+        let result = verify_request_response_pair(
+            request,
+            response,
+            canister_id.as_ref(),
+            current_time,
+            MAX_CERT_TIME_OFFSET_NS,
+            &root_key,
+            MIN_REQUESTED_VERIFICATION_VERSION,
+        )
+        .unwrap();
+
+        assert!(matches!(
+            result,
+            VerificationInfo {
+                verification_version,
+                response,
+            } if verification_version == 1 && response == Some(expected_response)
+        ));
+    }
+
+    #[test]
     fn index_html_fallback_certification_passes_verification() {
         let path = "/index.html";
         let body = "Hello World!";
