@@ -29,6 +29,7 @@ mod tests {
     #[case::nested_not_found_trailing_slash_path(&"/not/found/", &["<*>"], index_html_response())]
     // assert that the asset not found response is accepted for paths inside the js folder
     #[case::index_js_path(&"/js/index.js", &["js", "index.js", "<$>"], index_js_response())]
+    #[case::index_js_encoded_path(&"/j%73/index.js", &["js", "index.js", "<$>"], index_js_response())]
     #[case::js_not_found_path(&"/js/not-found", &["js", "<*>"], not_found_response())]
     #[case::js_not_found_trailing_slash_path(&"/js/not-found/", &["js", "<*>"], not_found_response())]
     #[case::js_nested_not_found_path(&"/js/not/found", &["js", "<*>"], not_found_response())]

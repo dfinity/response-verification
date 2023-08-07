@@ -30,9 +30,43 @@ pub struct Request {
 
 impl Request {
     pub(crate) fn get_uri(&self) -> ResponseVerificationResult<Uri> {
-        self.url
-            .parse::<Uri>()
+        let url = urlencoding::decode(&self.url)?;
+
+        url.parse::<Uri>()
             .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_get_uri() {
+        let req = Request {
+            method: "GET".to_string(),
+            url: "https://canister.com/sample-asset.txt".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let uri = req.get_uri().unwrap();
+
+        assert_eq!(uri.path(), "/sample-asset.txt");
+    }
+
+    #[test]
+    fn request_get_encoded_uri() {
+        let req = Request {
+            method: "GET".to_string(),
+            url: "https://canister.com/%73ample-asset.txt".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let uri = req.get_uri().unwrap();
+
+        assert_eq!(uri.path(), "/sample-asset.txt");
     }
 }
 
