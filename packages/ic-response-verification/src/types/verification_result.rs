@@ -45,8 +45,7 @@ impl From<VerificationInfo> for JsValue {
 
 #[cfg(all(target_arch = "wasm32", feature = "js", test))]
 mod tests {
-    use crate::types::{VerificationInfo, VerifiedResponse};
-    use crate::ResponseVerificationError;
+    use super::*;
     use js_sys::JSON;
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::wasm_bindgen_test;

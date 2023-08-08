@@ -37,39 +37,6 @@ impl Request {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn request_get_uri() {
-        let req = Request {
-            method: "GET".to_string(),
-            url: "https://canister.com/sample-asset.txt".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-
-        let uri = req.get_uri().unwrap();
-
-        assert_eq!(uri.path(), "/sample-asset.txt");
-    }
-
-    #[test]
-    fn request_get_encoded_uri() {
-        let req = Request {
-            method: "GET".to_string(),
-            url: "https://canister.com/%73ample-asset.txt".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-
-        let uri = req.get_uri().unwrap();
-
-        assert_eq!(uri.path(), "/sample-asset.txt");
-    }
-}
-
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
 impl From<JsValue> for Request {
     fn from(req: JsValue) -> Self {
@@ -125,6 +92,39 @@ impl From<JsValue> for Request {
             headers,
             body,
         }
+    }
+}
+
+#[cfg(all(not(target_arch = "wasm32"), test))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_get_uri() {
+        let req = Request {
+            method: "GET".to_string(),
+            url: "https://canister.com/sample-asset.txt".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let uri = req.get_uri().unwrap();
+
+        assert_eq!(uri.path(), "/sample-asset.txt");
+    }
+
+    #[test]
+    fn request_get_encoded_uri() {
+        let req = Request {
+            method: "GET".to_string(),
+            url: "https://canister.com/%73ample-asset.txt".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let uri = req.get_uri().unwrap();
+
+        assert_eq!(uri.path(), "/sample-asset.txt");
     }
 }
 
