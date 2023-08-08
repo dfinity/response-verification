@@ -381,6 +381,7 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
 mod tests {
     use super::*;
     use crate::{cel::CelParserError, test_utils::test_utils::hex_decode};
+    use base64::{engine::general_purpose, Engine as _};
     use std::array::TryFromSliceError;
     use wasm_bindgen_test::wasm_bindgen_test;
 
@@ -767,7 +768,9 @@ mod tests {
     #[wasm_bindgen_test]
     fn error_into_base64_decoding_error() {
         let invalid_base64 = hex_decode("fca1a1a1a1a1");
-        let inner_error = base64::decode(invalid_base64).expect_err("Expected error");
+        let inner_error = general_purpose::STANDARD
+            .decode(invalid_base64)
+            .expect_err("Expected error");
 
         let error = ResponseVerificationError::Base64DecodingError(inner_error);
 

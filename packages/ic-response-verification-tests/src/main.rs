@@ -84,8 +84,8 @@ async fn v2_test(canister_id: &str, agent: &Agent) -> Result<()> {
         ], // load sample text asset when requesting /sample-asset.txt
         [
             "GET",
-            "/sample-asset.txt",
-            "canisters/frontend/assets/%73ample-asset.txt",
+            "/%73ample-asset.txt",
+            "canisters/frontend/assets/sample-asset.txt",
         ], // load sample text asset when requesting /sample-asset.txt with encoding
         ["GET", "/index.js", "dist/frontend/index.js"], // load sample js asset when requesting /index.js
         ["GET", "/not-found", "dist/frontend/index.html"], // fallback to index.html on not found path

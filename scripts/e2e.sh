@@ -92,6 +92,7 @@ clean_exit() {
 
   dfx_stop
 
+  echo "TESTS FAILED!"
   exit 1
 }
 
