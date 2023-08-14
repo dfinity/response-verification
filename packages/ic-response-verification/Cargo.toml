@@ -1,7 +1,7 @@
 [package]
 name = "ic-response-verification"
 description = "Client side response verification for the Internet Computer"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["DFINITY Stiftung"]
 license = "Apache-2.0"
 readme = "README.md"
@@ -29,7 +29,7 @@ thiserror = "1.0.37"
 sha2 = "0.10.6"
 http = "0.2.8"
 ic-certification = { version = "0.25.0", default_features = false }
-ic-representation-independent-hash =  { path = "../ic-representation-independent-hash", version = "1.0.0" }
+ic-representation-independent-hash =  { path = "../ic-representation-independent-hash", version = "1.0.1" }
 miracl_core_bls12381 = { version = "4.2.2", default_features = false, features = ["std", "allow_alt_compress"] }
 flate2 = "1.0.24"
 leb128 = "0.2.5"
