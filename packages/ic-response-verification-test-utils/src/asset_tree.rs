@@ -1,5 +1,5 @@
 use crate::hash::hash;
-use crate::{hash_from_hex, serialize_to_cbor};
+use crate::{cbor_encode, hash_from_hex};
 use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree, RbTree};
 
 const LABEL_ASSETS: &[u8] = b"http_assets";
@@ -39,7 +39,7 @@ impl AssetTree {
         let tree = self.tree.witness(path.as_bytes());
         let labeled_tree = labeled(LABEL_ASSETS, tree);
 
-        serialize_to_cbor::<HashTree>(&labeled_tree)
+        cbor_encode::<HashTree>(&labeled_tree)
     }
 
     pub fn get_certified_data(&self) -> [u8; 32] {

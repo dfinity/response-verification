@@ -4,13 +4,14 @@ version = "1.0.2"
 edition = "2021"
 
 [dependencies]
-base64 = "0.21.0"
-hex = "0.4.3"
+base64 = "0.21"
+hex = "0.4"
 ic-certification-testing = { path = "../ic-certification-testing", version = "1.0.2" }
-ic-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-certified-map = "0.4.0"
-sha256 = "1.1.1"
-serde_cbor = "0.11.2"
-leb128 = "0.2.5"
+ic-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-certified-map = "0.4"
+sha256 = "1.1"
+serde_cbor = "0.11"
+leb128 = "0.2"
 serde = { version = "1.0", features = ["derive"]}
-flate2 = "1.0.25"
+flate2 = "1.0"
+ic-certification = { version = "0.25", default_features = false }

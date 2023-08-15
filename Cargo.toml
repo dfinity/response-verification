@@ -1,6 +1,8 @@
 [workspace]
 members = [
     "examples/rust",
+    "packages/ic-cbor",
+    "packages/ic-certificate-verification",
     "packages/ic-certification-testing",
     "packages/ic-representation-independent-hash",
     "packages/ic-response-verification",

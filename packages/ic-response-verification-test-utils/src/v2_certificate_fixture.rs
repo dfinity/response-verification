@@ -1,5 +1,5 @@
 use crate::{
-    create_expr_tree_path, create_versioned_certificate_header, hash, serialize_to_cbor, ExprTree,
+    cbor_encode, create_expr_tree_path, create_versioned_certificate_header, hash, ExprTree,
 };
 use ic_certification_testing::{CertificateBuilder, CertificateData};
 use ic_certified_map::Hash;
@@ -68,7 +68,7 @@ pub fn create_v2_header(expr_path: &[&str], certificate_cbor: &[u8], tree_cbor: 
     let certificate_header = create_versioned_certificate_header(
         certificate_cbor,
         tree_cbor,
-        serialize_to_cbor(&full_expr_path).as_slice(),
+        cbor_encode(&full_expr_path).as_slice(),
         2,
     );
 

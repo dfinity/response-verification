@@ -1,0 +1,24 @@
+[package]
+name = "ic-cbor"
+description = "CBOR decoding for Internet Computer clients"
+version = "1.0.2"
+authors = ["DFINITY Stiftung"]
+license = "Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/ic-cbor"
+homepage = "https://github.com/dfinity/response-verification#readme"
+repository = "https://github.com/dfinity/response-verification"
+categories = ["api-bindings", "authentication", "cryptography"]
+keywords = ["internet-computer", "icp", "dfinity", "cbor"]
+edition = "2021"
+include = ["src", "Cargo.toml", "README.md"]
+
+[dependencies]
+candid = "0.9"
+nom = "7.1"
+ic-certification = { version = "0.25", default_features = false }
+thiserror = "1.0"
+leb128 = "0.2"
+
+[dev-dependencies]
+ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils" }

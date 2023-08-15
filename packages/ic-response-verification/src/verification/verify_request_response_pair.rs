@@ -1,16 +1,17 @@
-use super::body::decode_body;
-use super::certificate_header::CertificateHeader;
-use crate::cbor::{
-    certificate::CertificateToCbor, hash_tree::HashTreeToCbor, parse_cbor_string_array,
+use super::{body::decode_body, certificate_header::CertificateHeader};
+use crate::{
+    cel,
+    error::{ResponseVerificationError, ResponseVerificationResult},
+    hash,
+    hash::filter_response_headers,
+    types::{Certification, Request, Response, VerificationInfo, VerifiedResponse},
+    validation::{
+        validate_body, validate_expr_hash, validate_expr_path, validate_hashes, validate_tree,
+    },
 };
-use crate::error::{ResponseVerificationError, ResponseVerificationResult};
-use crate::hash::filter_response_headers;
-use crate::types::{Certification, Request, Response, VerificationInfo, VerifiedResponse};
-use crate::validation::{validate_body, validate_certificate_time, validate_hashes, validate_tree};
-use crate::validation::{validate_expr_hash, validate_expr_path, VerifyCertificate};
-use crate::{cel, hash};
-use ic_certification::hash_tree::Sha256Digest;
-use ic_certification::{Certificate, HashTree};
+use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
+use ic_certificate_verification::{validate_certificate_time, VerifyCertificate};
+use ic_certification::{hash_tree::Sha256Digest, Certificate, HashTree};
 use ic_representation_independent_hash::hash;
 
 /// The minimum verification version supported by this package.
@@ -57,7 +58,7 @@ pub fn verify_request_response_pair(
 
             expr_path = certificate_header
                 .expr_path
-                .map(|expr_path| parse_cbor_string_array(&expr_path, "expr_path"))
+                .map(|expr_path| parse_cbor_string_array(&expr_path))
                 .transpose()?;
         }
 

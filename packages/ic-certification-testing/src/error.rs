@@ -32,6 +32,9 @@ pub enum CertificationTestError {
 
     #[error("only one of canister params or a custom tree may be provided")]
     BothCanisterParamsAndCustomTreeProvided,
+
+    #[error("failed to merge witnesses")]
+    WitnessMergingFailed,
 }
 
 impl From<TreeHashError> for CertificationTestError {
@@ -52,9 +55,9 @@ impl From<serde_wasm_bindgen::Error> for CertificationTestError {
     }
 }
 
-impl Into<JsValue> for CertificationTestError {
-    fn into(self) -> JsValue {
-        JsValue::from_str(&format!("{}", self))
+impl From<CertificationTestError> for JsValue {
+    fn from(error: CertificationTestError) -> Self {
+        JsValue::from_str(&format!("{}", error))
     }
 }
 

@@ -161,11 +161,11 @@ impl CertificateBuilder {
 
         let certificate_cbor = serialize_to_cbor(&certificate);
 
-        return Ok(CertificateData {
+        Ok(CertificateData {
             certificate,
             root_key: keypair.public_key,
             cbor_encoded_certificate: certificate_cbor,
-        });
+        })
     }
 
     fn build_delegation(
@@ -204,7 +204,7 @@ fn build_certificate(
     tree: &LabeledTree<Vec<u8>>,
 ) -> CertificationTestResult<(KeyPair, MixedHashTree, Blob)> {
     let keypair = generate_keypair()?;
-    let tree = get_mixed_hash_tree(&tree)?;
+    let tree = get_mixed_hash_tree(tree)?;
     let signature = get_tree_signature(&tree, &keypair.private_key)?;
 
     Ok((keypair, tree, signature))

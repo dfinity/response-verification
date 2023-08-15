@@ -42,8 +42,8 @@ jobs:
           body: |
             After merging this PR, tag the merge commit with:
             ```shell
-              git tag ${{ steps.cz.outputs.version }}
-              git push origin ${{ steps.cz.outputs.version }}
+            git tag ${{ steps.cz.outputs.version }}
+            git push origin ${{ steps.cz.outputs.version }}
             ```
           commit-message: 'chore: release ${{ steps.cz.outputs.version }}'
           branch: 'release/${{ steps.cz.outputs.version }}'

@@ -14,8 +14,8 @@ edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
 [dependencies]
-sha2 = "0.10.6"
-leb128 = "0.2.5"
+sha2 = "0.10"
+leb128 = "0.2"
 
 [dev-dependencies]
-hex = "0.4.3"
+hex = "0.4"

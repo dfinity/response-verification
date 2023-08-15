@@ -162,7 +162,7 @@ async fn perform_test(
         canister_id.as_slice(),
         current_time_ns,
         max_cert_time_offset_ns,
-        agent.read_root_key()?.as_slice(),
+        agent.read_root_key().as_slice(),
         ic_response_verification::MIN_VERIFICATION_VERSION,
     )?;
 

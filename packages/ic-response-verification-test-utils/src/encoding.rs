@@ -8,7 +8,15 @@ pub fn base64_encode(data: &[u8]) -> String {
     general_purpose::STANDARD.encode(data)
 }
 
-pub fn serialize_to_cbor<T: Serialize>(payload: &T) -> Vec<u8> {
+pub fn hex_encode(data: &[u8]) -> String {
+    hex::encode(data)
+}
+
+pub fn hex_decode(data: &str) -> Vec<u8> {
+    hex::decode(data).unwrap()
+}
+
+pub fn cbor_encode<T: Serialize>(payload: &T) -> Vec<u8> {
     let mut serializer = serde_cbor::Serializer::new(Vec::new());
     serializer.self_describe().unwrap();
     payload.serialize(&mut serializer).unwrap();
