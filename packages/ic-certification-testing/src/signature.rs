@@ -57,7 +57,7 @@ pub(crate) fn get_tree_signature(
     let root_hash = CryptoHashOfPartialState::from(CryptoHash(mixed_hash_tree.digest().to_vec()));
 
     let signature = sign_message(
-        &CertificationContent::new(root_hash)
+        CertificationContent::new(root_hash)
             .as_signed_bytes()
             .as_slice(),
         private_key,

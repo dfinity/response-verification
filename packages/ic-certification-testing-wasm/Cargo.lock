@@ -48,6 +48,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "assert_matches"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
+
+[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -698,7 +704,7 @@ dependencies = [
 [[package]]
 name = "ic-base-types"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "base32",
  "byte-unit",
@@ -706,8 +712,9 @@ dependencies = [
  "candid",
  "comparable",
  "crc32fast",
- "ic-crypto-sha",
+ "ic-crypto-sha2",
  "ic-protobuf",
+ "ic-stable-structures",
  "phantom_newtype",
  "prost",
  "serde",
@@ -716,9 +723,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-btc-types"
+name = "ic-btc-interface"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/bitcoin-canister?rev=b1693619e3d4dbc00d8c79e9b6886e1db48b21f7#b1693619e3d4dbc00d8c79e9b6886e1db48b21f7"
 dependencies = [
  "candid",
  "serde",
@@ -728,10 +735,10 @@ dependencies = [
 [[package]]
 name = "ic-btc-types-internal"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "candid",
- "ic-btc-types",
+ "ic-btc-interface",
  "ic-protobuf",
  "serde",
  "serde_bytes",
@@ -776,12 +783,12 @@ dependencies = [
 [[package]]
 name = "ic-constants"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 
 [[package]]
 name = "ic-crypto-getrandom-for-wasm"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "getrandom",
 ]
@@ -789,11 +796,12 @@ dependencies = [
 [[package]]
 name = "ic-crypto-internal-bls12-381-type"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "hex",
  "ic-crypto-getrandom-for-wasm",
  "ic_bls12_381",
+ "itertools",
  "lazy_static",
  "pairing",
  "paste",
@@ -807,10 +815,10 @@ dependencies = [
 [[package]]
 name = "ic-crypto-internal-seed"
 version = "0.1.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "hex",
- "ic-crypto-sha",
+ "ic-crypto-sha2",
  "ic-types",
  "rand",
  "rand_chacha",
@@ -821,7 +829,7 @@ dependencies = [
 [[package]]
 name = "ic-crypto-internal-sha2"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "openssl",
  "sha2 0.9.9",
@@ -830,9 +838,8 @@ dependencies = [
 [[package]]
 name = "ic-crypto-internal-threshold-sig-bls12381"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
- "arrayvec",
  "base64",
  "cached",
  "hex",
@@ -840,7 +847,8 @@ dependencies = [
  "ic-crypto-internal-seed",
  "ic-crypto-internal-threshold-sig-bls12381-der",
  "ic-crypto-internal-types",
- "ic-crypto-sha",
+ "ic-crypto-secrets-containers",
+ "ic-crypto-sha2",
  "ic-types",
  "lazy_static",
  "parking_lot",
@@ -857,7 +865,7 @@ dependencies = [
 [[package]]
 name = "ic-crypto-internal-threshold-sig-bls12381-der"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "simple_asn1",
 ]
@@ -865,7 +873,7 @@ dependencies = [
 [[package]]
 name = "ic-crypto-internal-types"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "arrayvec",
  "base64",
@@ -881,9 +889,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-crypto-sha"
+name = "ic-crypto-secrets-containers"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
+dependencies = [
+ "serde",
+ "zeroize",
+]
+
+[[package]]
+name = "ic-crypto-sha2"
+version = "0.8.0"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "ic-crypto-internal-sha2",
 ]
@@ -891,19 +908,21 @@ dependencies = [
 [[package]]
 name = "ic-crypto-tree-hash"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
+ "assert_matches",
  "ic-crypto-internal-types",
- "ic-crypto-sha",
+ "ic-crypto-sha2",
  "ic-protobuf",
  "serde",
  "serde_bytes",
+ "thiserror",
 ]
 
 [[package]]
 name = "ic-error-types"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "serde",
  "strum",
@@ -913,12 +932,12 @@ dependencies = [
 [[package]]
 name = "ic-ic00-types"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "candid",
  "float-cmp",
  "ic-base-types",
- "ic-btc-types",
+ "ic-btc-interface",
  "ic-btc-types-internal",
  "ic-error-types",
  "ic-protobuf",
@@ -933,7 +952,7 @@ dependencies = [
 [[package]]
 name = "ic-protobuf"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "bincode",
  "candid",
@@ -946,12 +965,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-stable-structures"
+version = "0.5.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "95dce29e3ceb0e6da3e78b305d95365530f2efd2146ca18590c0ef3aa6038568"
+
+[[package]]
 name = "ic-sys"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "hex",
- "ic-crypto-sha",
+ "ic-crypto-sha2",
  "lazy_static",
  "libc",
  "nix",
@@ -962,7 +987,7 @@ dependencies = [
 [[package]]
 name = "ic-types"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "base32",
  "base64",
@@ -976,7 +1001,7 @@ dependencies = [
  "ic-btc-types-internal",
  "ic-constants",
  "ic-crypto-internal-types",
- "ic-crypto-sha",
+ "ic-crypto-sha2",
  "ic-crypto-tree-hash",
  "ic-error-types",
  "ic-ic00-types",
@@ -1002,7 +1027,7 @@ dependencies = [
 [[package]]
 name = "ic-utils"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "bitflags 1.3.2",
  "cvt",
@@ -1020,9 +1045,9 @@ dependencies = [
 
 [[package]]
 name = "ic_bls12_381"
-version = "0.7.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42a180f02c79a71fcbc10b194406dbffd6a883c916f96be4f17ae3aeb96348c5"
+checksum = "c682cb199cd8fcb582a6023325d571a6464edda26c8063fe04b6f6082a1a363c"
 dependencies = [
  "digest 0.9.0",
  "ff",
@@ -1406,7 +1431,7 @@ dependencies = [
 [[package]]
 name = "phantom_newtype"
 version = "0.8.0"
-source = "git+https://github.com/dfinity/ic?rev=a533346f63f4091eb64692891de0d5b2ffd5b22a#a533346f63f4091eb64692891de0d5b2ffd5b22a"
+source = "git+https://github.com/dfinity/ic?rev=23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0#23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0"
 dependencies = [
  "candid",
  "serde",

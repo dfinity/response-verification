@@ -14,10 +14,10 @@ debug = []
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = "0.2.87"
-console_error_panic_hook = "0.1.7"
-wasm-bindgen-console-logger = "0.1.1"
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+wasm-bindgen-console-logger = "0.1"
 serde-wasm-bindgen = "0.4"
 ic-certification-testing = { path = "../ic-certification-testing" }
-log = "0.4.17"
-ic-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+log = "0.4"
+ic-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }

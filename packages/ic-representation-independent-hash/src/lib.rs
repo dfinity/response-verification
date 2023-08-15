@@ -1,6 +1,4 @@
-//! Utilities for calculating
-//! [Representation Independent Hashes](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
-//! of [crate::Request] and [crate::Response] objects.
+//! # Representation Independent Hash
 
 #![deny(
     missing_docs,

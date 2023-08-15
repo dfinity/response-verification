@@ -1,15 +1,15 @@
-use crate::error::{ResponseVerificationError, ResponseVerificationResult};
+use crate::{CborError, CborResult};
 use candid::Principal;
-use nom::bytes::complete::take;
-use nom::combinator::{eof, map, peek};
-use nom::error::{Error, ErrorKind};
-use nom::multi::{count, fold_many_m_n};
-use nom::number::complete::{be_u16, be_u32, be_u64, be_u8};
-use nom::sequence::terminated;
-use nom::Err;
-use nom::IResult;
-use std::collections::HashMap;
-use std::fmt;
+use nom::{
+    bytes::complete::take,
+    combinator::{eof, map, peek},
+    error::{Error, ErrorKind},
+    multi::{count, fold_many_m_n},
+    number::complete::{be_u16, be_u32, be_u64, be_u8},
+    sequence::terminated,
+    Err, IResult,
+};
+use std::{collections::HashMap, fmt};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum CborNegativeInt {
@@ -204,26 +204,23 @@ pub fn parse_cbor(i: &[u8]) -> Result<CborValue, nom::Err<Error<&[u8]>>> {
     Ok(result)
 }
 
-pub fn parse_cbor_principals_array(
-    i: &[u8],
-) -> ResponseVerificationResult<Vec<(Principal, Principal)>> {
-    let parsed_cbor =
-        parse_cbor(i).map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
+pub fn parse_cbor_principals_array(i: &[u8]) -> CborResult<Vec<(Principal, Principal)>> {
+    let parsed_cbor = parse_cbor(i).map_err(|e| CborError::MalformedCbor(e.to_string()))?;
 
     let CborValue::Array(ranges_entries) = parsed_cbor else {
-        return Err(ResponseVerificationError::MalformedCborCanisterRanges);
+        return Err(CborError::MalformedCborCanisterRanges);
     };
 
     ranges_entries
         .iter()
         .map(|ranges_entry| {
             let CborValue::Array(range) = ranges_entry else {
-                return Err(ResponseVerificationError::MalformedCborCanisterRanges);
+                return Err(CborError::MalformedCborCanisterRanges);
             };
 
             let (first_principal, second_principal) = match (range.get(0), range.get(1)) {
                 (Some(CborValue::ByteString(a)), Some(CborValue::ByteString(b))) => (a, b),
-                _ => return Err(ResponseVerificationError::MalformedCborCanisterRanges),
+                _ => return Err(CborError::MalformedCborCanisterRanges),
             };
 
             Ok((
@@ -234,16 +231,11 @@ pub fn parse_cbor_principals_array(
         .collect::<Result<_, _>>()
 }
 
-pub fn parse_cbor_string_array(
-    i: &[u8],
-    array_name: &str,
-) -> ResponseVerificationResult<Vec<String>> {
-    let parsed_cbor =
-        parse_cbor(i).map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
+pub fn parse_cbor_string_array(i: &[u8]) -> CborResult<Vec<String>> {
+    let parsed_cbor = parse_cbor(i).map_err(|e| CborError::MalformedCbor(e.to_string()))?;
 
     let CborValue::Array(elems) = parsed_cbor else {
-        return Err(ResponseVerificationError::UnexpectedCborNodeType {
-            node_name: array_name.into(),
+        return Err(CborError::UnexpectedCborNodeType {
             expected_type: "Array".into(),
             found_type: parsed_cbor.to_string()
         });
@@ -253,15 +245,13 @@ pub fn parse_cbor_string_array(
         .iter()
         .map(|elem| {
             let CborValue::ByteString(elem) = elem else {
-                return Err(ResponseVerificationError::UnexpectedCborNodeType {
-                    node_name: array_name.into(),
+                return Err(CborError::UnexpectedCborNodeType {
                     expected_type: "Array".into(),
                     found_type: elem.to_string()
                 });
             };
 
-            String::from_utf8(elem.to_owned())
-                .map_err(ResponseVerificationError::Utf8ConversionError)
+            String::from_utf8(elem.to_owned()).map_err(CborError::Utf8ConversionError)
         })
         .collect::<Result<_, _>>()
 }
@@ -270,12 +260,12 @@ pub fn parse_cbor_string_array(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use candid::Principal;
+    use ic_response_verification_test_utils::{cbor_encode, hex_decode};
 
     #[test]
     fn decodes_arrays() {
         let cbor_hex = "83070809";
-        let cbor = hex::decode(cbor_hex).unwrap();
+        let cbor = hex_decode(cbor_hex);
 
         let result = parse_cbor(cbor.as_slice()).unwrap();
 
@@ -292,7 +282,7 @@ mod tests {
     #[test]
     fn decodes_nested_arrays() {
         let cbor_hex = "8307820809820A0B";
-        let cbor = hex::decode(cbor_hex).unwrap();
+        let cbor = hex_decode(cbor_hex);
 
         let result = parse_cbor(cbor.as_slice()).unwrap();
 
@@ -315,7 +305,7 @@ mod tests {
     #[test]
     fn decodes_array_with_nested_map() {
         let cbor_hex = "826161a161626163";
-        let cbor = hex::decode(cbor_hex).unwrap();
+        let cbor = hex_decode(cbor_hex);
 
         let result = parse_cbor(cbor.as_slice()).unwrap();
 
@@ -334,7 +324,7 @@ mod tests {
     #[test]
     fn decodes_map_with_nested_array() {
         let cbor_hex = "A26161076162820809";
-        let cbor = hex::decode(cbor_hex).unwrap();
+        let cbor = hex_decode(cbor_hex);
 
         let result = parse_cbor(cbor.as_slice()).unwrap();
 
@@ -364,7 +354,7 @@ mod tests {
         )];
 
         assert_eq!(
-            parse_cbor_principals_array(&serde_cbor::to_vec(&expected_cbor).unwrap()).unwrap(),
+            parse_cbor_principals_array(&cbor_encode(&expected_cbor)).unwrap(),
             vec![(
                 Principal::from_slice("rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes()),
                 Principal::from_slice("rdmx6-jaaaa-aaaaa-aaadq-cai".as_bytes())
@@ -380,8 +370,8 @@ mod tests {
         )];
 
         assert!(matches!(
-            parse_cbor_principals_array(&serde_cbor::to_vec(&expected_cbor).unwrap()).err(),
-            Some(ResponseVerificationError::MalformedCborCanisterRanges),
+            parse_cbor_principals_array(&cbor_encode(&expected_cbor)).err(),
+            Some(CborError::MalformedCborCanisterRanges),
         ));
     }
 }

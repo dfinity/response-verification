@@ -13,7 +13,9 @@ pub(crate) fn get_mixed_hash_tree(
         .witness_generator()
         .ok_or(CertificationTestError::WitnessGenerationFailed)?;
 
-    let mixed_hash_tree = witness_gen.mixed_hash_tree(&tree)?;
+    let mixed_hash_tree = witness_gen
+        .mixed_hash_tree(tree)
+        .map_err(|_| CertificationTestError::WitnessMergingFailed)?;
 
     Ok(mixed_hash_tree)
 }

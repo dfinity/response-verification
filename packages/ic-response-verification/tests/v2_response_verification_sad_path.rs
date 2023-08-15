@@ -5,6 +5,8 @@ mod tests {
         invalid_root_key_certificate, skip_certification_cel, wrong_canister_certificate,
         MAX_CERT_TIME_OFFSET_NS, MIN_REQUESTED_VERIFICATION_VERSION,
     };
+    use candid::Principal;
+    use ic_certificate_verification::CertificateVerificationError;
     use ic_response_verification::{
         cel::cel_to_certification,
         hash::{request_hash, response_hash},
@@ -294,19 +296,21 @@ mod tests {
     #[rstest]
     #[case::invalid_root_key_certificate(
         invalid_root_key_certificate(),
-        ResponseVerificationError::CertificateVerificationFailed
+        ResponseVerificationError::CertificateVerificationFailed(
+            CertificateVerificationError::SignatureVerificationFailed
+        )
     )]
     #[case::expired_certificate(
         expired_certificate(),
-        ResponseVerificationError::CertificateTimeTooFarInThePast  { certificate_time: 0, min_certificate_time: 0 }
+        ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast  { certificate_time: 0, min_certificate_time: 0 })
     )]
     #[case::future_certificate(
         future_certificate(),
-        ResponseVerificationError::CertificateTimeTooFarInTheFuture  { certificate_time: 0, max_certificate_time: 0 }
+        ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture  { certificate_time: 0, max_certificate_time: 0 } )
     )]
     #[case::wrong_canister_certificate(
         wrong_canister_certificate(),
-        ResponseVerificationError::CertificatePrincipalOutOfRange
+        ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::PrincipalOutOfRange { canister_id: Principal::anonymous(), canister_ranges: vec![] } )
     )]
     fn invalid_certificate_fails_verification(
         #[case] fixture: (V2Fixture, u128, String),
@@ -356,10 +360,10 @@ mod tests {
 
         assert!(
             matches!(result, Err(ref failure) if match (failure, expected_failure) {
-                (ResponseVerificationError::CertificateVerificationFailed, ResponseVerificationError::CertificateVerificationFailed) => true,
-                (ResponseVerificationError::CertificatePrincipalOutOfRange, ResponseVerificationError::CertificatePrincipalOutOfRange) => true,
-                (ResponseVerificationError::CertificateTimeTooFarInThePast { .. }, ResponseVerificationError::CertificateTimeTooFarInThePast { .. }) => true,
-                (ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }, ResponseVerificationError::CertificateTimeTooFarInTheFuture { .. }) => true,
+                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::SignatureVerificationFailed), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::SignatureVerificationFailed)) => true,
+                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::PrincipalOutOfRange { .. }), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::PrincipalOutOfRange { .. })) => true,
+                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast { .. }), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast { .. })) => true,
+                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture { .. }), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture { .. })) => true,
                 _ => false
             })
         )

@@ -99,9 +99,9 @@ fn parse_int_header(value: &str) -> ResponseVerificationResult<u8> {
 mod tests {
     use super::*;
     use crate::test_utils::test_utils::{
-        cbor_encode, create_certificate, create_encoded_header_field, create_header_field,
-        create_tree,
+        create_encoded_header_field, create_header_field, create_tree,
     };
+    use ic_response_verification_test_utils::{cbor_encode, create_certificate};
 
     fn base64_encode_no_padding(data: &[u8]) -> String {
         use base64::engine::general_purpose;

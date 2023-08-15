@@ -4,6 +4,12 @@ description = "Utilities for testing applications that work with Internet Comput
 version = "1.0.2"
 authors = ["DFINITY Stiftung"]
 license = "Apache-2.0"
+readme = "README.md"
+documentation = "https://docs.rs/ic-certification-testing"
+homepage = "https://github.com/dfinity/response-verification#readme"
+repository = "https://github.com/dfinity/response-verification"
+categories = ["api-bindings", "authentication", "cryptography"]
+keywords = ["internet-computer", "icp", "dfinity", "certification", "testing"]
 edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
@@ -11,24 +17,24 @@ include = ["src", "Cargo.toml", "README.md"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-leb128 = "0.2.5"
-thiserror = "1.0.43"
-wasm-bindgen = "0.2.87"
-js-sys = "0.3.64"
-console_error_panic_hook = "0.1.7"
-wasm-bindgen-console-logger = "0.1.1"
-log = "0.4.17"
+leb128 = "0.2"
+thiserror = "1.0"
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+console_error_panic_hook = "0.1"
+wasm-bindgen-console-logger = "0.1"
+log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
-serde_cbor = "0.11.2"
+serde_cbor = "0.11"
 serde-wasm-bindgen = "0.4"
 
-ic-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
-ic-crypto-internal-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
+ic-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-crypto-internal-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
 
 # https://github.com/rust-random/rand#wasm-support
 # https://docs.rs/getrandom/latest/getrandom/#webassembly-support
-rand = "0.8.5"
-getrandom = { version = "0.2.8", features = ["js"] }
+rand = "0.8"
+getrandom = { version = "0.2", features = ["js"] }

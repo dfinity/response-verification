@@ -1,24 +1,22 @@
-use crate::cbor::{parse_cbor, CborHashTree, CborValue};
-use crate::error::ResponseVerificationError;
+use crate::{parse_cbor, CborError, CborHashTree, CborResult, CborValue};
 use ic_certification::{
     hash_tree::{empty, fork, label, leaf, pruned, Label, Sha256Digest},
     HashTree,
 };
 
 pub trait HashTreeToCbor {
-    fn from_cbor(cbor: &[u8]) -> Result<HashTree, ResponseVerificationError>;
+    fn from_cbor(cbor: &[u8]) -> CborResult<HashTree>;
 }
 
 impl HashTreeToCbor for HashTree {
-    fn from_cbor(cbor: &[u8]) -> Result<HashTree, ResponseVerificationError> {
-        let parsed_cbor = parse_cbor(cbor)
-            .map_err(|e| ResponseVerificationError::MalformedCbor(e.to_string()))?;
+    fn from_cbor(cbor: &[u8]) -> CborResult<HashTree> {
+        let parsed_cbor = parse_cbor(cbor).map_err(|e| CborError::MalformedCbor(e.to_string()))?;
 
         parsed_cbor_to_tree(&parsed_cbor)
     }
 }
 
-pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> Result<HashTree, ResponseVerificationError> {
+pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> CborResult<HashTree> {
     if let CborValue::Array(mut cbor_tags) = parsed_cbor.to_owned() {
         cbor_tags.reverse();
 
@@ -30,7 +28,7 @@ pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> Result<HashTree, Response
                     if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
                         Ok(leaf(data))
                     } else {
-                        Err(ResponseVerificationError::MalformedHashTree(String::from(
+                        Err(CborError::MalformedHashTree(String::from(
                             "Missing ByteString for Leaf node",
                         )))
                     }
@@ -39,11 +37,11 @@ pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> Result<HashTree, Response
                 CborHashTree::Pruned => {
                     if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
                         let digest: Sha256Digest = TryFrom::<&[u8]>::try_from(data.as_ref())
-                            .map_err(ResponseVerificationError::IncorrectPrunedDataLength)?;
+                            .map_err(CborError::IncorrectPrunedDataLength)?;
 
                         Ok(pruned(digest))
                     } else {
-                        Err(ResponseVerificationError::MalformedHashTree(String::from(
+                        Err(CborError::MalformedHashTree(String::from(
                             "Missing ByteString for Pruned node",
                         )))
                     }
@@ -58,7 +56,7 @@ pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> Result<HashTree, Response
 
                         Ok(label(node_label, child_node))
                     } else {
-                        Err(ResponseVerificationError::MalformedHashTree(String::from(
+                        Err(CborError::MalformedHashTree(String::from(
                             "Missing ByteString or child node for Labelled node",
                         )))
                     }
@@ -71,19 +69,19 @@ pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> Result<HashTree, Response
 
                         Ok(fork(left, right))
                     } else {
-                        Err(ResponseVerificationError::MalformedHashTree(String::from(
+                        Err(CborError::MalformedHashTree(String::from(
                             "Missing child nodes for Fork node",
                         )))
                     }
                 }
             }
         } else {
-            Err(ResponseVerificationError::MalformedHashTree(String::from(
+            Err(CborError::MalformedHashTree(String::from(
                 "Expected Hash Tree cbor tag",
             )))
         }
     } else {
-        Err(ResponseVerificationError::MalformedHashTree(String::from(
+        Err(CborError::MalformedHashTree(String::from(
             "Expected Array cbor tag",
         )))
     }
@@ -95,6 +93,7 @@ mod tests {
     use ic_certification::hash_tree::{
         empty, fork, label, leaf, pruned, pruned_from_hex, Label, LookupResult,
     };
+    use ic_response_verification_test_utils::{cbor_encode, hex_encode};
 
     fn lookup_path<'a, P: AsRef<[&'static str]>>(tree: &'a HashTree, path: P) -> LookupResult<'a> {
         let path: Vec<Label<Vec<u8>>> = path
@@ -115,12 +114,12 @@ mod tests {
                 leaf(vec![1u8, 2, 3, 4, 5, 6]),
             ),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
 
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
-            hex::encode(tree.digest()),
+            hex_encode(&tree.digest()),
             "69cf325d0f20505b261821a7e77ff72fb9a8753a7964f0b587553bfb44e72532"
         );
     }
@@ -141,11 +140,11 @@ mod tests {
             ),
             fork(label("c", empty()), label("d", leaf(b"morning".to_vec()))),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
-            hex::encode(tree.digest()),
+            hex_encode(&tree.digest()),
             "eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0"
         );
     }
@@ -179,11 +178,11 @@ mod tests {
                 label("d", leaf(b"morning".to_vec())),
             ),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
-            hex::encode(tree.digest()),
+            hex_encode(&tree.digest()),
             "eb5c5b2195e62d996b84c9bcc8259d19a83786a2f59e0878cec84c811f669aa0"
         );
 
@@ -212,7 +211,7 @@ mod tests {
                 ),
             ),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
@@ -257,7 +256,7 @@ mod tests {
                 pruned([1; 32]),
             ),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
@@ -302,7 +301,7 @@ mod tests {
                 ),
             ),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
@@ -339,7 +338,7 @@ mod tests {
                 pruned([1; 32]),
             ),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
@@ -376,7 +375,7 @@ mod tests {
             ),
             label("label 7", empty()),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
@@ -421,7 +420,7 @@ mod tests {
             ),
             label("label 7", empty()),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
@@ -466,7 +465,7 @@ mod tests {
             ),
             pruned([0; 32]),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(
@@ -503,7 +502,7 @@ mod tests {
             ),
             pruned([0; 32]),
         );
-        let tree_cbor = serde_cbor::to_vec(&original_tree).expect("Failed to encode tree to cbor");
+        let tree_cbor = cbor_encode(&original_tree);
         let tree = HashTree::from_cbor(&tree_cbor).expect("Failed to deserialize tree");
 
         assert_eq!(

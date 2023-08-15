@@ -1,4 +1,4 @@
-use crate::{serialize_to_cbor, NestedTree};
+use crate::{cbor_encode, NestedTree};
 use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree};
 
 const LABEL_EXPR: &[u8] = b"http_expr";
@@ -62,13 +62,13 @@ impl ExprTree {
         let tree = self.tree.witness(path);
         let labeled_tree = labeled(LABEL_EXPR, tree);
 
-        serialize_to_cbor::<HashTree>(&labeled_tree)
+        cbor_encode::<HashTree>(&labeled_tree)
     }
 
     pub fn serialize_to_cbor(&self) -> Vec<u8> {
         let labeled_tree = labeled(LABEL_EXPR, self.tree.as_hash_tree());
 
-        serialize_to_cbor::<HashTree>(&labeled_tree)
+        cbor_encode::<HashTree>(&labeled_tree)
     }
 
     pub fn get_certified_data(&self) -> [u8; 32] {

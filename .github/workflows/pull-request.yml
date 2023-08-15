@@ -46,8 +46,7 @@ jobs:
         run: cargo test
 
       - name: Wasm test
-        working-directory: packages/ic-response-verification
-        run: wasm-pack test --node --features=js
+        run: wasm-pack test --node packages/ic-response-verification --features=js
 
       - name: Lint Rust
         run: cargo clippy

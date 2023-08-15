@@ -1,5 +1,6 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
+    use ic_certificate_verification::CertificateVerificationError;
     use ic_certification_testing::{CertificateBuilder, CertificateData};
     use ic_response_verification::types::{Request, Response, VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
@@ -304,7 +305,9 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::CertificateVerificationFailed)
+            Err(ResponseVerificationError::CertificateVerificationFailed(
+                CertificateVerificationError::SignatureVerificationFailed
+            ))
         ));
     }
 
@@ -360,10 +363,10 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::CertificateTimeTooFarInTheFuture {
+            Err(ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture {
                 certificate_time,
                 max_certificate_time
-            }) if certificate_time == certificate_time &&
+            })) if certificate_time == certificate_time &&
             max_certificate_time == current_time + MAX_CERT_TIME_OFFSET_NS
         ));
     }
@@ -420,10 +423,10 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::CertificateTimeTooFarInThePast {
+            Err(ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast {
                 certificate_time,
                 min_certificate_time
-            }) if certificate_time == certificate_time &&
+            })) if certificate_time == certificate_time &&
             min_certificate_time == current_time - MAX_CERT_TIME_OFFSET_NS
         ));
     }
