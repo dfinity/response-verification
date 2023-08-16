@@ -840,7 +840,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
@@ -1046,7 +1046,7 @@ dependencies = [
 
 [[package]]
 name = "ic-representation-independent-hash"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "leb128",
  "sha2 0.10.6",
@@ -1054,7 +1054,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "base64 0.21.2",
  "candid 0.9.2",
@@ -1076,7 +1076,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "base64 0.21.2",
  "flate2",
@@ -1092,7 +1092,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "base64 0.21.2",
  "console_error_panic_hook",
