@@ -27,6 +27,7 @@ pub mod cel;
 pub mod hash;
 pub mod types;
 
+mod base64;
 mod cbor;
 mod test_utils;
 mod validation;
