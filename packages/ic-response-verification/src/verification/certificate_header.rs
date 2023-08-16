@@ -1,7 +1,9 @@
 use super::certificate_header_field::CertificateHeaderField;
-use crate::error::{ResponseVerificationError, ResponseVerificationResult};
-use base64::engine::general_purpose::STANDARD as BASE64;
-use base64::Engine;
+use crate::{
+    base64::BASE64,
+    error::{ResponseVerificationError, ResponseVerificationResult},
+};
+use base64::Engine as _;
 use log::warn;
 
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.
@@ -101,6 +103,11 @@ mod tests {
         create_tree,
     };
 
+    fn base64_encode_no_padding(data: &[u8]) -> String {
+        use base64::engine::general_purpose;
+        general_purpose::STANDARD_NO_PAD.encode(data)
+    }
+
     #[test]
     fn certificate_header_parses_valid_header() {
         let certificate = cbor_encode(&create_certificate(None));
@@ -112,6 +119,28 @@ mod tests {
             create_encoded_header_field("tree", &tree),
             create_header_field("version", &version.to_string()),
             create_encoded_header_field("expr_path", &expr_path),
+        ]
+        .join(",");
+
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
+
+        assert_eq!(certificate_header.certificate.unwrap(), certificate);
+        assert_eq!(certificate_header.tree.unwrap(), tree);
+        assert_eq!(certificate_header.version.unwrap(), version);
+        assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
+    }
+
+    #[test]
+    fn certificate_header_parsed_valid_header_with_unpadded_base64() {
+        let certificate = cbor_encode(&create_certificate(None));
+        let tree = cbor_encode(&create_tree(None));
+        let version = 2u8;
+        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let header = vec![
+            create_header_field("certificate", &base64_encode_no_padding(&certificate)),
+            create_header_field("tree", &base64_encode_no_padding(&tree)),
+            create_header_field("version", &version.to_string()),
+            create_header_field("expr_path", &base64_encode_no_padding(&expr_path)),
         ]
         .join(",");
 
