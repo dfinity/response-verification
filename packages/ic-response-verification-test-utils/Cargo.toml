@@ -1,16 +1,16 @@
 [package]
 name = "ic-response-verification-test-utils"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 
 [dependencies]
 base64 = "0.21.0"
 hex = "0.4.3"
-ic-certification-testing = { path = "../ic-certification-testing", version = "1.0.1" }
+ic-certification-testing = { path = "../ic-certification-testing", version = "1.0.2" }
 ic-types = { git = "https://github.com/dfinity/ic", rev = "a533346f63f4091eb64692891de0d5b2ffd5b22a" }
 ic-certified-map = "0.4.0"
 sha256 = "1.1.1"
 serde_cbor = "0.11.2"
 leb128 = "0.2.5"
-serde = { version = "1.0.152", features = ["derive"]}
+serde = { version = "1.0", features = ["derive"]}
 flate2 = "1.0.25"

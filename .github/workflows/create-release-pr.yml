@@ -31,7 +31,9 @@ jobs:
         run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
 
       - name: Update Cargo.lock
-        run: cargo build -p ic-response-verification
+        run: |
+          cargo build
+          pnpm build
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4

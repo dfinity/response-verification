@@ -3,7 +3,7 @@ commitizen:
   name: cz_conventional_commits
   tag_format: $version
   update_changelog_on_bump: true
-  version: 1.0.1
+  version: 1.0.2
   version_files:
     - packages/certificate-verification-js/package.json:version
     - packages/ic-certification-testing/Cargo.toml:version
