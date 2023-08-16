@@ -67,6 +67,7 @@ jobs:
             packages/certificate-verification-js/package.json
             packages/ic-cbor/Cargo.toml
             packages/ic-certificate-verification/Cargo.toml
+            packages/ic-certification/Cargo.toml
             packages/ic-certification-testing/Cargo.toml
             packages/ic-certification-testing-wasm/Cargo.lock
             packages/ic-certification-testing-wasm/Cargo.toml

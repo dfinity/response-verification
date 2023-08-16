@@ -14,4 +14,4 @@ serde_cbor = "0.11"
 leb128 = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 flate2 = "1.0"
-ic-certification = { version = "0.26", default_features = false }
+ic-certification = { path = "../ic-certification", version = "1.1.0", default_features = false }

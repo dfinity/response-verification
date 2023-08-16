@@ -1149,7 +1149,7 @@ dependencies = [
  "hex",
  "http",
  "http-body",
- "ic-certification",
+ "ic-certification 0.26.1",
  "ic-verify-bls-signature",
  "k256",
  "leb128",
@@ -1220,7 +1220,7 @@ name = "ic-cbor"
 version = "1.1.0"
 dependencies = [
  "candid 0.9.1",
- "ic-certification",
+ "ic-certification 1.1.0",
  "ic-response-verification-test-utils",
  "leb128",
  "nom",
@@ -1233,7 +1233,7 @@ version = "1.1.0"
 dependencies = [
  "candid 0.9.1",
  "ic-cbor",
- "ic-certification",
+ "ic-certification 1.1.0",
  "ic-certification-testing",
  "ic-response-verification-test-utils",
  "leb128",
@@ -1251,6 +1251,17 @@ dependencies = [
  "hex",
  "serde",
  "serde_bytes",
+ "sha2 0.10.6",
+]
+
+[[package]]
+name = "ic-certification"
+version = "1.1.0"
+dependencies = [
+ "hex",
+ "serde",
+ "serde_bytes",
+ "serde_cbor",
  "sha2 0.10.6",
 ]
 
@@ -1492,7 +1503,7 @@ dependencies = [
  "http",
  "ic-cbor",
  "ic-certificate-verification",
- "ic-certification",
+ "ic-certification 1.1.0",
  "ic-certification-testing",
  "ic-certified-map",
  "ic-crypto-tree-hash",
@@ -1520,7 +1531,7 @@ dependencies = [
  "base64 0.21.2",
  "flate2",
  "hex",
- "ic-certification",
+ "ic-certification 1.1.0",
  "ic-certification-testing",
  "ic-certified-map",
  "ic-types",

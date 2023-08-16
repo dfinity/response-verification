@@ -230,7 +230,6 @@ mod tests {
     use crate::cel::CelParserError;
     use base64::{engine::general_purpose, Engine as _};
     use ic_response_verification_test_utils::hex_decode;
-    use std::array::TryFromSliceError;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     #[wasm_bindgen_test]
