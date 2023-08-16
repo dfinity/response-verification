@@ -48,6 +48,16 @@ This package encapsulates the protocol for such verification. It is used by [the
 | `pnpm run -F @dfinity/certificate-verification build` | Build NPM package |
 | `pnpm run -F @dfinity/certificate-verification test`  | Test NPM package  |
 
+### Certification
+
+- [Cargo crate](./packages/ic-certification/README.md)
+
+| Command                                          | Description            |
+| ------------------------------------------------ | ---------------------- |
+| `cargo build -p ic-certification`                | Build Cargo crate      |
+| `cargo test -p ic-certification`                 | Test Cargo crate       |
+| `cargo doc -p ic-certification --no-deps --open` | Build Cargo crate docs |
+
 ### Certification Testing
 
 - [NPM package](./packages/ic-certification-testing-wasm/README.md)

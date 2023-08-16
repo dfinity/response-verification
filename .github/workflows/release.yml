@@ -63,6 +63,11 @@ jobs:
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
+      - name: Release ic-certification Cargo crate
+        run: cargo publish -p ic-certification --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
       - name: Release ic-response-verification Cargo crate
         run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
         env:
@@ -78,6 +83,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: >
+            target/package/ic-certification-${{ github.ref_name }}.crate,
             target/package/ic-representation-independent-hash-${{ github.ref_name }}.crate,
             target/package/ic-cbor-${{ github.ref_name }}.crate,
             target/package/ic-certificate-verification-${{ github.ref_name }}.crate,

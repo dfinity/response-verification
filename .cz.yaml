@@ -8,6 +8,7 @@ commitizen:
     - packages/certificate-verification-js/package.json:version
     - packages/ic-cbor/Cargo.toml:version
     - packages/ic-certificate-verification/Cargo.toml:version
+    - packages/ic-certification/Cargo.toml:version
     - packages/ic-certification-testing/Cargo.toml:version
     - packages/ic-certification-testing-wasm/Cargo.toml:version
     - packages/ic-certification-testing-wasm/package.json:version

@@ -852,9 +852,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification"
-version = "0.26.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d423020cc19ee52cb7fde4f64000d3dd6e8c5703947bf6d7911db5fb3428a8e"
+version = "1.1.0"
 dependencies = [
  "hex",
  "sha2 0.10.6",
