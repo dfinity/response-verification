@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fix
+
+- allow for padded and unpadded base64 encoded headers
+
 ## 1.0.1 (2023-08-14)
 
 ### Fix
