@@ -73,11 +73,11 @@ This package encapsulates the protocol for such verification. It is used by [the
 
 - [Cargo crate](./packages/ic-cbor/README.md)
 
-| Command                                                            | Description            |
-| ------------------------------------------------------------------ | ---------------------- |
-| `cargo build -p ic-representation-independent-hash`                | Build Cargo crate      |
-| `cargo test -p ic-representation-independent-hash`                 | Test Cargo crate       |
-| `cargo doc -p ic-representation-independent-hash --no-deps --open` | Build Cargo crate docs |
+| Command                                 | Description            |
+| --------------------------------------- | ---------------------- |
+| `cargo build -p ic-cbor`                | Build Cargo crate      |
+| `cargo test -p ic-cbor`                 | Test Cargo crate       |
+| `cargo doc -p ic-cbor --no-deps --open` | Build Cargo crate docs |
 
 ## Contributing
 
