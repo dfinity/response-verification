@@ -7,11 +7,11 @@ edition = "2021"
 base64 = "0.21"
 hex = "0.4"
 ic-certification-testing = { path = "../ic-certification-testing", version = "1.0.2" }
-ic-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
 ic-certified-map = "0.4"
 sha256 = "1.1"
 serde_cbor = "0.11"
 leb128 = "0.2"
 serde = { version = "1.0", features = ["derive"]}
 flate2 = "1.0"
-ic-certification = { version = "0.25", default_features = false }
+ic-certification = { version = "0.26.1", default_features = false }

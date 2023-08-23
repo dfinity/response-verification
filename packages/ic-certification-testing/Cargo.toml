@@ -26,13 +26,13 @@ wasm-bindgen-console-logger = "0.1"
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "0.11"
-serde-wasm-bindgen = "0.4"
+serde-wasm-bindgen = "0.5"
 
-ic-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
-ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
-ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
-ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
-ic-crypto-internal-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
+ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
+ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
+ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
+ic-crypto-internal-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
 
 # https://github.com/rust-random/rand#wasm-support
 # https://docs.rs/getrandom/latest/getrandom/#webassembly-support

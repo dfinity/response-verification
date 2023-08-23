@@ -28,7 +28,7 @@ wasm-bindgen = { version = "0.2", optional = true }
 thiserror = "1.0"
 sha2 = "0.10"
 http = "0.2"
-ic-certification = { version = "0.25", default_features = false }
+ic-certification = { version = "0.26.1", default_features = false }
 ic-representation-independent-hash =  { path = "../ic-representation-independent-hash", version = "1.0.2" }
 ic-cbor = { path = "../ic-cbor", version = "1.0.2"}
 ic-certificate-verification ={ path = "../ic-certificate-verification", version = "1.0.2" }
@@ -42,12 +42,12 @@ urlencoding = "2.1.3"
 [dev-dependencies]
 serde_cbor = "0.11"
 wasm-bindgen-test = "0.3"
-ic-certification = "0.25"
+ic-certification = "0.26.1"
 candid = "0.9"
 serde = "1.0"
 ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils" }
-ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
-ic-types = { git = "https://github.com/dfinity/ic", rev = "23a96f71e4ff434f1aaae04eb1d9e9ab36d663f0" }
+ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
+ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
 ic-certified-map = "0.4"
 rstest = "0.18"
 ic-certification-testing = { path = "../ic-certification-testing" }
