@@ -30,9 +30,33 @@ pub struct Request {
 
 impl Request {
     pub(crate) fn get_uri(&self) -> ResponseVerificationResult<Uri> {
-        let url = urlencoding::decode(&self.url)?;
+        let uri = self
+            .url
+            .parse::<Uri>()
+            .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))?;
 
-        url.parse::<Uri>()
+        // When decoding a URL the path and query string need to be handled differently, this allows for
+        // clients to send encoded URL paths that would match the same decoded URL path but the query string can
+        // still ramain encoded.
+        let authority = uri
+            .authority()
+            .map_or(String::new(), |authority| authority.to_string());
+        let scheme_with_delimiter = uri
+            .scheme_str()
+            .map_or(String::new(), |s| format!("{}://", s));
+        let decoded_path = urlencoding::decode(uri.path())?;
+        let query_string = uri
+            .query()
+            .map(|query| format!("?{}", query))
+            .unwrap_or_default();
+
+        let decoded_url = format!(
+            "{}{}{}{}",
+            scheme_with_delimiter, authority, decoded_path, query_string
+        );
+
+        decoded_url
+            .parse::<Uri>()
             .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))
     }
 }
@@ -115,16 +139,35 @@ mod tests {
 
     #[test]
     fn request_get_encoded_uri() {
-        let req = Request {
-            method: "GET".to_string(),
-            url: "https://canister.com/%73ample-asset.txt".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let test_requests = [
+            (
+                Request {
+                    method: "GET".to_string(),
+                    url: "https://canister.com/%73ample-asset.txt".to_string(),
+                    headers: vec![],
+                    body: vec![],
+                },
+                "/sample-asset.txt",
+                "",
+            ),
+            (
+                Request {
+                    method: "GET".to_string(),
+                    url: "https://canister.com/path/123?foo=test%20component&bar=1".to_string(),
+                    headers: vec![],
+                    body: vec![],
+                },
+                "/path/123",
+                "foo=test%20component&bar=1",
+            ),
+        ];
 
-        let uri = req.get_uri().unwrap();
+        for (req, expected_path, expected_query) in test_requests.iter() {
+            let uri = req.get_uri().unwrap();
 
-        assert_eq!(uri.path(), "/sample-asset.txt");
+            assert_eq!(uri.path(), *expected_path);
+            assert_eq!(uri.query().unwrap_or_default(), *expected_query);
+        }
     }
 }
 
