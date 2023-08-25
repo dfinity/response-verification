@@ -1,12 +1,12 @@
 [package]
 name = "ic-response-verification-test-utils"
-version = "1.0.2"
+version = "1.1.0"
 edition = "2021"
 
 [dependencies]
 base64 = "0.21"
 hex = "0.4"
-ic-certification-testing = { path = "../ic-certification-testing", version = "1.0.2" }
+ic-certification-testing = { path = "../ic-certification-testing", version = "1.1.0" }
 ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
 ic-certified-map = "0.4"
 sha256 = "1.1"
