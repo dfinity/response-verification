@@ -19,6 +19,8 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
+      - uses: ./.github/actions/setup-pnpm
+
       - name: Bump Version
         id: cz
         uses: commitizen-tools/commitizen-action@master
