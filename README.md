@@ -127,7 +127,7 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 - Set the initial version of the package in its package manager file to match the current version in the `version` field in `.cz.yaml`.
 - Add the package's package manager file(s) to the `add-paths` property in the `Create Pull Request` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`.
   - `package.json` for NPM packages
-  - `Cargo.toml` and `Cargo.lock` for Cargo crates
+  - `Cargo.toml` and `Cargo.lock` for Cargo crates that are compiled to WASM (they are excluded from the root workspace), non-WASM Cargo crates (they are part of the root workspace) only need `Cargo.toml`
 - If the package is a Rust crate:
   - Add the package to the `members` section in `Cargo.toml`.
     - If the package must be compiled to WASM then add it to the `exclude` section instead.
