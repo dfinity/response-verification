@@ -4,6 +4,10 @@
 
 - add certificate verification library
 
+### Fix
+
+- fix url decoding for encoded query strings
+
 ## 1.0.2 (2023-08-16)
 
 ### Fix
