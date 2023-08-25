@@ -18,6 +18,8 @@ jobs:
 
       - uses: ./.github/actions/setup-pnpm
 
+      - uses: ./.github/actions/setup-dfx
+
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
