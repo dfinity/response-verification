@@ -16,7 +16,7 @@ include = ["src", "Cargo.toml", "README.md"]
 [dependencies]
 candid = "0.9"
 nom = "7.1"
-ic-certification = { version = "0.26.1", default_features = false }
+ic-certification = { version = "0.26", default_features = false }
 ic-cbor = { path = "../ic-cbor", version = "1.0.2"}
 miracl_core_bls12381 = { version = "4.2", default_features = false, features = ["std", "allow_alt_compress"] }
 thiserror = "1.0"

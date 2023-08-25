@@ -28,7 +28,7 @@ wasm-bindgen = { version = "0.2", optional = true }
 thiserror = "1.0"
 sha2 = "0.10"
 http = "0.2"
-ic-certification = { version = "0.26.1", default_features = false }
+ic-certification = { version = "0.26", default_features = false }
 ic-representation-independent-hash =  { path = "../ic-representation-independent-hash", version = "1.0.2" }
 ic-cbor = { path = "../ic-cbor", version = "1.0.2"}
 ic-certificate-verification ={ path = "../ic-certificate-verification", version = "1.0.2" }
