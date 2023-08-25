@@ -37,7 +37,7 @@ impl Request {
 
         // When decoding a URL the path and query string need to be handled differently, this allows for
         // clients to send encoded URL paths that would match the same decoded URL path but the query string can
-        // still ramain encoded.
+        // still remain encoded.
         let authority = uri
             .authority()
             .map_or(String::new(), |authority| authority.to_string());
