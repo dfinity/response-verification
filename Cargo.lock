@@ -1217,7 +1217,7 @@ dependencies = [
 
 [[package]]
 name = "ic-cbor"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "candid 0.9.1",
  "ic-certification",
@@ -1229,7 +1229,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certificate-verification"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "candid 0.9.1",
  "ic-cbor",
@@ -1256,7 +1256,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
@@ -1474,7 +1474,7 @@ dependencies = [
 
 [[package]]
 name = "ic-representation-independent-hash"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "hex",
  "leb128",
@@ -1483,7 +1483,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "base64 0.21.2",
  "candid 0.9.1",
@@ -1515,7 +1515,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "base64 0.21.2",
  "flate2",
@@ -1532,7 +1532,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-tests"
-version = "1.0.2"
+version = "1.1.0"
 dependencies = [
  "anyhow",
  "hex",
