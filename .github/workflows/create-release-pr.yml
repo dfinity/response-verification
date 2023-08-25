@@ -16,10 +16,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - uses: ./.github/actions/setup-pnpm
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
-
-      - uses: ./.github/actions/setup-pnpm
 
       - name: Bump Version
         id: cz
@@ -31,6 +34,12 @@ jobs:
 
       - name: Print Version
         run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
+
+      - name: DFX prepare Certified Counter
+        working-directory: examples/certified-counter
+        run: |
+          dfx canister create --all
+          dfx generate backend
 
       - name: Update Cargo.lock
         run: |
