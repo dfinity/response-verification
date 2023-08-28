@@ -161,12 +161,14 @@ A Cargo crate can be referenced using a relative path in `Cargo.toml`:
 ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils" }
 ```
 
-If the referenced Cargo crate is also published then the current version must be included:
+If the _referencing_ Cargo crate is published to crates.io then the current version must be included and the _referenced_ crate must also be published:
 
 ```toml
 [dependencies]
 ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils", version = "1.0.0" }
 ```
+
+If a version is included in a dev dependency then the referenced dev dependency must also be published, but the version can be omitted for dev dependencies to avoid this.
 
 ### Referencing an NPM package
 

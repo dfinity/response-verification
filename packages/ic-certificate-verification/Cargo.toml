@@ -9,7 +9,13 @@ documentation = "https://docs.rs/ic-certificate-verification"
 homepage = "https://github.com/dfinity/response-verification#readme"
 repository = "https://github.com/dfinity/response-verification"
 categories = ["api-bindings", "authentication", "cryptography"]
-keywords = ["internet-computer", "icp", "dfinity", "certificate", "verification"]
+keywords = [
+    "internet-computer",
+    "icp",
+    "dfinity",
+    "certificate",
+    "verification",
+]
 edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
@@ -17,11 +23,14 @@ include = ["src", "Cargo.toml", "README.md"]
 candid = "0.9"
 nom = "7.1"
 ic-certification = { version = "0.26", default_features = false }
-ic-cbor = { path = "../ic-cbor", version = "1.1.0"}
-miracl_core_bls12381 = { version = "4.2", default_features = false, features = ["std", "allow_alt_compress"] }
+ic-cbor = { path = "../ic-cbor", version = "1.1.0" }
+miracl_core_bls12381 = { version = "4.2", default_features = false, features = [
+    "std",
+    "allow_alt_compress",
+] }
 thiserror = "1.0"
 leb128 = "0.2"
 
 [dev-dependencies]
-ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils", version = "1.1.0" }
-ic-certification-testing = { path = "../ic-certification-testing", version = "1.1.0" }
+ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils" }
+ic-certification-testing = { path = "../ic-certification-testing" }

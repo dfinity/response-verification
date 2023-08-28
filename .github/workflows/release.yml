@@ -53,6 +53,16 @@ jobs:
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
+      - name: Release ic-cbor Cargo crate
+        run: cargo publish -p ic-cbor --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
+      - name: Release ic-certificate-verification Cargo crate
+        run: cargo publish -p ic-certificate-verification --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
       - name: Release ic-response-verification Cargo crate
         run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
         env:
@@ -68,8 +78,10 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: >
-            target/package/ic-response-verification-${{ github.ref_name }}.crate,
             target/package/ic-representation-independent-hash-${{ github.ref_name }}.crate,
+            target/package/ic-cbor-${{ github.ref_name }}.crate,
+            target/package/ic-certificate-verification-${{ github.ref_name }}.crate,
+            target/package/ic-response-verification-${{ github.ref_name }}.crate,
             dfinity-response-verification-${{ github.ref_name }}.tgz
           bodyFile: 'RELEASE_NOTES.md'
           tag: '${{ github.ref_name }}'
