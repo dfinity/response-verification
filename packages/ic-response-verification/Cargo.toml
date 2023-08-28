@@ -29,9 +29,9 @@ thiserror = "1.0"
 sha2 = "0.10"
 http = "0.2"
 ic-certification = { version = "0.26", default_features = false }
-ic-representation-independent-hash =  { path = "../ic-representation-independent-hash", version = "1.1.0" }
-ic-cbor = { path = "../ic-cbor", version = "1.1.0"}
-ic-certificate-verification ={ path = "../ic-certificate-verification", version = "1.1.0" }
+ic-representation-independent-hash = { path = "../ic-representation-independent-hash", version = "1.1.0" }
+ic-cbor = { path = "../ic-cbor", version = "1.1.0" }
+ic-certificate-verification = { path = "../ic-certificate-verification", version = "1.1.0" }
 flate2 = "1.0"
 leb128 = "0.2"
 candid = "0.9"
