@@ -162,7 +162,7 @@ fn v1_verification(
             validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
             certificate.verify(canister_id, ic_public_key)?;
 
-            let request_uri = &request.get_uri()?;
+            let request_path = &request.get_path()?;
             let decoded_body = decode_body(&response.body, &encoding)?;
             let decoded_body_sha = hash(decoded_body.as_slice());
 
@@ -170,10 +170,10 @@ fn v1_verification(
                 return Err(ResponseVerificationError::InvalidTree);
             }
 
-            let mut valid_body = validate_body(&tree, request_uri, &decoded_body_sha);
+            let mut valid_body = validate_body(&tree, request_path, &decoded_body_sha);
             if encoding.is_some() && !valid_body {
                 let body_sha = hash(response.body.as_slice());
-                valid_body = validate_body(&tree, request_uri, &body_sha);
+                valid_body = validate_body(&tree, request_path, &body_sha);
             }
 
             if !valid_body {
@@ -208,7 +208,7 @@ fn v2_verification(
     certification: Option<Certification>,
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<VerificationInfo> {
-    let request_uri = request.get_uri()?;
+    let request_path = request.get_path()?;
 
     let (expr_path, expr_hash, certificate, tree) = match (expr_path, expr_hash, certificate, tree)
     {
@@ -235,7 +235,7 @@ fn v2_verification(
         return Err(ResponseVerificationError::InvalidTree);
     }
 
-    if !validate_expr_path(&expr_path, &request_uri, &tree) {
+    if !validate_expr_path(&expr_path, &request_path, &tree) {
         return Err(ResponseVerificationError::InvalidExpressionPath);
     }
 
