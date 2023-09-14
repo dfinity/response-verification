@@ -1,8 +1,7 @@
-use http::Uri;
 use ic_certification::{hash_tree::Sha256Digest, HashTree, LookupResult};
 
-pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest) -> bool {
-    let asset_path = ["http_assets".as_bytes(), request_uri.path().as_bytes()];
+pub fn validate_body(tree: &HashTree, request_path: &str, body_sha: &Sha256Digest) -> bool {
+    let asset_path = ["http_assets".as_bytes(), request_path.as_bytes()];
     let index_fallback_path = ["http_assets".as_bytes(), "/index.html".as_bytes()];
 
     let tree_sha = match tree.lookup_path(&asset_path) {
@@ -27,6 +26,7 @@ pub fn validate_body(tree: &HashTree, request_uri: &Uri, body_sha: &Sha256Digest
 mod tests {
     use super::*;
     use crate::test_utils::test_utils::{create_tree, CreateTreeOptions};
+    use http::Uri;
     use ic_representation_independent_hash::hash;
 
     static CANISTER_ID: &str = "r7inp-6aaaa-aaaaa-aaabq-cai";
@@ -44,7 +44,7 @@ mod tests {
         };
         let tree = create_tree(Some(tree_options));
 
-        let result = validate_body(&tree, &uri, &body_sha);
+        let result = validate_body(&tree, uri.path(), &body_sha);
 
         assert!(result);
     }
@@ -66,7 +66,7 @@ mod tests {
         };
         let tree = create_tree(Some(tree_options));
 
-        let result = validate_body(&tree, &uri, &body_sha);
+        let result = validate_body(&tree, uri.path(), &body_sha);
 
         assert!(result);
     }
@@ -84,7 +84,7 @@ mod tests {
         };
         let tree = create_tree(Some(tree_options));
 
-        let result = validate_body(&tree, &uri, &body_sha);
+        let result = validate_body(&tree, uri.path(), &body_sha);
 
         assert!(!result);
     }
@@ -102,7 +102,7 @@ mod tests {
         };
         let tree = create_tree(Some(tree_options));
 
-        let result = validate_body(&tree, &uri, &body_sha);
+        let result = validate_body(&tree, uri.path(), &body_sha);
 
         assert!(!result);
     }
@@ -120,7 +120,7 @@ mod tests {
         };
         let tree = create_tree(Some(tree_options));
 
-        let result = validate_body(&tree, &uri, &body_sha);
+        let result = validate_body(&tree, uri.path(), &body_sha);
 
         assert!(!result);
     }

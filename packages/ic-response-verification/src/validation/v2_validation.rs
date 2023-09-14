@@ -40,19 +40,19 @@ fn expr_path_has_valid_suffix(expr_path: &[String]) -> bool {
     expr_path.ends_with(&["<$>".to_string()]) || expr_path.ends_with(&["<*>".to_string()])
 }
 
-pub fn validate_expr_path(expr_path: &[String], request_url: &http::Uri, tree: &HashTree) -> bool {
+pub fn validate_expr_path(expr_path: &[String], request_path: &str, tree: &HashTree) -> bool {
     // if a path does not end with a valid delimiter then it is invalid
     if !expr_path_has_valid_suffix(expr_path) {
         return false;
     }
 
     let mut request_url_parts = vec!["http_expr"];
-    request_url_parts.extend(request_url.path().split('/').filter(|e| !e.is_empty()));
+    request_url_parts.extend(request_path.split('/').filter(|e| !e.is_empty()));
 
     // make sure to treat a request for a directory and a file as different paths
     // i.e. /app is not the same as /app/
     // we do this by inserting an empty space for directory paths
-    if request_url.path().ends_with('/') {
+    if request_path.ends_with('/') {
         request_url_parts.push("");
     }
 
@@ -621,7 +621,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(result);
     }
@@ -635,7 +635,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(result);
     }
@@ -657,7 +657,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(result);
     }
@@ -677,7 +677,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(result);
     }
@@ -700,7 +700,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -723,7 +723,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -745,7 +745,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -773,7 +773,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -798,7 +798,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -823,7 +823,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -840,7 +840,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -866,7 +866,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -880,7 +880,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, &request_uri, &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
 
         assert!(!result);
     }
@@ -980,7 +980,7 @@ mod tests {
             let expr_path: Vec<String> = path.iter().map(|x| x.to_string()).collect();
             let result = validate_expr_path(
                 &expr_path,
-                &http::Uri::try_from(request_uri).unwrap(),
+                http::Uri::try_from(request_uri).unwrap().path(),
                 &tree,
             );
             assert!(result);
@@ -1033,7 +1033,7 @@ mod tests {
             let expr_path: Vec<String> = path.iter().map(|x| x.to_string()).collect();
             let result = validate_expr_path(
                 &expr_path,
-                &http::Uri::try_from(request_uri).unwrap(),
+                http::Uri::try_from(request_uri).unwrap().path(),
                 &tree,
             );
             assert!(!result);

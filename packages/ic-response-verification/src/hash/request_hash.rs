@@ -18,10 +18,9 @@ pub fn request_hash(
         Value::String(request.method.to_string()),
     ));
 
-    let request_uri = request.get_uri()?;
-    let filtered_query = request_uri
-        .query()
-        .map(|query| get_filtered_query(query, request_certification));
+    let filtered_query = request
+        .get_query()?
+        .map(|query| get_filtered_query(&query, request_certification));
     if let Some(query_hash) = filtered_query {
         filtered_headers.push((":ic-cert-query".into(), Value::String(query_hash)))
     }

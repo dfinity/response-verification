@@ -29,34 +29,20 @@ pub struct Request {
 }
 
 impl Request {
-    pub(crate) fn get_uri(&self) -> ResponseVerificationResult<Uri> {
+    pub(crate) fn get_path(&self) -> ResponseVerificationResult<String> {
         let uri = self
             .url
             .parse::<Uri>()
             .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))?;
 
-        // When decoding a URL the path and query string need to be handled differently, this allows for
-        // clients to send encoded URL paths that would match the same decoded URL path but the query string can
-        // still remain encoded.
-        let authority = uri
-            .authority()
-            .map_or(String::new(), |authority| authority.to_string());
-        let scheme_with_delimiter = uri
-            .scheme_str()
-            .map_or(String::new(), |s| format!("{}://", s));
-        let decoded_path = urlencoding::decode(uri.path())?;
-        let query_string = uri
-            .query()
-            .map(|query| format!("?{}", query))
-            .unwrap_or_default();
+        let decoded_url = urlencoding::decode(uri.path()).map(|path| path.into_owned())?;
+        Ok(decoded_url)
+    }
 
-        let decoded_url = format!(
-            "{}{}{}{}",
-            scheme_with_delimiter, authority, decoded_path, query_string
-        );
-
-        decoded_url
+    pub(crate) fn get_query(&self) -> ResponseVerificationResult<Option<String>> {
+        self.url
             .parse::<Uri>()
+            .map(|uri| uri.query().map(|uri| uri.to_owned()))
             .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))
     }
 }
@@ -132,9 +118,11 @@ mod tests {
             body: vec![],
         };
 
-        let uri = req.get_uri().unwrap();
+        let path = req.get_path().unwrap();
+        let query = req.get_query().unwrap();
 
-        assert_eq!(uri.path(), "/sample-asset.txt");
+        assert_eq!(path, "/sample-asset.txt");
+        assert!(query.is_none());
     }
 
     #[test]
@@ -160,13 +148,34 @@ mod tests {
                 "/path/123",
                 "foo=test%20component&bar=1",
             ),
+            (
+                Request {
+                    method: "GET".to_string(),
+                    url: "https://canister.com/a%20file.txt".to_string(),
+                    headers: vec![],
+                    body: vec![],
+                },
+                "/a file.txt",
+                "",
+            ),
+            (
+                Request {
+                    method: "GET".to_string(),
+                    url: "https://canister.com/mujin0722/3888-zjfrd-tqaaa-aaaaf-qakia-cai/%E6%97%A0%E8%AE%BA%E7%BE%8E%E8%81%94%E5%82%A8%E6%98%AF%E5%90%A6%E5%8A%A0%E6%81%AFbtc%E4%BB%8D%E5%B0%86%E5%9B%9E%E5%88%B07%E4%B8%87%E5%88%80".to_string(),
+                    headers: vec![],
+                    body: vec![],
+                },
+                "/mujin0722/3888-zjfrd-tqaaa-aaaaf-qakia-cai/无论美联储是否加息btc仍将回到7万刀",
+                "",
+            ),
         ];
 
         for (req, expected_path, expected_query) in test_requests.iter() {
-            let uri = req.get_uri().unwrap();
+            let path = req.get_path().unwrap();
+            let query = req.get_query().unwrap();
 
-            assert_eq!(uri.path(), *expected_path);
-            assert_eq!(uri.query().unwrap_or_default(), *expected_query);
+            assert_eq!(path, *expected_path);
+            assert_eq!(query.unwrap_or_default(), *expected_query);
         }
     }
 }
