@@ -1217,10 +1217,10 @@ dependencies = [
 
 [[package]]
 name = "ic-cbor"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "candid 0.9.1",
- "ic-certification 1.1.0",
+ "ic-certification 1.2.0",
  "ic-response-verification-test-utils",
  "leb128",
  "nom",
@@ -1229,11 +1229,11 @@ dependencies = [
 
 [[package]]
 name = "ic-certificate-verification"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "candid 0.9.1",
  "ic-cbor",
- "ic-certification 1.1.0",
+ "ic-certification 1.2.0",
  "ic-certification-testing",
  "ic-response-verification-test-utils",
  "leb128",
@@ -1256,7 +1256,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "hex",
  "serde",
@@ -1267,7 +1267,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
@@ -1485,7 +1485,7 @@ dependencies = [
 
 [[package]]
 name = "ic-representation-independent-hash"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "hex",
  "leb128",
@@ -1494,7 +1494,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "base64 0.21.2",
  "candid 0.9.1",
@@ -1503,7 +1503,7 @@ dependencies = [
  "http",
  "ic-cbor",
  "ic-certificate-verification",
- "ic-certification 1.1.0",
+ "ic-certification 1.2.0",
  "ic-certification-testing",
  "ic-certified-map",
  "ic-crypto-tree-hash",
@@ -1526,12 +1526,12 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "base64 0.21.2",
  "flate2",
  "hex",
- "ic-certification 1.1.0",
+ "ic-certification 1.2.0",
  "ic-certification-testing",
  "ic-certified-map",
  "ic-types",
@@ -1543,7 +1543,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-tests"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "anyhow",
  "hex",
