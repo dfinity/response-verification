@@ -737,7 +737,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
@@ -760,7 +760,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing-wasm"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "console_error_panic_hook",
  "ic-certification-testing",

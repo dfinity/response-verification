@@ -1,7 +1,7 @@
 [package]
 name = "ic-certificate-verification"
 description = "Certificate verification for the Internet Computer"
-version = "1.1.0"
+version = "1.2.0"
 authors = ["DFINITY Stiftung"]
 license = "Apache-2.0"
 readme = "README.md"
@@ -22,8 +22,8 @@ include = ["src", "Cargo.toml", "README.md"]
 [dependencies]
 candid = "0.9"
 nom = "7.1"
-ic-certification = { path = "../ic-certification", version = "1.1.0", default_features = false }
-ic-cbor = { path = "../ic-cbor", version = "1.1.0" }
+ic-certification = { path = "../ic-certification", version = "1.2.0", default_features = false }
+ic-cbor = { path = "../ic-cbor", version = "1.2.0" }
 miracl_core_bls12381 = { version = "4.2", default_features = false, features = [
     "std",
     "allow_alt_compress",
