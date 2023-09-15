@@ -35,8 +35,8 @@ impl Request {
             .parse::<Uri>()
             .map_err(|_| ResponseVerificationError::MalformedUrl(self.url.clone()))?;
 
-        let decoded_url = urlencoding::decode(uri.path()).map(|path| path.into_owned())?;
-        Ok(decoded_url)
+        let decoded_path = urlencoding::decode(uri.path()).map(|path| path.into_owned())?;
+        Ok(decoded_path)
     }
 
     pub(crate) fn get_query(&self) -> ResponseVerificationResult<Option<String>> {
