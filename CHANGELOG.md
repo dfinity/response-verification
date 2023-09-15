@@ -4,6 +4,14 @@
 
 - add ic-certification library
 
+### Fix
+
+- handle non-latin characters in URL path
+
+### Refactor
+
+- rename variable
+
 ## 1.1.0 (2023-08-25)
 
 ### Feat
