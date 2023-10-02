@@ -9,6 +9,14 @@ thread_local! {
     static TREE: RefCell<RbTree<&'static str, Vec<u8>>> = RefCell::new(RbTree::new());
 }
 
+use sha2::{Digest, Sha256};
+
+pub fn hash(data: &[u8]) -> [u8; 32] {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    hasher.finalize().into()
+}
+
 #[update]
 fn inc_count() {
     let count = COUNTER.with(|counter| {
@@ -19,10 +27,7 @@ fn inc_count() {
 
     TREE.with(|tree| {
         let mut tree = tree.borrow_mut();
-        tree.insert(
-            "count",
-            hex::decode(sha256::digest(&count.to_be_bytes())).unwrap(),
-        );
+        tree.insert("count", hex::decode(hash(&count.to_be_bytes())).unwrap());
 
         ic_cdk::api::set_certified_data(&tree.root_hash());
     })

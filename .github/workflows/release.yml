@@ -53,6 +53,11 @@ jobs:
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
+      - name: Release ic-certification Cargo crate
+        run: cargo publish -p ic-certification --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
       - name: Release ic-cbor Cargo crate
         run: cargo publish -p ic-cbor --token ${CRATES_TOKEN}
         env:
@@ -60,11 +65,6 @@ jobs:
 
       - name: Release ic-certificate-verification Cargo crate
         run: cargo publish -p ic-certificate-verification --token ${CRATES_TOKEN}
-        env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
-
-      - name: Release ic-certification Cargo crate
-        run: cargo publish -p ic-certification --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 

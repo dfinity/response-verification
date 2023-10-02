@@ -1,14 +1,13 @@
 use ic_certified_map::Hash;
-use sha256::Sha256Digest;
+use sha2::{Digest, Sha256};
 
-pub fn hash<T>(content: T) -> Hash
+pub fn hash<T>(data: T) -> Hash
 where
-    T: Sha256Digest,
+    T: AsRef<[u8]>,
 {
-    let hash = sha256::digest(content);
-    let decoded_hash = hex::decode(hash).unwrap();
-
-    decoded_hash.try_into().unwrap()
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    hasher.finalize().into()
 }
 
 pub fn hash_from_hex<T: AsRef<[u8]>>(data: T) -> Hash {

@@ -2,15 +2,15 @@
   "name": "ic-response-verification-tests",
   "version": "1.2.0",
   "dependencies": {
-    "@dfinity/agent": "~0.18.0",
-    "@dfinity/principal": "~0.18.0",
-    "@dfinity/candid": "~0.18.0",
+    "@dfinity/agent": "~0.19.3",
+    "@dfinity/principal": "~0.19.3",
+    "@dfinity/candid": "~0.19.3",
     "@dfinity/response-verification": "workspace:*",
     "isomorphic-fetch": "^3.0.0"
   },
   "devDependencies": {
-    "@types/isomorphic-fetch": "^0.0.36",
-    "@types/node": "^20.1.1",
+    "@types/isomorphic-fetch": "^0.0.37",
+    "@types/node": "^18.0.0",
     "ts-node": "^10.9.1"
   }
 }
