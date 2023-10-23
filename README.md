@@ -35,7 +35,7 @@ This package encapsulates the protocol for such verification. It is used by [the
 | `cargo doc -p ic-response-verification --no-deps --open`                | Build Cargo crate docs |
 | `pnpm run -F @dfinity/response-verification build`                      | Build NPM package      |
 | `pnpm run -F @dfinity/response-verification test`                       | Test NPM package       |
-| `./scripts/e2e/sh`                                                      | Run e2e tests          |
+| `./scripts/e2e.sh`                                                      | Run e2e tests          |
 
 ### Certificate Verification
 
