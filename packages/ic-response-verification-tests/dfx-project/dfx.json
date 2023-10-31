@@ -4,7 +4,7 @@
       "frontend": {
         "entrypoint": "canisters/frontend/src/index.html"
       },
-      "source": ["canisters/frontend/assets", "dist/frontend/"],
+      "source": ["dist/frontend/"],
       "type": "assets"
     }
   }

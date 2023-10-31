@@ -1,6 +1,0 @@
-{
-  "include": ["./wasm-tests/**/*"],
-  "compilerOptions": {
-    "esModuleInterop": true
-  }
-}
