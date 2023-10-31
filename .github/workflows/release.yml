@@ -41,10 +41,6 @@ jobs:
       - name: Build NPM packages
         run: pnpm build
 
-      - name: Pack @dfinity/response-verification NPM package
-        working-directory: packages/ic-response-verification-wasm
-        run: npm pack --pack-destination ../../
-
       - name: Generate release notes
         run: cz changelog ${{ github.ref_name }} --file-name RELEASE_NOTES.md
 
@@ -58,6 +54,29 @@ jobs:
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
+      # `ic-certification-testing` cannot be published since it relies on unpublished crates
+      # from the `ic` repository. Namely:
+      # - ic-types
+      # - ic-crypto-tree-hash
+      # - ic-crypto-internal-threshold-sig-bls12381
+      # - ic-crypto-internal-seed
+      # - ic-crypto-internal-types
+      #
+      # - name: Release ic-certification-testing Cargo crate
+      #   run: cargo publish -p ic-certification-testing --token ${CRATES_TOKEN}
+      #   env:
+      #     CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
+      - name: Pack @dfinity/certification-testing NPM package
+        working-directory: packages/ic-certification-testing-wasm
+        run: npm pack --pack-destination ../../
+
+      - name: Release @dfinity/certification-testing NPM package
+        working-directory: packages/ic-certification-testing-wasm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Release ic-cbor Cargo crate
         run: cargo publish -p ic-cbor --token ${CRATES_TOKEN}
         env:
@@ -68,10 +87,24 @@ jobs:
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
+      - name: Pack @dfinity/certificate-verification NPM package
+        working-directory: packages/certificate-verification-js
+        run: npm pack --pack-destination ../../
+
+      - name: Release @dfinity/certificate-verification NPM package
+        working-directory: packages/certificate-verification-js
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Release ic-response-verification Cargo crate
         run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
+      - name: Pack @dfinity/response-verification NPM package
+        working-directory: packages/ic-response-verification-wasm
+        run: npm pack --pack-destination ../../
 
       - name: Release @dfinity/response-verification NPM package
         working-directory: packages/ic-response-verification-wasm
@@ -88,6 +121,8 @@ jobs:
             target/package/ic-cbor-${{ github.ref_name }}.crate,
             target/package/ic-certificate-verification-${{ github.ref_name }}.crate,
             target/package/ic-response-verification-${{ github.ref_name }}.crate,
+            dfinity-certification-testing-${{ github.ref_name }}.tgz,
+            dfinity-certificate-verification-${{ github.ref_name }}.tgz,
             dfinity-response-verification-${{ github.ref_name }}.tgz
           bodyFile: 'RELEASE_NOTES.md'
           tag: '${{ github.ref_name }}'
