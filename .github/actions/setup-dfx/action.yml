@@ -9,10 +9,12 @@ runs:
       with:
         path: /usr/local/bin/dfx
         key: dfx-cache-${{ env.dfx_version }}
+
     - name: Install dfx
       uses: dfinity/setup-dfx@main
       with:
         dfx-version: "0.14.2"
+
     - name: Configure DFX
       shell: bash
       run: |
