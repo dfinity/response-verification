@@ -2,7 +2,7 @@
 
 [Certificate verification](https://internetcomputer.org/docs/current/references/ic-interface-spec#canister-signatures) on the [Internet Computer](https://dfinity.org) is the process of verifying that a canister's response to a [query call](https://internetcomputer.org/docs/current/references/ic-interface-spec#http-query) has gone through consensus with other replicas hosting the same canister.
 
-This package provides a set of utilities to create these certificates for the purpose of testing in any Rust client that may need to verify them.
+This package provides a set of utilities to create these certificates for the purpose of testing in any Javascript client with `wasm` support that may need to verify them.
 
 ## Usage
 
