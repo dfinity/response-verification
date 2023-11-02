@@ -1,0 +1,12 @@
+{
+  "include": ["./**/*.ts"],
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ESNext"],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["bun-types"]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "ic-response-verification-tests",
+  "version": "1.2.0",
+  "scripts": {
+    "test": "tsc && bun test"
+  },
+  "devDependencies": {
+    "@dfinity/agent": "~0.19.3",
+    "@dfinity/candid": "~0.19.3",
+    "@dfinity/identity": "~0.19.3",
+    "@dfinity/principal": "~0.19.3",
+    "@dfinity/ic-management": "^1.0.0",
+    "@dfinity/http-canister-client": "https://gitpkg.now.sh/dfinity/http-gateway/packages/http-canister-client-js?7f42a1a3f94aee11218e3bb8b08ccdff9be6cecc",
+    "@dfinity/response-verification": "workspace:*",
+    "bun-types": "^1.0.7",
+    "ts-node": "^10.9.1"
+  }
+}

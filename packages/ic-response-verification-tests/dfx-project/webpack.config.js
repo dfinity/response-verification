@@ -32,6 +32,11 @@ module.exports = {
           to: '.ic-assets.json5',
           noErrorOnMissing: true,
         },
+        {
+          from: 'canisters/frontend/assets',
+          to: '.',
+          noErrorOnMissing: true,
+        },
       ],
     }),
   ],

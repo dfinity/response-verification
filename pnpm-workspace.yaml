@@ -2,7 +2,7 @@ packages:
   - 'packages/certificate-verification-js'
   - 'packages/ic-certification-testing-wasm'
   - 'packages/ic-response-verification-wasm'
-  - 'packages/ic-response-verification-tests'
+  - 'packages/ic-response-verification-tests/wasm-tests'
   - 'packages/ic-response-verification-tests/dfx-project'
   - 'examples/certified-counter'
   - 'examples/nodejs'
