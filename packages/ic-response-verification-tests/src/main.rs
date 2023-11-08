@@ -93,8 +93,8 @@ async fn v2_test(canister_id: &str, agent: &Agent) -> Result<()> {
             "canisters/frontend/assets/hello/index.html",
         ], // load hello/index.html when requesting full file path
         // *** /world.html ***
-        ["GET", "/world", "canisters/frontend/assets/world.html"], // load hello/index.html when requesting /hello
-        ["GET", "/world.html", "canisters/frontend/assets/world.html"], // load hello/index.html when requesting full file path
+        ["GET", "/world", "canisters/frontend/assets/world.html"], // load world/index.html when requesting /world
+        ["GET", "/world.html", "canisters/frontend/assets/world.html"], // load world.html when requesting full file path
         [
             "GET",
             "/sample-asset.txt",
