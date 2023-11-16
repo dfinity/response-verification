@@ -1,4 +1,4 @@
-use ic_certified_map::{AsHashTree, HashTree, RbTree};
+use ic_certification::{AsHashTree, Hash, HashTree, RbTree};
 
 pub trait NestedTreeKeyRequirements: Clone + AsRef<[u8]> + 'static {}
 pub trait NestedTreeValueRequirements: AsHashTree + 'static {}
@@ -18,14 +18,14 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> Default for N
 }
 
 impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> AsHashTree for NestedTree<K, V> {
-    fn root_hash(&self) -> ic_certified_map::Hash {
+    fn root_hash(&self) -> Hash {
         match self {
             NestedTree::Leaf(a) => a.root_hash(),
             NestedTree::Nested(tree) => tree.root_hash(),
         }
     }
 
-    fn as_hash_tree(&self) -> HashTree<'_> {
+    fn as_hash_tree(&self) -> HashTree {
         match self {
             NestedTree::Leaf(a) => a.as_hash_tree(),
             NestedTree::Nested(tree) => tree.as_hash_tree(),

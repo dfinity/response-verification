@@ -28,7 +28,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Build Cargo crates
-        run: cargo build --release
+        run: cargo build --release --workspace --exclude certified_counter_backend
 
       - name: DFX prepare Certified Counter
         working-directory: examples/certified-counter

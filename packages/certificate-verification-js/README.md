@@ -26,7 +26,7 @@ service : {
 };
 ```
 
-Check [ic-certified-map](https://github.com/dfinity/cdk-rs/tree/main/library/ic-certified-map) for details on how to create `certificate` and `witness` inside your canister.
+Check [ic-certification](https://docs.rs/ic_certification/latest/ic_certification/) for details on how to create `certificate` and `witness` inside your canister.
 
 `calculateDataHash` is a userland provided function that can calculate the hash of the data returned from the canister. This must be calculated in the same way on the canister and the frontend.
 

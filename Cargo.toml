@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "examples/rust",
+    "examples/certified-counter/src/backend",
     "packages/ic-cbor",
     "packages/ic-certification",
     "packages/ic-certificate-verification",
@@ -14,7 +15,6 @@ members = [
 # https://github.com/rust-lang/cargo/issues/9406
 # these projects need wasm32-unknown-unknown as their target
 exclude = [
-    "examples/certified-counter/src/backend",
     "packages/ic-response-verification-wasm",
     "packages/ic-certification-testing-wasm",
 ]

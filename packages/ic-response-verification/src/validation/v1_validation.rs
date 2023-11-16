@@ -1,6 +1,6 @@
-use ic_certification::{hash_tree::Sha256Digest, HashTree, LookupResult};
+use ic_certification::{hash_tree::Hash, HashTree, LookupResult};
 
-pub fn validate_body(tree: &HashTree, request_path: &str, body_sha: &Sha256Digest) -> bool {
+pub fn validate_body(tree: &HashTree, request_path: &str, body_sha: &Hash) -> bool {
     let asset_path = ["http_assets".as_bytes(), request_path.as_bytes()];
     let index_fallback_path = ["http_assets".as_bytes(), "/index.html".as_bytes()];
 

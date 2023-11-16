@@ -11,7 +11,7 @@ use crate::{
 };
 use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
 use ic_certificate_verification::{validate_certificate_time, VerifyCertificate};
-use ic_certification::{hash_tree::Sha256Digest, Certificate, HashTree};
+use ic_certification::{hash_tree::Hash, Certificate, HashTree};
 use ic_representation_independent_hash::hash;
 
 /// The minimum verification version supported by this package.
@@ -36,7 +36,7 @@ pub fn verify_request_response_pair(
     let mut version = MIN_VERIFICATION_VERSION;
     let mut expr_path: Option<Vec<String>> = None;
     let mut certification: Option<Certification> = None;
-    let mut expr_hash: Option<Sha256Digest> = None;
+    let mut expr_hash: Option<Hash> = None;
 
     for (name, value) in response.headers.iter() {
         if name.eq_ignore_ascii_case("Ic-Certificate") {
@@ -109,7 +109,7 @@ fn verification(
     certificate: Option<Certificate>,
     encoding: Option<String>,
     expr_path: Option<Vec<String>>,
-    expr_hash: Option<Sha256Digest>,
+    expr_hash: Option<Hash>,
     certification: Option<Certification>,
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<VerificationInfo> {
@@ -204,7 +204,7 @@ fn v2_verification(
     tree: Option<HashTree>,
     certificate: Option<Certificate>,
     expr_path: Option<Vec<String>>,
-    expr_hash: Option<Sha256Digest>,
+    expr_hash: Option<Hash>,
     certification: Option<Certification>,
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<VerificationInfo> {

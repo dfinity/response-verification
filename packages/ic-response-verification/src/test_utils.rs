@@ -1,6 +1,6 @@
 #[cfg(test)]
 pub mod test_utils {
-    use ic_certification::hash_tree::{fork, label, leaf, pruned_from_hex, Sha256Digest};
+    use ic_certification::hash_tree::{fork, label, leaf, pruned_from_hex, Hash};
     use ic_certification::HashTree;
     use ic_response_verification_test_utils::{base64_encode, hex_decode};
 
@@ -48,7 +48,7 @@ pub mod test_utils {
         pruned_from_hex(data).unwrap()
     }
 
-    pub fn sha256_from_hex(data: &str) -> Sha256Digest {
+    pub fn sha256_from_hex(data: &str) -> Hash {
         TryFrom::try_from(hex_decode(data)).unwrap()
     }
 

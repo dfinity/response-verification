@@ -8,7 +8,7 @@ use std::{
 };
 
 /// Sha256 Digest: 32 bytes
-pub type Sha256Digest = [u8; 32];
+pub type Hash = [u8; 32];
 
 #[derive(Clone, Hash, Ord, PartialOrd, Eq, PartialEq)]
 /// For labeled [HashTreeNode]
@@ -171,7 +171,7 @@ pub enum SubtreeLookupResult<Storage: AsRef<[u8]>> {
 /// A HashTree representing a full tree.
 #[derive(Clone, PartialEq, Eq)]
 pub struct HashTree<Storage: AsRef<[u8]>> {
-    root: HashTreeNode<Storage>,
+    pub(crate) root: HashTreeNode<Storage>,
 }
 
 impl<Storage: AsRef<[u8]>> fmt::Debug for HashTree<Storage> {
@@ -186,7 +186,7 @@ impl<Storage: AsRef<[u8]>> fmt::Debug for HashTree<Storage> {
 impl<Storage: AsRef<[u8]>> HashTree<Storage> {
     /// Recomputes root hash of the full tree that this hash tree was constructed from.
     #[inline]
-    pub fn digest(&self) -> Sha256Digest {
+    pub fn digest(&self) -> Hash {
         self.root.digest()
     }
 
@@ -271,7 +271,7 @@ pub fn leaf<Storage: AsRef<[u8]>, L: Into<Storage>>(leaf: L) -> HashTree<Storage
 
 /// Create a pruned tree node.
 #[inline]
-pub fn pruned<Storage: AsRef<[u8]>, C: Into<Sha256Digest>>(content: C) -> HashTree<Storage> {
+pub fn pruned<Storage: AsRef<[u8]>, C: Into<Hash>>(content: C) -> HashTree<Storage> {
     HashTree {
         root: HashTreeNode::Pruned(content.into()),
     }
@@ -283,7 +283,7 @@ pub fn pruned<Storage: AsRef<[u8]>, C: Into<Sha256Digest>>(content: C) -> HashTr
 pub fn pruned_from_hex<Storage: AsRef<[u8]>, C: AsRef<str>>(
     content: C,
 ) -> Result<HashTree<Storage>, FromHexError> {
-    let mut decode: Sha256Digest = [0; 32];
+    let mut decode: Hash = [0; 32];
     hex::decode_to_slice(content.as_ref(), &mut decode)?;
 
     Ok(pruned(decode))
@@ -315,7 +315,7 @@ pub enum HashTreeNode<Storage: AsRef<[u8]>> {
     Fork(Box<(Self, Self)>),
     Labeled(Label<Storage>, Box<Self>),
     Leaf(Storage),
-    Pruned(Sha256Digest),
+    Pruned(Hash),
 }
 
 impl<Storage: AsRef<[u8]>> fmt::Debug for HashTreeNode<Storage> {
@@ -401,7 +401,7 @@ impl<Storage: AsRef<[u8]>> HashTreeNode<Storage> {
 
     /// Calculate the digest of this node only.
     #[inline]
-    pub fn digest(&self) -> Sha256Digest {
+    pub fn digest(&self) -> Hash {
         let mut hasher = sha2::Sha256::new();
         self.domain_sep(&mut hasher);
 
@@ -779,6 +779,37 @@ mod serde_impl {
             })
         }
     }
+}
+
+/// Identifiably hashes a fork in the branch. Used for hashing [`HashTree::Fork`].
+pub fn fork_hash(l: &Hash, r: &Hash) -> Hash {
+    let mut h = domain_sep("ic-hashtree-fork");
+    h.update(&l[..]);
+    h.update(&r[..]);
+    h.finalize().into()
+}
+
+/// Identifiably hashes a leaf node's data. Used for hashing [`HashTree::Leaf`].
+pub fn leaf_hash(data: &[u8]) -> Hash {
+    let mut h = domain_sep("ic-hashtree-leaf");
+    h.update(data);
+    h.finalize().into()
+}
+
+/// Identifiably hashes a label for this branch. Used for hashing [`HashTree::Labeled`].
+pub fn labeled_hash(label: &[u8], content_hash: &Hash) -> Hash {
+    let mut h = domain_sep("ic-hashtree-labeled");
+    h.update(label);
+    h.update(&content_hash[..]);
+    h.finalize().into()
+}
+
+fn domain_sep(s: &str) -> sha2::Sha256 {
+    let buf: [u8; 1] = [s.len() as u8];
+    let mut h = sha2::Sha256::new();
+    h.update(&buf[..]);
+    h.update(s.as_bytes());
+    h
 }
 
 #[cfg(test)]

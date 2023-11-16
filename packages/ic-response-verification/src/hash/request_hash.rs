@@ -1,6 +1,6 @@
 use crate::error::ResponseVerificationResult;
 use crate::types::{Request, RequestCertification};
-use ic_certification::hash_tree::Sha256Digest;
+use ic_certification::hash_tree::Hash;
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 /// Calculates the
@@ -10,7 +10,7 @@ use ic_representation_independent_hash::{hash, representation_independent_hash, 
 pub fn request_hash(
     request: &Request,
     request_certification: &RequestCertification,
-) -> ResponseVerificationResult<Sha256Digest> {
+) -> ResponseVerificationResult<Hash> {
     let mut filtered_headers = get_filtered_headers(&request.headers, request_certification);
 
     filtered_headers.push((

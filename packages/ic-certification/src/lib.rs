@@ -2,17 +2,21 @@
 
 #![cfg_attr(docsrs, feature(doc_cfg, doc_auto_cfg))]
 
-use hash_tree::Sha256Digest;
 use hex::FromHexError;
 
 pub mod certificate;
 pub mod hash_tree;
+pub use crate::hash_tree::*;
+pub mod rb_tree;
+pub use crate::rb_tree::*;
 
 #[doc(inline)]
 pub use hash_tree::LookupResult;
 
 /// A HashTree representing a full tree.
 pub type HashTree = hash_tree::HashTree<Vec<u8>>;
+/// A HashTreeNode representing a node in a tree.
+pub type HashTreeNode = hash_tree::HashTreeNode<Vec<u8>>;
 /// For labeled [`HashTreeNode`](hash_tree::HashTreeNode)
 pub type Label = hash_tree::Label<Vec<u8>>;
 /// A result of looking up for a subtree.
@@ -37,7 +41,7 @@ pub fn fork(left: HashTree, right: HashTree) -> HashTree {
 
 /// Create a labeled hash tree.
 #[inline]
-pub fn label<L: Into<Label>, N: Into<HashTree>>(label: L, node: N) -> HashTree {
+pub fn labeled<L: Into<Label>, N: Into<HashTree>>(label: L, node: N) -> HashTree {
     hash_tree::label(label, node)
 }
 
@@ -49,7 +53,7 @@ pub fn leaf<L: Into<Vec<u8>>>(leaf: L) -> HashTree {
 
 /// Create a pruned tree node.
 #[inline]
-pub fn pruned<C: Into<Sha256Digest>>(content: C) -> HashTree {
+pub fn pruned<C: Into<Hash>>(content: C) -> HashTree {
     hash_tree::pruned(content)
 }
 

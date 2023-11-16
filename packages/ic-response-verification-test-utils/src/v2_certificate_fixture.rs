@@ -1,8 +1,8 @@
 use crate::{
     cbor_encode, create_expr_tree_path, create_versioned_certificate_header, hash, ExprTree,
 };
+use ic_certification::Hash;
 use ic_certification_testing::{CertificateBuilder, CertificateData};
-use ic_certified_map::Hash;
 use ic_types::CanisterId;
 
 pub struct V2TreeFixture {

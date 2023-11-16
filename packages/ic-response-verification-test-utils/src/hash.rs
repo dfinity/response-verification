@@ -1,4 +1,4 @@
-use ic_certified_map::Hash;
+use ic_certification::Hash;
 use sha2::{Digest, Sha256};
 
 pub fn hash<T>(data: T) -> Hash

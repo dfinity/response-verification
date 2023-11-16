@@ -6,7 +6,7 @@ This package provides a set of utilities to create these certificates for the pu
 
 ## Usage
 
-First, a hash tree must be created containing the data that needs to be certified. This can be done using the [ic-certified-map](https://docs.rs/ic-certified-map/latest/ic_certified_map/) library. The root hash of this tree is then used to create the certificate.
+First, a hash tree must be created containing the data that needs to be certified. This can be done using the [ic-certification](https://docs.rs/ic_certification/latest/ic_certification/) library. The root hash of this tree is then used to create the certificate.
 
 The [ic-certification](https://docs.rs/ic-certification/latest/ic_certification/), [ic-cbor](https://docs.rs/ic-cbor/latest/ic_cbor/) and [ic-certificate-verification](https://docs.rs/ic-certificate-verification/latest/ic_certificate_verification/) libraries can then be used to decode the certificate and verify it.
 
@@ -14,8 +14,7 @@ The [ic-certification](https://docs.rs/ic-certification/latest/ic_certification/
 use ic_certification_testing::{CertificateBuilder, CertificateData};
 use ic_cbor::CertificateToCbor;
 use ic_certificate_verification::VerifyCertificate;
-use ic_certification::Certificate;
-use ic_certified_map::{AsHashTree, RbTree};
+use ic_certification::{Certificate, AsHashTree, RbTree};
 use ic_types::CanisterId;
 use sha2::{Digest, Sha256};
 use std::time::{SystemTime, UNIX_EPOCH};

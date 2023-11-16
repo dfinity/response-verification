@@ -1,5 +1,5 @@
 use crate::{cbor_encode, NestedTree};
-use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree};
+use ic_certification::{labeled, labeled_hash, AsHashTree, Hash, HashTree};
 
 const LABEL_EXPR: &[u8] = b"http_expr";
 

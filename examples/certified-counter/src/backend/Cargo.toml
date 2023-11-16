@@ -1,5 +1,5 @@
 [package]
-name = "backend"
+name = "certified_counter_backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,10 +9,9 @@ crate-type = ["cdylib"]
 [dependencies]
 anyhow = "1.0.71"
 candid = "0.8.2"
-hex = "0.4.3"
 ic-cdk = "0.6.0"
 ic-cdk-macros = "0.6.0"
-ic-certified-map = "0.3.4"
+ic-certification = { path = "../../../../packages/ic-certification" }
 serde = "1.0.164"
 serde_cbor = "0.11.2"
 sha2 = "0.10"
