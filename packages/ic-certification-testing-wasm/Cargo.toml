@@ -1,11 +1,14 @@
 [package]
 name = "ic-certification-testing-wasm"
 description = "Utilities for testing applications that work with Internet Computer certification"
-version = "1.2.0"
-authors = ["DFINITY Stiftung"]
-license = "Apache-2.0"
-edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
 
 [features]
 debug = []
@@ -14,10 +17,10 @@ debug = []
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-wasm-bindgen = "0.2"
-console_error_panic_hook = "0.1"
-wasm-bindgen-console-logger = "0.1"
-serde-wasm-bindgen = "0.5"
-ic-certification-testing = { path = "../ic-certification-testing" }
-log = "0.4"
-ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
+wasm-bindgen.workspace = true
+console_error_panic_hook.workspace = true
+wasm-bindgen-console-logger.workspace = true
+serde-wasm-bindgen.workspace = true
+ic-certification-testing.workspace = true
+log.workspace = true
+ic-types.workspace = true

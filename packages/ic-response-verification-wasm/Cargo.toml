@@ -1,11 +1,15 @@
 [package]
 name = "ic-response-verification-wasm"
 description = "WASM version of client side response verification for the Internet Computer"
-version = "1.2.0"
-authors = ["DFINITY Stiftung"]
-license = "Apache-2.0"
-edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
+
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
 
 [features]
 debug = ["ic-response-verification/debug"]
@@ -16,22 +20,15 @@ crate-type = ["cdylib", "rlib"]
 [package.metadata.wasm-pack.profile.release]
 wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
-[profile.release]
-lto = true
-opt-level = 'z'
-codegen-units = 1
-
 [dependencies]
-ic-response-verification = { path = "../ic-response-verification", features = [
-    "js",
-] }
-console_error_panic_hook = "0.1"
-js-sys = "0.3"
-wasm-bindgen = "0.2"
-log = "0.4"
-wasm-bindgen-console-logger = "0.1"
+ic-response-verification = { workspace = true, features = ["js"] }
+console_error_panic_hook.workspace = true
+js-sys.workspace = true
+wasm-bindgen.workspace = true
+log.workspace = true
+wasm-bindgen-console-logger.workspace = true
 
 [dev-dependencies]
-base64 = "0.21"
-wasm-bindgen-test = "0.3"
-ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils" }
+base64.workspace = true
+wasm-bindgen-test.workspace = true
+ic-response-verification-test-utils.workspace = true

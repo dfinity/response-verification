@@ -63,20 +63,9 @@ jobs:
           add-paths: |
             .cz.yaml
             CHANGELOG.md
+            Cargo.toml
             Cargo.lock
             packages/certificate-verification-js/package.json
-            packages/ic-cbor/Cargo.toml
-            packages/ic-certificate-verification/Cargo.toml
-            packages/ic-certification/Cargo.toml
-            packages/ic-certification-testing/Cargo.toml
-            packages/ic-certification-testing-wasm/Cargo.lock
-            packages/ic-certification-testing-wasm/Cargo.toml
             packages/ic-certification-testing-wasm/package.json
-            packages/ic-representation-independent-hash/Cargo.toml
-            packages/ic-response-verification/Cargo.toml
-            packages/ic-response-verification-test-utils/Cargo.toml
-            packages/ic-response-verification-tests/Cargo.toml
             packages/ic-response-verification-tests/package.json
-            packages/ic-response-verification-wasm/Cargo.lock
-            packages/ic-response-verification-wasm/Cargo.toml
             packages/ic-response-verification-wasm/package.json

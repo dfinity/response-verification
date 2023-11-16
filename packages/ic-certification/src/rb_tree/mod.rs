@@ -417,7 +417,7 @@ impl<K: 'static + AsRef<[u8]>, V: AsHashTree + 'static> RbTree<K, V> {
     /// contains the value in question.
     ///
     /// If the key is not in the map, returns a proof of absence.
-    pub fn witness<'a>(&'a self, key: &[u8]) -> HashTree {
+    pub fn witness(&self, key: &[u8]) -> HashTree {
         self.nested_witness(key, |v| v.as_hash_tree())
     }
 
@@ -882,7 +882,7 @@ impl<K: 'static + AsRef<[u8]>, V: AsHashTree + 'static> RbTree<K, V> {
     }
 }
 
-fn three_way_fork<'a>(l: HashTree, m: HashTree, r: HashTree) -> HashTree {
+fn three_way_fork(l: HashTree, m: HashTree, r: HashTree) -> HashTree {
     match (l.root, m.root, r.root) {
         (HashTreeNode::Empty(), m, HashTreeNode::Empty()) => HashTree { root: m },
         (l, m, HashTreeNode::Empty()) => fork(HashTree { root: l }, HashTree { root: m }),

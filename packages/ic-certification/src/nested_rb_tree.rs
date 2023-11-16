@@ -128,7 +128,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
     }
 }
 
-pub fn merge_hash_trees<'a>(lhs: HashTree, rhs: HashTree) -> HashTree {
+pub fn merge_hash_trees(lhs: HashTree, rhs: HashTree) -> HashTree {
     match (lhs.root, rhs.root) {
         (HashTreeNode::Pruned(l), HashTreeNode::Pruned(r)) => {
             if l != r {

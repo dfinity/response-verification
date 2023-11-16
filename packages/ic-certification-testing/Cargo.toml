@@ -1,40 +1,38 @@
 [package]
 name = "ic-certification-testing"
 description = "Utilities for testing applications that work with Internet Computer certification"
-version = "1.2.0"
-authors = ["DFINITY Stiftung"]
-license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://docs.rs/ic-certification-testing"
-homepage = "https://github.com/dfinity/response-verification#readme"
-repository = "https://github.com/dfinity/response-verification"
 categories = ["api-bindings", "authentication", "cryptography"]
 keywords = ["internet-computer", "icp", "dfinity", "certification", "testing"]
-edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-leb128 = "0.2"
-thiserror = "1.0"
-wasm-bindgen = "0.2"
-js-sys = "0.3"
-console_error_panic_hook = "0.1"
-wasm-bindgen-console-logger = "0.1"
-log = "0.4"
-serde = { version = "1.0", features = ["derive"] }
-serde_cbor = "0.11"
-serde-wasm-bindgen = "0.5"
+leb128.workspace = true
+thiserror.workspace = true
+wasm-bindgen.workspace = true
+js-sys.workspace = true
+console_error_panic_hook.workspace = true
+wasm-bindgen-console-logger.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_cbor.workspace = true
+serde-wasm-bindgen.workspace = true
+rand.workspace = true
+getrandom.workspace = true
 
-ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-ic-crypto-internal-threshold-sig-bls12381 = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-ic-crypto-internal-seed = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-ic-crypto-internal-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-
-# https://github.com/rust-random/rand#wasm-support
-# https://docs.rs/getrandom/latest/getrandom/#webassembly-support
-rand = "0.8"
-getrandom = { version = "0.2", features = ["js"] }
+ic-types.workspace = true
+ic-crypto-tree-hash.workspace = true
+ic-crypto-internal-threshold-sig-bls12381.workspace = true
+ic-crypto-internal-seed.workspace = true
+ic-crypto-internal-types.workspace = true

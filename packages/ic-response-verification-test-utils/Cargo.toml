@@ -1,16 +1,21 @@
 [package]
 name = "ic-response-verification-test-utils"
-version = "1.2.0"
-edition = "2021"
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
 
 [dependencies]
-base64 = "0.21"
-hex = "0.4"
-ic-certification-testing = { path = "../ic-certification-testing", version = "1.2.0" }
-ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-sha2 = "0.10"
-serde_cbor = "0.11"
-leb128 = "0.2"
-serde = { version = "1.0", features = ["derive"] }
-flate2 = "1.0"
-ic-certification = { path = "../ic-certification", version = "1.2.0", default_features = false }
+base64.workspace = true
+hex.workspace = true
+ic-certification-testing.workspace = true
+ic-types.workspace = true
+sha2.workspace = true
+serde_cbor.workspace = true
+leb128.workspace = true
+serde.workspace = true
+flate2.workspace = true
+ic-certification = { workspace = true, features = ["default"] }
