@@ -9,6 +9,8 @@ pub mod hash_tree;
 pub use crate::hash_tree::*;
 pub mod rb_tree;
 pub use crate::rb_tree::*;
+pub mod nested_rb_tree;
+pub use crate::nested_rb_tree::*;
 
 #[doc(inline)]
 pub use hash_tree::LookupResult;

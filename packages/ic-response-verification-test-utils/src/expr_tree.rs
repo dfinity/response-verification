@@ -1,5 +1,5 @@
-use crate::{cbor_encode, NestedTree};
-use ic_certification::{labeled, labeled_hash, AsHashTree, Hash, HashTree};
+use crate::cbor_encode;
+use ic_certification::{labeled, labeled_hash, AsHashTree, Hash, HashTree, NestedTree};
 
 const LABEL_EXPR: &[u8] = b"http_expr";
 
@@ -50,7 +50,7 @@ impl Default for ExprTree {
 impl ExprTree {
     pub fn new() -> Self {
         Self {
-            tree: NestedTree::new(),
+            tree: NestedTree::default(),
         }
     }
 
