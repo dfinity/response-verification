@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- add rb_tree to ic_certification crate
+
 ### Fix
 
 - update dependencies
