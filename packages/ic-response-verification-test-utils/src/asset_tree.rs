@@ -1,6 +1,6 @@
 use crate::hash::hash;
 use crate::{cbor_encode, hash_from_hex};
-use ic_certified_map::{labeled, labeled_hash, AsHashTree, Hash, HashTree, RbTree};
+use ic_certification::{labeled, labeled_hash, AsHashTree, Hash, HashTree, RbTree};
 
 const LABEL_ASSETS: &[u8] = b"http_assets";
 

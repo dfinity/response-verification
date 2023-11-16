@@ -882,17 +882,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ic-certified-map"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "197524aecec47db0b6c0c9f8821aad47272c2bd762c7a0ffe9715eaca0364061"
-dependencies = [
- "serde",
- "serde_bytes",
- "sha2 0.10.6",
-]
-
-[[package]]
 name = "ic-constants"
 version = "0.8.0"
 source = "git+https://github.com/dfinity/ic?rev=6e3bb8100e7724a8ec53dac26faa3426378a6953#6e3bb8100e7724a8ec53dac26faa3426378a6953"
@@ -1116,7 +1105,6 @@ dependencies = [
  "hex",
  "ic-certification",
  "ic-certification-testing",
- "ic-certified-map",
  "ic-types",
  "leb128",
  "serde",

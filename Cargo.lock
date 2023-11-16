@@ -368,6 +368,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "certified_counter_backend"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "candid 0.8.4",
+ "ic-cdk",
+ "ic-cdk-macros",
+ "ic-certification 1.2.0",
+ "serde",
+ "serde_cbor",
+ "sha2 0.10.8",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1223,6 +1237,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-cdk"
+version = "0.6.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c98b304a2657bad15bcb547625a018e13cf596676d834cfd93023395a6e2e03a"
+dependencies = [
+ "candid 0.8.4",
+ "cfg-if",
+ "ic-cdk-macros",
+ "ic0",
+ "serde",
+ "serde_bytes",
+]
+
+[[package]]
+name = "ic-cdk-macros"
+version = "0.6.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebf50458685a0fc6b0e414cdba487610aeb199ac94db52d9fd76270565debee7"
+dependencies = [
+ "candid 0.8.4",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_tokenstream",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "ic-certificate-verification"
 version = "1.2.0"
 dependencies = [
@@ -1281,17 +1323,6 @@ dependencies = [
  "thiserror",
  "wasm-bindgen",
  "wasm-bindgen-console-logger",
-]
-
-[[package]]
-name = "ic-certified-map"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "197524aecec47db0b6c0c9f8821aad47272c2bd762c7a0ffe9715eaca0364061"
-dependencies = [
- "serde",
- "serde_bytes",
- "sha2 0.10.8",
 ]
 
 [[package]]
@@ -1500,7 +1531,6 @@ dependencies = [
  "ic-certificate-verification",
  "ic-certification 1.2.0",
  "ic-certification-testing",
- "ic-certified-map",
  "ic-crypto-tree-hash",
  "ic-representation-independent-hash",
  "ic-response-verification-test-utils",
@@ -1528,7 +1558,6 @@ dependencies = [
  "hex",
  "ic-certification 1.2.0",
  "ic-certification-testing",
- "ic-certified-map",
  "ic-types",
  "leb128",
  "serde",
@@ -1673,6 +1702,12 @@ dependencies = [
  "pairing",
  "sha2 0.9.9",
 ]
+
+[[package]]
+name = "ic0"
+version = "0.18.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "576c539151d4769fb4d1a0c25c4108dd18facd04c5695b02cf2d226ab4e43aa5"
 
 [[package]]
 name = "ic_bls12_381"
@@ -2731,6 +2766,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.37",
+]
+
+[[package]]
+name = "serde_tokenstream"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "797ba1d80299b264f3aac68ab5d12e5825a561749db4df7cd7c8083900c5d4e9"
+dependencies = [
+ "proc-macro2",
+ "serde",
+ "syn 1.0.109",
 ]
 
 [[package]]

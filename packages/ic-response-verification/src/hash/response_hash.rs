@@ -1,5 +1,5 @@
 use crate::types::{Response, ResponseCertification};
-use ic_certification::hash_tree::Sha256Digest;
+use ic_certification::hash_tree::Hash;
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
@@ -83,10 +83,7 @@ pub fn filter_response_headers(
 /// Calculates the
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
 /// of [ResponseHeaders] that have been filtered with [filter_response_headers].
-pub fn response_headers_hash(
-    status_code: &u64,
-    response_headers: &ResponseHeaders,
-) -> Sha256Digest {
+pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeaders) -> Hash {
     let mut headers_to_verify: Vec<(String, Value)> = response_headers
         .headers
         .iter()
@@ -116,10 +113,7 @@ pub fn response_headers_hash(
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
 /// of a [crate::types::Response] according to [crate::types::ResponseCertification] returned from
 /// [crate::cel::cel_to_certification].
-pub fn response_hash(
-    response: &Response,
-    response_certification: &ResponseCertification,
-) -> Sha256Digest {
+pub fn response_hash(response: &Response, response_certification: &ResponseCertification) -> Hash {
     let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
         response_headers_hash(&response.status_code.into(), &filtered_headers),

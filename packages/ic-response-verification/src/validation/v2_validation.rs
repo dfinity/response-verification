@@ -1,6 +1,6 @@
 use crate::types::Certification;
 use ic_certification::hash_tree::HashTreeNode;
-use ic_certification::{hash_tree::Sha256Digest, HashTree, Label, SubtreeLookupResult};
+use ic_certification::{hash_tree::Hash, HashTree, Label, SubtreeLookupResult};
 
 fn path_from_parts<T>(parts: &[T]) -> Vec<Label>
 where
@@ -117,7 +117,7 @@ pub fn validate_expr_path(expr_path: &[String], request_path: &str, tree: &HashT
 
 pub fn validate_expr_hash(
     expr_path: &[String],
-    expr_hash: &Sha256Digest,
+    expr_hash: &Hash,
     tree: &HashTree,
 ) -> Option<HashTree> {
     let mut path = path_from_parts(expr_path);
@@ -130,9 +130,9 @@ pub fn validate_expr_hash(
 }
 
 pub fn validate_hashes(
-    expr_hash: &Sha256Digest,
-    request_hash: &Option<Sha256Digest>,
-    response_hash: &Sha256Digest,
+    expr_hash: &Hash,
+    request_hash: &Option<Hash>,
+    response_hash: &Hash,
     expr_path: &[String],
     tree: &HashTree,
     certification: &Certification,

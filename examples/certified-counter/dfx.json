@@ -2,7 +2,7 @@
   "canisters": {
     "backend": {
       "candid": "src/backend/backend.did",
-      "package": "backend",
+      "package": "certified_counter_backend",
       "type": "rust"
     },
     "frontend": {
@@ -15,6 +15,6 @@
     }
   },
   "output_env_file": ".env",
-  "dfx": "0.14.2",
+  "dfx": "0.15.1",
   "version": 1
 }

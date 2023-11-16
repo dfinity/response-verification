@@ -1,5 +1,5 @@
 use crate::{base64_encode, hex_decode};
-use ic_certification::{fork, label, leaf, pruned_from_hex, Certificate, Delegation, HashTree};
+use ic_certification::{fork, labeled, leaf, pruned_from_hex, Certificate, Delegation, HashTree};
 use ic_types::CanisterId;
 use std::str::FromStr;
 
@@ -63,12 +63,12 @@ pub fn create_certificate(options: Option<CreateCertificateOptions>) -> Certific
     let tree = fork(
         fork(
             fork(
-                label("canister",
-                      label(canister_id,
+                labeled("canister",
+                      labeled(canister_id,
                             fork(
                                 fork(
                                     fork(
-                                        label(
+                                        labeled(
                                             "certified_data",
                                             leaf(certified_data)
                                         ),
@@ -86,7 +86,7 @@ pub fn create_certificate(options: Option<CreateCertificateOptions>) -> Certific
         ),
         fork(
             create_pruned("0B2F12CF83A8A339691C0D39BE38432CEE1A64DA8E3898BB69AFDB6970823C5E"),
-            label(
+            labeled(
                 "time",
                 leaf(time),
             ),

@@ -1,6 +1,6 @@
 use crate::{parse_cbor, CborError, CborHashTree, CborResult, CborValue};
 use ic_certification::{
-    hash_tree::{empty, fork, label, leaf, pruned, Label, Sha256Digest},
+    hash_tree::{empty, fork, label, leaf, pruned, Hash, Label},
     HashTree,
 };
 
@@ -36,7 +36,7 @@ pub fn parsed_cbor_to_tree(parsed_cbor: &CborValue) -> CborResult<HashTree> {
 
                 CborHashTree::Pruned => {
                     if let Some(CborValue::ByteString(data)) = cbor_tags.pop() {
-                        let digest: Sha256Digest = TryFrom::<&[u8]>::try_from(data.as_ref())
+                        let digest: Hash = TryFrom::<&[u8]>::try_from(data.as_ref())
                             .map_err(CborError::IncorrectPrunedDataLength)?;
 
                         Ok(pruned(digest))

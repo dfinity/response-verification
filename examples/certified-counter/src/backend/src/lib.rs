@@ -1,6 +1,6 @@
 use ic_cdk::export::candid::CandidType;
 use ic_cdk::*;
-use ic_certified_map::*;
+use ic_certification::{AsHashTree, RbTree};
 use serde::Serialize;
 use std::cell::*;
 
@@ -27,7 +27,7 @@ fn inc_count() {
 
     TREE.with(|tree| {
         let mut tree = tree.borrow_mut();
-        tree.insert("count", hex::decode(hash(&count.to_be_bytes())).unwrap());
+        tree.insert("count", hash(&count.to_be_bytes()).to_vec());
 
         ic_cdk::api::set_certified_data(&tree.root_hash());
     })
