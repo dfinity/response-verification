@@ -1,17 +1,18 @@
 [package]
 name = "ic-response-verification"
 description = "Client side response verification for the Internet Computer"
-version = "1.2.0"
-authors = ["DFINITY Stiftung"]
-license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://docs.rs/ic-response-verification"
-homepage = "https://github.com/dfinity/response-verification#readme"
-repository = "https://github.com/dfinity/response-verification"
 categories = ["api-bindings", "authentication", "cryptography", "wasm"]
 keywords = ["internet-computer", "icp", "dfinity", "response", "verification"]
-edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
 
 [features]
 debug = ["log/max_level_trace", "log/release_max_level_trace"]
@@ -21,32 +22,32 @@ js = ["dep:wasm-bindgen", "dep:js-sys"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-base64 = "0.21"
-nom = "7.1"
+base64.workspace = true
+nom.workspace = true
 js-sys = { version = "0.3", optional = true }
 wasm-bindgen = { version = "0.2", optional = true }
-thiserror = "1.0"
-sha2 = "0.10"
-http = "0.2"
-ic-certification = { path = "../ic-certification", version = "1.2.0", default_features = false }
-ic-representation-independent-hash = { path = "../ic-representation-independent-hash", version = "1.2.0" }
-ic-cbor = { path = "../ic-cbor", version = "1.2.0" }
-ic-certificate-verification = { path = "../ic-certificate-verification", version = "1.2.0" }
-flate2 = "1.0"
-leb128 = "0.2"
-candid = "0.9"
-log = { version = "0.4", features = ["max_level_off", "release_max_level_off"] }
-hex = "0.4"
-urlencoding = "2.1.3"
+thiserror.workspace = true
+sha2.workspace = true
+http.workspace = true
+ic-certification = { workspace = true }
+ic-representation-independent-hash.workspace = true
+ic-cbor.workspace = true
+ic-certificate-verification.workspace = true
+flate2.workspace = true
+leb128.workspace = true
+candid.workspace = true
+log = { workspace = true, features = ["max_level_off", "release_max_level_off"] }
+hex.workspace = true
+urlencoding.workspace = true
 
 [dev-dependencies]
-serde_cbor = "0.11"
-wasm-bindgen-test = "0.3"
-ic-certification = { path = "../ic-certification", version = "1.2.0" }
-candid = "0.9"
-serde = "1.0"
-ic-response-verification-test-utils = { path = "../ic-response-verification-test-utils" }
-ic-crypto-tree-hash = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-ic-types = { git = "https://github.com/dfinity/ic", rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953" }
-rstest = "0.18"
-ic-certification-testing = { path = "../ic-certification-testing" }
+serde_cbor.workspace = true
+wasm-bindgen-test.workspace = true
+ic-certification.workspace = true
+candid.workspace = true
+serde.workspace = true
+ic-response-verification-test-utils.workspace = true
+ic-crypto-tree-hash.workspace = true
+ic-types.workspace = true
+rstest.workspace = true
+ic-certification-testing.workspace = true

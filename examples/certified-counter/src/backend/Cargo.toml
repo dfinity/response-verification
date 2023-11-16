@@ -7,11 +7,11 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0.71"
-candid = "0.8.2"
-ic-cdk = "0.6.0"
-ic-cdk-macros = "0.6.0"
-ic-certification = { path = "../../../../packages/ic-certification" }
-serde = "1.0.164"
-serde_cbor = "0.11.2"
-sha2 = "0.10"
+anyhow.workspace = true
+candid.workspace = true
+ic-cdk.workspace = true
+ic-cdk-macros.workspace = true
+ic-certification.workspace = true
+serde.workspace = true
+serde_cbor.workspace = true
+sha2.workspace = true

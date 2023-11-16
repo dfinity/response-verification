@@ -120,6 +120,20 @@ Install and activate the correct version of PNPM:
 corepack enable
 ```
 
+### Working on WASM crates
+
+Until Cargo supports [per package targets](https://github.com/rust-lang/cargo/issues/9406), the WASM crates are excluded from the `default_members` array of the Cargo workspace.
+Commands such as `cargo build` and `cargo check` will not include these crates, so they must be built separately with the corresponding `pnpm` command listed under [projects](#projects).
+
+Since `rust-analyzer` will also apply the same target to all crates, these crates will show errors in the IDE. To workaround this, create a `.cargo/config.toml` file:
+
+```toml
+[build]
+target = "wasm32-unknown-unknown"
+```
+
+While this file exists, some of the non-WASM crates will show errors instead. Delete the file to work on the non-WASM crates.
+
 ### Making a Commit
 
 ```shell
@@ -134,24 +148,26 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 - Add the package's package manager file to the `version_files` field in `.cz.yaml`.
   - `package.json` for NPM packages
   - `Cargo.toml` for Cargo crates
-- Set the initial version of the package in its package manager file to match the current version in the `version` field in `.cz.yaml`.
-- Add the package's package manager file(s) to the `add-paths` property in the `Create Pull Request` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`.
+- Set the initial version of the package in its package manager file to match the current version in the `version` field in `.cz.yaml`
+  - For `package.json`, set the version manually
+  - For `Cargo.toml`, use `version.workspace = true`
+- Add the package's package manager file(s) to the `add-paths` property in the `Create Pull Request` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`
   - `package.json` for NPM packages
-  - `Cargo.toml` and `Cargo.lock` for Cargo crates that are compiled to WASM (they are excluded from the root workspace), non-WASM Cargo crates (they are part of the root workspace) only need `Cargo.toml`
+  - No files need to be added for Cargo crates
 - If the package is a Rust crate:
-  - Add the package to the `members` section in `Cargo.toml`.
-    - If the package must be compiled to WASM then add it to the `exclude` section instead.
-  - Add a `Release ic-<package-name> Cargo crate` job to the `Release` workflow in `.github/workflows/release.yml`.
-  - Add `target/package/ic-<package-name>-${{ github.ref_name }}.crate` to the `artifacts` property in the `Create Github release` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`.
-    - Make sure every entry except the last is comma delimited.
-  - If the crate has dependenencies in this repository, make sure it is published _after_ the dependencies.
-  - If the crate has dependent in this repository, make sure it is published _before_ the dependents.
+  - Add the package to the `members` section in `Cargo.toml` and the `default-members` section
+    - If the package must be compiled to WASM then do not add it to the `default-members` section
+  - Add a `Release ic-<package-name> Cargo crate` job to the `Release` workflow in `.github/workflows/release.yml`
+  - Add `target/package/ic-<package-name>-${{ github.ref_name }}.crate` to the `artifacts` property in the `Create Github release` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`
+    - Make sure every entry except the last is comma delimited
+  - If the crate has dependenencies in this repository, make sure it is published _after_ the dependencies
+  - If the crate has a dependent in this repository, make sure it is published _before_ the dependents
 - If the package is an NPM package:
-  - Add the package to `pnpm-workspace.yaml`.
-  - Add a `Pack @dfinity/<package-name> NPM package` job to the `Release` workflow in `.github/workflows/release.yml`.
-  - Add a `Release @dfinity/<package-name> NPM package` job to the `Release` workflow in `.github/workflows/release.yml`.
-  - Add `dfinity-<package-name>-${{ github.ref_name }}.tgz` to the `artifacts` property in the `Create Github release` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`.
-    - Make sure every entry except the last is comma delimited.
+  - Add the package to `pnpm-workspace.yaml`
+  - Add a `Pack @dfinity/<package-name> NPM package` job to the `Release` workflow in `.github/workflows/release.yml`
+  - Add a `Release @dfinity/<package-name> NPM package` job to the `Release` workflow in `.github/workflows/release.yml`
+  - Add `dfinity-<package-name>-${{ github.ref_name }}.tgz` to the `artifacts` property in the `Create Github release` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`
+    - Make sure every entry except the last is comma delimited
 
 ### Package naming conventions
 

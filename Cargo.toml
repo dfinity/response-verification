@@ -10,14 +10,108 @@ members = [
     "packages/ic-response-verification",
     "packages/ic-response-verification-test-utils",
     "packages/ic-response-verification-tests",
-]
-
-# https://github.com/rust-lang/cargo/issues/9406
-# these projects need wasm32-unknown-unknown as their target
-exclude = [
     "packages/ic-response-verification-wasm",
     "packages/ic-certification-testing-wasm",
 ]
+
+# https://github.com/rust-lang/cargo/issues/9406
+# includes all members except those that must be compiled to WASM
+default-members = [
+    "examples/rust",
+    "packages/ic-cbor",
+    "packages/ic-certification",
+    "packages/ic-certificate-verification",
+    "packages/ic-certification-testing",
+    "packages/ic-representation-independent-hash",
+    "packages/ic-response-verification",
+    "packages/ic-response-verification-test-utils",
+    "packages/ic-response-verification-tests",
+]
+
+[workspace.package]
+version = "1.2.0"
+authors = ["DFINITY Stiftung"]
+edition = "2021"
+repository = "https://github.com/dfinity/response-verification"
+homepage = "https://github.com/dfinity/response-verification#readme"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+nom = "7.1"
+leb128 = "0.2"
+log = "0.4"
+hex = "0.4"
+base64 = "0.21"
+http = "0.2"
+flate2 = "1.0"
+sha2 = "0.10"
+urlencoding = "2.1.3"
+rstest = "0.18"
+tokio = { version = "1.24", features = ["full"] }
+
+serde_bytes = "0.11"
+serde_cbor = "0.11"
+
+thiserror = "1.0"
+anyhow = "1.0"
+
+candid = "0.9"
+ic-agent = "0.29"
+ic-utils = "0.29"
+ic-cdk = "0.6.0"
+ic-cdk-macros = "0.6.0"
+
+wasm-bindgen = "0.2"
+wasm-bindgen-test = "0.3"
+serde-wasm-bindgen = "0.5"
+js-sys = "0.3"
+console_error_panic_hook = "0.1"
+wasm-bindgen-console-logger = "0.1"
+# https://github.com/rust-random/rand#wasm-support
+# https://docs.rs/getrandom/latest/getrandom/#webassembly-support
+rand = "0.8"
+getrandom = { version = "0.2", features = ["js"] }
+
+
+ic-certification = { path = "./packages/ic-certification", default-features = false, version = "1.2.0" }
+ic-certification-testing = { path = "./packages/ic-certification-testing" }
+ic-representation-independent-hash = { path = "./packages/ic-representation-independent-hash", version = "1.2.0" }
+ic-certificate-verification = { path = "./packages/ic-certificate-verification", version = "1.2.0" }
+ic-response-verification = { path = "./packages/ic-response-verification", version = "1.2.0" }
+ic-response-verification-test-utils = { path = "./packages/ic-response-verification-test-utils" }
+ic-cbor = { path = "./packages/ic-cbor", version = "1.2.0" }
+
+
+[workspace.dependencies.ic-types]
+git = "https://github.com/dfinity/ic"
+rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953"
+
+[workspace.dependencies.ic-crypto-tree-hash]
+git = "https://github.com/dfinity/ic"
+rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953"
+
+[workspace.dependencies.ic-crypto-internal-threshold-sig-bls12381]
+git = "https://github.com/dfinity/ic"
+rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953"
+
+[workspace.dependencies.ic-crypto-internal-seed]
+git = "https://github.com/dfinity/ic"
+rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953"
+
+[workspace.dependencies.ic-crypto-internal-types]
+git = "https://github.com/dfinity/ic"
+rev = "6e3bb8100e7724a8ec53dac26faa3426378a6953"
+
+
+[workspace.dependencies.serde]
+version = "1.0"
+features = ["derive"]
+
+[workspace.dependencies.miracl_core_bls12381]
+version = "4.2"
+default_features = false
+features = ["std", "allow_alt_compress"]
+
 
 [profile.release]
 lto = true

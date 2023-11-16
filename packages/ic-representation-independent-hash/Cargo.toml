@@ -1,21 +1,22 @@
 [package]
 name = "ic-representation-independent-hash"
 description = "A library for computing representation-independent hashes as described in the Internet Computer interface specification."
-version = "1.2.0"
-authors = ["DFINITY Stiftung"]
-license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://docs.rs/ic-representation-independent-hash"
-homepage = "https://github.com/dfinity/response-verification#readme"
-repository = "https://github.com/dfinity/response-verification"
 categories = ["cryptography", "hash"]
 keywords = ["icp", "dfinity", "representation", "independent", "hash"]
-edition = "2021"
 include = ["src", "Cargo.toml", "README.md"]
 
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
+
 [dependencies]
-sha2 = "0.10"
-leb128 = "0.2"
+sha2.workspace = true
+leb128.workspace = true
 
 [dev-dependencies]
-hex = "0.4"
+hex.workspace = true
