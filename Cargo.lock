@@ -375,7 +375,7 @@ dependencies = [
  "candid 0.9.8",
  "ic-cdk",
  "ic-cdk-macros",
- "ic-certification 1.2.0",
+ "ic-certification 1.3.0",
  "serde",
  "serde_cbor",
  "sha2 0.10.8",
@@ -1157,7 +1157,7 @@ dependencies = [
  "hex",
  "http",
  "http-body",
- "ic-certification 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ic-certification 1.2.0",
  "ic-transport-types",
  "ic-verify-bls-signature",
  "k256",
@@ -1226,10 +1226,10 @@ dependencies = [
 
 [[package]]
 name = "ic-cbor"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "candid 0.9.8",
- "ic-certification 1.2.0",
+ "ic-certification 1.3.0",
  "ic-response-verification-test-utils",
  "leb128",
  "nom",
@@ -1266,28 +1266,17 @@ dependencies = [
 
 [[package]]
 name = "ic-certificate-verification"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "candid 0.9.8",
  "ic-cbor",
- "ic-certification 1.2.0",
+ "ic-certification 1.3.0",
  "ic-certification-testing",
  "ic-response-verification-test-utils",
  "leb128",
  "miracl_core_bls12381",
  "nom",
  "thiserror",
-]
-
-[[package]]
-name = "ic-certification"
-version = "1.2.0"
-dependencies = [
- "hex",
- "serde",
- "serde_bytes",
- "serde_cbor",
- "sha2 0.10.8",
 ]
 
 [[package]]
@@ -1303,8 +1292,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-certification"
+version = "1.3.0"
+dependencies = [
+ "hex",
+ "serde",
+ "serde_bytes",
+ "serde_cbor",
+ "sha2 0.10.8",
+]
+
+[[package]]
 name = "ic-certification-testing"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
@@ -1327,7 +1327,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing-wasm"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "console_error_panic_hook",
  "ic-certification-testing",
@@ -1524,7 +1524,7 @@ dependencies = [
 
 [[package]]
 name = "ic-representation-independent-hash"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "hex",
  "leb128",
@@ -1533,7 +1533,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "base64 0.21.4",
  "candid 0.9.8",
@@ -1542,7 +1542,7 @@ dependencies = [
  "http",
  "ic-cbor",
  "ic-certificate-verification",
- "ic-certification 1.2.0",
+ "ic-certification 1.3.0",
  "ic-certification-testing",
  "ic-crypto-tree-hash",
  "ic-representation-independent-hash",
@@ -1564,12 +1564,12 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "base64 0.21.4",
  "flate2",
  "hex",
- "ic-certification 1.2.0",
+ "ic-certification 1.3.0",
  "ic-certification-testing",
  "ic-types",
  "leb128",
@@ -1580,7 +1580,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-tests"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -1593,7 +1593,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "base64 0.21.4",
  "console_error_panic_hook",
@@ -1634,7 +1634,7 @@ checksum = "8c97e3c1de364b46489da5ccdfd90a57c70a51b5d9a05a5a4d8945c67b6bdcc2"
 dependencies = [
  "candid 0.9.8",
  "hex",
- "ic-certification 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ic-certification 1.2.0",
  "leb128",
  "serde",
  "serde_bytes",
