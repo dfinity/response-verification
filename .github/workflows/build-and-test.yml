@@ -1,0 +1,71 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  SCCACHE_GHA_ENABLED: 'true'
+  RUSTC_WRAPPER: 'sccache'
+
+jobs:
+  build_and_test_rust:
+    name: Build and Test Rust
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Build Cargo crates
+        run: cargo build --release
+
+      - name: Test Cargo crates
+        run: cargo test
+
+      - name: Lint Rust
+        run: cargo clippy
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+  build_and_test_js:
+    name: Build and Test JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - uses: ./.github/actions/setup-pnpm
+
+      - uses: ./.github/actions/setup-dfx
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: DFX prepare Certified Counter
+        working-directory: examples/certified-counter
+        run: |
+          dfx canister create --all
+          dfx generate backend
+
+      - name: Build NPM packages
+        run: pnpm build
+
+      - name: Test NPM packages
+        run: pnpm test
+
+      - name: Wasm test
+        run: wasm-pack test --node packages/ic-response-verification --features=js
+
+      - name: Check Typescript formatting
+        run: pnpm run format:check
