@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add nested rb_tree to ic_certification
 - add rb_tree to ic_certification crate
 
 ### Fix
