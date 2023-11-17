@@ -1,4 +1,4 @@
-name: Merge
+name: Update changelog
 
 on:
   push:
