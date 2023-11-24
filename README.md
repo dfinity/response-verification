@@ -17,6 +17,16 @@ This package encapsulates the protocol for such verification. It is used by [the
 | `pnpm test`   | Test all NPM packages   |
 | `pnpm format` | Format all NPM packages |
 
+### HTTP Certification
+
+- [Cargo crate](./packages/ic-http-certification/README.md)
+
+| Command                                               | Description            |
+| ----------------------------------------------------- | ---------------------- |
+| `cargo build -p ic-http-certification`                | Build Cargo crate      |
+| `cargo test -p ic-http-certification`                 | Test Cargo crate       |
+| `cargo doc -p ic-http-certification --no-deps --open` | Build Cargo crate docs |
+
 ### Response Verification
 
 - [Cargo crate](./packages/ic-response-verification/README.md)
@@ -147,7 +157,7 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
 - Follow the [Package naming conventions](#package-naming-conventions) when naming the package.
 - Add the package's package manager file to the `version_files` field in `.cz.yaml`.
   - `package.json` for NPM packages
-  - `Cargo.toml` for Cargo crates
+  - Nothing for for Cargo crates, it is already covered by the root `Cargo.toml`
 - Set the initial version of the package in its package manager file to match the current version in the `version` field in `.cz.yaml`
   - For `package.json`, set the version manually
   - For `Cargo.toml`, use `version.workspace = true`
@@ -158,7 +168,7 @@ See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for m
   - Add the package to the `members` section in `Cargo.toml` and the `default-members` section
     - If the package must be compiled to WASM then do not add it to the `default-members` section
   - Add a `Release ic-<package-name> Cargo crate` job to the `Release` workflow in `.github/workflows/release.yml`
-  - Add `target/package/ic-<package-name>-${{ github.ref_name }}.crate` to the `artifacts` property in the `Create Github release` job of the `Create Release PR` workflow in `.github/workflows/create-release-pr.yml`
+  - Add `target/package/ic-<package-name>-${{ github.ref_name }}.crate` to the `artifacts` property in the `Create Github release` job of the `Release` workflow in `.github/workflows/release.yml`
     - Make sure every entry except the last is comma delimited
   - If the crate has dependenencies in this repository, make sure it is published _after_ the dependencies
   - If the crate has a dependent in this repository, make sure it is published _before_ the dependents
