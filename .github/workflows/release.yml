@@ -67,6 +67,11 @@ jobs:
       #   env:
       #     CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
+      - name: Release ic-http-certification Cargo crate
+        run: cargo publish -p ic-http-certification --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
       - name: Pack @dfinity/certification-testing NPM package
         working-directory: packages/ic-certification-testing-wasm
         run: npm pack --pack-destination ../../
@@ -117,6 +122,7 @@ jobs:
         with:
           artifacts: >
             target/package/ic-certification-${{ github.ref_name }}.crate,
+            target/package/ic-http-certification-${{ github.ref_name }}.crate,
             target/package/ic-representation-independent-hash-${{ github.ref_name }}.crate,
             target/package/ic-cbor-${{ github.ref_name }}.crate,
             target/package/ic-certificate-verification-${{ github.ref_name }}.crate,

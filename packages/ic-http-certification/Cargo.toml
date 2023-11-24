@@ -1,0 +1,18 @@
+[package]
+name = "ic-http-certification"
+description = "Certification for HTTP responses for the Internet Computer"
+readme = "README.md"
+documentation = "https://docs.rs/ic-http-certification"
+categories = ["api-bindings", "data-structures", "no-std"]
+keywords = ["internet-computer", "agent", "utility", "icp", "dfinity"]
+include = ["src", "Cargo.toml", "LICENSE", "README.md"]
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[dev-dependencies]
+rstest.workspace = true

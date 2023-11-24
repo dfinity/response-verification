@@ -34,6 +34,10 @@ jobs:
           push: false
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+      # commitizen is formatting the .cz.yaml file in a way that Prettier does not like
+      - name: Format
+        run: pnpm format
+
       - name: Print Version
         run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
 

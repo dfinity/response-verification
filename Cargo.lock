@@ -1488,6 +1488,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-http-certification"
+version = "1.3.0"
+dependencies = [
+ "rstest",
+]
+
+[[package]]
 name = "ic-ic00-types"
 version = "0.8.0"
 source = "git+https://github.com/dfinity/ic?rev=6e3bb8100e7724a8ec53dac26faa3426378a6953#6e3bb8100e7724a8ec53dac26faa3426378a6953"
