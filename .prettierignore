@@ -9,3 +9,6 @@ node_modules
 /tmp
 
 pnpm-lock.yaml
+
+# commitizen is formatting the .cz.yaml file in a way that Prettier does not like
+.cz.yaml
