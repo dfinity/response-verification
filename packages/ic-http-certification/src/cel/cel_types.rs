@@ -1,3 +1,5 @@
+use super::create_cel_expr;
+
 /// A certification CEL expression defintion.
 /// Contains an enum variant for each CEL function supported for certification.
 /// Currently only one variant is supported: [CelExpression::DefaultCertification].
@@ -10,6 +12,14 @@ pub enum CelExpression<'a> {
     /// Providing [None] will opt out of certification, while providing [Some] will opt in to certification.
     /// See [DefaultCertification] for more details on its available parameters.
     DefaultCertification(Option<DefaultCertification<'a>>),
+}
+
+impl<'a> CelExpression<'a> {
+    /// Converts a [CelExpression] object into it's [String] representation.
+    /// Alias of [create_cel_expr](create_cel_expr()).
+    pub fn to_string(&self) -> String {
+        create_cel_expr(self)
+    }
 }
 
 /// A certification CEL expression definition that uses the `default_certification` function.
@@ -72,4 +82,10 @@ pub enum DefaultResponseCertification<'a> {
     /// As many or as little headers can be provided as desired.
     /// Providing an empty list will result in all response headers being certified.
     ResponseHeaderExclusions(&'a [&'a str]),
+}
+
+impl Default for DefaultResponseCertification<'_> {
+    fn default() -> Self {
+        DefaultResponseCertification::CertifiedResponseHeaders(&[])
+    }
 }
