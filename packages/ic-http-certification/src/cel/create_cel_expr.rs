@@ -3,6 +3,7 @@ use super::{
 };
 
 /// Converts a CEL expression from a [CelExpression] object into it's [String] representation.
+/// [CelExpression::to_string](CelExpression::to_string()) is an alias of this method and can be used for ergonomics.
 pub fn create_cel_expr(certification: &CelExpression) -> String {
     match certification {
         CelExpression::DefaultCertification(certification) => {
@@ -83,6 +84,7 @@ fn create_response_cel_expr(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cel::fixtures::*;
     use rstest::*;
 
     #[rstest]
@@ -91,17 +93,33 @@ mod tests {
         no_request_response_inclusions(),
         no_request_response_inclusions_cel()
     )]
-    #[case::no_request_header_inclusions(
+    #[case::no_request_response_exclusions(
         no_request_response_exclusions(),
         no_request_response_exclusions_cel()
+    )]
+    #[case::no_request_empty_response_inclusions(
+        no_request_empty_response_inclusions(),
+        no_request_empty_response_inclusions_cel()
+    )]
+    #[case::no_request_empty_response_exclusions(
+        no_request_empty_response_exclusions(),
+        no_request_empty_response_exclusions_cel()
+    )]
+    #[case::include_request_response_header_inclusions(
+        include_request_response_header_inclusions(),
+        include_request_response_header_inclusions_cel()
     )]
     #[case::include_request_response_header_exclusions(
         include_request_response_header_exclusions(),
         include_request_response_header_exclusions_cel()
     )]
-    #[case::include_request_response_header_inclusions(
-        include_request_response_header_inclusions(),
-        include_request_response_header_inclusions_cel()
+    #[case::include_request_empty_response_inclusions(
+        include_request_empty_response_inclusions(),
+        include_request_empty_response_inclusions_cel()
+    )]
+    #[case::include_request_empty_response_exclusions(
+        include_request_empty_response_exclusions(),
+        include_request_empty_response_exclusions_cel()
     )]
     #[case::empty_request_response_inclusions(
         empty_request_response_inclusions(),
@@ -121,16 +139,6 @@ mod tests {
         CelExpression::DefaultCertification(None)
     }
 
-    fn no_certification_cel() -> String {
-        remove_whitespace(
-            r#"default_certification(
-                ValidationArgs {
-                    no_certification: Empty {}
-                }
-            )"#,
-        )
-    }
-
     fn no_request_response_inclusions() -> CelExpression<'static> {
         CelExpression::DefaultCertification(Some(DefaultCertification {
             request_certification: None,
@@ -144,27 +152,6 @@ mod tests {
         }))
     }
 
-    fn no_request_response_inclusions_cel() -> String {
-        remove_whitespace(
-            r#"default_certification(
-                ValidationArgs {
-                    no_request_certification: Empty {},
-                    response_certification: ResponseCertification {
-                        certified_response_headers: ResponseHeaderList {
-                            headers: [
-                                "Cache-Control",
-                                "ETag",
-                                "Content-Length",
-                                "Content-Type",
-                                "Content-Encoding"
-                            ]
-                        }
-                    }
-                }
-            )"#,
-        )
-    }
-
     fn no_request_response_exclusions() -> CelExpression<'static> {
         CelExpression::DefaultCertification(Some(DefaultCertification {
             request_certification: None,
@@ -176,67 +163,18 @@ mod tests {
         }))
     }
 
-    fn no_request_response_exclusions_cel() -> String {
-        remove_whitespace(
-            r#"default_certification(
-                ValidationArgs {
-                    no_request_certification: Empty {},
-                    response_certification: ResponseCertification {
-                        response_header_exclusions: ResponseHeaderList {
-                            headers: [
-                                "Date",
-                                "Cookie",
-                                "Set-Cookie"
-                            ]
-                        }
-                    }
-                }
-            )"#,
-        )
-    }
-
-    fn include_request_response_header_exclusions() -> CelExpression<'static> {
+    fn no_request_empty_response_inclusions() -> CelExpression<'static> {
         CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
-                headers: &["Accept", "Accept-Encoding", "If-Match"],
-                query_parameters: &["foo", "bar", "baz"],
-            }),
-            response_certification: DefaultResponseCertification::ResponseHeaderExclusions(&[
-                "Date",
-                "Cookie",
-                "Set-Cookie",
-            ]),
+            request_certification: None,
+            response_certification: DefaultResponseCertification::CertifiedResponseHeaders(&[]),
         }))
     }
 
-    fn include_request_response_header_exclusions_cel() -> String {
-        remove_whitespace(
-            r#"default_certification(
-                ValidationArgs {
-                    request_certification: RequestCertification {
-                        certified_request_headers: [
-                            "Accept",
-                            "Accept-Encoding",
-                            "If-Match"
-                        ],
-                        certified_query_parameters: [
-                            "foo",
-                            "bar",
-                            "baz"
-                        ]
-                    },
-                    response_certification: ResponseCertification {
-                        response_header_exclusions: ResponseHeaderList {
-                            headers: [
-                                "Date",
-                                "Cookie",
-                                "Set-Cookie"
-                            ]
-                        }
-                    }
-                }
-            )"#,
-        )
+    fn no_request_empty_response_exclusions() -> CelExpression<'static> {
+        CelExpression::DefaultCertification(Some(DefaultCertification {
+            request_certification: None,
+            response_certification: DefaultResponseCertification::ResponseHeaderExclusions(&[]),
+        }))
     }
 
     fn include_request_response_header_inclusions() -> CelExpression<'static> {
@@ -255,36 +193,38 @@ mod tests {
         }))
     }
 
-    fn include_request_response_header_inclusions_cel() -> String {
-        remove_whitespace(
-            r#"default_certification(
-                ValidationArgs {
-                    request_certification: RequestCertification {
-                        certified_request_headers: [
-                            "Accept",
-                            "Accept-Encoding",
-                            "If-Match"
-                        ],
-                        certified_query_parameters: [
-                            "foo",
-                            "bar",
-                            "baz"
-                        ]
-                    },
-                    response_certification: ResponseCertification {
-                        certified_response_headers: ResponseHeaderList {
-                            headers: [
-                                "Cache-Control",
-                                "ETag",
-                                "Content-Length",
-                                "Content-Type",
-                                "Content-Encoding"
-                            ]
-                        }
-                    }
-                }
-            )"#,
-        )
+    fn include_request_response_header_exclusions() -> CelExpression<'static> {
+        CelExpression::DefaultCertification(Some(DefaultCertification {
+            request_certification: Some(DefaultRequestCertification {
+                headers: &["Accept", "Accept-Encoding", "If-Match"],
+                query_parameters: &["foo", "bar", "baz"],
+            }),
+            response_certification: DefaultResponseCertification::ResponseHeaderExclusions(&[
+                "Date",
+                "Cookie",
+                "Set-Cookie",
+            ]),
+        }))
+    }
+
+    fn include_request_empty_response_inclusions() -> CelExpression<'static> {
+        CelExpression::DefaultCertification(Some(DefaultCertification {
+            request_certification: Some(DefaultRequestCertification {
+                headers: &["Accept", "Accept-Encoding", "If-Match"],
+                query_parameters: &["foo", "bar", "baz"],
+            }),
+            response_certification: DefaultResponseCertification::CertifiedResponseHeaders(&[]),
+        }))
+    }
+
+    fn include_request_empty_response_exclusions() -> CelExpression<'static> {
+        CelExpression::DefaultCertification(Some(DefaultCertification {
+            request_certification: Some(DefaultRequestCertification {
+                headers: &["Accept", "Accept-Encoding", "If-Match"],
+                query_parameters: &["foo", "bar", "baz"],
+            }),
+            response_certification: DefaultResponseCertification::ResponseHeaderExclusions(&[]),
+        }))
     }
 
     fn empty_request_response_inclusions() -> CelExpression<'static> {
@@ -297,24 +237,6 @@ mod tests {
         }))
     }
 
-    fn empty_request_response_inclusions_cel() -> String {
-        remove_whitespace(
-            r#"default_certification(
-                ValidationArgs {
-                    request_certification: RequestCertification {
-                        certified_request_headers: [],
-                        certified_query_parameters: []
-                    },
-                    response_certification: ResponseCertification {
-                        certified_response_headers: ResponseHeaderList {
-                            headers: []
-                        }
-                    }
-                }
-            )"#,
-        )
-    }
-
     fn empty_request_response_exclusions() -> CelExpression<'static> {
         CelExpression::DefaultCertification(Some(DefaultCertification {
             request_certification: Some(DefaultRequestCertification {
@@ -323,27 +245,5 @@ mod tests {
             }),
             response_certification: DefaultResponseCertification::ResponseHeaderExclusions(&[]),
         }))
-    }
-
-    fn empty_request_response_exclusions_cel() -> String {
-        remove_whitespace(
-            r#"default_certification(
-                ValidationArgs {
-                    request_certification: RequestCertification {
-                        certified_request_headers: [],
-                        certified_query_parameters: []
-                    },
-                    response_certification: ResponseCertification {
-                        response_header_exclusions: ResponseHeaderList {
-                            headers: []
-                        }
-                    }
-                }
-            )"#,
-        )
-    }
-
-    fn remove_whitespace<'a>(s: &'a str) -> String {
-        s.chars().filter(|c| !c.is_whitespace()).collect()
     }
 }
