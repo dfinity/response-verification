@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add cel builder to ic-http-certification crate
 - add-ic-http-certification-crate add CEL expression generation
 
 ## 1.3.0 (2023-11-17)
