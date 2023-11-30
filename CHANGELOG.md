@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add copy on write support to CEL definition types
 - add cel builder to ic-http-certification crate
 - add-ic-http-certification-crate add CEL expression generation
 
