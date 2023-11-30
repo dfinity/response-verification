@@ -1,4 +1,5 @@
 use super::create_cel_expr;
+use std::borrow::Cow;
 
 /// A certification CEL expression defintion.
 /// Contains an enum variant for each CEL function supported for certification.
@@ -53,13 +54,13 @@ pub struct DefaultRequestCertification<'a> {
     ///
     /// As many or as little headers can be provided as desired.
     /// Providing an empty list will result in no request headers being certified.
-    pub headers: &'a [&'a str],
+    pub headers: Cow<'a, [&'a str]>,
 
     /// A list of request query parameters to include in certification.
     ///
     /// As many or as little query parameters can be provided as desired.
     /// Providing an empty list will result in no request query parameters being certified.
-    pub query_parameters: &'a [&'a str],
+    pub query_parameters: Cow<'a, [&'a str]>,
 }
 
 /// Options for configuring certification of a response.
@@ -75,17 +76,35 @@ pub enum DefaultResponseCertification<'a> {
     ///
     /// As many or as little headers can be provided as desired.
     /// Providing an empty list will result in no response headers being certified.
-    CertifiedResponseHeaders(&'a [&'a str]),
+    CertifiedResponseHeaders(Cow<'a, [&'a str]>),
 
     /// A list of response headers to exclude from certification.
     ///
     /// As many or as little headers can be provided as desired.
     /// Providing an empty list will result in all response headers being certified.
-    ResponseHeaderExclusions(&'a [&'a str]),
+    ResponseHeaderExclusions(Cow<'a, [&'a str]>),
+}
+
+impl<'a> DefaultResponseCertification<'a> {
+    /// A list of response headers to include in certification.
+    ///
+    /// As many or as little headers can be provided as desired.
+    /// Providing an empty list will result in no response headers being certified.
+    pub fn certified_response_headers(headers: &'a [&'a str]) -> Self {
+        Self::CertifiedResponseHeaders(Cow::Borrowed(headers))
+    }
+
+    /// A list of response headers to exclude from certification.
+    ///
+    /// As many or as little headers can be provided as desired.
+    /// Providing an empty list will result in all response headers being certified.
+    pub fn response_header_exclusions(headers: &'a [&'a str]) -> Self {
+        Self::ResponseHeaderExclusions(Cow::Borrowed(headers))
+    }
 }
 
 impl Default for DefaultResponseCertification<'_> {
     fn default() -> Self {
-        DefaultResponseCertification::CertifiedResponseHeaders(&[])
+        DefaultResponseCertification::CertifiedResponseHeaders(Cow::Borrowed(&[]))
     }
 }

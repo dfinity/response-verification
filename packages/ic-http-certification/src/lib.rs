@@ -34,7 +34,7 @@ The CEL builder interface is provided to ease the creation of CEL expressions th
 
 When certifying requests, the request body and method are always certified. To additionally certify request headers and query parameters, use [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) and [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()) respectively. Both methods take a [str] slice as an argument.
 
-When certifying a response, the response body and status code are always certified. To additionally certify response headers, use [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). This method takes the [DefaultResponseCertification](DefaultResponseCertification) enum as an argument. To specify header inclusions, use the [CertifiedResponseHeaders](DefaultResponseCertification::CertifiedResponseHeaders) variant of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [ResponseHeaderExclusions](DefaultResponseCertification::ResponseHeaderExclusions) variant of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both variants take a [str] slice as an argument.
+When certifying a response, the response body and status code are always certified. To additionally certify response headers, use [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). This method takes the [DefaultResponseCertification](DefaultResponseCertification) enum as an argument. To specify header inclusions, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both functions take a [str] slice as an argument.
 
 #### Fully certified request / response pair
 
@@ -46,7 +46,7 @@ use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 let cel_expr = DefaultCelBuilder::full_certification()
     .with_request_headers(&["Accept", "Accept-Encoding", "If-Match"])
     .with_request_query_parameters(&["foo", "bar", "baz"])
-    .with_response_certification(DefaultResponseCertification::CertifiedResponseHeaders(&[
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
         "Cache-Control",
         "ETag",
     ]))
@@ -63,7 +63,7 @@ For example, to certify only the request body and method:
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::full_certification()
-    .with_response_certification(DefaultResponseCertification::CertifiedResponseHeaders(&[
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
         "Cache-Control",
         "ETag",
     ]))
@@ -78,7 +78,7 @@ use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 let cel_expr = DefaultCelBuilder::full_certification()
     .with_request_headers(&[])
     .with_request_query_parameters(&[])
-    .with_response_certification(DefaultResponseCertification::CertifiedResponseHeaders(&[
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
         "Cache-Control",
         "ETag",
     ]))
@@ -93,7 +93,7 @@ Request certification can be skipped entirely by using [DefaultCelBuilder::respo
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::response_certification()
-    .with_response_certification(DefaultResponseCertification::ResponseHeaderExclusions(&[
+    .with_response_certification(DefaultResponseCertification::response_header_exclusions(&[
         "Date",
         "Cookie",
         "Set-Cookie",
@@ -103,7 +103,7 @@ let cel_expr = DefaultCelBuilder::response_certification()
 
 #### Partially certified response
 
-Similiarly to request certification, any number of response headers can be provided via the [CertifiedResponseHeaders](DefaultResponseCertification::CertifiedResponseHeaders) variant of the [DefaultResponseCertification](DefaultResponseCertification) enum when calling [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). The provided array can also be an empty. If the array is empty, or the method is not called, then no response headers will be certified.
+Similiarly to request certification, any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) function of the [DefaultResponseCertification](DefaultResponseCertification) enum when calling [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). The provided array can also be an empty. If the array is empty, or the method is not called, then no response headers will be certified.
 
 For example, to certify only the response body and status code:
 
@@ -120,7 +120,7 @@ This can also be done more explicitly:
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::response_certification()
-    .with_response_certification(DefaultResponseCertification::CertifiedResponseHeaders(&[]))
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[]))
     .build();
 ```
 
@@ -157,7 +157,7 @@ To define a CEL expression, start with the [CelExpression](cel::CelExpression) e
 
 When certifying requests, the request body and method are always certified. To additionally certify request headers and query parameters, use the [headers](cel::DefaultRequestCertification::headers) and [query_parameters](cel::DefaultRequestCertification::query_parameters) of [DefaultRequestCertification](cel::DefaultRequestCertification) struct. Both properties take a [str] slice as an argument.
 
-When certifying a response, the response body and status code are always certified. To additionally certify response headers, use the [CertifiedResponseHeaders](DefaultResponseCertification::CertifiedResponseHeaders) variant of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [ResponseHeaderExclusions](DefaultResponseCertification::ResponseHeaderExclusions) variant of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both variants take a [str] slice as an argument.
+When certifying a response, the response body and status code are always certified. To additionally certify response headers, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both functions take a [str] slice as an argument.
 
 Note that the example CEL expressions provided below are formatted for readability. The actual CEL expressions produced by [CelExpression::to_string](cel::CelExpression::to_string()) and [create_cel_expr](cel::create_cel_expr()) are minified. The minified CEL expression is preferred because it is more compact, resulting in a smaller payload and a faster evaluation time for the HTTP Gateway that is verifying the certification, but the formatted versions are also accepted.
 
@@ -166,14 +166,15 @@ Note that the example CEL expressions provided below are formatted for readabili
 To define a fully certified request and response pair, including request headers, query parameters, and response headers:
 
 ```rust
+use std::borrow::Cow;
 use ic_http_certification::cel::{CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification};
 
 let cel_expr = CelExpression::DefaultCertification(Some(DefaultCertification {
   request_certification: Some(DefaultRequestCertification {
-    headers: &["Accept", "Accept-Encoding", "If-Match"],
-    query_parameters: &["foo", "bar", "baz"],
+    headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
+    query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
   }),
-  response_certification: DefaultResponseCertification::CertifiedResponseHeaders(&[
+  response_certification: DefaultResponseCertification::certified_response_headers(&[
     "ETag",
     "Cache-Control",
   ]),
@@ -208,14 +209,15 @@ Any number of request headers or query parameters can be provided via the [heade
 For example, to certify only the request body and method:
 
 ```rust
+use std::borrow::Cow;
 use ic_http_certification::cel::{CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification};
 
 let cel_expr = CelExpression::DefaultCertification(Some(DefaultCertification {
   request_certification: Some(DefaultRequestCertification {
-    headers: &[],
-    query_parameters: &[],
+    headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
+    query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
   }),
-  response_certification: DefaultResponseCertification::CertifiedResponseHeaders(&[
+  response_certification: DefaultResponseCertification::certified_response_headers(&[
     "ETag",
     "Cache-Control",
   ]),
@@ -252,7 +254,7 @@ use ic_http_certification::cel::{CelExpression, DefaultCertification, DefaultRes
 
 let cel_expr = CelExpression::DefaultCertification(Some(DefaultCertification {
   request_certification: None,
-  response_certification: DefaultResponseCertification::CertifiedResponseHeaders(&[
+  response_certification: DefaultResponseCertification::certified_response_headers(&[
     "ETag",
     "Cache-Control",
   ]),
@@ -279,17 +281,18 @@ default_certification (
 
 #### Partially certified response
 
-Similiarly to request certification, any number of response headers can be provided via the [CertifiedResponseHeaders](DefaultResponseCertification::CertifiedResponseHeaders) variant of the [DefaultResponseCertification](DefaultResponseCertification) enum, and it can also be an empty array. If the array is empty, no response headers will be certified. For example:
+Similiarly to request certification, any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) function of the [DefaultResponseCertification](DefaultResponseCertification) enum, and it can also be an empty array. If the array is empty, no response headers will be certified. For example:
 
 ```rust
+use std::borrow::Cow;
 use ic_http_certification::cel::{CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification};
 
 let cel_expr = CelExpression::DefaultCertification(Some(DefaultCertification {
   request_certification: Some(DefaultRequestCertification {
-    headers: &["Accept", "Accept-Encoding", "If-Match"],
-    query_parameters: &["foo", "bar", "baz"],
+    headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
+    query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
   }),
-  response_certification: DefaultResponseCertification::CertifiedResponseHeaders(&[]),
+  response_certification: DefaultResponseCertification::certified_response_headers(&[]),
 }));
 ```
 
@@ -311,17 +314,18 @@ default_certification (
 )
 ```
 
-If the [ResponseHeaderExclusions](DefaultResponseCertification::ResponseHeaderExclusions) variant is used, an empty array will certify _all_ response headers. For example:
+If the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) funciton is used, an empty array will certify _all_ response headers. For example:
 
 ```rust
+use std::borrow::Cow;
 use ic_http_certification::cel::{CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification};
 
 let cel_expr = CelExpression::DefaultCertification(Some(DefaultCertification {
   request_certification: Some(DefaultRequestCertification {
-    headers: &["Accept", "Accept-Encoding", "If-Match"],
-    query_parameters: &["foo", "bar", "baz"],
+    headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
+    query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
   }),
-  response_certification: DefaultResponseCertification::ResponseHeaderExclusions(&[]),
+  response_certification: DefaultResponseCertification::response_header_exclusions(&[]),
 }));
 ```
 
