@@ -1,6 +1,7 @@
 use super::{
     CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification,
 };
+use std::borrow::Cow;
 
 /// A CEL expression builder for creating a default certification expression.
 #[derive(Debug, Clone)]
@@ -104,8 +105,8 @@ impl<'a> DefaultFullCelExpressionBuilder<'a> {
     /// Build the CEL expression, consuming the builder.
     pub fn build(self) -> CelExpression<'a> {
         let request_certification = Some(DefaultRequestCertification {
-            headers: self.request_headers,
-            query_parameters: self.request_query_parameters,
+            headers: Cow::Borrowed(self.request_headers),
+            query_parameters: Cow::Borrowed(self.request_query_parameters),
         });
 
         CelExpression::DefaultCertification(Some(DefaultCertification {
@@ -131,13 +132,15 @@ mod tests {
     #[rstest]
     fn no_request_response_inclusions(no_request_response_inclusions_cel: String) {
         let cel_expr = DefaultCelBuilder::response_certification()
-            .with_response_certification(DefaultResponseCertification::CertifiedResponseHeaders(&[
-                "Cache-Control",
-                "ETag",
-                "Content-Length",
-                "Content-Type",
-                "Content-Encoding",
-            ]))
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &[
+                    "Cache-Control",
+                    "ETag",
+                    "Content-Length",
+                    "Content-Type",
+                    "Content-Encoding",
+                ],
+            ))
             .build()
             .to_string();
 
@@ -147,11 +150,9 @@ mod tests {
     #[rstest]
     fn no_request_response_exclusions(no_request_response_exclusions_cel: String) {
         let cel_expr = DefaultCelBuilder::response_certification()
-            .with_response_certification(DefaultResponseCertification::ResponseHeaderExclusions(&[
-                "Date",
-                "Cookie",
-                "Set-Cookie",
-            ]))
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                &["Date", "Cookie", "Set-Cookie"],
+            ))
             .build()
             .to_string();
 
@@ -164,9 +165,9 @@ mod tests {
             .build()
             .to_string();
         let explicit_cel_expr = DefaultCelBuilder::response_certification()
-            .with_response_certification(
-                DefaultResponseCertification::CertifiedResponseHeaders(&[]),
-            )
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &[],
+            ))
             .build()
             .to_string();
         let default_cel_expr = DefaultCelBuilder::response_certification()
@@ -182,9 +183,9 @@ mod tests {
     #[rstest]
     fn no_request_empty_response_exclusions(no_request_empty_response_exclusions_cel: String) {
         let cel_expr = DefaultCelBuilder::response_certification()
-            .with_response_certification(
-                DefaultResponseCertification::ResponseHeaderExclusions(&[]),
-            )
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                &[],
+            ))
             .build()
             .to_string();
 
@@ -198,13 +199,15 @@ mod tests {
         let cel_expr = DefaultCelBuilder::full_certification()
             .with_request_headers(&["Accept", "Accept-Encoding", "If-Match"])
             .with_request_query_parameters(&["foo", "bar", "baz"])
-            .with_response_certification(DefaultResponseCertification::CertifiedResponseHeaders(&[
-                "Cache-Control",
-                "ETag",
-                "Content-Length",
-                "Content-Type",
-                "Content-Encoding",
-            ]))
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &[
+                    "Cache-Control",
+                    "ETag",
+                    "Content-Length",
+                    "Content-Type",
+                    "Content-Encoding",
+                ],
+            ))
             .build()
             .to_string();
 
@@ -218,11 +221,9 @@ mod tests {
         let cel_expr = DefaultCelBuilder::full_certification()
             .with_request_headers(&["Accept", "Accept-Encoding", "If-Match"])
             .with_request_query_parameters(&["foo", "bar", "baz"])
-            .with_response_certification(DefaultResponseCertification::ResponseHeaderExclusions(&[
-                "Date",
-                "Cookie",
-                "Set-Cookie",
-            ]))
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                &["Date", "Cookie", "Set-Cookie"],
+            ))
             .build()
             .to_string();
 
@@ -241,9 +242,9 @@ mod tests {
         let explicit_cel_expr = DefaultCelBuilder::full_certification()
             .with_request_headers(&["Accept", "Accept-Encoding", "If-Match"])
             .with_request_query_parameters(&["foo", "bar", "baz"])
-            .with_response_certification(
-                DefaultResponseCertification::CertifiedResponseHeaders(&[]),
-            )
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &[],
+            ))
             .build()
             .to_string();
         let default_cel_expr = DefaultCelBuilder::full_certification()
@@ -274,9 +275,9 @@ mod tests {
         let cel_expr = DefaultCelBuilder::full_certification()
             .with_request_headers(&["Accept", "Accept-Encoding", "If-Match"])
             .with_request_query_parameters(&["foo", "bar", "baz"])
-            .with_response_certification(
-                DefaultResponseCertification::ResponseHeaderExclusions(&[]),
-            )
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                &[],
+            ))
             .build()
             .to_string();
 
@@ -289,9 +290,9 @@ mod tests {
         let explicit_cel_expr = DefaultCelBuilder::full_certification()
             .with_request_headers(&[])
             .with_request_query_parameters(&[])
-            .with_response_certification(
-                DefaultResponseCertification::CertifiedResponseHeaders(&[]),
-            )
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &[],
+            ))
             .build()
             .to_string();
         let default_cel_expr = DefaultCelBuilder::full_certification()
@@ -309,17 +310,17 @@ mod tests {
     #[rstest]
     fn empty_request_response_exclusions(empty_request_response_exclusions_cel: String) {
         let implicit_cel_expr = DefaultCelBuilder::full_certification()
-            .with_response_certification(
-                DefaultResponseCertification::ResponseHeaderExclusions(&[]),
-            )
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                &[],
+            ))
             .build()
             .to_string();
         let explicit_cel_expr = DefaultCelBuilder::full_certification()
             .with_request_headers(&[])
             .with_request_query_parameters(&[])
-            .with_response_certification(
-                DefaultResponseCertification::ResponseHeaderExclusions(&[]),
-            )
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                &[],
+            ))
             .build()
             .to_string();
 
