@@ -14,5 +14,12 @@ repository.workspace = true
 license.workspace = true
 homepage.workspace = true
 
+[dependencies]
+candid.workspace = true
+serde.workspace = true
+http.workspace = true
+urlencoding.workspace = true
+thiserror.workspace = true
+
 [dev-dependencies]
 rstest.workspace = true

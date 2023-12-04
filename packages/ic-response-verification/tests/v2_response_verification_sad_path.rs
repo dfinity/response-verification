@@ -7,10 +7,10 @@ mod tests {
     };
     use candid::Principal;
     use ic_certificate_verification::CertificateVerificationError;
+    use ic_http_certification::{HttpRequest, HttpResponse};
     use ic_response_verification::{
         cel::cel_to_certification,
         hash::{request_hash, response_hash},
-        types::{Request, Response},
         verify_request_response_pair, ResponseVerificationError,
     };
     use ic_response_verification_test_utils::{
@@ -29,7 +29,7 @@ mod tests {
         let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
         let response_certification = certification.response_certification;
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![
@@ -38,7 +38,7 @@ mod tests {
             ],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
@@ -94,7 +94,7 @@ mod tests {
         let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
         let request_certification = certification.request_certification.unwrap();
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![
@@ -103,7 +103,7 @@ mod tests {
             ],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
@@ -161,7 +161,7 @@ mod tests {
         let request_certification = certification.request_certification.unwrap();
         let response_certification = certification.response_certification;
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![
@@ -170,7 +170,7 @@ mod tests {
             ],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
@@ -228,13 +228,13 @@ mod tests {
     ) {
         let current_time = get_current_timestamp();
 
-        let request = Request {
+        let request = HttpRequest {
             url: "/assets/js/app.js".to_string(),
             method: "GET".to_string(),
             headers: vec![],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: b"Hello World!".to_vec(),
             headers: vec![("IC-CertificateExpression".to_string(), cel_expr.clone())],
@@ -329,13 +329,13 @@ mod tests {
         let path = "/";
         let body = "Hello World!";
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![

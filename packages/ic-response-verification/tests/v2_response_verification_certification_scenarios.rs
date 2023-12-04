@@ -10,8 +10,9 @@ mod tests {
         etag_caching_match_response, etag_caching_mismatch_request, etag_caching_mismatch_response,
         etag_certificate_tree, index_js_response, not_found_response, redirect_response,
     };
+    use ic_http_certification::{HttpRequest, HttpResponse};
     use ic_response_verification::{
-        types::{Request, Response, VerificationInfo, VerifiedResponse},
+        types::{VerificationInfo, VerifiedResponse},
         verify_request_response_pair, ResponseVerificationError,
     };
     use ic_response_verification_test_utils::{
@@ -44,9 +45,9 @@ mod tests {
         #[from(certificate_tree)] expr_tree: ExprTree,
         #[case] req_path: &str,
         #[case] expr_path: &[&str],
-        #[case] mut expected_response: Response,
+        #[case] mut expected_response: HttpResponse,
     ) {
-        let request = Request {
+        let request = HttpRequest {
             url: req_path.into(),
             method: "GET".into(),
             headers: vec![
@@ -142,9 +143,9 @@ mod tests {
         #[from(certificate_tree)] expr_tree: ExprTree,
         #[case] req_path: &str,
         #[case] expr_path: &[&str],
-        #[case] mut expected_response: Response,
+        #[case] mut expected_response: HttpResponse,
     ) {
-        let request = Request {
+        let request = HttpRequest {
             url: req_path.into(),
             method: "GET".into(),
             headers: vec![
@@ -199,8 +200,8 @@ mod tests {
     )]
     fn etag_scenarios_pass_verification(
         #[from(etag_certificate_tree)] expr_tree: ExprTree,
-        #[case] request: Request,
-        #[case] mut expected_response: Response,
+        #[case] request: HttpRequest,
+        #[case] mut expected_response: HttpResponse,
     ) {
         let expr_path = ["app", "<$>"];
         let current_time = get_current_timestamp();
@@ -255,8 +256,8 @@ mod tests {
     #[rstest]
     fn etag_scenarios_fail_verification(
         #[from(etag_certificate_tree)] expr_tree: ExprTree,
-        #[from(etag_caching_mismatch_request)] request: Request,
-        #[from(etag_caching_match_response)] mut expected_response: Response,
+        #[from(etag_caching_mismatch_request)] request: HttpRequest,
+        #[from(etag_caching_match_response)] mut expected_response: HttpResponse,
     ) {
         let expr_path = ["app", "<$>"];
         let current_time = get_current_timestamp();
@@ -295,10 +296,10 @@ mod tests {
 
 #[cfg(not(target_arch = "wasm32"))]
 mod fixtures {
+    use ic_http_certification::{HttpRequest, HttpResponse};
     use ic_response_verification::{
         cel::cel_to_certification,
         hash::{request_hash, response_hash},
-        types::{Request, Response},
     };
     use ic_response_verification_test_utils::{
         create_expr_tree_path, deflate_encode, gzip_encode, hash, remove_whitespace, ExprTree,
@@ -314,10 +315,10 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn index_html_response() -> Response {
+    pub fn index_html_response() -> HttpResponse {
         let cel = asset_cel();
 
-        Response {
+        HttpResponse {
             status_code: 200,
             body: gzip_encode(&html_body()),
             headers: vec![
@@ -329,11 +330,11 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn index_js_response() -> Response {
+    pub fn index_js_response() -> HttpResponse {
         let cel = asset_cel();
         let body = br#"window.onload=function(){console.log("Hello World")};"#;
 
-        Response {
+        HttpResponse {
             status_code: 200,
             body: gzip_encode(body),
             headers: vec![
@@ -345,11 +346,11 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn not_found_response() -> Response {
+    pub fn not_found_response() -> HttpResponse {
         let cel = asset_cel();
         let body = br#"Not Found"#;
 
-        Response {
+        HttpResponse {
             status_code: 404,
             body: body.to_vec(),
             headers: vec![
@@ -361,11 +362,11 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn redirect_response() -> Response {
+    pub fn redirect_response() -> HttpResponse {
         let cel = redirect_cel();
         let body = br#"Moved Permanently"#;
 
-        Response {
+        HttpResponse {
             status_code: 301,
             body: body.to_vec(),
             headers: vec![
@@ -376,10 +377,10 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn content_encoding_identity_response() -> Response {
+    pub fn content_encoding_identity_response() -> HttpResponse {
         let cel = asset_cel();
 
-        Response {
+        HttpResponse {
             status_code: 200,
             body: html_body(),
             headers: vec![
@@ -391,10 +392,10 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn content_encoding_gzip_response() -> Response {
+    pub fn content_encoding_gzip_response() -> HttpResponse {
         let cel = asset_cel();
 
-        Response {
+        HttpResponse {
             status_code: 200,
             body: gzip_encode(&html_body()),
             headers: vec![
@@ -406,10 +407,10 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn content_encoding_deflate_response() -> Response {
+    pub fn content_encoding_deflate_response() -> HttpResponse {
         let cel = asset_cel();
 
-        Response {
+        HttpResponse {
             status_code: 200,
             body: deflate_encode(&html_body()),
             headers: vec![
@@ -421,10 +422,10 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_match_request() -> Request {
+    pub fn etag_caching_match_request() -> HttpRequest {
         let etag = hex::encode(hash(html_body().as_slice()));
 
-        Request {
+        HttpRequest {
             url: "/app".into(),
             method: "GET".into(),
             headers: vec![
@@ -437,11 +438,11 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_match_response() -> Response {
+    pub fn etag_caching_match_response() -> HttpResponse {
         let cel = etag_caching_match_cel();
         let body = br#"Not Modified"#;
 
-        Response {
+        HttpResponse {
             status_code: 304,
             body: body.to_vec(),
             headers: vec![
@@ -453,8 +454,8 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_mismatch_request() -> Request {
-        Request {
+    pub fn etag_caching_mismatch_request() -> HttpRequest {
+        HttpRequest {
             url: "/app".into(),
             method: "GET".into(),
             headers: vec![
@@ -470,11 +471,11 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_mismatch_response() -> Response {
+    pub fn etag_caching_mismatch_response() -> HttpResponse {
         let cel = etag_caching_mismatch_cel();
         let etag = hex::encode(hash(html_body().as_slice()));
 
-        Response {
+        HttpResponse {
             status_code: 200,
             body: deflate_encode(&html_body()),
             headers: vec![

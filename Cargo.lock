@@ -1491,7 +1491,12 @@ dependencies = [
 name = "ic-http-certification"
 version = "1.3.0"
 dependencies = [
+ "candid 0.9.8",
+ "http",
  "rstest",
+ "serde",
+ "thiserror",
+ "urlencoding",
 ]
 
 [[package]]
@@ -1552,6 +1557,7 @@ dependencies = [
  "ic-certification 1.3.0",
  "ic-certification-testing",
  "ic-crypto-tree-hash",
+ "ic-http-certification",
  "ic-representation-independent-hash",
  "ic-response-verification-test-utils",
  "ic-types",
@@ -1593,6 +1599,7 @@ dependencies = [
  "hex",
  "http",
  "ic-agent",
+ "ic-http-certification",
  "ic-response-verification",
  "ic-utils 0.29.0",
  "tokio",
@@ -1604,6 +1611,7 @@ version = "1.3.0"
 dependencies = [
  "base64 0.21.4",
  "console_error_panic_hook",
+ "ic-http-certification",
  "ic-response-verification",
  "ic-response-verification-test-utils",
  "js-sys",
@@ -2607,6 +2615,7 @@ version = "0.1.0"
 dependencies = [
  "candid 0.9.8",
  "hex",
+ "ic-http-certification",
  "ic-response-verification",
  "serde",
  "serde_bytes",

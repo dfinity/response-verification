@@ -4,14 +4,6 @@
 mod certification;
 pub use certification::*;
 
-/// Types to represent response objects used for certification.
-mod request;
-pub use request::*;
-
-/// Types to represent request objects used for certification.
-mod response;
-pub use response::*;
-
 /// Types to represent the result of verifying a request/response pair's certification.
 mod verification_result;
 pub use verification_result::*;

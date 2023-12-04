@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 ic-response-verification.workspace = true
+ic-http-certification.workspace = true
 candid.workspace = true
 hex.workspace = true
 serde.workspace = true

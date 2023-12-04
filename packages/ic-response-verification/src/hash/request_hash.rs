@@ -1,6 +1,7 @@
 use crate::error::ResponseVerificationResult;
-use crate::types::{Request, RequestCertification};
+use crate::types::RequestCertification;
 use ic_certification::hash_tree::Hash;
+use ic_http_certification::HttpRequest;
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 /// Calculates the
@@ -8,7 +9,7 @@ use ic_representation_independent_hash::{hash, representation_independent_hash, 
 /// of [crate::types::Request] according to [crate::types::RequestCertification] returned from
 /// [crate::cel::cel_to_certification].
 pub fn request_hash(
-    request: &Request,
+    request: &HttpRequest,
     request_certification: &RequestCertification,
 ) -> ResponseVerificationResult<Hash> {
     let mut filtered_headers = get_filtered_headers(&request.headers, request_certification);
@@ -157,8 +158,8 @@ mod tests {
         assert_eq!(result, result_with_fragment);
     }
 
-    fn create_request(uri: &str) -> Request {
-        Request {
+    fn create_request(uri: &str) -> HttpRequest {
+        HttpRequest {
             url: uri.into(),
             method: "POST".into(),
             headers: vec![

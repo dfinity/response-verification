@@ -15,4 +15,5 @@ ic-agent.workspace = true
 ic-utils.workspace = true
 tokio.workspace = true
 ic-response-verification.workspace = true
+ic-http-certification.workspace = true
 anyhow.workspace = true

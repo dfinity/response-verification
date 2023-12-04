@@ -76,6 +76,7 @@ getrandom = { version = "0.2", features = ["js"] }
 
 
 ic-certification = { path = "./packages/ic-certification", default-features = false, version = "1.3.0" }
+ic-http-certification = { path = "./packages/ic-http-certification", version = "1.3.0" }
 ic-certification-testing = { path = "./packages/ic-certification-testing" }
 ic-representation-independent-hash = { path = "./packages/ic-representation-independent-hash", version = "1.3.0" }
 ic-certificate-verification = { path = "./packages/ic-certificate-verification", version = "1.3.0" }

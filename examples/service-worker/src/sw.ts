@@ -73,10 +73,6 @@ self.addEventListener('activate', async () => {
           console.log(`Error parsing cbor: ${error.message}`);
           break;
 
-        case ResponseVerificationErrorCode.MalformedUrl:
-          console.log(`Invalid URL provided: ${error.message}`);
-          break;
-
         case ResponseVerificationErrorCode.CertificateVerificationFailed:
           console.log(`Certificate verification failed: ${error.message}`);
           break;

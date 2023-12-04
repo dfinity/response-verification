@@ -1,28 +1,13 @@
-use candid::{CandidType, Decode, Deserialize, Principal};
-use ic_response_verification::types::{Request, Response};
+use candid::{Decode, Principal};
+use ic_http_certification::{HttpRequest, HttpResponse};
 use ic_response_verification::{verify_request_response_pair, MIN_VERIFICATION_VERSION};
-
-#[derive(Debug, Clone, CandidType, Deserialize)]
-struct HttpRequest {
-    pub url: String,
-    pub headers: Vec<(String, String)>,
-    #[serde(with = "serde_bytes")]
-    pub body: Vec<u8>,
-}
-
-#[derive(Debug, Clone, CandidType, Deserialize)]
-pub struct HttpResponse {
-    pub headers: Vec<(String, String)>,
-    #[serde(with = "serde_bytes")]
-    pub body: Vec<u8>,
-}
 
 fn main() {
     let request_hex = "4449444C046D7B6C02007101716D016C04EFD6E40271E1EDEB4A71A2F5ED880400C6A4A19806020103012F03474554000704486F73742372646D78362D6A616161612D61616161612D61616164712D6361692E6963302E617070066163636570748701746578742F68746D6C2C6170706C69636174696F6E2F7868746D6C2B786D6C2C6170706C69636174696F6E2F786D6C3B713D302E392C696D6167652F617669662C696D6167652F776562702C696D6167652F61706E672C2A2F2A3B713D302E382C6170706C69636174696F6E2F7369676E65642D65786368616E67653B763D62333B713D302E39097365632D63682D756128224368726F6D69756D223B763D22313037222C20224E6F743D413F4272616E64223B763D22323422107365632D63682D75612D6D6F62696C65023F30127365632D63682D75612D706C6174666F726D092257696E646F77732219757067726164652D696E7365637572652D726571756573747301310A757365722D6167656E74744D6F7A696C6C612F352E30202857696E646F7773204E542031302E303B2057696E36343B2078363429204170706C655765624B69742F3533372E333620284B48544D4C2C206C696B65204765636B6F29204368726F6D652F3130372E302E353330342E313037205361666172692F3533372E3336";
     let request_candid = hex::decode(request_hex).expect("Could not decode request from hex");
     let http_request =
         Decode!(&request_candid, HttpRequest).expect("Could not decode request from candid");
-    let request = Request {
+    let request = HttpRequest {
         method: "GET".into(),
         url: http_request.url,
         headers: http_request.headers,
@@ -39,7 +24,7 @@ fn main() {
     let http_response =
         Decode!(&response_candid, HttpResponse).expect("Could not decode response from candid");
 
-    let response = Response {
+    let response = HttpResponse {
         status_code: 200,
         headers: http_response.headers,
         body: http_response.body,
