@@ -29,7 +29,8 @@ wasm-bindgen = { version = "0.2", optional = true }
 thiserror.workspace = true
 sha2.workspace = true
 http.workspace = true
-ic-certification = { workspace = true }
+ic-certification.workspace = true
+ic-http-certification.workspace = true
 ic-representation-independent-hash.workspace = true
 ic-cbor.workspace = true
 ic-certificate-verification.workspace = true

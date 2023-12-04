@@ -2,7 +2,8 @@ use crate::agent::create_agent;
 use anyhow::{anyhow, Result};
 use ic_agent::export::Principal;
 use ic_agent::Agent;
-use ic_response_verification::types::{Request, Response, VerificationInfo};
+use ic_http_certification::{HttpRequest, HttpResponse};
+use ic_response_verification::types::VerificationInfo;
 use ic_utils::call::SyncCall;
 use ic_utils::interfaces::http_request::HeaderField;
 use ic_utils::interfaces::HttpRequestCanister;
@@ -150,7 +151,7 @@ async fn perform_test(
     path: &str,
     certificate_version: Option<&u16>,
     agent: &Agent,
-) -> Result<(VerificationInfo, Response)> {
+) -> Result<(VerificationInfo, HttpResponse)> {
     let canister_id = Principal::from_text(canister_id)?;
     let canister_interface = HttpRequestCanister::create(agent, canister_id);
 
@@ -159,13 +160,13 @@ async fn perform_test(
         .call()
         .await?;
 
-    let request = Request {
+    let request = HttpRequest {
         method: "GET".into(),
         headers: vec![],
         url: path.into(),
         body: vec![],
     };
-    let response = Response {
+    let response = HttpResponse {
         headers: response
             .headers
             .iter()

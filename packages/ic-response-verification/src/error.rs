@@ -13,17 +13,9 @@ pub type ResponseVerificationResult<T = ()> = Result<T, ResponseVerificationErro
 /// The primary container for response verification errors
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseVerificationError {
-    /// The URL was malformed and could not be parsed correctly
-    #[error(r#"Failed to parse url: "{0}""#)]
-    MalformedUrl(String),
-
     /// Error converting UTF-8 string
     #[error(r#"IO error: "{0}""#)]
     IoError(#[from] std::io::Error),
-
-    /// Error converting UTF-8 string
-    #[error(r#"Error converting UTF8 string bytes: "{0}""#)]
-    Utf8ConversionError(#[from] std::string::FromUtf8Error),
 
     /// An unsupported verification version was requested
     #[error(r#"The requested verification version {requested_version:?} is not supported, the current supported range is {min_supported_version:?}-{max_supported_version:?}"#)]
@@ -100,6 +92,10 @@ pub enum ResponseVerificationError {
     /// Failed to verify certificate
     #[error("Certificate verification failed")]
     CertificateVerificationFailed(#[from] CertificateVerificationError),
+
+    /// HTTP Certification error
+    #[error(r#"HTTP Certification error: "{0}""#)]
+    HttpCertificationError(#[from] ic_http_certification::HttpCertificationError),
 }
 
 /// JS Representation of the ResponseVerificationError code
@@ -107,12 +103,8 @@ pub enum ResponseVerificationError {
 #[wasm_bindgen(js_name = ResponseVerificationErrorCode)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ResponseVerificationJsErrorCode {
-    /// The URL was malformed and could not be parsed correctly
-    MalformedUrl,
     /// Error converting UTF-8 string
     IoError,
-    /// Error converting UTF-8 string
-    Utf8ConversionError,
     /// An unsupported verification version was requested
     UnsupportedVerificationVersion,
     /// Mismatch between the minimum requested version and the actual requested version
@@ -145,6 +137,8 @@ pub enum ResponseVerificationJsErrorCode {
     CborDecodingFailed,
     /// Failed to verify certificate
     CertificateVerificationFailed,
+    /// HTTP Certification error
+    HttpCertificationError,
 }
 
 /// JS Representation of the ResponseVerificationError
@@ -165,13 +159,7 @@ pub struct ResponseVerificationJsError {
 impl From<ResponseVerificationError> for ResponseVerificationJsError {
     fn from(error: ResponseVerificationError) -> ResponseVerificationJsError {
         let code = match error {
-            ResponseVerificationError::MalformedUrl(_) => {
-                ResponseVerificationJsErrorCode::MalformedUrl
-            }
             ResponseVerificationError::IoError(_) => ResponseVerificationJsErrorCode::IoError,
-            ResponseVerificationError::Utf8ConversionError { .. } => {
-                ResponseVerificationJsErrorCode::Utf8ConversionError
-            }
             ResponseVerificationError::UnsupportedVerificationVersion { .. } => {
                 ResponseVerificationJsErrorCode::UnsupportedVerificationVersion
             }
@@ -214,6 +202,9 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::CertificateVerificationFailed(_) => {
                 ResponseVerificationJsErrorCode::CertificateVerificationFailed
             }
+            ResponseVerificationError::HttpCertificationError(_) => {
+                ResponseVerificationJsErrorCode::HttpCertificationError
+            }
         };
         let message = error.to_string();
 
@@ -229,20 +220,22 @@ mod tests {
     use super::*;
     use crate::cel::CelParserError;
     use base64::{engine::general_purpose, Engine as _};
+    use ic_http_certification::HttpCertificationError;
     use ic_response_verification_test_utils::hex_decode;
     use wasm_bindgen_test::wasm_bindgen_test;
 
     #[wasm_bindgen_test]
-    fn error_into_invalid_url() {
-        let error = ResponseVerificationError::MalformedUrl("https://internetcomputer.org".into());
-
+    fn error_into_http_certification_error() {
+        let error = ResponseVerificationError::HttpCertificationError(
+            HttpCertificationError::MalformedUrl("https://internetcomputer.org".into()),
+        );
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::MalformedUrl,
-                message: r#"Failed to parse url: "https://internetcomputer.org""#.into(),
+                code: ResponseVerificationJsErrorCode::HttpCertificationError,
+                message: r#"HTTP Certification error: "Failed to parse url: "https://internetcomputer.org"""#.into(),
             }
         )
     }
@@ -270,16 +263,18 @@ mod tests {
         let invalid_utf_bytes = hex_decode("fca1a1a1a1a1");
         let inner_error = String::from_utf8(invalid_utf_bytes).expect_err("Expected error");
 
-        let error = ResponseVerificationError::Utf8ConversionError(inner_error.clone());
+        let error = ResponseVerificationError::HttpCertificationError(
+            HttpCertificationError::Utf8ConversionError(inner_error.clone()),
+        );
 
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::Utf8ConversionError,
+                code: ResponseVerificationJsErrorCode::HttpCertificationError,
                 message: format!(
-                    r#"Error converting UTF8 string bytes: "{0}""#,
+                    r#"HTTP Certification error: "Error converting UTF8 string bytes: "{0}"""#,
                     inner_error.to_string()
                 ),
             }

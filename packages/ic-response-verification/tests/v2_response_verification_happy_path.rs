@@ -1,8 +1,9 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
+    use ic_http_certification::{HttpRequest, HttpResponse};
     use ic_response_verification::cel::cel_to_certification;
     use ic_response_verification::hash::{request_hash, response_hash};
-    use ic_response_verification::types::{Request, Response, VerificationInfo, VerifiedResponse};
+    use ic_response_verification::types::{VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification_test_utils::{
         create_v2_fixture, get_current_timestamp, remove_whitespace, V2Fixture,
@@ -27,13 +28,13 @@ mod tests {
         "#,
         );
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
@@ -97,13 +98,13 @@ mod tests {
         let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
         let response_certification = certification.response_certification;
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
@@ -185,7 +186,7 @@ mod tests {
         let request_certification = certification.request_certification.unwrap();
         let response_certification = certification.response_certification;
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![
@@ -194,7 +195,7 @@ mod tests {
             ],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
@@ -273,13 +274,13 @@ mod tests {
         let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
         let response_certification = certification.response_certification;
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
-        let mut response = Response {
+        let mut response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![

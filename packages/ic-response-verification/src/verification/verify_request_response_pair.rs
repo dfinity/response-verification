@@ -4,7 +4,7 @@ use crate::{
     error::{ResponseVerificationError, ResponseVerificationResult},
     hash,
     hash::filter_response_headers,
-    types::{Certification, Request, Response, VerificationInfo, VerifiedResponse},
+    types::{Certification, VerificationInfo, VerifiedResponse},
     validation::{
         validate_body, validate_expr_hash, validate_expr_path, validate_hashes, validate_tree,
     },
@@ -12,6 +12,7 @@ use crate::{
 use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
 use ic_certificate_verification::{validate_certificate_time, VerifyCertificate};
 use ic_certification::{hash_tree::Hash, Certificate, HashTree};
+use ic_http_certification::{HttpRequest, HttpResponse};
 use ic_representation_independent_hash::hash;
 
 /// The minimum verification version supported by this package.
@@ -22,8 +23,8 @@ pub const MAX_VERIFICATION_VERSION: u8 = 2;
 /// The primary entry point for verifying a request and response pair. This will verify the response
 /// with respect to the request, according the [Response Verification Spec]().
 pub fn verify_request_response_pair(
-    request: Request,
-    response: Response,
+    request: HttpRequest,
+    response: HttpResponse,
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
@@ -100,8 +101,8 @@ pub fn verify_request_response_pair(
 
 fn verification(
     version: u8,
-    request: Request,
-    response: Response,
+    request: HttpRequest,
+    response: HttpResponse,
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
@@ -147,8 +148,8 @@ fn verification(
 }
 
 fn v1_verification(
-    request: Request,
-    response: Response,
+    request: HttpRequest,
+    response: HttpResponse,
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
@@ -196,8 +197,8 @@ fn v1_verification(
 }
 
 fn v2_verification(
-    request: Request,
-    response: Response,
+    request: HttpRequest,
+    response: HttpResponse,
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,

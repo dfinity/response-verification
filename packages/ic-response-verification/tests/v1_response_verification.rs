@@ -2,7 +2,8 @@
 mod tests {
     use ic_certificate_verification::CertificateVerificationError;
     use ic_certification_testing::{CertificateBuilder, CertificateData};
-    use ic_response_verification::types::{Request, Response, VerificationInfo, VerifiedResponse};
+    use ic_http_certification::{HttpRequest, HttpResponse};
+    use ic_response_verification::types::{VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification::ResponseVerificationError;
     use ic_response_verification_test_utils::{
@@ -39,14 +40,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -102,14 +103,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: encoded_path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -164,14 +165,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: "/".into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -226,14 +227,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: b"Hello IC!".to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -280,14 +281,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -338,14 +339,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -398,14 +399,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -456,14 +457,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -511,14 +512,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -564,14 +565,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
@@ -617,14 +618,14 @@ mod tests {
 
         let certificate_header = create_certificate_header(&cbor_encoded_certificate, &tree_cbor);
 
-        let request = Request {
+        let request = HttpRequest {
             url: path.into(),
             method: "GET".into(),
             headers: vec![],
             body: vec![],
         };
 
-        let response = Response {
+        let response = HttpResponse {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],

@@ -22,6 +22,7 @@ wasm-opt = ["-Oz", "--enable-mutable-globals"]
 
 [dependencies]
 ic-response-verification = { workspace = true, features = ["js"] }
+ic-http-certification.workspace = true
 console_error_panic_hook.workspace = true
 js-sys.workspace = true
 wasm-bindgen.workspace = true

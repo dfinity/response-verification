@@ -1,5 +1,6 @@
-use crate::types::{Response, ResponseCertification};
+use crate::types::ResponseCertification;
 use ic_certification::hash_tree::Hash;
+use ic_http_certification::HttpResponse;
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
@@ -20,7 +21,7 @@ pub struct ResponseHeaders {
 /// Filters headers of [crate::types::Response] according to [crate::types::ResponseCertification]
 /// returned from [crate::cel::cel_to_certification].
 pub fn filter_response_headers(
-    response: &Response,
+    response: &HttpResponse,
     response_certification: &ResponseCertification,
 ) -> ResponseHeaders {
     let headers_filter: Box<dyn Fn(_) -> _> = match response_certification {
@@ -113,7 +114,10 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
 /// of a [crate::types::Response] according to [crate::types::ResponseCertification] returned from
 /// [crate::cel::cel_to_certification].
-pub fn response_hash(response: &Response, response_certification: &ResponseCertification) -> Hash {
+pub fn response_hash(
+    response: &HttpResponse,
+    response_certification: &ResponseCertification,
+) -> Hash {
     let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
         response_headers_hash(&response.status_code.into(), &filtered_headers),
@@ -213,7 +217,7 @@ mod tests {
         let response_certification =
             ResponseCertification::CertifiedHeaders(vec!["Accept-Encoding".into()]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
-        let response_without_excluded_headers = Response {
+        let response_without_excluded_headers = HttpResponse {
             status_code: 200,
             headers: vec![
                 (
@@ -253,7 +257,7 @@ mod tests {
         let response_certification =
             ResponseCertification::HeaderExclusions(vec!["Content-Security-Policy".into()]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
-        let response_without_excluded_headers = Response {
+        let response_without_excluded_headers = HttpResponse {
             status_code: 200,
             headers: vec![
                 (
@@ -296,7 +300,7 @@ mod tests {
         let response_certification =
             ResponseCertification::CertifiedHeaders(vec!["Accept-Encoding".into()]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
-        let response_without_excluded_headers = Response {
+        let response_without_excluded_headers = HttpResponse {
             status_code: 200,
             headers: vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
@@ -343,7 +347,7 @@ mod tests {
         let response_certification =
             ResponseCertification::HeaderExclusions(vec!["Content-Security-Policy".into()]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
-        let response_without_excluded_headers = Response {
+        let response_without_excluded_headers = HttpResponse {
             status_code: 200,
             headers: vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
@@ -375,8 +379,8 @@ mod tests {
     /// of the expected hashes. Generating the hash for a string with so much whitespace manually
     /// may be prone to error in copy/pasting the string into a website and missing a leading/trailing
     /// newline or a tab character somewhere.
-    fn create_response(cel_expression: &str) -> Response {
-        Response {
+    fn create_response(cel_expression: &str) -> HttpResponse {
+        HttpResponse {
             status_code: 200,
             headers: vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),

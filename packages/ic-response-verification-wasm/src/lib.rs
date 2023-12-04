@@ -1,9 +1,13 @@
+use crate::request::request_from_js;
+use crate::response::response_from_js;
 use ic_response_verification::{
-    types::{Request, Response, VerificationInfo},
-    verify_request_response_pair as verify_request_response_pair_impl, ResponseVerificationJsError,
-    MAX_VERIFICATION_VERSION, MIN_VERIFICATION_VERSION,
+    types::VerificationInfo, verify_request_response_pair as verify_request_response_pair_impl,
+    ResponseVerificationJsError, MAX_VERIFICATION_VERSION, MIN_VERIFICATION_VERSION,
 };
 use wasm_bindgen::{prelude::*, JsCast};
+
+mod request;
+mod response;
 
 #[wasm_bindgen]
 extern "C" {
@@ -46,8 +50,8 @@ pub fn verify_request_response_pair(
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
 ) -> Result<JsVerificationInfo, ResponseVerificationJsError> {
-    let request = Request::from(JsValue::from(request));
-    let response = Response::from(JsValue::from(response));
+    let request = request_from_js(JsValue::from(request));
+    let response = response_from_js(JsValue::from(response));
 
     verify_request_response_pair_impl(
         request.into(),
