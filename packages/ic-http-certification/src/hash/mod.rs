@@ -7,3 +7,6 @@ pub use request_hash::*;
 
 mod response_hash;
 pub use response_hash::*;
+
+/// Sha256 Digest: 32 bytes
+pub type Hash = [u8; 32];

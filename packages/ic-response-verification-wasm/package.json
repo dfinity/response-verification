@@ -20,6 +20,7 @@
   "browser": "./dist/web/web.js",
   "types": "./dist/web/web.d.ts",
   "scripts": {
-    "build": "../../scripts/package.sh . ./dist"
+    "build": "../../scripts/package.sh . ./dist",
+    "test": " wasm-pack test --node"
   }
 }

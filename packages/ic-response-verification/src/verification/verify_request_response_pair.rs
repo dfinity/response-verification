@@ -1,10 +1,8 @@
 use super::{body::decode_body, certificate_header::CertificateHeader};
 use crate::{
-    cel,
+    cel::{map_cel_ast, parse_cel_expression},
     error::{ResponseVerificationError, ResponseVerificationResult},
-    hash,
-    hash::filter_response_headers,
-    types::{Certification, VerificationInfo, VerifiedResponse},
+    types::{VerificationInfo, VerifiedResponse},
     validation::{
         validate_body, validate_expr_hash, validate_expr_path, validate_hashes, validate_tree,
     },
@@ -12,8 +10,12 @@ use crate::{
 use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
 use ic_certificate_verification::{validate_certificate_time, VerifyCertificate};
 use ic_certification::{hash_tree::Hash, Certificate, HashTree};
-use ic_http_certification::{HttpRequest, HttpResponse};
+use ic_http_certification::{
+    cel::CelExpression, filter_response_headers, request_hash, response_headers_hash, HttpRequest,
+    HttpResponse,
+};
 use ic_representation_independent_hash::hash;
+use std::collections::HashMap;
 
 /// The minimum verification version supported by this package.
 pub const MIN_VERIFICATION_VERSION: u8 = 1;
@@ -31,90 +33,47 @@ pub fn verify_request_response_pair(
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
 ) -> ResponseVerificationResult<VerificationInfo> {
-    let mut encoding: Option<String> = None;
-    let mut tree: Option<HashTree> = None;
-    let mut certificate: Option<Certificate> = None;
-    let mut version = MIN_VERIFICATION_VERSION;
-    let mut expr_path: Option<Vec<String>> = None;
-    let mut certification: Option<Certification> = None;
-    let mut expr_hash: Option<Hash> = None;
+    let headers: HashMap<_, _> = response
+        .headers
+        .iter()
+        .map(|(k, v)| (k.to_lowercase(), v.clone()))
+        .collect();
 
-    for (name, value) in response.headers.iter() {
-        if name.eq_ignore_ascii_case("Ic-Certificate") {
-            let certificate_header = CertificateHeader::from(value.as_str())?;
+    let encoding = headers
+        .get("content-encoding")
+        .map(|encoding| encoding.as_str());
 
-            tree = certificate_header
-                .tree
-                .map(|tree| HashTree::from_cbor(&tree))
-                .transpose()?;
+    let Some(certificate_header) = headers.get("ic-certificate") else {
+        return Err(ResponseVerificationError::MissingCertification);
+    };
 
-            certificate = certificate_header
-                .certificate
-                .map(|certificate| Certificate::from_cbor(&certificate))
-                .transpose()?;
+    let certificate_header = CertificateHeader::from(certificate_header)?;
 
-            version = certificate_header
-                .version
-                .unwrap_or(MIN_VERIFICATION_VERSION);
+    let Some(tree) = certificate_header
+        .tree
+        .map(|tree| HashTree::from_cbor(&tree))
+        .transpose()? else {
+            return Err(ResponseVerificationError::MissingTree);
+        };
 
-            expr_path = certificate_header
-                .expr_path
-                .map(|expr_path| parse_cbor_string_array(&expr_path))
-                .transpose()?;
-        }
+    let Some(certificate) = certificate_header
+        .certificate
+        .map(|certificate| Certificate::from_cbor(&certificate))
+        .transpose()? else {
+            return Err(ResponseVerificationError::MissingCertificate);
+        };
 
-        if name.eq_ignore_ascii_case("Ic-CertificateExpression") {
-            certification = cel::cel_to_certification(value)?;
-            expr_hash = Some(hash(value.as_bytes()));
-        }
+    let version = certificate_header
+        .version
+        .unwrap_or(MIN_VERIFICATION_VERSION);
 
-        if name.eq_ignore_ascii_case("Content-Encoding") {
-            encoding = Some(value.into());
-        }
-    }
-
-    if version < min_requested_verification_version {
-        return Err(
+    match version {
+        version if version < min_requested_verification_version => Err(
             ResponseVerificationError::RequestedVerificationVersionMismatch {
                 requested_version: version,
                 min_requested_verification_version,
             },
-        );
-    }
-
-    verification(
-        version,
-        request,
-        response,
-        canister_id,
-        current_time_ns,
-        max_cert_time_offset_ns,
-        tree,
-        certificate,
-        encoding,
-        expr_path,
-        expr_hash,
-        certification,
-        ic_public_key,
-    )
-}
-
-fn verification(
-    version: u8,
-    request: HttpRequest,
-    response: HttpResponse,
-    canister_id: &[u8],
-    current_time_ns: u128,
-    max_cert_time_offset_ns: u128,
-    tree: Option<HashTree>,
-    certificate: Option<Certificate>,
-    encoding: Option<String>,
-    expr_path: Option<Vec<String>>,
-    expr_hash: Option<Hash>,
-    certification: Option<Certification>,
-    ic_public_key: &[u8],
-) -> ResponseVerificationResult<VerificationInfo> {
-    match version {
+        ),
         1 => v1_verification(
             request,
             response,
@@ -126,19 +85,35 @@ fn verification(
             encoding,
             ic_public_key,
         ),
-        2 => v2_verification(
-            request,
-            response,
-            canister_id,
-            current_time_ns,
-            max_cert_time_offset_ns,
-            tree,
-            certificate,
-            expr_path,
-            expr_hash,
-            certification,
-            ic_public_key,
-        ),
+        2 => match headers.get("ic-certificateexpression") {
+            Some(certificate_expression_header) => {
+                let Some(expr_path) = certificate_header
+                    .expr_path
+                    .map(|expr_path| parse_cbor_string_array(&expr_path))
+                    .transpose()? else {
+                        return Err(ResponseVerificationError::MissingCertificateExpressionPath);
+                    };
+
+                let cel_ast = parse_cel_expression(certificate_expression_header)?;
+                let certification = map_cel_ast(&cel_ast)?;
+                let expr_hash = hash(certificate_expression_header.as_bytes());
+
+                v2_verification(
+                    request,
+                    response,
+                    canister_id,
+                    current_time_ns,
+                    max_cert_time_offset_ns,
+                    tree,
+                    certificate,
+                    expr_path,
+                    expr_hash,
+                    certification,
+                    ic_public_key,
+                )
+            }
+            None => Err(ResponseVerificationError::MissingCertification),
+        },
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
             min_supported_version: MIN_VERIFICATION_VERSION,
             max_supported_version: MAX_VERIFICATION_VERSION,
@@ -153,47 +128,40 @@ fn v1_verification(
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
-    tree: Option<HashTree>,
-    certificate: Option<Certificate>,
-    encoding: Option<String>,
+    tree: HashTree,
+    certificate: Certificate,
+    encoding: Option<&str>,
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<VerificationInfo> {
-    match (tree, certificate) {
-        (Some(tree), Some(certificate)) => {
-            validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-            certificate.verify(canister_id, ic_public_key)?;
+    validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
+    certificate.verify(canister_id, ic_public_key)?;
 
-            let request_path = &request.get_path()?;
-            let decoded_body = decode_body(&response.body, &encoding)?;
-            let decoded_body_sha = hash(decoded_body.as_slice());
+    let request_path = request.get_path()?;
+    let decoded_body = decode_body(&response.body, encoding)?;
+    let decoded_body_sha = hash(decoded_body.as_slice());
 
-            if !validate_tree(canister_id, &certificate, &tree) {
-                return Err(ResponseVerificationError::InvalidTree);
-            }
-
-            let mut valid_body = validate_body(&tree, request_path, &decoded_body_sha);
-            if encoding.is_some() && !valid_body {
-                let body_sha = hash(response.body.as_slice());
-                valid_body = validate_body(&tree, request_path, &body_sha);
-            }
-
-            if !valid_body {
-                return Err(ResponseVerificationError::InvalidResponseBody);
-            }
-
-            Ok(VerificationInfo {
-                response: Some(VerifiedResponse {
-                    status_code: None,
-                    headers: Vec::new(),
-                    body: response.body,
-                }),
-                verification_version: 1,
-            })
-        }
-        (None, Some(_certificate)) => Err(ResponseVerificationError::MissingTree),
-        (Some(_tree), None) => Err(ResponseVerificationError::MissingCertificate),
-        _ => Err(ResponseVerificationError::MissingCertification),
+    if !validate_tree(canister_id, &certificate, &tree) {
+        return Err(ResponseVerificationError::InvalidTree);
     }
+
+    let mut valid_body = validate_body(&tree, &request_path, &decoded_body_sha);
+    if encoding.is_some() && !valid_body {
+        let body_sha = hash(response.body.as_slice());
+        valid_body = validate_body(&tree, &request_path, &body_sha);
+    }
+
+    if !valid_body {
+        return Err(ResponseVerificationError::InvalidResponseBody);
+    }
+
+    Ok(VerificationInfo {
+        response: Some(VerifiedResponse {
+            status_code: None,
+            headers: Vec::new(),
+            body: response.body,
+        }),
+        verification_version: 1,
+    })
 }
 
 fn v2_verification(
@@ -202,32 +170,14 @@ fn v2_verification(
     canister_id: &[u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
-    tree: Option<HashTree>,
-    certificate: Option<Certificate>,
-    expr_path: Option<Vec<String>>,
-    expr_hash: Option<Hash>,
-    certification: Option<Certification>,
+    tree: HashTree,
+    certificate: Certificate,
+    expr_path: Vec<String>,
+    expr_hash: Hash,
+    certification: CelExpression,
     ic_public_key: &[u8],
 ) -> ResponseVerificationResult<VerificationInfo> {
     let request_path = request.get_path()?;
-
-    let (expr_path, expr_hash, certificate, tree) = match (expr_path, expr_hash, certificate, tree)
-    {
-        (Some(expr_path), Some(expr_hash), Some(certificate), Some(tree)) => {
-            (expr_path, expr_hash, certificate, tree)
-        }
-        (Some(_), Some(_), Some(_), None) => return Err(ResponseVerificationError::MissingTree),
-        (Some(_), Some(_), None, Some(_)) => {
-            return Err(ResponseVerificationError::MissingCertificate)
-        }
-        (Some(_), None, Some(_), Some(_)) => {
-            return Err(ResponseVerificationError::MissingCertificateExpression)
-        }
-        (None, Some(_), Some(_), Some(_)) => {
-            return Err(ResponseVerificationError::MissingCertificateExpressionPath)
-        }
-        _ => return Err(ResponseVerificationError::MissingCertification),
-    };
 
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
     certificate.verify(canister_id, ic_public_key)?;
@@ -240,7 +190,7 @@ fn v2_verification(
         return Err(ResponseVerificationError::InvalidExpressionPath);
     }
 
-    let Some(certification) = certification else {
+    let CelExpression::DefaultCertification(Some(certification)) = certification else {
         return match validate_expr_hash(&expr_path, &expr_hash, &tree).is_some() {
             true => Ok(VerificationInfo {
                 response: None,
@@ -253,14 +203,14 @@ fn v2_verification(
     let request_hash = certification
         .request_certification
         .as_ref()
-        .map(|request_certification| hash::request_hash(&request, request_certification))
+        .map(|request_certification| request_hash(&request, request_certification))
         .transpose()?;
 
     let body_hash = hash(&response.body);
     let response_headers =
         filter_response_headers(&response, &certification.response_certification);
     let response_headers_hash =
-        hash::response_headers_hash(&response.status_code.into(), &response_headers);
+        response_headers_hash(&response.status_code.into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
     let are_hashes_valid = validate_hashes(

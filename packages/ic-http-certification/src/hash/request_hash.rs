@@ -1,17 +1,15 @@
-use crate::error::ResponseVerificationResult;
-use crate::types::RequestCertification;
-use ic_certification::hash_tree::Hash;
-use ic_http_certification::HttpRequest;
+use super::Hash;
+use crate::{cel::DefaultRequestCertification, HttpCertificationResult, HttpRequest};
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 /// Calculates the
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
 /// of [crate::types::Request] according to [crate::types::RequestCertification] returned from
 /// [crate::cel::cel_to_certification].
-pub fn request_hash(
-    request: &HttpRequest,
-    request_certification: &RequestCertification,
-) -> ResponseVerificationResult<Hash> {
+pub fn request_hash<'a>(
+    request: &'a HttpRequest,
+    request_certification: &'a DefaultRequestCertification,
+) -> HttpCertificationResult<Hash> {
     let mut filtered_headers = get_filtered_headers(&request.headers, request_certification);
 
     filtered_headers.push((
@@ -37,14 +35,14 @@ pub fn request_hash(
 
 fn get_filtered_headers(
     headers: &[(String, String)],
-    request_certification: &RequestCertification,
+    request_certification: &DefaultRequestCertification,
 ) -> Vec<(String, Value)> {
     headers
         .iter()
         .filter_map(|(header_name, header_value)| {
             let is_header_included =
                 request_certification
-                    .certified_request_headers
+                    .headers
                     .iter()
                     .any(|header_to_include| {
                         header_to_include.eq_ignore_ascii_case(&header_name.to_string())
@@ -62,7 +60,7 @@ fn get_filtered_headers(
         .collect()
 }
 
-fn get_filtered_query(query: &str, request_certification: &RequestCertification) -> String {
+fn get_filtered_query(query: &str, request_certification: &DefaultRequestCertification) -> String {
     let filtered_query_string = query
         .split('&')
         .filter(|query_fragment| {
@@ -71,11 +69,12 @@ fn get_filtered_query(query: &str, request_certification: &RequestCertification)
 
             query_param_name
                 .map(|query_param_name| {
-                    request_certification.certified_query_parameters.iter().any(
-                        |query_param_to_include| {
+                    request_certification
+                        .query_parameters
+                        .iter()
+                        .any(|query_param_to_include| {
                             query_param_to_include.eq_ignore_ascii_case(query_param_name)
-                        },
-                    )
+                        })
                 })
                 .unwrap_or(false)
         })
@@ -88,12 +87,13 @@ fn get_filtered_query(query: &str, request_certification: &RequestCertification)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::borrow::Cow;
 
     #[test]
     fn request_hash_without_query() {
-        let request_certification = RequestCertification {
-            certified_request_headers: vec!["host".into()],
-            certified_query_parameters: vec![],
+        let request_certification = DefaultRequestCertification {
+            headers: Cow::Borrowed(&["host"]),
+            query_parameters: Cow::Borrowed(&[]),
         };
         let request = create_request("https://ic0.app");
         let expected_hash =
@@ -107,9 +107,9 @@ mod tests {
 
     #[test]
     fn request_hash_with_query() {
-        let request_certification = RequestCertification {
-            certified_request_headers: vec!["host".into()],
-            certified_query_parameters: vec!["q".into(), "name".into()],
+        let request_certification = DefaultRequestCertification {
+            headers: Cow::Borrowed(&["host"]),
+            query_parameters: Cow::Borrowed(&["q", "name"]),
         };
         let request =
             create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");
@@ -124,9 +124,9 @@ mod tests {
 
     #[test]
     fn request_hash_query_order_matters() {
-        let request_certification = RequestCertification {
-            certified_request_headers: vec!["host".into()],
-            certified_query_parameters: vec!["q".into(), "name".into()],
+        let request_certification = DefaultRequestCertification {
+            headers: Cow::Borrowed(&["host"]),
+            query_parameters: Cow::Borrowed(&["q", "name"]),
         };
         let request =
             create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");
@@ -141,9 +141,9 @@ mod tests {
 
     #[test]
     fn request_hash_query_with_fragment_does_not_change() {
-        let request_certification = RequestCertification {
-            certified_request_headers: vec!["host".into()],
-            certified_query_parameters: vec!["q".into(), "name".into()],
+        let request_certification = DefaultRequestCertification {
+            headers: Cow::Borrowed(&["host"]),
+            query_parameters: Cow::Borrowed(&["q", "name"]),
         };
         let request =
             create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");

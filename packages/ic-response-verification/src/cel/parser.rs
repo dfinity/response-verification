@@ -12,14 +12,14 @@ use std::collections::HashMap;
 use std::fmt;
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum CelValue {
-    String(String),
-    Array(Vec<CelValue>),
-    Object(String, HashMap<String, CelValue>),
-    Function(String, Vec<CelValue>),
+pub(crate) enum CelValue<'a> {
+    String(&'a str),
+    Array(Vec<CelValue<'a>>),
+    Object(&'a str, HashMap<&'a str, CelValue<'a>>),
+    Function(&'a str, Vec<CelValue<'a>>),
 }
 
-impl fmt::Display for CelValue {
+impl<'a> fmt::Display for CelValue<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
@@ -53,47 +53,39 @@ where
 
 fn ident<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, String, E> {
+) -> IResult<&'a str, &'a str, E> {
     let acceptable_special_chars = "_";
 
     context(
         "parse_ident",
-        map(
-            take_while(move |e| acceptable_special_chars.contains(e) || is_alphanumeric(e as u8)),
-            String::from,
-        ),
+        take_while(move |e| acceptable_special_chars.contains(e) || is_alphanumeric(e as u8)),
     )(i)
 }
 
 fn parse_str<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, String, E> {
+) -> IResult<&'a str, &'a str, E> {
     let acceptable_special_chars = "-";
 
     context(
         "parse_str",
-        map(
-            escaped(
-                take_while(move |e| {
-                    acceptable_special_chars.contains(e) || is_alphanumeric(e as u8)
-                }),
-                '\\',
-                one_of("\"n\\"),
-            ),
-            String::from,
+        escaped(
+            take_while(move |e| acceptable_special_chars.contains(e) || is_alphanumeric(e as u8)),
+            '\\',
+            one_of("\"n\\"),
         ),
     )(i)
 }
 
 fn string<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, String, E> {
+) -> IResult<&'a str, &'a str, E> {
     context("string", drop_separators('\"', '\"', parse_str))(i)
 }
 
 fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, Vec<CelValue>, E> {
+) -> IResult<&'a str, Vec<CelValue<'a>>, E> {
     context(
         "array",
         drop_separators(
@@ -106,7 +98,7 @@ fn array<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, (String, CelValue), E> {
+) -> IResult<&'a str, (&'a str, CelValue<'a>), E> {
     context(
         "key_value",
         separated_pair(
@@ -119,7 +111,7 @@ fn key_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn object<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, (String, HashMap<String, CelValue>), E> {
+) -> IResult<&'a str, (&'a str, HashMap<&'a str, CelValue<'a>>), E> {
     context(
         "object",
         tuple((
@@ -138,7 +130,7 @@ fn object<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn function<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, (String, Vec<CelValue>), E> {
+) -> IResult<&'a str, (&'a str, Vec<CelValue<'a>>), E> {
     context(
         "function",
         tuple((
@@ -157,7 +149,7 @@ fn function<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 
 fn cel_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     i: &'a str,
-) -> IResult<&'a str, CelValue, E> {
+) -> IResult<&'a str, CelValue<'a>, E> {
     context(
         "cel_value",
         trim_whitespace(alt((
@@ -169,7 +161,7 @@ fn cel_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
     )(i)
 }
 
-pub fn parse_cel_expression(i: &str) -> CelParserResult<CelValue> {
+pub(crate) fn parse_cel_expression(i: &str) -> CelParserResult<CelValue> {
     #[cfg(feature = "debug")]
     let result = cel_value::<nom::error::VerboseError<&str>>(i);
 

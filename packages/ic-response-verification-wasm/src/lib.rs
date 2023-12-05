@@ -32,7 +32,7 @@ pub fn get_max_verification_version() -> u8 {
 }
 
 #[wasm_bindgen(start)]
-pub fn main() {
+pub fn main_js() {
     console_error_panic_hook::set_once();
     log::set_logger(&wasm_bindgen_console_logger::DEFAULT_LOGGER).unwrap();
     log::set_max_level(log::LevelFilter::Trace);

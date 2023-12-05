@@ -1,9 +1,5 @@
 //! Public types used for response verification.
 
-/// Types to represent parsed CEL expressions.
-mod certification;
-pub use certification::*;
-
 /// Types to represent the result of verifying a request/response pair's certification.
 mod verification_result;
 pub use verification_result::*;

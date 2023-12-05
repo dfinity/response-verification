@@ -1,6 +1,6 @@
-use crate::types::Certification;
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Hash, HashTree, Label, SubtreeLookupResult};
+use ic_http_certification::cel::DefaultCertification;
 
 fn path_from_parts<T>(parts: &[T]) -> Vec<Label>
 where
@@ -135,7 +135,7 @@ pub fn validate_hashes(
     response_hash: &Hash,
     expr_path: &[String],
     tree: &HashTree,
-    certification: &Certification,
+    certification: &DefaultCertification,
 ) -> bool {
     let Some(expr_tree) = validate_expr_hash(expr_path, expr_hash, tree) else {
         return false;
@@ -159,10 +159,12 @@ pub fn validate_hashes(
 
 #[cfg(test)]
 mod tests {
+    use std::borrow::Cow;
+
     use super::*;
     use crate::test_utils::test_utils::{create_pruned, remove_whitespace, sha256_from_hex};
-    use crate::types::{RequestCertification, ResponseCertification};
     use ic_certification::hash_tree::{fork, label, leaf};
+    use ic_http_certification::{cel::DefaultRequestCertification, DefaultResponseCertification};
     use ic_representation_independent_hash::hash;
     use ic_response_verification_test_utils::hex_decode;
 
@@ -1040,15 +1042,15 @@ mod tests {
         }
     }
 
-    fn create_certification() -> Certification {
-        Certification {
-            request_certification: Some(RequestCertification {
-                certified_request_headers: vec!["Host".into()],
-                certified_query_parameters: vec![],
+    fn create_certification<'a>() -> DefaultCertification<'a> {
+        DefaultCertification {
+            request_certification: Some(DefaultRequestCertification {
+                headers: Cow::Borrowed(&["Host"]),
+                query_parameters: Cow::Borrowed(&[]),
             }),
-            response_certification: ResponseCertification::CertifiedHeaders(vec![
-                "Accept-Encoding".into(),
-                "Cache-Control".into(),
+            response_certification: DefaultResponseCertification::certified_response_headers(&[
+                "Accept-Encoding",
+                "Cache-Control",
             ]),
         }
     }
