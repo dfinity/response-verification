@@ -18,8 +18,10 @@ fn create_default_cel_expr(certification: &Option<DefaultCertification>) -> Stri
     match certification {
         None => cel_expr.push_str("no_certification:Empty{}"),
         Some(certification) => {
+            cel_expr.push_str("certification:Certification{");
             create_request_cel_expr(&mut cel_expr, certification.request_certification.as_ref());
             create_response_cel_expr(&mut cel_expr, &certification.response_certification);
+            cel_expr.push_str("}");
         }
     }
 
