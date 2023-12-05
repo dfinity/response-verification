@@ -296,13 +296,12 @@ mod tests {
 
 #[cfg(not(target_arch = "wasm32"))]
 mod fixtures {
-    use ic_http_certification::{HttpRequest, HttpResponse};
-    use ic_response_verification::{
-        cel::cel_to_certification,
-        hash::{request_hash, response_hash},
+    use ic_http_certification::{
+        cel::CelExpression, request_hash, response_hash, DefaultCelBuilder,
+        DefaultResponseCertification, HttpRequest, HttpResponse,
     };
     use ic_response_verification_test_utils::{
-        create_expr_tree_path, deflate_encode, gzip_encode, hash, remove_whitespace, ExprTree,
+        create_expr_tree_path, deflate_encode, gzip_encode, hash, ExprTree,
     };
     use rstest::*;
 
@@ -324,7 +323,7 @@ mod fixtures {
             headers: vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -340,7 +339,7 @@ mod fixtures {
             headers: vec![
                 ("Content-Type".into(), "text/javascript".into()),
                 ("Content-Encoding".into(), "gzip".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -356,7 +355,7 @@ mod fixtures {
             headers: vec![
                 ("Content-Type".into(), "text/plain".into()),
                 ("Content-Encoding".into(), "identity".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -371,7 +370,7 @@ mod fixtures {
             body: body.to_vec(),
             headers: vec![
                 ("Location".into(), "/new-path".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -386,7 +385,7 @@ mod fixtures {
             headers: vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "identity".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -401,7 +400,7 @@ mod fixtures {
             headers: vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -416,7 +415,7 @@ mod fixtures {
             headers: vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -448,7 +447,7 @@ mod fixtures {
             headers: vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
@@ -482,100 +481,57 @@ mod fixtures {
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
                 ("ETag".into(), etag),
-                ("IC-CertificateExpression".into(), cel),
+                ("IC-CertificateExpression".into(), cel.to_string()),
             ],
         }
     }
 
     #[fixture]
-    pub fn asset_cel() -> String {
-        remove_whitespace(
-            r#"
-                default_certification (
-                    ValidationArgs {
-                        certification: Certification {
-                            no_request_certification: Empty {},
-                            response_certification: ResponseCertification {
-                                certified_response_headers: ResponseHeaderList {
-                                    headers: ["Content-Type", "Content-Encoding"]
-                                }
-                            }
-                        }
-                    }
-                )
-            "#,
-        )
+    pub fn asset_cel() -> CelExpression<'static> {
+        DefaultCelBuilder::response_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &["Content-Type", "Content-Encoding"],
+            ))
+            .build()
     }
 
     #[fixture]
-    pub fn redirect_cel() -> String {
-        remove_whitespace(
-            r#"
-                default_certification (
-                    ValidationArgs {
-                        certification: Certification {
-                            no_request_certification: Empty {},
-                            response_certification: ResponseCertification {
-                                certified_response_headers: ResponseHeaderList {
-                                    headers: ["Location"]
-                                }
-                            }
-                        }
-                    }
-                )
-            "#,
-        )
+    pub fn redirect_cel() -> CelExpression<'static> {
+        DefaultCelBuilder::response_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &["Location"],
+            ))
+            .build()
     }
 
     #[fixture]
-    pub fn etag_caching_match_cel() -> String {
-        remove_whitespace(
-            r#"
-                default_certification (
-                    ValidationArgs {
-                        certification: Certification {
-                            request_certification: RequestCertification {
-                                certified_request_headers: ["If-None-Match"],
-                                certified_query_parameters: []
-                            },
-                            response_certification: ResponseCertification {
-                                certified_response_headers: ResponseHeaderList {
-                                    headers: ["Content-Type", "Content-Encoding"]
-                                }
-                            }
-                        }
-                    }
-                )
-            "#,
-        )
+    pub fn etag_caching_match_cel() -> CelExpression<'static> {
+        DefaultCelBuilder::full_certification()
+            .with_request_headers(&["If-None-Match"])
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &["Content-Type", "Content-Encoding", "ETag"],
+            ))
+            .build()
     }
 
     #[fixture]
-    pub fn etag_caching_mismatch_cel() -> String {
-        remove_whitespace(
-            r#"
-                default_certification (
-                    ValidationArgs {
-                        certification: Certification {
-                            no_request_certification: Empty {},
-                            response_certification: ResponseCertification {
-                                certified_response_headers: ResponseHeaderList {
-                                    headers: ["Content-Type", "Content-Encoding", "ETag"]
-                                }
-                            }
-                        }
-                    }
-                )
-            "#,
-        )
+    pub fn etag_caching_mismatch_cel() -> CelExpression<'static> {
+        DefaultCelBuilder::response_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &["Content-Type", "Content-Encoding", "ETag"],
+            ))
+            .build()
     }
 
     #[fixture]
     pub fn certificate_tree() -> ExprTree {
-        let asset_cel = asset_cel();
+        let asset_certification = asset_cel();
+        let asset_cel = asset_certification.to_string();
         let asset_cel_hash = hash(asset_cel.as_bytes());
-        let asset_certification = cel_to_certification(&asset_cel).unwrap().unwrap();
 
+        let CelExpression::DefaultCertification(Some(asset_certification)) = asset_certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let index_html_response_hash = response_hash(
             &index_html_response(),
             &asset_certification.response_certification,
@@ -589,10 +545,13 @@ mod fixtures {
             &asset_certification.response_certification,
         );
 
-        let redirect_cel = redirect_cel();
+        let redirect_certification = redirect_cel();
+        let redirect_cel = redirect_certification.to_string();
         let redirect_cel_hash = hash(redirect_cel.as_bytes());
-        let redirect_certification = cel_to_certification(&redirect_cel).unwrap().unwrap();
 
+        let CelExpression::DefaultCertification(Some(redirect_certification)) = redirect_certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let redirect_response_hash = response_hash(
             &redirect_response(),
             &redirect_certification.response_certification,
@@ -660,11 +619,13 @@ mod fixtures {
 
     #[fixture]
     pub fn etag_certificate_tree() -> ExprTree {
-        let etag_caching_match_cel = etag_caching_match_cel();
+        let etag_caching_match_certification = etag_caching_match_cel();
+        let etag_caching_match_cel = etag_caching_match_certification.to_string();
         let etag_caching_match_cel_hash = hash(etag_caching_match_cel.as_bytes());
-        let etag_caching_match_certification = cel_to_certification(&etag_caching_match_cel)
-            .unwrap()
-            .unwrap();
+
+        let CelExpression::DefaultCertification(Some(etag_caching_match_certification)) = etag_caching_match_certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let etag_caching_match_response_hash = response_hash(
             &etag_caching_match_response(),
             &etag_caching_match_certification.response_certification,
@@ -677,11 +638,13 @@ mod fixtures {
         )
         .unwrap();
 
-        let etag_caching_mismatch_cel = etag_caching_mismatch_cel();
+        let etag_caching_mismatch_certification = etag_caching_mismatch_cel();
+        let etag_caching_mismatch_cel = etag_caching_mismatch_certification.to_string();
         let etag_caching_mismatch_cel_hash = hash(etag_caching_mismatch_cel.as_bytes());
-        let etag_caching_mismatch_certification = cel_to_certification(&etag_caching_mismatch_cel)
-            .unwrap()
-            .unwrap();
+
+        let CelExpression::DefaultCertification(Some(etag_caching_mismatch_certification)) = etag_caching_mismatch_certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let etag_caching_mismatch_response_hash = response_hash(
             &etag_caching_mismatch_response(),
             &etag_caching_mismatch_certification.response_certification,
