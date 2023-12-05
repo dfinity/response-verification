@@ -7,12 +7,10 @@ mod tests {
     };
     use candid::Principal;
     use ic_certificate_verification::CertificateVerificationError;
-    use ic_http_certification::{HttpRequest, HttpResponse};
-    use ic_response_verification::{
-        cel::cel_to_certification,
-        hash::{request_hash, response_hash},
-        verify_request_response_pair, ResponseVerificationError,
+    use ic_http_certification::{
+        request_hash, response_hash, CelExpression, HttpRequest, HttpResponse,
     };
+    use ic_response_verification::{verify_request_response_pair, ResponseVerificationError};
     use ic_response_verification_test_utils::{
         create_expr_tree_path, create_v2_certificate_fixture, create_v2_fixture, create_v2_header,
         create_v2_tree_fixture, get_current_timestamp, hash, hash_from_hex, ExprTree,
@@ -21,12 +19,18 @@ mod tests {
     use rstest::*;
 
     #[rstest]
-    fn request_hash_mismatch_fails_verification(#[from(full_certification_cel)] cel_expr: String) {
+    fn request_hash_mismatch_fails_verification(
+        #[from(full_certification_cel)] certification: CelExpression<'static>,
+    ) {
         let path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
-        let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
+
+        let cel_expr = certification.to_string();
+        let CelExpression::DefaultCertification(Some(certification)) = certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let response_certification = certification.response_certification;
 
         let request = HttpRequest {
@@ -85,13 +89,17 @@ mod tests {
 
     #[rstest]
     pub fn response_hash_mismatch_fails_verification(
-        #[from(full_certification_cel)] cel_expr: String,
+        #[from(full_certification_cel)] certification: CelExpression<'static>,
     ) {
         let path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
-        let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
+
+        let cel_expr = certification.to_string();
+        let CelExpression::DefaultCertification(Some(certification)) = certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let request_certification = certification.request_certification.unwrap();
 
         let request = HttpRequest {
@@ -150,14 +158,18 @@ mod tests {
 
     #[rstest]
     fn cel_expr_hash_fails_verification(
-        #[from(skip_certification_cel)] wrong_cel_expr: String,
-        #[from(full_certification_cel)] cel_expr: String,
+        #[from(skip_certification_cel)] wrong_cel_expr: CelExpression<'static>,
+        #[from(full_certification_cel)] certification: CelExpression<'static>,
     ) {
         let path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
-        let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
+
+        let cel_expr = certification.to_string();
+        let CelExpression::DefaultCertification(Some(certification)) = certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let request_certification = certification.request_certification.unwrap();
         let response_certification = certification.response_certification;
 
@@ -174,7 +186,10 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
-                ("IC-CertificateExpression".into(), wrong_cel_expr.clone()),
+                (
+                    "IC-CertificateExpression".into(),
+                    wrong_cel_expr.to_string(),
+                ),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
         };
@@ -223,9 +238,10 @@ mod tests {
     #[case::more_specific_path_exists_in_tree(&["assets", "<*>"])]
     #[case::does_not_match_request_url(&["assets", "js", "dashboard.js", "<$>"])]
     fn invalid_expr_path_fails_verification(
-        #[from(skip_certification_cel)] cel_expr: String,
+        #[from(skip_certification_cel)] certification: CelExpression<'static>,
         #[case] expr_path: &[&str],
     ) {
+        let cel_expr = certification.to_string();
         let current_time = get_current_timestamp();
 
         let request = HttpRequest {
@@ -240,7 +256,7 @@ mod tests {
             headers: vec![("IC-CertificateExpression".to_string(), cel_expr.clone())],
         };
 
-        let cel_expr_hash = hash(cel_expr);
+        let cel_expr_hash = hash(&cel_expr);
         let mut expr_tree = ExprTree::new();
 
         expr_tree.insert(&create_expr_tree_path(
@@ -372,8 +388,9 @@ mod tests {
 
 #[cfg(not(target_arch = "wasm32"))]
 mod fixtures {
+    use ic_http_certification::{CelExpression, DefaultCelBuilder, DefaultResponseCertification};
     use ic_response_verification_test_utils::{
-        create_v2_fixture, get_current_timestamp, get_timestamp, remove_whitespace, V2Fixture,
+        create_v2_fixture, get_current_timestamp, get_timestamp, V2Fixture,
     };
     use ic_types::CanisterId;
     use rstest::*;
@@ -386,43 +403,23 @@ mod fixtures {
     pub const MIN_REQUESTED_VERIFICATION_VERSION: u8 = 2;
 
     #[fixture]
-    pub fn full_certification_cel() -> String {
-        remove_whitespace(
-            r#"
-                default_certification (
-                    ValidationArgs {
-                        certification: Certification {
-                            request_certification: RequestCertification {
-                                certified_request_headers: ["Cache-Control"],
-                                certified_query_parameters: ["q"]
-                            },
-                            response_certification: ResponseCertification {
-                                certified_response_headers: ResponseHeaderList {
-                                    headers: ["Cache-Control"]
-                                }
-                            }
-                        }
-                    }
-                )
-            "#,
-        )
+    pub fn full_certification_cel() -> CelExpression<'static> {
+        DefaultCelBuilder::full_certification()
+            .with_request_headers(&["Cache-Control"])
+            .with_request_query_parameters(&["q"])
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &["Cache-Control"],
+            ))
+            .build()
     }
 
     #[fixture]
-    pub fn skip_certification_cel() -> String {
-        remove_whitespace(
-            r#"
-                default_certification (
-                    ValidationArgs {
-                        no_certification: Empty { }
-                    }
-                )
-            "#,
-        )
+    pub fn skip_certification_cel() -> CelExpression<'static> {
+        DefaultCelBuilder::skip_certification()
     }
 
     pub fn invalid_root_key_certificate() -> (V2Fixture, u128, String) {
-        let cel_expr = skip_certification_cel();
+        let cel_expr = skip_certification_cel().to_string();
         let expr_path = ["", "<$>"];
         let current_time = get_current_timestamp();
 
@@ -442,7 +439,7 @@ mod fixtures {
     }
 
     pub fn expired_certificate() -> (V2Fixture, u128, String) {
-        let cel_expr = skip_certification_cel();
+        let cel_expr = skip_certification_cel().to_string();
         let expr_path = ["", "<$>"];
         let current_time = get_current_timestamp();
 
@@ -458,7 +455,7 @@ mod fixtures {
     }
 
     pub fn future_certificate() -> (V2Fixture, u128, String) {
-        let cel_expr = skip_certification_cel();
+        let cel_expr = skip_certification_cel().to_string();
         let expr_path = ["", "<$>"];
         let current_time = get_current_timestamp();
 
@@ -474,7 +471,7 @@ mod fixtures {
     }
 
     pub fn wrong_canister_certificate() -> (V2Fixture, u128, String) {
-        let cel_expr = skip_certification_cel();
+        let cel_expr = skip_certification_cel().to_string();
         let expr_path = ["", "<$>"];
         let other_canister_id = CanisterId::from_u64(15);
         let current_time = get_current_timestamp();
