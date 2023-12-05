@@ -383,7 +383,7 @@ Typically these requests have been routed through `raw` Internet Computer URLs i
 )]
 
 pub mod cel;
-pub use cel::{DefaultCelBuilder, DefaultResponseCertification};
+pub use cel::{CelExpression, DefaultCelBuilder, DefaultResponseCertification};
 pub mod error;
 pub use error::*;
 pub mod http;
