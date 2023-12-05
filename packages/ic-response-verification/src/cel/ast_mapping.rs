@@ -1,12 +1,16 @@
 use crate::cel::error::{CelParserError, CelParserResult};
 use crate::cel::parser::CelValue;
-use crate::types::{Certification, RequestCertification, ResponseCertification};
+use ic_http_certification::cel::{
+    CelExpression, DefaultCertification, DefaultRequestCertification,
+};
+use ic_http_certification::DefaultResponseCertification;
+use std::borrow::Cow;
 use std::collections::HashMap;
 
 fn validate_object<'a>(
-    cel: &'a CelValue,
+    cel: &'a CelValue<'a>,
     name: &str,
-) -> CelParserResult<&'a HashMap<String, CelValue>> {
+) -> CelParserResult<&'a HashMap<&'a str, CelValue<'a>>> {
     let CelValue::Object(object_name, object_value) = cel else {
         return Err(CelParserError::UnexpectedNodeType {
             node_name: name.into(),
@@ -15,18 +19,21 @@ fn validate_object<'a>(
         });
     };
 
-    if object_name != name {
+    if *object_name != name {
         return Err(CelParserError::UnexpectedNodeName {
             node_type: "Object".into(),
             expected_name: name.into(),
-            found_name: object_name.into(),
+            found_name: (*object_name).into(),
         });
     }
 
     Ok(object_value)
 }
 
-fn validate_function<'a>(cel: &'a CelValue, name: &str) -> CelParserResult<&'a Vec<CelValue>> {
+fn validate_function<'a>(
+    cel: &'a CelValue<'a>,
+    name: &'a str,
+) -> CelParserResult<&'a Vec<CelValue<'a>>> {
     let CelValue::Function(function_name, function_value) = cel else {
         return Err(CelParserError::UnexpectedNodeType {
             node_name: name.into(),
@@ -35,18 +42,21 @@ fn validate_function<'a>(cel: &'a CelValue, name: &str) -> CelParserResult<&'a V
         });
     };
 
-    if function_name != name {
+    if *function_name != name {
         return Err(CelParserError::UnexpectedNodeName {
             node_type: "Function".into(),
             expected_name: name.into(),
-            found_name: function_name.into(),
+            found_name: (*function_name).into(),
         });
     }
 
     Ok(function_value)
 }
 
-fn validate_string_array(cel: &CelValue, name: &str) -> CelParserResult<Vec<String>> {
+fn validate_string_array<'a>(
+    cel: &'a CelValue<'a>,
+    name: &'a str,
+) -> CelParserResult<Vec<&'a str>> {
     let CelValue::Array(array) = cel else {
         return Err(CelParserError::UnexpectedNodeType {
             node_name: name.into(),
@@ -66,16 +76,16 @@ fn validate_string_array(cel: &CelValue, name: &str) -> CelParserResult<Vec<Stri
                 });
             };
 
-            Ok(e.to_owned())
+            Ok(*e)
         })
         .collect::<Result<_, _>>()?;
 
     Ok(elements)
 }
 
-fn validate_request_certification(
-    certification: &HashMap<String, CelValue>,
-) -> CelParserResult<Option<RequestCertification>> {
+fn validate_request_certification<'a>(
+    certification: &'a HashMap<&'a str, CelValue<'a>>,
+) -> CelParserResult<Option<DefaultRequestCertification<'a>>> {
     let no_request_certification = certification.get("no_request_certification");
     let request_certification = certification.get("request_certification");
 
@@ -105,17 +115,17 @@ fn validate_request_certification(
             let certified_query_parameters =
                 validate_string_array(certified_query_parameters, "certified_query_parameters")?;
 
-            Ok(Some(RequestCertification {
-                certified_request_headers,
-                certified_query_parameters,
+            Ok(Some(DefaultRequestCertification {
+                headers: Cow::Owned(certified_request_headers),
+                query_parameters: Cow::Owned(certified_query_parameters),
             }))
         }
     };
 }
 
-fn validate_response_certification(
-    certification: &HashMap<String, CelValue>,
-) -> CelParserResult<ResponseCertification> {
+fn validate_response_certification<'a>(
+    certification: &'a HashMap<&'a str, CelValue<'a>>,
+) -> CelParserResult<DefaultResponseCertification<'a>> {
     let Some(response_certification) = certification.get("response_certification") else {
         return Err(CelParserError::MissingObjectProperty {
             object_name: "RequestCertification".into(),
@@ -125,7 +135,7 @@ fn validate_response_certification(
     let response_certification = validate_object(response_certification, "ResponseCertification")?;
 
     let get_response_certification_headers =
-        |property_name| -> CelParserResult<Option<Vec<String>>> {
+        |property_name| -> CelParserResult<Option<Vec<&'a str>>> {
             response_certification
                 .get(property_name)
                 .map(|certified_response_headers| {
@@ -146,13 +156,17 @@ fn validate_response_certification(
     match (certified_response_headers, response_header_exclusions) {
         (Some(_), Some(_)) => Err(CelParserError::ExtraneousResponseCertificationProperty),
         (None, None) => Err(CelParserError::MissingResponseCertificationProperty),
-        (Some(headers), None) => Ok(ResponseCertification::CertifiedHeaders(headers)),
-        (None, Some(headers)) => Ok(ResponseCertification::HeaderExclusions(headers)),
+        (Some(headers), None) => Ok(DefaultResponseCertification::CertifiedResponseHeaders(
+            Cow::Owned(headers),
+        )),
+        (None, Some(headers)) => Ok(DefaultResponseCertification::ResponseHeaderExclusions(
+            Cow::Owned(headers),
+        )),
     }
 }
 
-pub fn map_cel_ast(cel: CelValue) -> CelParserResult<Option<Certification>> {
-    let default_certification = validate_function(&cel, "default_certification")?;
+pub(crate) fn map_cel_ast<'a>(cel: &'a CelValue<'a>) -> CelParserResult<CelExpression<'a>> {
+    let default_certification = validate_function(cel, "default_certification")?;
 
     let Some(validation_args) = default_certification.get(0) else {
         return Err(CelParserError::MissingFunctionParameter {
@@ -171,7 +185,7 @@ pub fn map_cel_ast(cel: CelValue) -> CelParserResult<Option<Certification>> {
     match (no_certification, certification) {
         (Some(_), Some(_)) => Err(CelParserError::ExtraneousValidationArgsProperty),
         (None, None) => Err(CelParserError::MissingValidationArgsProperty),
-        (Some(_), None) => Ok(None),
+        (Some(_), None) => Ok(CelExpression::DefaultCertification(None)),
         (None, Some(certification)) => {
             let certification = validate_object(certification, "Certification")?;
 
@@ -179,10 +193,12 @@ pub fn map_cel_ast(cel: CelValue) -> CelParserResult<Option<Certification>> {
 
             let response_certification = validate_response_certification(certification)?;
 
-            Ok(Some(Certification {
-                request_certification,
-                response_certification,
-            }))
+            Ok(CelExpression::DefaultCertification(Some(
+                DefaultCertification {
+                    request_certification,
+                    response_certification,
+                },
+            )))
         }
     }
 }

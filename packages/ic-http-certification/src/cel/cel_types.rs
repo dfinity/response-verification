@@ -4,7 +4,7 @@ use std::borrow::Cow;
 /// A certification CEL expression defintion.
 /// Contains an enum variant for each CEL function supported for certification.
 /// Currently only one variant is supported: [CelExpression::DefaultCertification].
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CelExpression<'a> {
     /// A certification CEL expression definition that uses the `default_certification` function.
     /// This is currently the only supported function.
@@ -27,7 +27,7 @@ impl<'a> CelExpression<'a> {
 ///
 /// [request_certification](DefaultCertification::request_certification) is used for configuring request certification, and
 /// [response_certification](DefaultCertification::response_certification) is used for configuring response certification.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefaultCertification<'a> {
     /// Options for configuring certification of a request.
     ///
@@ -48,7 +48,7 @@ pub struct DefaultCertification<'a> {
 /// The request method and body are always certified, but this struct allows configuring the
 /// certification of request [headers](DefaultRequestCertification::headers) and
 /// [query parameters](DefaultRequestCertification::query_parameters).
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefaultRequestCertification<'a> {
     /// A list of request headers to include in certification.
     ///
@@ -70,7 +70,7 @@ pub struct DefaultRequestCertification<'a> {
 /// [CertifiedResponseHeaders](DefaultResponseCertification::CertifiedResponseHeaders) variant,
 /// and response headers may be excluded using the
 /// [ResponseHeaderExclusions](DefaultResponseCertification::ResponseHeaderExclusions) variant.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DefaultResponseCertification<'a> {
     /// A list of response headers to include in certification.
     ///

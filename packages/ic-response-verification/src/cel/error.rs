@@ -1,4 +1,4 @@
-pub type CelParserResult<T = ()> = Result<T, CelParserError>;
+pub(crate) type CelParserResult<T = ()> = Result<T, CelParserError>;
 
 /// CEL expression parsing error.
 #[derive(thiserror::Error, Debug)]

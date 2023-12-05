@@ -13,7 +13,6 @@ mod error;
 pub use error::*;
 
 pub mod cel;
-pub mod hash;
 pub mod types;
 
 mod base64;

@@ -19,7 +19,10 @@ candid.workspace = true
 serde.workspace = true
 http.workspace = true
 urlencoding.workspace = true
+ic-representation-independent-hash.workspace = true
+ic-certification.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true
+hex.workspace = true
