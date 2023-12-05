@@ -1,12 +1,13 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
-    use ic_http_certification::{HttpRequest, HttpResponse};
-    use ic_response_verification::cel::cel_to_certification;
-    use ic_response_verification::hash::{request_hash, response_hash};
+    use ic_http_certification::{
+        request_hash, response_hash, CelExpression, DefaultCelBuilder,
+        DefaultResponseCertification, HttpRequest, HttpResponse,
+    };
     use ic_response_verification::types::{VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification_test_utils::{
-        create_v2_fixture, get_current_timestamp, remove_whitespace, V2Fixture,
+        create_v2_fixture, get_current_timestamp, V2Fixture,
     };
 
     const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000;
@@ -18,15 +19,7 @@ mod tests {
         let body = "Hello World!";
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
-        let cel_expr = remove_whitespace(
-            r#"
-            default_certification (
-                ValidationArgs {
-                    no_certification: Empty { }
-                }
-            )
-        "#,
-        );
+        let cel_expr = DefaultCelBuilder::skip_certification();
 
         let request = HttpRequest {
             url: path.into(),
@@ -38,7 +31,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
-                ("IC-CertificateExpression".into(), cel_expr.clone()),
+                ("IC-CertificateExpression".into(), cel_expr.to_string()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
         };
@@ -47,7 +40,7 @@ mod tests {
             root_key,
             certificate_header,
             canister_id,
-        } = create_v2_fixture(&cel_expr, &expr_path, &current_time, None, None);
+        } = create_v2_fixture(&cel_expr.to_string(), &expr_path, &current_time, None, None);
 
         response
             .headers
@@ -79,23 +72,16 @@ mod tests {
         let body = "Hello World!";
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
-        let cel_expr = remove_whitespace(
-            r#"
-            default_certification (
-                ValidationArgs {
-                    certification: Certification {
-                        no_request_certification: Empty {},
-                        response_certification: ResponseCertification {
-                            certified_response_headers: ResponseHeaderList {
-                                headers: ["Cache-Control"]
-                            }
-                        }
-                    }
-                }
-            )
-        "#,
-        );
-        let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
+
+        let certification = DefaultCelBuilder::response_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &["Cache-Control"],
+            ))
+            .build();
+        let cel_expr = certification.to_string();
+        let CelExpression::DefaultCertification(Some(certification)) = certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let response_certification = certification.response_certification;
 
         let request = HttpRequest {
@@ -163,26 +149,18 @@ mod tests {
         let body = "Hello World!";
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
-        let cel_expr = remove_whitespace(
-            r#"
-            default_certification (
-                ValidationArgs {
-                    certification: Certification {
-                        request_certification: RequestCertification {
-                            certified_request_headers: ["Cache-Control"],
-                            certified_query_parameters: ["q"]
-                        },
-                        response_certification: ResponseCertification {
-                            certified_response_headers: ResponseHeaderList {
-                                headers: ["Cache-Control"]
-                            }
-                        }
-                    }
-                }
-            )
-        "#,
-        );
-        let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
+
+        let certification = DefaultCelBuilder::full_certification()
+            .with_request_headers(&["Cache-Control"])
+            .with_request_query_parameters(&["q"])
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                &["Cache-Control"],
+            ))
+            .build();
+        let cel_expr = certification.to_string();
+        let CelExpression::DefaultCertification(Some(certification)) = certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let request_certification = certification.request_certification.unwrap();
         let response_certification = certification.response_certification;
 
@@ -255,23 +233,16 @@ mod tests {
         let body = "Hello World!";
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
-        let cel_expr = remove_whitespace(
-            r#"
-            default_certification (
-                ValidationArgs {
-                    certification: Certification {
-                        no_request_certification: Empty {},
-                        response_certification: ResponseCertification {
-                            response_header_exclusions: ResponseHeaderList {
-                                headers: ["Content-Language", "Content-Encoding"]
-                            }
-                        }
-                    }
-                }
-            )
-        "#,
-        );
-        let certification = cel_to_certification(&cel_expr).unwrap().unwrap();
+
+        let certification = DefaultCelBuilder::response_certification()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                &["Content-Language", "Content-Encoding"],
+            ))
+            .build();
+        let cel_expr = certification.to_string();
+        let CelExpression::DefaultCertification(Some(certification)) = certification else {
+            panic!("Expected asset certification to have response certification")
+        };
         let response_certification = certification.response_certification;
 
         let request = HttpRequest {
