@@ -2,6 +2,7 @@
 
 ### Feat
 
+- move request and response hashing from ic-response-verification to ic-http-certification
 - migrate http request and response types from ic-response-verification to ic-http-certification
 - add copy on write support to CEL definition types
 - add cel builder to ic-http-certification crate
