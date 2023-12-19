@@ -10,6 +10,7 @@
 
 ### Fix
 
+- disallow nested delegations when verifying certificates
 - missing certification object in CEL expressions
 
 ## 1.3.0 (2023-11-17)
