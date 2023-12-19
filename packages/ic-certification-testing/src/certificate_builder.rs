@@ -48,6 +48,7 @@ pub struct CertificateBuilder {
     time: Option<u128>,
     canister: Option<CanisterData>,
     subnet: Option<SubnetData>,
+    nested_subnet: Option<SubnetData>,
     signature: Option<Blob>,
     custom_tree: Option<LabeledTree<Vec<u8>>>,
 }
@@ -67,6 +68,7 @@ impl CertificateBuilder {
                 certified_data: certified_data.to_vec(),
             }),
             subnet: None,
+            nested_subnet: None,
             signature: None,
             custom_tree: None,
         })
@@ -77,6 +79,7 @@ impl CertificateBuilder {
             time: None,
             canister: None,
             subnet: None,
+            nested_subnet: None,
             signature: None,
             custom_tree: Some(custom_tree),
         }
@@ -87,17 +90,17 @@ impl CertificateBuilder {
         subnet_id: u64,
         canister_id_ranges: Vec<(u64, u64)>,
     ) -> &mut Self {
-        let canister_id_ranges = canister_id_ranges
-            .into_iter()
-            .map(|(low, high)| (CanisterId::from_u64(low), CanisterId::from_u64(high)))
-            .collect();
+        self.subnet = Some(create_subnet_data(subnet_id, canister_id_ranges));
 
-        let subnet_id = SubnetId::from(PrincipalId::new_subnet_test_id(subnet_id));
+        self
+    }
 
-        self.subnet = Some(SubnetData {
-            subnet_id,
-            canister_id_ranges,
-        });
+    pub fn with_nested_delegation(
+        &mut self,
+        subnet_id: u64,
+        canister_id_ranges: Vec<(u64, u64)>,
+    ) -> &mut Self {
+        self.nested_subnet = Some(create_subnet_data(subnet_id, canister_id_ranges));
 
         self
     }
@@ -134,10 +137,25 @@ impl CertificateBuilder {
         })?;
 
         let (keypair, tree, signature) = build_certificate(&tree)?;
-        let delegation = None;
-        let delegation_data = self.build_delegation(&keypair, &encoded_time)?;
         let signature = self.signature.as_ref().unwrap_or(&signature);
 
+        let nested_delegation_data = self.build_nested_delegation(&keypair, &encoded_time)?;
+        if let Some((delegation, keypair)) = nested_delegation_data {
+            let certificate = Certificate {
+                tree,
+                signature: signature.clone(),
+                delegation: Some(delegation),
+            };
+            let certificate_cbor = serialize_to_cbor(&certificate);
+
+            return Ok(CertificateData {
+                certificate,
+                root_key: keypair.public_key,
+                cbor_encoded_certificate: certificate_cbor,
+            });
+        }
+
+        let delegation_data = self.build_delegation(&keypair, &encoded_time)?;
         if let Some((delegation, keypair)) = delegation_data {
             let certificate = Certificate {
                 tree,
@@ -156,7 +174,7 @@ impl CertificateBuilder {
         let certificate = Certificate {
             tree,
             signature: signature.clone(),
-            delegation,
+            delegation: None,
         };
 
         let certificate_cbor = serialize_to_cbor(&certificate);
@@ -173,30 +191,83 @@ impl CertificateBuilder {
         delegatee_keypair: &KeyPair,
         encoded_time: &[u8],
     ) -> CertificationTestResult<Option<(CertificateDelegation, KeyPair)>> {
-        if let Some(subnet) = &self.subnet {
-            let tree = create_delegation_tree(
-                &delegatee_keypair.public_key,
-                encoded_time,
-                &subnet.subnet_id,
-                &subnet.canister_id_ranges,
-            )?;
-            let (keypair, tree, signature) = build_certificate(&tree)?;
-            let certificate = Certificate {
-                tree,
-                signature,
-                delegation: None,
-            };
+        if let Some(subnet_data) = &self.subnet {
+            let delegation_data =
+                create_delegation_data(delegatee_keypair, encoded_time, subnet_data, None)?;
 
-            return Ok(Some((
-                CertificateDelegation {
-                    certificate: Blob(serialize_to_cbor(&certificate)),
-                    subnet_id: Blob(subnet.subnet_id.get().to_vec()),
-                },
-                keypair,
-            )));
+            return Ok(Some(delegation_data));
         }
 
         Ok(None)
+    }
+
+    fn build_nested_delegation(
+        &self,
+        delegatee_keypair: &KeyPair,
+        encoded_time: &[u8],
+    ) -> CertificationTestResult<Option<(CertificateDelegation, KeyPair)>> {
+        match (&self.subnet, &self.nested_subnet) {
+            (Some(subnet_data), Some(nested_subnet_data)) => {
+                let (nested_delegation, nested_keypair) = create_delegation_data(
+                    delegatee_keypair,
+                    encoded_time,
+                    nested_subnet_data,
+                    None,
+                )?;
+
+                let (delegation, _keypair) = create_delegation_data(
+                    &nested_keypair,
+                    encoded_time,
+                    subnet_data,
+                    Some(nested_delegation),
+                )?;
+
+                return Ok(Some((delegation, nested_keypair)));
+            }
+            (_, _) => Ok(None),
+        }
+    }
+}
+
+fn create_delegation_data(
+    delegatee_keypair: &KeyPair,
+    encoded_time: &[u8],
+    subnet_data: &SubnetData,
+    nested_delegation: Option<CertificateDelegation>,
+) -> CertificationTestResult<(CertificateDelegation, KeyPair)> {
+    let tree = create_delegation_tree(
+        &delegatee_keypair.public_key,
+        encoded_time,
+        &subnet_data.subnet_id,
+        &subnet_data.canister_id_ranges,
+    )?;
+    let (keypair, tree, signature) = build_certificate(&tree)?;
+    let certificate = Certificate {
+        tree,
+        signature,
+        delegation: nested_delegation,
+    };
+
+    Ok((
+        CertificateDelegation {
+            certificate: Blob(serialize_to_cbor(&certificate)),
+            subnet_id: Blob(subnet_data.subnet_id.get().to_vec()),
+        },
+        keypair,
+    ))
+}
+
+fn create_subnet_data(subnet_id: u64, canister_id_ranges: Vec<(u64, u64)>) -> SubnetData {
+    let canister_id_ranges = canister_id_ranges
+        .into_iter()
+        .map(|(low, high)| (CanisterId::from_u64(low), CanisterId::from_u64(high)))
+        .collect();
+
+    let subnet_id = SubnetId::from(PrincipalId::new_subnet_test_id(subnet_id));
+
+    SubnetData {
+        subnet_id,
+        canister_id_ranges,
     }
 }
 
