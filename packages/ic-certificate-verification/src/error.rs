@@ -87,4 +87,8 @@ pub enum CertificateVerificationError {
     /// Failed to decode CBOR
     #[error("CBOR decoding failed")]
     CborDecodingFailed(#[from] CborError),
+
+    /// The certificate contained more than one delegation.
+    #[error("The certificate contained more than one delegation")]
+    CertificateHasTooManyDelegations,
 }

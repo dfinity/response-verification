@@ -79,6 +79,9 @@ impl VerifyCertificate<Vec<u8>> for Delegation {
         root_public_key: &[u8],
     ) -> CertificateVerificationResult<Vec<u8>> {
         let cert: Certificate = Certificate::from_cbor(&self.certificate)?;
+        if cert.delegation.is_some() {
+            return Err(CertificateVerificationError::CertificateHasTooManyDelegations);
+        }
         cert.verify(canister_id, root_public_key)?;
 
         let canister_range_path = [
@@ -158,17 +161,16 @@ pub fn validate_certificate_time(
 
 #[cfg(test)]
 mod tests {
-    use std::{
-        ops::{Add, Sub},
-        time::{Duration, SystemTime},
-    };
-
     use super::*;
     use ic_cbor::CertificateToCbor;
     use ic_certification::Certificate;
     use ic_certification_testing::{CertificateBuilder, CertificateData};
     use ic_response_verification_test_utils::{
         create_canister_id, get_current_timestamp, get_timestamp, AssetTree,
+    };
+    use std::{
+        ops::{Add, Sub},
+        time::{Duration, SystemTime},
     };
 
     static CANISTER_ID: &str = "r7inp-6aaaa-aaaaa-aaabq-cai";
@@ -192,6 +194,33 @@ mod tests {
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
 
         certificate.verify(canister_id.as_ref(), &root_key).unwrap();
+    }
+
+    #[test]
+    fn verify_certificate_with_nested_delegation_should_fail() {
+        let canister_id = create_canister_id(CANISTER_ID);
+        let CertificateData {
+            cbor_encoded_certificate,
+            certificate: _,
+            root_key,
+        } = CertificateBuilder::new(
+            &canister_id.to_string(),
+            &AssetTree::new().get_certified_data(),
+        )
+        .unwrap()
+        .with_delegation(123, vec![(0, 9)])
+        .with_nested_delegation(456, vec![(20, 19)])
+        .build()
+        .unwrap();
+
+        let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
+
+        let result = certificate.verify(canister_id.as_ref(), &root_key);
+
+        assert!(matches!(
+            result.err(),
+            Some(CertificateVerificationError::CertificateHasTooManyDelegations),
+        ))
     }
 
     #[test]
