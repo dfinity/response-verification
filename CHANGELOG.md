@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fix
+
+- Revert "chore: bump candid to 0.10"
+
 ## 2.0.0 (2023-12-20)
 
 ### Feat
