@@ -11,8 +11,11 @@ use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
 use ic_certificate_verification::{validate_certificate_time, VerifyCertificate};
 use ic_certification::{hash_tree::Hash, Certificate, HashTree};
 use ic_http_certification::{
-    cel::CelExpression, filter_response_headers, request_hash, response_headers_hash, HttpRequest,
-    HttpResponse,
+    cel::{
+        CelExpression, DefaultCelExpression, DefaultFullCelExpression,
+        DefaultResponseOnlyCelExpression,
+    },
+    filter_response_headers, request_hash, response_headers_hash, HttpRequest, HttpResponse,
 };
 use ic_representation_independent_hash::hash;
 use std::collections::HashMap;
@@ -190,25 +193,32 @@ fn v2_verification(
         return Err(ResponseVerificationError::InvalidExpressionPath);
     }
 
-    let CelExpression::DefaultCertification(Some(certification)) = certification else {
-        return match validate_expr_hash(&expr_path, &expr_hash, &tree).is_some() {
-            true => Ok(VerificationInfo {
-                response: None,
-                verification_version: 2,
-            }),
-            false => Err(ResponseVerificationError::InvalidExpressionPath)
-        };
+    let (request_certification, response_certification) = match &certification {
+        CelExpression::Default(DefaultCelExpression::Skip) => {
+            return match validate_expr_hash(&expr_path, &expr_hash, &tree).is_some() {
+                true => Ok(VerificationInfo {
+                    response: None,
+                    verification_version: 2,
+                }),
+                false => Err(ResponseVerificationError::InvalidExpressionPath),
+            };
+        }
+        CelExpression::Default(DefaultCelExpression::ResponseOnly(
+            DefaultResponseOnlyCelExpression { response },
+        )) => (None, response),
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request,
+            response,
+        })) => (Some(request), response),
     };
 
-    let request_hash = certification
-        .request_certification
+    let request_hash = request_certification
         .as_ref()
         .map(|request_certification| request_hash(&request, request_certification))
         .transpose()?;
 
     let body_hash = hash(&response.body);
-    let response_headers =
-        filter_response_headers(&response, &certification.response_certification);
+    let response_headers = filter_response_headers(&response, &response_certification);
     let response_headers_hash =
         response_headers_hash(&response.status_code.into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());

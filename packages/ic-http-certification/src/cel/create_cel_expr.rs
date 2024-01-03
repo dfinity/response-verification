@@ -1,29 +1,75 @@
 use super::{
-    CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification,
+    CelExpression, DefaultCelExpression, DefaultFullCelExpression, DefaultRequestCertification,
+    DefaultResponseCertification, DefaultResponseOnlyCelExpression,
 };
 
-/// Converts a CEL expression from a [CelExpression] object into it's [String] representation.
-/// [CelExpression::to_string](CelExpression::to_string()) is an alias of this method and can be used for ergonomics.
+/// Converts a CEL expression from a [CelExpression] struct into it's [String] representation.
+///
+/// [CelExpression::to_string](CelExpression::to_string()) is an alias of this function and can be used
+/// for ergonomics.
 pub fn create_cel_expr(certification: &CelExpression) -> String {
     match certification {
-        CelExpression::DefaultCertification(certification) => {
-            create_default_cel_expr(certification)
-        }
+        CelExpression::Default(certification) => create_default_cel_expr(certification),
     }
 }
 
-fn create_default_cel_expr(certification: &Option<DefaultCertification>) -> String {
+/// Converts a CEL expression from a [DefaultCelExpression] struct into it's [String] representation.
+///
+/// [DefaultCelExpression::to_string](DefaultCelExpression::to_string()) is an alias of this function and
+/// can be used for ergonomics.
+pub fn create_default_cel_expr(certification: &DefaultCelExpression) -> String {
+    match certification {
+        DefaultCelExpression::Skip => create_default_skip_cel_expr(),
+        DefaultCelExpression::ResponseOnly(certification) => {
+            create_default_response_only_cel_expr(certification)
+        }
+        DefaultCelExpression::Full(certification) => create_default_full_cel_expr(certification),
+    }
+}
+
+/// Creates the [String] representation of a CEL expression that skips certification entirely.
+pub fn create_default_skip_cel_expr() -> String {
+    let mut cel_expr = String::from("default_certification(ValidationArgs{");
+    cel_expr.push_str("no_certification:Empty{}");
+    cel_expr.push_str("})");
+    cel_expr
+}
+
+/// Converts a CEL expression that only certifies the [HTTP response](crate::HttpResponse), excluding the
+/// [HTTP request](crate::HttpRequest) from certification, from a [DefaultResponseOnlyCelExpression] struct into
+/// it's [String] representation.
+///
+/// [DefaultResponseOnlyCelExpression::to_string](DefaultResponseOnlyCelExpression::to_string()) is an
+/// alias of this method and can be used for ergonomics.
+pub fn create_default_response_only_cel_expr(
+    certification: &DefaultResponseOnlyCelExpression,
+) -> String {
     let mut cel_expr = String::from("default_certification(ValidationArgs{");
 
-    match certification {
-        None => cel_expr.push_str("no_certification:Empty{}"),
-        Some(certification) => {
-            cel_expr.push_str("certification:Certification{");
-            create_request_cel_expr(&mut cel_expr, certification.request_certification.as_ref());
-            create_response_cel_expr(&mut cel_expr, &certification.response_certification);
-            cel_expr.push_str("}");
-        }
-    }
+    cel_expr.push_str("certification:Certification{");
+    cel_expr.push_str("no_request_certification:Empty{},");
+
+    create_response_cel_expr(&mut cel_expr, &certification.response);
+
+    cel_expr.push_str("}");
+
+    cel_expr.push_str("})");
+    cel_expr
+}
+
+/// Converts a CEL expression that certifies both the [HTTP request](crate::HttpRequest) and
+/// [HTTP response](crate::HttpResponse), from a [DefaultFullCelExpression] struct into it's [String] representation.
+/// [DefaultFullCelExpression::to_string](DefaultFullCelExpression::to_string()) is an alias of this method and can
+/// be used for ergonomics.
+pub fn create_default_full_cel_expr(certification: &DefaultFullCelExpression) -> String {
+    let mut cel_expr = String::from("default_certification(ValidationArgs{");
+
+    cel_expr.push_str("certification:Certification{");
+
+    create_request_cel_expr(&mut cel_expr, &certification.request);
+    create_response_cel_expr(&mut cel_expr, &certification.response);
+
+    cel_expr.push_str("}");
 
     cel_expr.push_str("})");
     cel_expr
@@ -31,30 +77,24 @@ fn create_default_cel_expr(certification: &Option<DefaultCertification>) -> Stri
 
 fn create_request_cel_expr(
     cel_expr: &mut String,
-    request_certification: Option<&DefaultRequestCertification>,
+    request_certification: &DefaultRequestCertification,
 ) {
-    match request_certification {
-        None => cel_expr.push_str("no_request_certification:Empty{},"),
-        Some(request_certification) => {
-            cel_expr
-                .push_str("request_certification:RequestCertification{certified_request_headers:[");
+    cel_expr.push_str("request_certification:RequestCertification{certified_request_headers:[");
 
-            if !request_certification.headers.is_empty() {
-                cel_expr.push('"');
-                cel_expr.push_str(&request_certification.headers.join(r#"",""#));
-                cel_expr.push('"');
-            }
-
-            cel_expr.push_str("],certified_query_parameters:[");
-            if !request_certification.query_parameters.is_empty() {
-                cel_expr.push('"');
-                cel_expr.push_str(&request_certification.query_parameters.join(r#"",""#));
-                cel_expr.push('"');
-            }
-
-            cel_expr.push_str("]},");
-        }
+    if !request_certification.headers.is_empty() {
+        cel_expr.push('"');
+        cel_expr.push_str(&request_certification.headers.join(r#"",""#));
+        cel_expr.push('"');
     }
+
+    cel_expr.push_str("],certified_query_parameters:[");
+    if !request_certification.query_parameters.is_empty() {
+        cel_expr.push('"');
+        cel_expr.push_str(&request_certification.query_parameters.join(r#"",""#));
+        cel_expr.push('"');
+    }
+
+    cel_expr.push_str("]},");
 }
 
 fn create_response_cel_expr(
@@ -139,54 +179,58 @@ mod tests {
     }
 
     fn no_certification() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(None)
+        CelExpression::Default(DefaultCelExpression::Skip)
     }
 
     fn no_request_response_inclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: None,
-            response_certification: DefaultResponseCertification::certified_response_headers(&[
-                "Cache-Control",
-                "ETag",
-                "Content-Length",
-                "Content-Type",
-                "Content-Encoding",
-            ]),
-        }))
+        CelExpression::Default(DefaultCelExpression::ResponseOnly(
+            DefaultResponseOnlyCelExpression {
+                response: DefaultResponseCertification::certified_response_headers(&[
+                    "Cache-Control",
+                    "ETag",
+                    "Content-Length",
+                    "Content-Type",
+                    "Content-Encoding",
+                ]),
+            },
+        ))
     }
 
     fn no_request_response_exclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: None,
-            response_certification: DefaultResponseCertification::response_header_exclusions(&[
-                "Date",
-                "Cookie",
-                "Set-Cookie",
-            ]),
-        }))
+        CelExpression::Default(DefaultCelExpression::ResponseOnly(
+            DefaultResponseOnlyCelExpression {
+                response: DefaultResponseCertification::response_header_exclusions(&[
+                    "Date",
+                    "Cookie",
+                    "Set-Cookie",
+                ]),
+            },
+        ))
     }
 
     fn no_request_empty_response_inclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: None,
-            response_certification: DefaultResponseCertification::certified_response_headers(&[]),
-        }))
+        CelExpression::Default(DefaultCelExpression::ResponseOnly(
+            DefaultResponseOnlyCelExpression {
+                response: DefaultResponseCertification::certified_response_headers(&[]),
+            },
+        ))
     }
 
     fn no_request_empty_response_exclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: None,
-            response_certification: DefaultResponseCertification::response_header_exclusions(&[]),
-        }))
+        CelExpression::Default(DefaultCelExpression::ResponseOnly(
+            DefaultResponseOnlyCelExpression {
+                response: DefaultResponseCertification::response_header_exclusions(&[]),
+            },
+        ))
     }
 
     fn include_request_response_header_inclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request: DefaultRequestCertification {
                 headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
                 query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            }),
-            response_certification: DefaultResponseCertification::certified_response_headers(&[
+            },
+            response: DefaultResponseCertification::certified_response_headers(&[
                 "Cache-Control",
                 "ETag",
                 "Content-Length",
@@ -197,12 +241,12 @@ mod tests {
     }
 
     fn include_request_response_header_exclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request: DefaultRequestCertification {
                 headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
                 query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            }),
-            response_certification: DefaultResponseCertification::response_header_exclusions(&[
+            },
+            response: DefaultResponseCertification::response_header_exclusions(&[
                 "Date",
                 "Cookie",
                 "Set-Cookie",
@@ -211,42 +255,42 @@ mod tests {
     }
 
     fn include_request_empty_response_inclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request: DefaultRequestCertification {
                 headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
                 query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            }),
-            response_certification: DefaultResponseCertification::certified_response_headers(&[]),
+            },
+            response: DefaultResponseCertification::certified_response_headers(&[]),
         }))
     }
 
     fn include_request_empty_response_exclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request: DefaultRequestCertification {
                 headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
                 query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            }),
-            response_certification: DefaultResponseCertification::response_header_exclusions(&[]),
+            },
+            response: DefaultResponseCertification::response_header_exclusions(&[]),
         }))
     }
 
     fn empty_request_response_inclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request: DefaultRequestCertification {
                 headers: Cow::Borrowed(&[]),
                 query_parameters: Cow::Borrowed(&[]),
-            }),
-            response_certification: DefaultResponseCertification::certified_response_headers(&[]),
+            },
+            response: DefaultResponseCertification::certified_response_headers(&[]),
         }))
     }
 
     fn empty_request_response_exclusions() -> CelExpression<'static> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request: DefaultRequestCertification {
                 headers: Cow::Borrowed(&[]),
                 query_parameters: Cow::Borrowed(&[]),
-            }),
-            response_certification: DefaultResponseCertification::response_header_exclusions(&[]),
+            },
+            response: DefaultResponseCertification::response_header_exclusions(&[]),
         }))
     }
 }

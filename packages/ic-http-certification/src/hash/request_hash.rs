@@ -4,8 +4,7 @@ use ic_representation_independent_hash::{hash, representation_independent_hash, 
 
 /// Calculates the
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
-/// of [crate::types::Request] according to [crate::types::RequestCertification] returned from
-/// [crate::cel::cel_to_certification].
+/// of an [HttpRequest] according to a CEL expression defined by [DefaultRequestCertification].
 pub fn request_hash<'a>(
     request: &'a HttpRequest,
     request_certification: &'a DefaultRequestCertification,

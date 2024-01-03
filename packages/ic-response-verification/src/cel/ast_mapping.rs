@@ -1,9 +1,12 @@
 use crate::cel::error::{CelParserError, CelParserResult};
 use crate::cel::parser::CelValue;
-use ic_http_certification::cel::{
-    CelExpression, DefaultCertification, DefaultRequestCertification,
+use ic_http_certification::{
+    cel::{
+        CelExpression, DefaultCelExpression, DefaultFullCelExpression, DefaultRequestCertification,
+        DefaultResponseOnlyCelExpression,
+    },
+    DefaultResponseCertification,
 };
-use ic_http_certification::DefaultResponseCertification;
 use std::borrow::Cow;
 use std::collections::HashMap;
 
@@ -185,7 +188,7 @@ pub(crate) fn map_cel_ast<'a>(cel: &'a CelValue<'a>) -> CelParserResult<CelExpre
     match (no_certification, certification) {
         (Some(_), Some(_)) => Err(CelParserError::ExtraneousValidationArgsProperty),
         (None, None) => Err(CelParserError::MissingValidationArgsProperty),
-        (Some(_), None) => Ok(CelExpression::DefaultCertification(None)),
+        (Some(_), None) => Ok(CelExpression::Default(DefaultCelExpression::Skip)),
         (None, Some(certification)) => {
             let certification = validate_object(certification, "Certification")?;
 
@@ -193,10 +196,16 @@ pub(crate) fn map_cel_ast<'a>(cel: &'a CelValue<'a>) -> CelParserResult<CelExpre
 
             let response_certification = validate_response_certification(certification)?;
 
-            Ok(CelExpression::DefaultCertification(Some(
-                DefaultCertification {
-                    request_certification,
-                    response_certification,
+            let Some(request_certification) = request_certification else {
+                return Ok(CelExpression::Default(DefaultCelExpression::ResponseOnly(DefaultResponseOnlyCelExpression {
+                    response: response_certification
+                })));
+            };
+
+            Ok(CelExpression::Default(DefaultCelExpression::Full(
+                DefaultFullCelExpression {
+                    request: request_certification,
+                    response: response_certification,
                 },
             )))
         }
