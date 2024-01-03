@@ -1,6 +1,7 @@
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Hash, HashTree, Label, SubtreeLookupResult};
-use ic_http_certification::cel::DefaultCertification;
+use ic_http_certification::cel::DefaultCelExpression;
+use ic_http_certification::CelExpression;
 
 fn path_from_parts<T>(parts: &[T]) -> Vec<Label>
 where
@@ -135,14 +136,16 @@ pub fn validate_hashes(
     response_hash: &Hash,
     expr_path: &[String],
     tree: &HashTree,
-    certification: &DefaultCertification,
+    certification: &CelExpression,
 ) -> bool {
     let Some(expr_tree) = validate_expr_hash(expr_path, expr_hash, tree) else {
         return false;
     };
 
     let mut expr_tree_path: Vec<Label> = vec![];
-    if let (Some(_), Some(request_hash)) = (&certification.request_certification, request_hash) {
+    if let (CelExpression::Default(DefaultCelExpression::Full(_)), Some(request_hash)) =
+        (&certification, request_hash)
+    {
         expr_tree_path.push(request_hash.into());
     } else {
         expr_tree_path.push("".into());
@@ -159,14 +162,16 @@ pub fn validate_hashes(
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Cow;
-
     use super::*;
     use crate::test_utils::test_utils::{create_pruned, remove_whitespace, sha256_from_hex};
     use ic_certification::hash_tree::{fork, label, leaf};
-    use ic_http_certification::{cel::DefaultRequestCertification, DefaultResponseCertification};
+    use ic_http_certification::{
+        cel::{DefaultFullCelExpression, DefaultRequestCertification},
+        DefaultResponseCertification,
+    };
     use ic_representation_independent_hash::hash;
     use ic_response_verification_test_utils::hex_decode;
+    use std::borrow::Cow;
 
     const REQUEST_HASH: &str = "5fac69685533f0650991441a2b818e8ad5ab2fec51de8cfdbea1276135494815";
     const RESPONSE_HASH: &str = "07b7c729f4083db0e266fef3f8f5acf1315135605bf38884c07ebb59fbf91ce8";
@@ -1042,16 +1047,16 @@ mod tests {
         }
     }
 
-    fn create_certification<'a>() -> DefaultCertification<'a> {
-        DefaultCertification {
-            request_certification: Some(DefaultRequestCertification {
+    fn create_certification<'a>() -> CelExpression<'a> {
+        CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
+            request: DefaultRequestCertification {
                 headers: Cow::Borrowed(&["Host"]),
                 query_parameters: Cow::Borrowed(&[]),
-            }),
-            response_certification: DefaultResponseCertification::certified_response_headers(&[
+            },
+            response: DefaultResponseCertification::certified_response_headers(&[
                 "Accept-Encoding",
                 "Cache-Control",
             ]),
-        }
+        }))
     }
 }

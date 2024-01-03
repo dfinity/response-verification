@@ -17,8 +17,8 @@ pub struct ResponseHeaders {
     pub certificate_expression: Option<String>,
 }
 
-/// Filters headers of [crate::types::Response] according to [crate::types::ResponseCertification]
-/// returned from [crate::cel::cel_to_certification].
+/// Filters the headers of an [HttpResponse] according to a CEL expression defined by
+/// [DefaultResponseCertification].
 pub fn filter_response_headers<'a>(
     response: &HttpResponse,
     response_certification: &DefaultResponseCertification<'a>,
@@ -109,18 +109,24 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
 
     representation_independent_hash(&headers_to_verify)
 }
+
 /// Calculates the
 /// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
-/// of a [crate::types::Response] according to [crate::types::ResponseCertification] returned from
-/// [crate::cel::cel_to_certification].
+/// of an [HttpResponse] according to a CEL expression defined by [DefaultResponseCertification].
+///
+/// An optional response body hash may be provided if this is known beforehand. If this override is not
+/// provided then the response body hash will be calculated by this function.
 pub fn response_hash(
     response: &HttpResponse,
     response_certification: &DefaultResponseCertification,
+    response_body_hash: Option<Hash>,
 ) -> Hash {
+    let response_body_hash = response_body_hash.unwrap_or(hash(&response.body));
+
     let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
         response_headers_hash(&response.status_code.into(), &filtered_headers),
-        hash(&response.body),
+        response_body_hash,
     ]
     .concat();
 
@@ -205,7 +211,7 @@ mod tests {
             hex::decode("3393250e3cedc30408dcb7e8963898c3d7549b8a0b76496b82fdfeae99c2ac78")
                 .unwrap();
 
-        let result = response_hash(&response, &response_certification);
+        let result = response_hash(&response, &response_certification, None);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -227,9 +233,12 @@ mod tests {
             body: HELLO_WORLD_BODY.into(),
         };
 
-        let result = response_hash(&response, &response_certification);
-        let result_without_excluded_headers =
-            response_hash(&response_without_excluded_headers, &response_certification);
+        let result = response_hash(&response, &response_certification, None);
+        let result_without_excluded_headers = response_hash(
+            &response_without_excluded_headers,
+            &response_certification,
+            None,
+        );
 
         assert_eq!(result, result_without_excluded_headers);
     }
@@ -245,7 +254,7 @@ mod tests {
             hex::decode("a2ffb50ef8971650c2fb46c0a2788b7d5ac5a027d635175e8e06b419ce6c4cda")
                 .unwrap();
 
-        let result = response_hash(&response, &response_certification);
+        let result = response_hash(&response, &response_certification, None);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -269,9 +278,12 @@ mod tests {
             body: HELLO_WORLD_BODY.into(),
         };
 
-        let result = response_hash(&response, &response_certification);
-        let result_without_excluded_headers =
-            response_hash(&response_without_excluded_headers, &response_certification);
+        let result = response_hash(&response, &response_certification, None);
+        let result_without_excluded_headers = response_hash(
+            &response_without_excluded_headers,
+            &response_certification,
+            None,
+        );
 
         assert_eq!(result, result_without_excluded_headers);
     }
@@ -373,10 +385,27 @@ mod tests {
         assert_eq!(result, result_without_excluded_headers);
     }
 
-    /// We remove white space from CEL expressions to ease the calculation
-    /// of the expected hashes. Generating the hash for a string with so much whitespace manually
-    /// may be prone to error in copy/pasting the string into a website and missing a leading/trailing
-    /// newline or a tab character somewhere.
+    #[test]
+    fn response_hash_with_body_hash_override() {
+        let response_certification = DefaultResponseCertification::certified_response_headers(&[
+            "Accept-Encoding",
+            "Cache-Control",
+        ]);
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
+        let response_body_hash: Hash =
+            hex::decode("5462fc394013080effc31d578ec3fff8b44cdf24738b38a77ce4afacbc93a7f5")
+                .unwrap()
+                .try_into()
+                .unwrap();
+        let expected_hash =
+            hex::decode("1afc744a377cb8785d1078f53f9bbc9160d86b7a05f490e42c89366326eaef20")
+                .unwrap();
+
+        let result = response_hash(&response, &response_certification, Some(response_body_hash));
+
+        assert_eq!(result, expected_hash.as_slice());
+    }
+
     fn create_response(cel_expression: &str) -> HttpResponse {
         HttpResponse {
             status_code: 200,
@@ -398,6 +427,10 @@ mod tests {
         }
     }
 
+    /// Remove white space from CEL expressions to ease the calculation
+    /// of the expected hashes. Generating the hash for a string with so much whitespace manually
+    /// may be prone to error in copy/pasting the string into a website and missing a leading/trailing
+    /// newline or a tab character somewhere.
     fn remove_whitespace<'a>(s: &'a str) -> String {
         s.chars().filter(|c| !c.is_whitespace()).collect()
     }

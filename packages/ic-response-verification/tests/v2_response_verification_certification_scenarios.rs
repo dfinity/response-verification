@@ -297,8 +297,8 @@ mod tests {
 #[cfg(not(target_arch = "wasm32"))]
 mod fixtures {
     use ic_http_certification::{
-        cel::CelExpression, request_hash, response_hash, DefaultCelBuilder,
-        DefaultResponseCertification, HttpRequest, HttpResponse,
+        request_hash, response_hash, DefaultCelBuilder, DefaultFullCelExpression,
+        DefaultResponseCertification, DefaultResponseOnlyCelExpression, HttpRequest, HttpResponse,
     };
     use ic_response_verification_test_utils::{
         create_expr_tree_path, deflate_encode, gzip_encode, hash, ExprTree,
@@ -487,8 +487,8 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn asset_cel() -> CelExpression<'static> {
-        DefaultCelBuilder::response_certification()
+    pub fn asset_cel() -> DefaultResponseOnlyCelExpression<'static> {
+        DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
                 &["Content-Type", "Content-Encoding"],
             ))
@@ -496,8 +496,8 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn redirect_cel() -> CelExpression<'static> {
-        DefaultCelBuilder::response_certification()
+    pub fn redirect_cel() -> DefaultResponseOnlyCelExpression<'static> {
+        DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
                 &["Location"],
             ))
@@ -505,7 +505,7 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_match_cel() -> CelExpression<'static> {
+    pub fn etag_caching_match_cel() -> DefaultFullCelExpression<'static> {
         DefaultCelBuilder::full_certification()
             .with_request_headers(&["If-None-Match"])
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
@@ -515,8 +515,8 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_mismatch_cel() -> CelExpression<'static> {
-        DefaultCelBuilder::response_certification()
+    pub fn etag_caching_mismatch_cel() -> DefaultResponseOnlyCelExpression<'static> {
+        DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
                 &["Content-Type", "Content-Encoding", "ETag"],
             ))
@@ -529,45 +529,34 @@ mod fixtures {
         let asset_cel = asset_certification.to_string();
         let asset_cel_hash = hash(asset_cel.as_bytes());
 
-        let CelExpression::DefaultCertification(Some(asset_certification)) = asset_certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let index_html_response_hash = response_hash(
-            &index_html_response(),
-            &asset_certification.response_certification,
-        );
-        let index_js_response_hash = response_hash(
-            &index_js_response(),
-            &asset_certification.response_certification,
-        );
-        let not_found_response_hash = response_hash(
-            &not_found_response(),
-            &asset_certification.response_certification,
-        );
+        let index_html_response_hash =
+            response_hash(&index_html_response(), &asset_certification.response, None);
+        let index_js_response_hash =
+            response_hash(&index_js_response(), &asset_certification.response, None);
+        let not_found_response_hash =
+            response_hash(&not_found_response(), &asset_certification.response, None);
 
         let redirect_certification = redirect_cel();
         let redirect_cel = redirect_certification.to_string();
         let redirect_cel_hash = hash(redirect_cel.as_bytes());
 
-        let CelExpression::DefaultCertification(Some(redirect_certification)) = redirect_certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let redirect_response_hash = response_hash(
-            &redirect_response(),
-            &redirect_certification.response_certification,
-        );
+        let redirect_response_hash =
+            response_hash(&redirect_response(), &redirect_certification.response, None);
 
         let content_encoding_identity_response_hash = response_hash(
             &content_encoding_identity_response(),
-            &asset_certification.response_certification,
+            &asset_certification.response,
+            None,
         );
         let content_encoding_gzip_response_hash = response_hash(
             &content_encoding_gzip_response(),
-            &asset_certification.response_certification,
+            &asset_certification.response,
+            None,
         );
         let content_encoding_deflate_response_hash = response_hash(
             &content_encoding_deflate_response(),
-            &asset_certification.response_certification,
+            &asset_certification.response,
+            None,
         );
 
         let mut expr_tree = ExprTree::new();
@@ -623,18 +612,14 @@ mod fixtures {
         let etag_caching_match_cel = etag_caching_match_certification.to_string();
         let etag_caching_match_cel_hash = hash(etag_caching_match_cel.as_bytes());
 
-        let CelExpression::DefaultCertification(Some(etag_caching_match_certification)) = etag_caching_match_certification else {
-            panic!("Expected asset certification to have response certification")
-        };
         let etag_caching_match_response_hash = response_hash(
             &etag_caching_match_response(),
-            &etag_caching_match_certification.response_certification,
+            &etag_caching_match_certification.response,
+            None,
         );
         let etag_caching_match_request_hash = request_hash(
             &etag_caching_match_request(),
-            &etag_caching_match_certification
-                .request_certification
-                .unwrap(),
+            &etag_caching_match_certification.request,
         )
         .unwrap();
 
@@ -642,12 +627,10 @@ mod fixtures {
         let etag_caching_mismatch_cel = etag_caching_mismatch_certification.to_string();
         let etag_caching_mismatch_cel_hash = hash(etag_caching_mismatch_cel.as_bytes());
 
-        let CelExpression::DefaultCertification(Some(etag_caching_mismatch_certification)) = etag_caching_mismatch_certification else {
-            panic!("Expected asset certification to have response certification")
-        };
         let etag_caching_mismatch_response_hash = response_hash(
             &etag_caching_mismatch_response(),
-            &etag_caching_mismatch_certification.response_certification,
+            &etag_caching_mismatch_certification.response,
+            None,
         );
 
         let mut expr_tree = ExprTree::new();

@@ -8,7 +8,8 @@ mod tests {
     use candid::Principal;
     use ic_certificate_verification::CertificateVerificationError;
     use ic_http_certification::{
-        request_hash, response_hash, CelExpression, HttpRequest, HttpResponse,
+        request_hash, response_hash, CelExpression, DefaultFullCelExpression, HttpRequest,
+        HttpResponse,
     };
     use ic_response_verification::{verify_request_response_pair, ResponseVerificationError};
     use ic_response_verification_test_utils::{
@@ -20,7 +21,7 @@ mod tests {
 
     #[rstest]
     fn request_hash_mismatch_fails_verification(
-        #[from(full_certification_cel)] certification: CelExpression<'static>,
+        #[from(full_certification_cel)] certification: DefaultFullCelExpression<'static>,
     ) {
         let path = "/?q=greeting";
         let body = "Hello World!";
@@ -28,10 +29,6 @@ mod tests {
         let expr_path = ["", "<$>"];
 
         let cel_expr = certification.to_string();
-        let CelExpression::DefaultCertification(Some(certification)) = certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let response_certification = certification.response_certification;
 
         let request = HttpRequest {
             url: path.into(),
@@ -53,7 +50,7 @@ mod tests {
 
         let request_hash =
             hash_from_hex("8afafcbf4e8ba0e372a5c17bcb8d668f6acdfab65ab3739a708ca632ded39098");
-        let response_hash = response_hash(&response, &response_certification);
+        let response_hash = response_hash(&response, &certification.response, None);
 
         let V2Fixture {
             root_key,
@@ -89,7 +86,7 @@ mod tests {
 
     #[rstest]
     pub fn response_hash_mismatch_fails_verification(
-        #[from(full_certification_cel)] certification: CelExpression<'static>,
+        #[from(full_certification_cel)] certification: DefaultFullCelExpression<'static>,
     ) {
         let path = "/?q=greeting";
         let body = "Hello World!";
@@ -97,10 +94,6 @@ mod tests {
         let expr_path = ["", "<$>"];
 
         let cel_expr = certification.to_string();
-        let CelExpression::DefaultCertification(Some(certification)) = certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let request_certification = certification.request_certification.unwrap();
 
         let request = HttpRequest {
             url: path.into(),
@@ -120,7 +113,7 @@ mod tests {
             ],
         };
 
-        let request_hash = request_hash(&request, &request_certification).unwrap();
+        let request_hash = request_hash(&request, &certification.request).unwrap();
         let response_hash =
             hash_from_hex("25dfc31fa622ded0d67b3ea322ab85dbc6c7455729c3618fcb3c26c23e1cc17c");
 
@@ -159,7 +152,7 @@ mod tests {
     #[rstest]
     fn cel_expr_hash_fails_verification(
         #[from(skip_certification_cel)] wrong_cel_expr: CelExpression<'static>,
-        #[from(full_certification_cel)] certification: CelExpression<'static>,
+        #[from(full_certification_cel)] certification: DefaultFullCelExpression<'static>,
     ) {
         let path = "/?q=greeting";
         let body = "Hello World!";
@@ -167,11 +160,6 @@ mod tests {
         let expr_path = ["", "<$>"];
 
         let cel_expr = certification.to_string();
-        let CelExpression::DefaultCertification(Some(certification)) = certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let request_certification = certification.request_certification.unwrap();
-        let response_certification = certification.response_certification;
 
         let request = HttpRequest {
             url: path.into(),
@@ -194,8 +182,8 @@ mod tests {
             ],
         };
 
-        let request_hash = request_hash(&request, &request_certification).unwrap();
-        let response_hash = response_hash(&response, &response_certification);
+        let request_hash = request_hash(&request, &certification.request).unwrap();
+        let response_hash = response_hash(&response, &certification.response, None);
 
         let V2TreeFixture {
             tree_cbor,
@@ -388,7 +376,9 @@ mod tests {
 
 #[cfg(not(target_arch = "wasm32"))]
 mod fixtures {
-    use ic_http_certification::{CelExpression, DefaultCelBuilder, DefaultResponseCertification};
+    use ic_http_certification::{
+        CelExpression, DefaultCelBuilder, DefaultFullCelExpression, DefaultResponseCertification,
+    };
     use ic_response_verification_test_utils::{
         create_v2_fixture, get_current_timestamp, get_timestamp, V2Fixture,
     };
@@ -403,7 +393,7 @@ mod fixtures {
     pub const MIN_REQUESTED_VERIFICATION_VERSION: u8 = 2;
 
     #[fixture]
-    pub fn full_certification_cel() -> CelExpression<'static> {
+    pub fn full_certification_cel() -> DefaultFullCelExpression<'static> {
         DefaultCelBuilder::full_certification()
             .with_request_headers(&["Cache-Control"])
             .with_request_query_parameters(&["q"])

@@ -1,8 +1,8 @@
 #[cfg(not(target_arch = "wasm32"))]
 mod tests {
     use ic_http_certification::{
-        request_hash, response_hash, CelExpression, DefaultCelBuilder,
-        DefaultResponseCertification, HttpRequest, HttpResponse,
+        request_hash, response_hash, DefaultCelBuilder, DefaultResponseCertification, HttpRequest,
+        HttpResponse,
     };
     use ic_response_verification::types::{VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
@@ -73,16 +73,12 @@ mod tests {
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
 
-        let certification = DefaultCelBuilder::response_certification()
+        let certification = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
                 &["Cache-Control"],
             ))
             .build();
         let cel_expr = certification.to_string();
-        let CelExpression::DefaultCertification(Some(certification)) = certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let response_certification = certification.response_certification;
 
         let request = HttpRequest {
             url: path.into(),
@@ -99,7 +95,7 @@ mod tests {
             ],
         };
 
-        let response_hash = response_hash(&response, &response_certification);
+        let response_hash = response_hash(&response, &certification.response, None);
 
         let V2Fixture {
             root_key,
@@ -158,11 +154,6 @@ mod tests {
             ))
             .build();
         let cel_expr = certification.to_string();
-        let CelExpression::DefaultCertification(Some(certification)) = certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let request_certification = certification.request_certification.unwrap();
-        let response_certification = certification.response_certification;
 
         let request = HttpRequest {
             url: path.into(),
@@ -182,8 +173,8 @@ mod tests {
             ],
         };
 
-        let request_hash = request_hash(&request, &request_certification).unwrap();
-        let response_hash = response_hash(&response, &response_certification);
+        let request_hash = request_hash(&request, &certification.request).unwrap();
+        let response_hash = response_hash(&response, &certification.response, None);
 
         let V2Fixture {
             root_key,
@@ -234,16 +225,12 @@ mod tests {
         let current_time = get_current_timestamp();
         let expr_path = ["", "<$>"];
 
-        let certification = DefaultCelBuilder::response_certification()
+        let certification = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::response_header_exclusions(
                 &["Content-Language", "Content-Encoding"],
             ))
             .build();
         let cel_expr = certification.to_string();
-        let CelExpression::DefaultCertification(Some(certification)) = certification else {
-            panic!("Expected asset certification to have response certification")
-        };
-        let response_certification = certification.response_certification;
 
         let request = HttpRequest {
             url: path.into(),
@@ -263,7 +250,7 @@ mod tests {
             ],
         };
 
-        let response_hash = response_hash(&response, &response_certification);
+        let response_hash = response_hash(&response, &certification.response, None);
 
         let V2Fixture {
             root_key,

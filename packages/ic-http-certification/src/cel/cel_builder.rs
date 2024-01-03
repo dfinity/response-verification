@@ -1,5 +1,6 @@
 use super::{
-    CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification,
+    CelExpression, DefaultCelExpression, DefaultFullCelExpression, DefaultRequestCertification,
+    DefaultResponseCertification, DefaultResponseOnlyCelExpression,
 };
 use std::borrow::Cow;
 
@@ -10,20 +11,20 @@ pub struct DefaultCelBuilder {}
 impl DefaultCelBuilder {
     /// Create a CEL expression that skips certification entirely.
     pub fn skip_certification<'a>() -> CelExpression<'a> {
-        CelExpression::DefaultCertification(None)
+        CelExpression::Default(DefaultCelExpression::Skip)
     }
 
     /// Creates a builder for a CEL expression that will only certify a response.
     /// Request certification will not be included with this builder.
-    /// See [DefaultResponseCelBuilder] for more details on this builder's interface.
+    /// See [DefaultResponseOnlyCelBuilder] for more details on this builder's interface.
     /// See [full_certification](DefaultCelBuilder::full_certification()) for a builder that will certify both the request and response.
-    pub fn response_certification<'a>() -> DefaultResponseCelBuilder<'a> {
+    pub fn response_only_certification<'a>() -> DefaultResponseOnlyCelBuilder<'a> {
         Default::default()
     }
 
     /// Creates a builder for a CEL expression that will certify both the request and response.
     /// See [DefaultFullCelExpressionBuilder] for more details on this builder's interface.
-    /// See [response_certification](DefaultCelBuilder::response_certification()) for a builder that will only certify the response.
+    /// See [response_only_certification](DefaultCelBuilder::response_only_certification()) for a builder that will only certify the response.
     pub fn full_certification<'a>() -> DefaultFullCelExpressionBuilder<'a> {
         Default::default()
     }
@@ -32,11 +33,11 @@ impl DefaultCelBuilder {
 /// A CEL expression builder for creating expressions that will only certify a response.
 /// To create an expression that certifies both the request and response, see [DefaultFullCelExpressionBuilder].
 #[derive(Debug, Clone, Default)]
-pub struct DefaultResponseCelBuilder<'a> {
+pub struct DefaultResponseOnlyCelBuilder<'a> {
     response_certification: DefaultResponseCertification<'a>,
 }
 
-impl<'a> DefaultResponseCelBuilder<'a> {
+impl<'a> DefaultResponseOnlyCelBuilder<'a> {
     /// Configure the response headers that will be included in certification.
     ///
     /// See [DefaultResponseCertification] for details on how to configure this.
@@ -51,16 +52,15 @@ impl<'a> DefaultResponseCelBuilder<'a> {
     }
 
     /// Build the CEL expression, consuming the builder.
-    pub fn build(self) -> CelExpression<'a> {
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification: None,
-            response_certification: self.response_certification,
-        }))
+    pub fn build(self) -> DefaultResponseOnlyCelExpression<'a> {
+        DefaultResponseOnlyCelExpression {
+            response: self.response_certification,
+        }
     }
 }
 
 /// A CEL expression builder for creating expressions that will certify both the request and response.
-/// To create an expression that only certifies the response, see [DefaultResponseCelBuilder].
+/// To create an expression that only certifies the response, see [DefaultResponseOnlyCelBuilder].
 #[derive(Debug, Clone, Default)]
 pub struct DefaultFullCelExpressionBuilder<'a> {
     request_headers: &'a [&'a str],
@@ -103,16 +103,16 @@ impl<'a> DefaultFullCelExpressionBuilder<'a> {
     }
 
     /// Build the CEL expression, consuming the builder.
-    pub fn build(self) -> CelExpression<'a> {
-        let request_certification = Some(DefaultRequestCertification {
+    pub fn build(self) -> DefaultFullCelExpression<'a> {
+        let request_certification = DefaultRequestCertification {
             headers: Cow::Borrowed(self.request_headers),
             query_parameters: Cow::Borrowed(self.request_query_parameters),
-        });
+        };
 
-        CelExpression::DefaultCertification(Some(DefaultCertification {
-            request_certification,
-            response_certification: self.response_certification,
-        }))
+        DefaultFullCelExpression {
+            request: request_certification,
+            response: self.response_certification,
+        }
     }
 }
 
@@ -131,7 +131,7 @@ mod tests {
 
     #[rstest]
     fn no_request_response_inclusions(no_request_response_inclusions_cel: String) {
-        let cel_expr = DefaultCelBuilder::response_certification()
+        let cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
                 &[
                     "Cache-Control",
@@ -149,7 +149,7 @@ mod tests {
 
     #[rstest]
     fn no_request_response_exclusions(no_request_response_exclusions_cel: String) {
-        let cel_expr = DefaultCelBuilder::response_certification()
+        let cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::response_header_exclusions(
                 &["Date", "Cookie", "Set-Cookie"],
             ))
@@ -161,16 +161,16 @@ mod tests {
 
     #[rstest]
     fn no_request_empty_response_inclusions(no_request_empty_response_inclusions_cel: String) {
-        let implicit_cel_expr = DefaultCelBuilder::response_certification()
+        let implicit_cel_expr = DefaultCelBuilder::response_only_certification()
             .build()
             .to_string();
-        let explicit_cel_expr = DefaultCelBuilder::response_certification()
+        let explicit_cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
                 &[],
             ))
             .build()
             .to_string();
-        let default_cel_expr = DefaultCelBuilder::response_certification()
+        let default_cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::default())
             .build()
             .to_string();
@@ -182,7 +182,7 @@ mod tests {
 
     #[rstest]
     fn no_request_empty_response_exclusions(no_request_empty_response_exclusions_cel: String) {
-        let cel_expr = DefaultCelBuilder::response_certification()
+        let cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::response_header_exclusions(
                 &[],
             ))
