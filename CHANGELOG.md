@@ -2,6 +2,7 @@
 
 ### Feat
 
+- add bls signature cache
 - **ic-http-certification**: add certification builder
 
 ## 2.0.1 (2023-12-20)
