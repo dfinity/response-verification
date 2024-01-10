@@ -51,6 +51,7 @@ pub fn response_from_js(resp: JsValue) -> HttpResponse {
         status_code,
         headers,
         body,
+        upgrade: None,
     }
 }
 
@@ -84,6 +85,7 @@ mod tests {
                     ("header1".into(), "header1val".into()),
                     ("header2".into(), "header2val".into()),
                 ],
+                upgrade: None,
             }
         );
     }

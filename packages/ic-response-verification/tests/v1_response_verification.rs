@@ -51,6 +51,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
         let expected_response = VerifiedResponse {
             status_code: None,
@@ -114,6 +115,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
         let expected_response = VerifiedResponse {
             status_code: None,
@@ -176,6 +178,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
         let expected_response = VerifiedResponse {
             status_code: None,
@@ -238,6 +241,7 @@ mod tests {
             status_code: 200,
             body: b"Hello IC!".to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(
@@ -292,6 +296,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(
@@ -350,6 +355,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(
@@ -410,6 +416,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(
@@ -468,6 +475,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(
@@ -523,6 +531,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(
@@ -576,6 +585,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(
@@ -629,6 +639,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![("IC-Certificate".into(), certificate_header)],
+            upgrade: None,
         };
 
         let result = verify_request_response_pair(

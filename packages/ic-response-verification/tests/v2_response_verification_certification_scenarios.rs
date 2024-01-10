@@ -325,6 +325,7 @@ mod fixtures {
                 ("Content-Encoding".into(), "gzip".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -341,6 +342,7 @@ mod fixtures {
                 ("Content-Encoding".into(), "gzip".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -357,6 +359,7 @@ mod fixtures {
                 ("Content-Encoding".into(), "identity".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -372,6 +375,7 @@ mod fixtures {
                 ("Location".into(), "/new-path".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -387,6 +391,7 @@ mod fixtures {
                 ("Content-Encoding".into(), "identity".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -402,6 +407,7 @@ mod fixtures {
                 ("Content-Encoding".into(), "gzip".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -417,6 +423,7 @@ mod fixtures {
                 ("Content-Encoding".into(), "deflate".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -449,6 +456,7 @@ mod fixtures {
                 ("Content-Encoding".into(), "deflate".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 
@@ -483,6 +491,7 @@ mod fixtures {
                 ("ETag".into(), etag),
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
+            upgrade: None,
         }
     }
 

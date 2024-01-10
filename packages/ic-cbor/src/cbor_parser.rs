@@ -246,7 +246,7 @@ pub fn parse_cbor_string_array(i: &[u8]) -> CborResult<Vec<String>> {
         .map(|elem| {
             let CborValue::ByteString(elem) = elem else {
                 return Err(CborError::UnexpectedCborNodeType {
-                    expected_type: "Array".into(),
+                    expected_type: "ByteString".into(),
                     found_type: elem.to_string()
                 });
             };

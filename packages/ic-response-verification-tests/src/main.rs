@@ -174,6 +174,7 @@ async fn perform_test(
             .collect(),
         body: response.body,
         status_code: response.status_code,
+        upgrade: None,
     };
     let current_time_ns = get_current_time();
     let max_cert_time_offset_ns = 300_000_000_000; // 5 mins

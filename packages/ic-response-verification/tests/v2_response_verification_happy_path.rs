@@ -34,6 +34,7 @@ mod tests {
                 ("IC-CertificateExpression".into(), cel_expr.to_string()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
+            upgrade: None,
         };
 
         let V2Fixture {
@@ -93,6 +94,7 @@ mod tests {
                 ("IC-CertificateExpression".into(), cel_expr.clone()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
+            upgrade: None,
         };
 
         let response_hash = response_hash(&response, &certification.response, None);
@@ -171,6 +173,7 @@ mod tests {
                 ("IC-CertificateExpression".into(), cel_expr.clone()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
+            upgrade: None,
         };
 
         let request_hash = request_hash(&request, &certification.request).unwrap();
@@ -248,6 +251,7 @@ mod tests {
                 ("Content-Language".into(), "en-US".into()),
                 ("Server".into(), "Apache/2.4.1 (Unix)".into()),
             ],
+            upgrade: None,
         };
 
         let response_hash = response_hash(&response, &certification.response, None);
