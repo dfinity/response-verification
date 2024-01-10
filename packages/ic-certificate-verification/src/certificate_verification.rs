@@ -1,8 +1,10 @@
-use crate::error::{CertificateVerificationError, CertificateVerificationResult};
+use crate::{
+    error::{CertificateVerificationError, CertificateVerificationResult},
+    signature_verification::verify_signature,
+};
 use candid::Principal;
 use ic_cbor::{parse_cbor_principals_array, CertificateToCbor};
 use ic_certification::{Certificate, Delegation, LookupResult};
-use miracl_core_bls12381::bls12381::bls::{core_verify, BLS_OK};
 
 const IC_STATE_ROOT_DOMAIN_SEPARATOR: &[u8; 14] = b"\x0Dic-state-root";
 const DER_PREFIX: &[u8; 37] = b"\x30\x81\x82\x30\x1d\x06\x0d\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x01\x02\x01\x06\x0c\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x02\x01\x03\x61\x00";
@@ -63,12 +65,9 @@ impl VerifyCertificate<()> for Certificate {
             Some(delegation) => delegation.verify(canister_id, root_public_key)?,
             _ => root_public_key.into(),
         };
-        let key = extract_der(der_key)?;
+        let pk = extract_der(der_key)?;
 
-        match core_verify(sig, &msg, &key) {
-            BLS_OK => Ok(()),
-            _ => Err(CertificateVerificationError::SignatureVerificationFailed),
-        }
+        verify_signature(&pk, sig, &msg)
     }
 }
 
