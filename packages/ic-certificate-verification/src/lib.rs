@@ -1,3 +1,5 @@
+mod signature_verification;
+
 mod error;
 pub use error::*;
 
