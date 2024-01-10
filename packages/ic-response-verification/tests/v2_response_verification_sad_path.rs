@@ -46,6 +46,7 @@ mod tests {
                 ("IC-CertificateExpression".into(), cel_expr.clone()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
+            upgrade: None,
         };
 
         let request_hash =
@@ -111,6 +112,7 @@ mod tests {
                 ("IC-CertificateExpression".into(), cel_expr.clone()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
+            upgrade: None,
         };
 
         let request_hash = request_hash(&request, &certification.request).unwrap();
@@ -180,6 +182,7 @@ mod tests {
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
+            upgrade: None,
         };
 
         let request_hash = request_hash(&request, &certification.request).unwrap();
@@ -242,6 +245,7 @@ mod tests {
             status_code: 200,
             body: b"Hello World!".to_vec(),
             headers: vec![("IC-CertificateExpression".to_string(), cel_expr.clone())],
+            upgrade: None,
         };
 
         let cel_expr_hash = hash(&cel_expr);
@@ -346,6 +350,7 @@ mod tests {
                 ("IC-CertificateExpression".into(), cel_expr.clone()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
+            upgrade: None,
         };
 
         response

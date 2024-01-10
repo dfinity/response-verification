@@ -231,6 +231,7 @@ mod tests {
                 ("Accept-Encoding".into(), "gzip".into()),
             ],
             body: HELLO_WORLD_BODY.into(),
+            upgrade: None,
         };
 
         let result = response_hash(&response, &response_certification, None);
@@ -276,6 +277,7 @@ mod tests {
                 ("Cache-Control".into(), "no-store".into()),
             ],
             body: HELLO_WORLD_BODY.into(),
+            upgrade: None,
         };
 
         let result = response_hash(&response, &response_certification, None);
@@ -321,6 +323,7 @@ mod tests {
                 ("Accept-Encoding".into(), "gzip".into()),
             ],
             body: HELLO_WORLD_BODY.into(),
+            upgrade: None,
         };
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
@@ -370,6 +373,7 @@ mod tests {
                 ("Cache-Control".into(), "no-store".into()),
             ],
             body: HELLO_WORLD_BODY.into(),
+            upgrade: None,
         };
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
@@ -424,6 +428,7 @@ mod tests {
                 ),
             ],
             body: HELLO_WORLD_BODY.into(),
+            upgrade: None,
         }
     }
 

@@ -158,7 +158,7 @@ Typically these requests have been routed through `raw` Internet Computer URLs i
 
 ## Creating certifications
 
-Once a CEL expression has been defined, it can be used in conjunction with an `HttpRequest` and `HttpResponse` to create a [Certification]. The [Certification] enum has three variants, each with a corresponding associated function used to create that particular variant:
+Once a CEL expression has been defined, it can be used in conjunction with an `HttpRequest` and `HttpResponse` to create an instance of the `HttpCertification` enum. The `HttpCertification` enum has three variants, each with a corresponding associated function used to create that particular variant:
 
 - The `Full` variant is used to include both the `HttpRequest` and the corresponding `HttpResponse` in certification.
 - The `ResponseOnly` variant is used to include only the `HttpResponse` in certification and exclude the corresponding `HttpRequest` from certification.
@@ -169,7 +169,7 @@ Once a CEL expression has been defined, it can be used in conjunction with an `H
 To perform a full certification, a CEL expression created from `DefaultCelBuilder::full_certification` is required, along with an `HttpRequest` and `HttpResponse` and optionally, a pre-calculated response body hash. For example:
 
 ```rust
-use ic_http_certification::{Certification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
+use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::full_certification()
     .with_request_headers(&["Accept", "Accept-Encoding", "If-None-Match"])
@@ -198,9 +198,10 @@ let response = HttpResponse {
         ("ETag".to_string(), "123456789".to_string()),
     ],
     body: vec![1, 2, 3, 4, 5, 6],
+    upgrade: None,
 };
 
-let certification = Certification::full(&cel_expr, &request, &response, None);
+let certification = HttpCertification::full(&cel_expr, &request, &response, None);
 ```
 
 ### Response-only certification
@@ -208,7 +209,7 @@ let certification = Certification::full(&cel_expr, &request, &response, None);
 To perform a response-only certification, a CEL expression created from `DefaultCelBuilder::response_only_certification` is required, along with an `HttpResponse` and optionally, a pre-calculated response body hash. For example:
 
 ```rust
-use ic_http_certification::{Certification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
+use ic_http_certification::{HttpCertification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::response_only_certification()
     .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
@@ -224,9 +225,10 @@ let response = HttpResponse {
         ("ETag".to_string(), "123456789".to_string()),
     ],
     body: vec![1, 2, 3, 4, 5, 6],
+    upgrade: None,
 };
 
-let certification = Certification::response_only(&cel_expr, &response, None);
+let certification = HttpCertification::response_only(&cel_expr, &response, None);
 ```
 
 ### Skipping certification
@@ -234,9 +236,9 @@ let certification = Certification::response_only(&cel_expr, &response, None);
 Skipping certification does not need an explicit CEL expression to be defined since it's always the same. For example:
 
 ```rust
-use ic_http_certification::Certification;
+use ic_http_certification::HttpCertification;
 
-let certification = Certification::skip();
+let certification = HttpCertification::skip();
 ```
 
 ## Directly creating a CEL expression

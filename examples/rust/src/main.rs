@@ -28,6 +28,7 @@ fn main() {
         status_code: 200,
         headers: http_response.headers,
         body: http_response.body,
+        upgrade: None,
     };
     println!("***Response***");
     println!("Body: {:?}", response.body);

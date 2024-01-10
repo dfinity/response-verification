@@ -11,4 +11,6 @@ pub struct HttpResponse {
     pub headers: Vec<HeaderField>,
     /// Response body as an array of bytes.
     pub body: Vec<u8>,
+    /// Whether the request should be upgraded to an update call.
+    pub upgrade: Option<bool>,
 }
