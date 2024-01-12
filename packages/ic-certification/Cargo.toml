@@ -29,6 +29,7 @@ optional = true
 [dev-dependencies]
 serde.workspace = true
 serde_cbor.workspace = true
+rstest.workspace = true
 
 [features]
 default = ['serde', 'serde_bytes']

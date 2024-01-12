@@ -152,6 +152,8 @@ pub fn merge_hash_trees(lhs: HashTree, rhs: HashTree) -> HashTree {
             )
         }
         (HashTreeNode::Empty(), HashTreeNode::Empty()) => empty(),
+        (HashTreeNode::Empty(), r) => HashTree { root: r },
+        (l, HashTreeNode::Empty()) => HashTree { root: l },
         (HashTreeNode::Leaf(l), HashTreeNode::Leaf(r)) => {
             if l != r {
                 panic!("merge_hash_trees: inconsistent leaves");
@@ -167,8 +169,10 @@ pub fn merge_hash_trees(lhs: HashTree, rhs: HashTree) -> HashTree {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::LookupResult;
+    use rstest::*;
 
-    #[test]
+    #[rstest]
     fn nested_tree_operation() {
         let mut tree: NestedTree<&str, Vec<u8>> = NestedTree::default();
         // insertion
@@ -201,5 +205,126 @@ mod tests {
         assert_eq!(tree.get(&["one"]), None);
         assert!(!tree.contains_leaf(&["one", "two"]));
         assert!(!tree.contains_leaf(&["one"]));
+    }
+
+    #[rstest]
+    fn merge_hash_trees_merge_witness() {
+        let mut tree: NestedTree<&str, Vec<u8>> = NestedTree::default();
+        tree.insert(&["one", "two"], vec![1]);
+        tree.insert(&["one", "three"], vec![2]);
+        tree.insert(&["two", "two"], vec![3]);
+        tree.insert(&["two", "three"], vec![4]);
+
+        let witness_one_two = tree.witness(&["one", "two"]);
+        let witness_one_three = tree.witness(&["two", "three"]);
+        let witness_merged = merge_hash_trees(witness_one_two, witness_one_three);
+
+        assert!(matches!(
+            witness_merged.lookup_path(&["one", "two"]),
+            LookupResult::Found(val) if val == &vec![1]
+        ));
+        assert!(matches!(
+            witness_merged.lookup_path(&["one", "three"]),
+            LookupResult::Unknown
+        ));
+        assert!(matches!(
+            witness_merged.lookup_path(&["two", "three"]),
+            LookupResult::Found(val) if val == &vec![4]
+        ));
+        assert!(matches!(
+            witness_merged.lookup_path(&["two", "two"]),
+            LookupResult::Unknown
+        ));
+
+        let witness_merged_left_empty = merge_hash_trees(empty(), witness_merged.clone());
+        assert_eq!(witness_merged_left_empty, witness_merged);
+
+        let witness_merged_right_empty = merge_hash_trees(witness_merged.clone(), empty());
+        assert_eq!(witness_merged_right_empty, witness_merged);
+    }
+
+    #[rstest]
+    // empty
+    #[case::empty_labeled(empty(), labeled_a(), labeled_a())]
+    #[case::labeled_empty(labeled_a(), empty(), labeled_a())]
+    #[case::empty_leaf(empty(), leaf_a(), leaf_a())]
+    #[case::leaf_empty(leaf_a(), empty(), leaf_a())]
+    // pruned
+    #[case::pruned_pruned(pruned_a(), pruned_a(), pruned_a())]
+    #[case::pruned_labeled(pruned_a(), labeled_a(), labeled_a())]
+    #[case::labeled_pruned(labeled_a(), pruned_a(), labeled_a())]
+    #[case::pruned_leaf(pruned_a(), leaf_a(), leaf_a())]
+    #[case::leaf_pruned(leaf_a(), pruned_a(), leaf_a())]
+    #[case::empty_pruned(empty(), pruned_a(), empty())]
+    #[case::pruned_empty(pruned_a(), empty(), empty())]
+    // matching
+    #[case::empty_empty(empty(), empty(), empty())]
+    #[case::fork_fork(fork_a(), fork_a(), fork_a())]
+    #[case::leaf_leaf(leaf_a(), leaf_a(), leaf_a())]
+    // mismatched
+    fn merge_hash_trees_operation(
+        #[case] lhs: HashTree,
+        #[case] rhs: HashTree,
+        #[case] merged: HashTree,
+    ) {
+        assert_eq!(merge_hash_trees(lhs, rhs), merged);
+    }
+
+    #[rstest]
+    #[should_panic]
+    #[case::mismatched_pruned(pruned_a(), pruned_b())]
+    #[should_panic]
+    #[case::mismatched_labeled(labeled_a(), labeled_b())]
+    #[should_panic]
+    #[case::mismatched_leaves(leaf_a(), leaf_b())]
+    #[should_panic]
+    #[case::mismatched_leaf_and_fork(leaf_a(), fork_a())]
+    #[should_panic]
+    #[case::mismatched_fork_and_leaf(fork_a(), leaf_a())]
+    #[should_panic]
+    #[case::mismatched_label_and_fork(labeled_a(), fork_a())]
+    #[should_panic]
+    #[case::mismatched_fork_and_label(fork_a(), labeled_a())]
+    #[should_panic]
+    #[case::mismatched_leaf_and_fork(leaf_a(), fork_a())]
+    #[should_panic]
+    #[case::mismatched_fork_and_leaf(fork_a(), leaf_a())]
+    fn merge_hash_trees_inconsistent_structure(#[case] lhs: HashTree, #[case] rhs: HashTree) {
+        merge_hash_trees(lhs, rhs);
+    }
+
+    #[fixture]
+    fn pruned_a() -> HashTree {
+        pruned(Hash::from([0u8; 32]))
+    }
+
+    #[fixture]
+    fn pruned_b() -> HashTree {
+        pruned(Hash::from([1u8; 32]))
+    }
+
+    #[fixture]
+    fn labeled_a() -> HashTree {
+        labeled("foo", pruned_a())
+    }
+
+    #[fixture]
+    fn labeled_b() -> HashTree {
+        labeled("bar", pruned_a())
+    }
+
+    #[fixture]
+    fn leaf_a() -> HashTree {
+        leaf(Hash::from([0u8; 32]))
+    }
+
+    #[fixture]
+    fn leaf_b() -> HashTree {
+        leaf(Hash::from([1u8; 32]))
+    }
+
+    #[fixture]
+    fn fork_a() -> HashTree {
+        fork(leaf_a(), leaf(Hash::from([1u8; 32])))
     }
 }
