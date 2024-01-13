@@ -55,10 +55,4 @@ impl From<serde_wasm_bindgen::Error> for CertificationTestError {
     }
 }
 
-/*impl From<CertificationTestError> for JsValue {
-    fn from(error: CertificationTestError) -> Self {
-        JsValue::from_str(&format!("{}", error))
-    }
-}*/
-
 pub type CertificationTestResult<T = ()> = Result<T, CertificationTestError>;
