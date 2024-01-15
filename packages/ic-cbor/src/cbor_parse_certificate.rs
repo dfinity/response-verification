@@ -16,13 +16,13 @@ impl CertificateToCbor for Certificate {
 fn parsed_cbor_to_certificate(parsed_cbor: CborValue) -> CborResult<Certificate> {
     let CborValue::Map(map) = parsed_cbor else {
         return Err(CborError::MalformedCertificate(
-            "Expected Map when parsing Certificate Cbor".into()
+            "Expected Map when parsing Certificate Cbor".into(),
         ));
     };
 
     let Some(tree_cbor) = map.get("tree") else {
         return Err(CborError::MalformedCertificate(
-            "Expected Tree when parsing Certificate Cbor".into()
+            "Expected Tree when parsing Certificate Cbor".into(),
         ));
     };
 
@@ -39,13 +39,15 @@ fn parsed_cbor_to_certificate(parsed_cbor: CborValue) -> CborResult<Certificate>
     let delegation = if let Some(CborValue::Map(delegation_map)) = map.get("delegation") {
         let Some(CborValue::ByteString(subnet_id)) = delegation_map.get("subnet_id") else {
             return Err(CborError::MalformedCertificate(
-                "Expected Delegation Map to contain a Subnet ID when parsing Certificate Cbor".into()
+                "Expected Delegation Map to contain a Subnet ID when parsing Certificate Cbor"
+                    .into(),
             ));
         };
 
         let Some(CborValue::ByteString(certificate)) = delegation_map.get("certificate") else {
             return Err(CborError::MalformedCertificate(
-                "Expected Delegation Map to contain a Certificate when parsing Certificate Cbor".into()
+                "Expected Delegation Map to contain a Certificate when parsing Certificate Cbor"
+                    .into(),
             ));
         };
 

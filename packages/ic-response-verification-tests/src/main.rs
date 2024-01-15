@@ -36,11 +36,15 @@ async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
     let Ok(replica_address) = env::var("DFX_REPLICA_ADDRESS") else {
-        return Err(anyhow!("The `DFX_REPLICA_ADDRESS` env variable not provided`"));
+        return Err(anyhow!(
+            "The `DFX_REPLICA_ADDRESS` env variable not provided`"
+        ));
     };
 
     let Some(canister_id) = args.get(1) else {
-        return Err(anyhow!("The canister_id arg was not provided: `cargo run [canister_id]`"));
+        return Err(anyhow!(
+            "The canister_id arg was not provided: `cargo run [canister_id]`"
+        ));
     };
 
     let agent = create_agent(replica_address.as_str()).await?;

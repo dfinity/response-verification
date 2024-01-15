@@ -237,7 +237,7 @@ pub fn parse_cbor_string_array(i: &[u8]) -> CborResult<Vec<String>> {
     let CborValue::Array(elems) = parsed_cbor else {
         return Err(CborError::UnexpectedCborNodeType {
             expected_type: "Array".into(),
-            found_type: parsed_cbor.to_string()
+            found_type: parsed_cbor.to_string(),
         });
     };
 
@@ -247,7 +247,7 @@ pub fn parse_cbor_string_array(i: &[u8]) -> CborResult<Vec<String>> {
             let CborValue::ByteString(elem) = elem else {
                 return Err(CborError::UnexpectedCborNodeType {
                     expected_type: "ByteString".into(),
-                    found_type: elem.to_string()
+                    found_type: elem.to_string(),
                 });
             };
 

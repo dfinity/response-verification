@@ -174,6 +174,29 @@ impl HttpCertification {
             response_hash,
         })
     }
+
+    pub(crate) fn to_tree_path(&self) -> Vec<Vec<u8>> {
+        match self {
+            HttpCertification::Skip { cel_expr_hash } => vec![cel_expr_hash.to_vec()],
+            HttpCertification::ResponseOnly {
+                cel_expr_hash,
+                response_hash,
+            } => vec![
+                cel_expr_hash.to_vec(),
+                "".as_bytes().to_vec(),
+                response_hash.to_vec(),
+            ],
+            HttpCertification::Full {
+                cel_expr_hash,
+                request_hash,
+                response_hash,
+            } => vec![
+                cel_expr_hash.to_vec(),
+                request_hash.to_vec(),
+                response_hash.to_vec(),
+            ],
+        }
+    }
 }
 
 #[cfg(test)]
@@ -193,6 +216,7 @@ mod tests {
             result,
             HttpCertification::Skip { cel_expr_hash } if cel_expr_hash == expected_cel_expr_hash
         ));
+        assert_eq!(result.to_tree_path(), vec![expected_cel_expr_hash.to_vec()]);
     }
 
     #[rstest]
@@ -221,7 +245,15 @@ mod tests {
                 response_hash
             } if cel_expr_hash == expected_cel_expr_hash &&
                 response_hash == expected_response_hash
-        ))
+        ));
+        assert_eq!(
+            result.to_tree_path(),
+            vec![
+                expected_cel_expr_hash.to_vec(),
+                "".as_bytes().to_vec(),
+                expected_response_hash.to_vec()
+            ]
+        );
     }
 
     #[rstest]
@@ -262,6 +294,14 @@ mod tests {
             } if cel_expr_hash == expected_cel_expr_hash &&
                 request_hash == expected_request_hash &&
                 response_hash == expected_response_hash
-        ))
+        ));
+        assert_eq!(
+            result.to_tree_path(),
+            vec![
+                expected_cel_expr_hash.to_vec(),
+                expected_request_hash.to_vec(),
+                expected_response_hash.to_vec()
+            ]
+        );
     }
 }
