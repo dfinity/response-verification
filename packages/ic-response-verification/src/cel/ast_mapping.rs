@@ -100,7 +100,9 @@ fn validate_request_certification<'a>(
             let request_certification =
                 validate_object(request_certification, "RequestCertification")?;
 
-            let Some(certified_request_headers) = request_certification.get("certified_request_headers") else {
+            let Some(certified_request_headers) =
+                request_certification.get("certified_request_headers")
+            else {
                 return Err(CelParserError::MissingObjectProperty {
                     object_name: "RequestCertification".into(),
                     expected_property_name: "certified_request_headers".into(),
@@ -109,7 +111,9 @@ fn validate_request_certification<'a>(
             let certified_request_headers =
                 validate_string_array(certified_request_headers, "certified_request_headers")?;
 
-            let Some(certified_query_parameters) = request_certification.get("certified_query_parameters") else {
+            let Some(certified_query_parameters) =
+                request_certification.get("certified_query_parameters")
+            else {
                 return Err(CelParserError::MissingObjectProperty {
                     object_name: "RequestCertification".into(),
                     expected_property_name: "certified_query_parameters".into(),
@@ -197,9 +201,11 @@ pub(crate) fn map_cel_ast<'a>(cel: &'a CelValue<'a>) -> CelParserResult<CelExpre
             let response_certification = validate_response_certification(certification)?;
 
             let Some(request_certification) = request_certification else {
-                return Ok(CelExpression::Default(DefaultCelExpression::ResponseOnly(DefaultResponseOnlyCelExpression {
-                    response: response_certification
-                })));
+                return Ok(CelExpression::Default(DefaultCelExpression::ResponseOnly(
+                    DefaultResponseOnlyCelExpression {
+                        response: response_certification,
+                    },
+                )));
             };
 
             Ok(CelExpression::Default(DefaultCelExpression::Full(

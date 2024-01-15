@@ -55,16 +55,18 @@ pub fn verify_request_response_pair(
     let Some(tree) = certificate_header
         .tree
         .map(|tree| HashTree::from_cbor(&tree))
-        .transpose()? else {
-            return Err(ResponseVerificationError::MissingTree);
-        };
+        .transpose()?
+    else {
+        return Err(ResponseVerificationError::MissingTree);
+    };
 
     let Some(certificate) = certificate_header
         .certificate
         .map(|certificate| Certificate::from_cbor(&certificate))
-        .transpose()? else {
-            return Err(ResponseVerificationError::MissingCertificate);
-        };
+        .transpose()?
+    else {
+        return Err(ResponseVerificationError::MissingCertificate);
+    };
 
     let version = certificate_header
         .version
@@ -93,9 +95,10 @@ pub fn verify_request_response_pair(
                 let Some(expr_path) = certificate_header
                     .expr_path
                     .map(|expr_path| parse_cbor_string_array(&expr_path))
-                    .transpose()? else {
-                        return Err(ResponseVerificationError::MissingCertificateExpressionPath);
-                    };
+                    .transpose()?
+                else {
+                    return Err(ResponseVerificationError::MissingCertificateExpressionPath);
+                };
 
                 let cel_ast = parse_cel_expression(certificate_expression_header)?;
                 let certification = map_cel_ast(&cel_ast)?;

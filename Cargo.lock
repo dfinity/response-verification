@@ -1248,6 +1248,7 @@ name = "ic-certification"
 version = "2.3.0"
 dependencies = [
  "hex",
+ "rstest",
  "serde",
  "serde_bytes",
  "serde_cbor",
@@ -1448,6 +1449,7 @@ dependencies = [
  "ic-certification 2.3.0",
  "ic-representation-independent-hash",
  "rstest",
+ "rstest_reuse",
  "serde",
  "thiserror",
  "urlencoding",
@@ -2340,6 +2342,17 @@ dependencies = [
  "rustc_version",
  "syn 2.0.37",
  "unicode-ident",
+]
+
+[[package]]
+name = "rstest_reuse"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50cac8ade68f5f9cb8cf23eb0fb9d349dcd7131813237ad75ecea760541b5d78"
+dependencies = [
+ "quote",
+ "rustc_version",
+ "syn 1.0.109",
 ]
 
 [[package]]

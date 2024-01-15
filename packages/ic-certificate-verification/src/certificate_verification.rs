@@ -88,10 +88,13 @@ impl VerifyCertificate<Vec<u8>> for Delegation {
             self.subnet_id.as_ref(),
             "canister_ranges".as_bytes(),
         ];
-        let LookupResult::Found(canister_range) = cert.tree.lookup_path(&canister_range_path) else {
-            return Err(CertificateVerificationError::SubnetCanisterIdRangesNotFound {
-                path: canister_range_path.iter().map(|p| p.to_vec()).collect(),
-            });
+        let LookupResult::Found(canister_range) = cert.tree.lookup_path(&canister_range_path)
+        else {
+            return Err(
+                CertificateVerificationError::SubnetCanisterIdRangesNotFound {
+                    path: canister_range_path.iter().map(|p| p.to_vec()).collect(),
+                },
+            );
         };
 
         let canister_id = Principal::from_slice(canister_id);
@@ -127,7 +130,9 @@ pub fn validate_certificate_time(
 ) -> CertificateVerificationResult {
     let time_path = ["time".as_bytes()];
 
-    let LookupResult::Found(mut encoded_certificate_time) = certificate.tree.lookup_path(&time_path) else {
+    let LookupResult::Found(mut encoded_certificate_time) =
+        certificate.tree.lookup_path(&time_path)
+    else {
         return Err(CertificateVerificationError::MissingTimePathInTree {
             path: time_path.iter().map(|p| p.to_vec()).collect(),
         });
