@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fix
+
+- **ic-certification-testing**: remove unnecessary CertificationTestError conversion
+
 ## 2.2.0 (2024-01-11)
 
 ### Feat
