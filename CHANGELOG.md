@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- **ic-http-certification**: add upgrade property to HttpResponse struct
+
 ### Fix
 
 - **ic-certification-testing**: remove unnecessary CertificationTestError conversion
