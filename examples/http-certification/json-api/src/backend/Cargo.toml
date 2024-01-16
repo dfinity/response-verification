@@ -1,0 +1,19 @@
+[package]
+name = "http_certification_backend"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow.workspace = true
+candid.workspace = true
+ic-cdk.workspace = true
+ic-cdk-macros.workspace = true
+serde.workspace = true
+serde_cbor.workspace = true
+sha2.workspace = true
+ic-http-certification = { workspace = true, features = ["serde"] }
+base64.workspace = true
+serde_json = "1.0"

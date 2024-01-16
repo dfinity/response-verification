@@ -1,0 +1,11 @@
+{
+  "dfx": "0.15.2",
+  "output_env_file": ".env",
+  "canisters": {
+    "backend": {
+      "type": "rust",
+      "package": "http_certification_backend",
+      "candid": "src/backend/backend.did"
+    }
+  }
+}
