@@ -228,7 +228,7 @@ mod tests {
         let certificate_header = create_v2_header(
             &certification_tree_entry,
             &certificate_cbor,
-            &cbor_encode(&certification_tree.witness(&certification_tree_entry, &req_path)),
+            &cbor_encode(&certification_tree.witness(&certification_tree_entry, req_path)),
         );
 
         let expected_certified_response = VerifiedResponse {

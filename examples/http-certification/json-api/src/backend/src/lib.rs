@@ -12,6 +12,8 @@ use ic_http_certification::{
 use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, collections::HashMap};
 
+// Public methods
+
 #[init]
 fn init() {
     prepare_cel_exprs();
@@ -51,6 +53,8 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
         _ => not_found_handler(&req),
     }
 }
+
+// Storage
 
 struct CertifiedHttpResponse {
     response: HttpResponse,
@@ -262,8 +266,6 @@ fn upgrade_to_update_call_handler() -> HttpResponse {
     }
 }
 
-// Utilities
-
 const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
 fn add_certificate_header(
     response: &mut HttpResponse,
@@ -292,6 +294,8 @@ fn add_certificate_header(
         ),
     ));
 }
+
+// Encoding
 
 fn cbor_encode(value: &impl Serialize) -> Vec<u8> {
     let mut serializer = serde_cbor::Serializer::new(Vec::new());

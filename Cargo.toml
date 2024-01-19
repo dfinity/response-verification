@@ -5,6 +5,7 @@ members = [
     "examples/rust",
     "examples/certified-counter/src/backend",
     "examples/http-certification/json-api/src/backend",
+    "examples/http-certification/assets/src/backend",
     "packages/ic-cbor",
     "packages/ic-certification",
     "packages/ic-certificate-verification",

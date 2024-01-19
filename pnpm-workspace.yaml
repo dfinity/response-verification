@@ -8,3 +8,4 @@ packages:
   - 'examples/nodejs'
   - 'examples/service-worker'
   - 'examples/web'
+  - 'examples/http-certification/assets/src/frontend'
