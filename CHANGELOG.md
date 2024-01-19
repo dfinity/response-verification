@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- **ic-http-certification**: add HttpCertificationTree
+
 ### Fix
 
 - **ic-certification**: allow empty hash trees to be merged with other hash trees
