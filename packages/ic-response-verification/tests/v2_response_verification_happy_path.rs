@@ -110,7 +110,7 @@ mod tests {
             root_key,
             certificate_header,
             canister_id,
-        } = create_v2_fixture(&req_path, &certification_tree_entry, &current_time);
+        } = create_v2_fixture(req_path, &certification_tree_entry, &current_time);
 
         response
             .headers
@@ -184,7 +184,7 @@ mod tests {
             root_key,
             certificate_header,
             canister_id,
-        } = create_v2_fixture(&req_path, &certification_tree_entry, &current_time);
+        } = create_v2_fixture(req_path, &certification_tree_entry, &current_time);
 
         response
             .headers
@@ -255,7 +255,7 @@ mod tests {
             root_key,
             certificate_header,
             canister_id,
-        } = create_v2_fixture(&req_path, &certification_tree_entry, &current_time);
+        } = create_v2_fixture(req_path, &certification_tree_entry, &current_time);
 
         response
             .headers
