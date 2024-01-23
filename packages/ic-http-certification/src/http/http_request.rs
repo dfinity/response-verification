@@ -18,7 +18,7 @@ pub struct HttpRequest {
 
 impl HttpRequest {
     /// Returns the path of the request URL, without domain, query parameters or fragments.
-    pub fn get_path<'a>(&'a self) -> HttpCertificationResult<String> {
+    pub fn get_path(&self) -> HttpCertificationResult<String> {
         let uri = self
             .url
             .parse::<Uri>()
@@ -29,7 +29,7 @@ impl HttpRequest {
     }
 
     /// Returns the query parameters of the request URL, if any, as a string.
-    pub fn get_query<'a>(&'a self) -> HttpCertificationResult<Option<String>> {
+    pub fn get_query(&self) -> HttpCertificationResult<Option<String>> {
         self.url
             .parse::<Uri>()
             .map(|uri| uri.query().map(|uri| uri.to_owned()))

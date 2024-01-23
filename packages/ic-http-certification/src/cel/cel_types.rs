@@ -18,10 +18,10 @@ pub enum CelExpression<'a> {
     Default(DefaultCelExpression<'a>),
 }
 
-impl<'a> CelExpression<'a> {
+impl ToString for CelExpression<'_> {
     /// Converts a [CelExpression] object into it's [String] representation.
     /// Alias of [create_cel_expr](create_cel_expr()).
-    pub fn to_string(&self) -> String {
+    fn to_string(&self) -> String {
         create_cel_expr(self)
     }
 }
@@ -57,11 +57,11 @@ pub enum DefaultCelExpression<'a> {
     Skip,
 }
 
-impl<'a> DefaultCelExpression<'a> {
+impl ToString for DefaultCelExpression<'_> {
     /// Converts a [DefaultCelExpression] object into it's [String] representation.
     ///
     /// Alias of [create_default_cel_expr](create_default_cel_expr()).
-    pub fn to_string(&self) -> String {
+    fn to_string(&self) -> String {
         create_default_cel_expr(self)
     }
 }
@@ -75,11 +75,11 @@ pub struct DefaultResponseOnlyCelExpression<'a> {
     pub response: DefaultResponseCertification<'a>,
 }
 
-impl<'a> DefaultResponseOnlyCelExpression<'a> {
+impl ToString for DefaultResponseOnlyCelExpression<'_> {
     /// Converts a [DefaultResponseOnlyCelExpression] object into it's [String] representation.
     ///
     /// Alias of [create_default_response_only_cel_expr](create_default_response_only_cel_expr()).
-    pub fn to_string(&self) -> String {
+    fn to_string(&self) -> String {
         create_default_response_only_cel_expr(self)
     }
 }
@@ -97,10 +97,10 @@ pub struct DefaultFullCelExpression<'a> {
     pub response: DefaultResponseCertification<'a>,
 }
 
-impl<'a> DefaultFullCelExpression<'a> {
+impl ToString for DefaultFullCelExpression<'_> {
     /// Converts a [DefaultFullCelExpression] object into it's [String] representation.
     /// Alias of [create_default_full_cel_expr](create_default_full_cel_expr()).
-    pub fn to_string(&self) -> String {
+    fn to_string(&self) -> String {
         create_default_full_cel_expr(self)
     }
 }

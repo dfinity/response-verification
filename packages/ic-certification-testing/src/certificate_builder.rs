@@ -222,7 +222,7 @@ impl CertificateBuilder {
                     Some(nested_delegation),
                 )?;
 
-                return Ok(Some((delegation, nested_keypair)));
+                Ok(Some((delegation, nested_keypair)))
             }
             (_, _) => Ok(None),
         }

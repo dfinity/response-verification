@@ -30,7 +30,7 @@ jobs:
         run: cargo test
 
       - name: Lint Rust
-        run: cargo clippy
+        run: cargo clippy --all-targets --all-features
 
       - name: Check Rust formatting
         run: cargo fmt --all -- --check

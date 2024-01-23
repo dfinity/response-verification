@@ -133,7 +133,7 @@ impl HttpCertification {
     /// from certification.
     pub fn skip() -> HttpCertification {
         let cel_expr = DefaultCelBuilder::skip_certification().to_string();
-        let cel_expr_hash = hash(&cel_expr.as_bytes());
+        let cel_expr_hash = hash(cel_expr.as_bytes());
 
         HttpCertification::Skip { cel_expr_hash }
     }

@@ -98,9 +98,7 @@ fn parse_int_header(value: &str) -> ResponseVerificationResult<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::test_utils::{
-        create_encoded_header_field, create_header_field, create_tree,
-    };
+    use crate::test_utils::{create_encoded_header_field, create_header_field, create_tree};
     use ic_response_verification_test_utils::{cbor_encode, create_certificate};
 
     fn base64_encode_no_padding(data: &[u8]) -> String {
@@ -114,7 +112,7 @@ mod tests {
         let tree = cbor_encode(&create_tree(None));
         let version = 2u8;
         let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
-        let header = vec![
+        let header = [
             create_encoded_header_field("certificate", &certificate),
             create_encoded_header_field("tree", &tree),
             create_header_field("version", &version.to_string()),
@@ -136,7 +134,7 @@ mod tests {
         let tree = cbor_encode(&create_tree(None));
         let version = 2u8;
         let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
-        let header = vec![
+        let header = [
             create_header_field("certificate", &base64_encode_no_padding(&certificate)),
             create_header_field("tree", &base64_encode_no_padding(&tree)),
             create_header_field("version", &version.to_string()),
@@ -154,7 +152,7 @@ mod tests {
 
     #[test]
     fn certificate_header_parses_valid_header_empty_values() {
-        let header = vec![
+        let header = [
             create_encoded_header_field("certificate", ""),
             create_encoded_header_field("tree", ""),
             create_encoded_header_field("version", ""),
@@ -181,7 +179,7 @@ mod tests {
         let tree = cbor_encode(&create_tree(None));
         let version = 2u8;
         let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
-        let header = vec![
+        let header = [
             create_encoded_header_field("certificate", &certificate),
             create_encoded_header_field("tree", &tree),
             create_header_field("version", &version.to_string()),
@@ -203,7 +201,7 @@ mod tests {
         let certificate = cbor_encode(&create_certificate(None));
         let version = 2u8;
         let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
-        let header = vec![
+        let header = [
             create_encoded_header_field("certificate", &certificate),
             create_header_field("version", &version.to_string()),
             create_encoded_header_field("expr_path", &expr_path),
@@ -223,10 +221,10 @@ mod tests {
         let tree = cbor_encode(&create_tree(None));
         let version = 2u8;
         let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
-        let header = vec![
+        let header = [
             create_encoded_header_field("tree", &tree),
             create_header_field("version", &version.to_string()),
-            create_encoded_header_field("expr_path", &expr_path),
+            create_encoded_header_field("expr_path", expr_path),
         ]
         .join(",");
 
@@ -241,7 +239,7 @@ mod tests {
         let certificate = cbor_encode(&create_certificate(None));
         let tree = cbor_encode(&create_tree(None));
         let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
-        let header = vec![
+        let header = [
             create_encoded_header_field("certificate", &certificate),
             create_encoded_header_field("tree", &tree),
             create_encoded_header_field("expr_path", &expr_path),
@@ -261,7 +259,7 @@ mod tests {
         let certificate = cbor_encode(&create_certificate(None));
         let tree = cbor_encode(&create_tree(None));
         let version = 2u8;
-        let header = vec![
+        let header = [
             create_encoded_header_field("certificate", &certificate),
             create_encoded_header_field("tree", &tree),
             create_header_field("version", &version.to_string()),
@@ -288,14 +286,14 @@ mod tests {
         let second_version = 3u8;
         let second_expr_path = "Goodbye expr_path!";
 
-        let header = vec![
+        let header = [
             create_encoded_header_field("certificate", &certificate),
             create_encoded_header_field("certificate", second_certificate),
             create_encoded_header_field("tree", &tree),
             create_encoded_header_field("tree", second_tree),
             create_header_field("version", &version.to_string()),
             create_encoded_header_field("expr_path", &expr_path),
-            create_encoded_header_field("version", &second_version.to_string()),
+            create_encoded_header_field("version", second_version.to_string()),
             create_encoded_header_field("expr_path", second_expr_path),
         ]
         .join(",");

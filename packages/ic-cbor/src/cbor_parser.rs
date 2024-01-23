@@ -218,7 +218,7 @@ pub fn parse_cbor_principals_array(i: &[u8]) -> CborResult<Vec<(Principal, Princ
                 return Err(CborError::MalformedCborCanisterRanges);
             };
 
-            let (first_principal, second_principal) = match (range.get(0), range.get(1)) {
+            let (first_principal, second_principal) = match (range.first(), range.get(1)) {
                 (Some(CborValue::ByteString(a)), Some(CborValue::ByteString(b))) => (a, b),
                 _ => return Err(CborError::MalformedCborCanisterRanges),
             };

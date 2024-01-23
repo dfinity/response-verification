@@ -51,7 +51,7 @@ pub fn create_default_response_only_cel_expr(
 
     create_response_cel_expr(&mut cel_expr, &certification.response);
 
-    cel_expr.push_str("}");
+    cel_expr.push('}');
 
     cel_expr.push_str("})");
     cel_expr
@@ -69,7 +69,7 @@ pub fn create_default_full_cel_expr(certification: &DefaultFullCelExpression) ->
     create_request_cel_expr(&mut cel_expr, &certification.request);
     create_response_cel_expr(&mut cel_expr, &certification.response);
 
-    cel_expr.push_str("}");
+    cel_expr.push('}');
 
     cel_expr.push_str("})");
     cel_expr

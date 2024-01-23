@@ -95,14 +95,14 @@ mod tests {
     };
     use ic_response_verification_test_utils::{cbor_encode, hex_encode};
 
-    fn lookup_path<'a, P: AsRef<[&'static str]>>(tree: &'a HashTree, path: P) -> LookupResult<'a> {
+    fn lookup_path<P: AsRef<[&'static str]>>(tree: &HashTree, path: P) -> LookupResult<'_> {
         let path: Vec<Label<Vec<u8>>> = path
             .as_ref()
             .iter()
             .map(|l| l.as_bytes().to_vec().into())
             .collect();
 
-        tree.lookup_path(&path)
+        tree.lookup_path(path)
     }
 
     #[test]
