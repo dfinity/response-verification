@@ -261,6 +261,6 @@ pub(super) fn empty_request_response_exclusions_cel() -> String {
     )
 }
 
-fn remove_whitespace<'a>(s: &'a str) -> String {
+fn remove_whitespace(s: &str) -> String {
     s.chars().filter(|c| !c.is_whitespace()).collect()
 }

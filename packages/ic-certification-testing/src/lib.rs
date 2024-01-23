@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+
 mod certificate_builder;
 pub use certificate_builder::*;
 

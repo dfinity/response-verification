@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+
 mod signature_verification;
 
 mod error;

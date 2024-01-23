@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+
 use crate::request::request_from_js;
 use crate::response::response_from_js;
 use ic_response_verification::{

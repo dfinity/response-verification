@@ -150,7 +150,7 @@ mod tests {
         let path = HttpCertificationPath::Exact(path);
 
         let result = path.to_expr_path();
-        let expected = vec![PATH_PREFIX]
+        let expected = [PATH_PREFIX]
             .iter()
             .chain(expected.iter())
             .map(|segment| segment.to_string())
@@ -164,7 +164,7 @@ mod tests {
         let path = HttpCertificationPath::Wildcard(path);
 
         let result = path.to_expr_path();
-        let expected = vec![PATH_PREFIX]
+        let expected = [PATH_PREFIX]
             .iter()
             .chain(expected.iter())
             .map(|segment| segment.to_string())

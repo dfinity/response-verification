@@ -35,7 +35,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> AsHashTree fo
 
 impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K, V> {
     pub fn get(&self, path: &[K]) -> Option<&V> {
-        if let Some(key) = path.get(0) {
+        if let Some(key) = path.first() {
             match self {
                 NestedTree::Leaf(_) => None,
                 NestedTree::Nested(tree) => tree
@@ -52,7 +52,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
 
     /// Returns true if there is a leaf at the specified path
     pub fn contains_leaf(&self, path: &[K]) -> bool {
-        if let Some(key) = path.get(0) {
+        if let Some(key) = path.first() {
             match self {
                 NestedTree::Leaf(_) => false,
                 NestedTree::Nested(tree) => tree
@@ -67,7 +67,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
 
     /// Returns true if there is a leaf or a subtree at the specified path
     pub fn contains_path(&self, path: &[K]) -> bool {
-        if let Some(key) = path.get(0) {
+        if let Some(key) = path.first() {
             match self {
                 NestedTree::Leaf(_) => false,
                 NestedTree::Nested(tree) => tree
@@ -81,7 +81,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
     }
 
     pub fn insert(&mut self, path: &[K], value: V) {
-        if let Some(key) = path.get(0) {
+        if let Some(key) = path.first() {
             match self {
                 NestedTree::Leaf(_) => {
                     *self = NestedTree::default();
@@ -102,7 +102,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
     }
 
     pub fn delete(&mut self, path: &[K]) {
-        if let Some(key) = path.get(0) {
+        if let Some(key) = path.first() {
             match self {
                 NestedTree::Leaf(_) => {}
                 NestedTree::Nested(tree) => {
@@ -115,7 +115,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
     }
 
     pub fn witness(&self, path: &[K]) -> HashTree {
-        if let Some(key) = path.get(0) {
+        if let Some(key) = path.first() {
             match self {
                 NestedTree::Leaf(value) => value.as_hash_tree(),
                 NestedTree::Nested(tree) => {
@@ -221,7 +221,7 @@ mod tests {
 
         assert!(matches!(
             witness_merged.lookup_path(&["one", "two"]),
-            LookupResult::Found(val) if val == &vec![1]
+            LookupResult::Found(val) if val == vec![1]
         ));
         assert!(matches!(
             witness_merged.lookup_path(&["one", "three"]),
@@ -229,7 +229,7 @@ mod tests {
         ));
         assert!(matches!(
             witness_merged.lookup_path(&["two", "three"]),
-            LookupResult::Found(val) if val == &vec![4]
+            LookupResult::Found(val) if val == vec![4]
         ));
         assert!(matches!(
             witness_merged.lookup_path(&["two", "two"]),

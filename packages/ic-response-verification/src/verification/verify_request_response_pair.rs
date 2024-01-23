@@ -79,7 +79,7 @@ pub fn verify_request_response_pair(
                 min_requested_verification_version,
             },
         ),
-        1 => v1_verification(
+        1 => v1_verification(V1VerificationOpts {
             request,
             response,
             canister_id,
@@ -89,7 +89,7 @@ pub fn verify_request_response_pair(
             certificate,
             encoding,
             ic_public_key,
-        ),
+        }),
         2 => match headers.get("ic-certificateexpression") {
             Some(certificate_expression_header) => {
                 let Some(expr_path) = certificate_header
@@ -104,7 +104,7 @@ pub fn verify_request_response_pair(
                 let certification = map_cel_ast(&cel_ast)?;
                 let expr_hash = hash(certificate_expression_header.as_bytes());
 
-                v2_verification(
+                v2_verification(V2VerificationOpts {
                     request,
                     response,
                     canister_id,
@@ -116,7 +116,7 @@ pub fn verify_request_response_pair(
                     expr_hash,
                     certification,
                     ic_public_key,
-                )
+                })
             }
             None => Err(ResponseVerificationError::MissingCertification),
         },
@@ -128,16 +128,30 @@ pub fn verify_request_response_pair(
     }
 }
 
-fn v1_verification(
+struct V1VerificationOpts<'a> {
     request: HttpRequest,
     response: HttpResponse,
-    canister_id: &[u8],
+    canister_id: &'a [u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
     tree: HashTree,
     certificate: Certificate,
-    encoding: Option<&str>,
-    ic_public_key: &[u8],
+    encoding: Option<&'a str>,
+    ic_public_key: &'a [u8],
+}
+
+fn v1_verification(
+    V1VerificationOpts {
+        request,
+        response,
+        canister_id,
+        current_time_ns,
+        max_cert_time_offset_ns,
+        tree,
+        certificate,
+        encoding,
+        ic_public_key,
+    }: V1VerificationOpts<'_>,
 ) -> ResponseVerificationResult<VerificationInfo> {
     validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
     certificate.verify(canister_id, ic_public_key)?;
@@ -170,18 +184,34 @@ fn v1_verification(
     })
 }
 
-fn v2_verification(
+struct V2VerificationOpts<'a> {
     request: HttpRequest,
     response: HttpResponse,
-    canister_id: &[u8],
+    canister_id: &'a [u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
     tree: HashTree,
     certificate: Certificate,
     expr_path: Vec<String>,
     expr_hash: Hash,
-    certification: CelExpression,
-    ic_public_key: &[u8],
+    certification: CelExpression<'a>,
+    ic_public_key: &'a [u8],
+}
+
+fn v2_verification(
+    V2VerificationOpts {
+        request,
+        response,
+        canister_id,
+        current_time_ns,
+        max_cert_time_offset_ns,
+        tree,
+        certificate,
+        expr_path,
+        expr_hash,
+        certification,
+        ic_public_key,
+    }: V2VerificationOpts<'_>,
 ) -> ResponseVerificationResult<VerificationInfo> {
     let request_path = request.get_path()?;
 
@@ -221,7 +251,7 @@ fn v2_verification(
         .transpose()?;
 
     let body_hash = hash(&response.body);
-    let response_headers = filter_response_headers(&response, &response_certification);
+    let response_headers = filter_response_headers(&response, response_certification);
     let response_headers_hash =
         response_headers_hash(&response.status_code.into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());

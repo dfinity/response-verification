@@ -66,8 +66,7 @@ impl HttpCertificationTree {
                 // matches the request URL. So we step through the path and generate a witness for each subpath,
                 // with and without trailing slashes.
                 (0..request_url_path.len())
-                    .into_iter()
-                    .map(|index| {
+                    .flat_map(|index| {
                         let sub_path = request_url_path[0..index].to_vec();
 
                         let without_trailing_slash = [
@@ -83,7 +82,6 @@ impl HttpCertificationTree {
 
                         [without_trailing_slash, with_trailing_slash]
                     })
-                    .flatten()
                     .fold(empty(), |acc, path| {
                         merge_hash_trees(acc, self.tree.witness(&path))
                     })
