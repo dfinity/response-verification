@@ -1,8 +1,6 @@
-use crate::{
-    cbor_encode, create_expr_tree_path, create_versioned_certificate_header, hash, ExprTree,
-};
-use ic_certification::Hash;
+use crate::{cbor_encode, create_versioned_certificate_header};
 use ic_certification_testing::{CertificateBuilder, CertificateData};
+use ic_http_certification::{HttpCertificationTree, HttpCertificationTreeEntry};
 use ic_types::CanisterId;
 
 pub struct V2TreeFixture {
@@ -11,19 +9,15 @@ pub struct V2TreeFixture {
 }
 
 pub fn create_v2_tree_fixture(
-    cel_expr: &str,
-    expr_path: &[&str],
-    req_hash: Option<&Hash>,
-    res_hash: Option<&Hash>,
+    req_path: &str,
+    certification_tree_entry: &HttpCertificationTreeEntry,
 ) -> V2TreeFixture {
-    let cel_expr_hash = hash(cel_expr);
+    let mut tree = HttpCertificationTree::default();
+    tree.insert(certification_tree_entry);
 
-    let expr_tree_path = create_expr_tree_path(expr_path, &cel_expr_hash, req_hash, res_hash);
-
-    let mut expr_tree = ExprTree::new();
-    expr_tree.insert(&expr_tree_path);
-    let certified_data = expr_tree.get_certified_data();
-    let tree_cbor = expr_tree.witness_and_serialize_to_cbor(&expr_tree_path);
+    let certified_data = tree.root_hash();
+    let witness = tree.witness(certification_tree_entry, req_path);
+    let tree_cbor = cbor_encode(&witness);
 
     V2TreeFixture {
         tree_cbor,
@@ -61,18 +55,17 @@ pub fn create_v2_certificate_fixture(
     }
 }
 
-pub fn create_v2_header(expr_path: &[&str], certificate_cbor: &[u8], tree_cbor: &[u8]) -> String {
-    let mut full_expr_path = vec!["http_expr"];
-    full_expr_path.extend(expr_path);
-
-    let certificate_header = create_versioned_certificate_header(
+pub fn create_v2_header(
+    certification_tree_entry: &HttpCertificationTreeEntry,
+    certificate_cbor: &[u8],
+    tree_cbor: &[u8],
+) -> String {
+    create_versioned_certificate_header(
         certificate_cbor,
         tree_cbor,
-        cbor_encode(&full_expr_path).as_slice(),
+        cbor_encode(&certification_tree_entry.path.to_expr_path()).as_slice(),
         2,
-    );
-
-    certificate_header
+    )
 }
 
 pub struct V2Fixture {
@@ -82,16 +75,14 @@ pub struct V2Fixture {
 }
 
 pub fn create_v2_fixture(
-    cel_expr: &str,
-    expr_path: &[&str],
+    req_path: &str,
+    certification_tree_entry: &HttpCertificationTreeEntry,
     current_time: &u128,
-    req_hash: Option<&Hash>,
-    res_hash: Option<&Hash>,
 ) -> V2Fixture {
     let V2TreeFixture {
         tree_cbor,
         certified_data,
-    } = create_v2_tree_fixture(cel_expr, expr_path, req_hash, res_hash);
+    } = create_v2_tree_fixture(req_path, certification_tree_entry);
 
     let V2CertificateFixture {
         root_key,
@@ -99,7 +90,8 @@ pub fn create_v2_fixture(
         canister_id,
     } = create_v2_certificate_fixture(&certified_data, current_time);
 
-    let certificate_header = create_v2_header(expr_path, &certificate_cbor, &tree_cbor);
+    let certificate_header =
+        create_v2_header(certification_tree_entry, &certificate_cbor, &tree_cbor);
 
     V2Fixture {
         root_key,

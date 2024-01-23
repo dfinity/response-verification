@@ -7,6 +7,7 @@ use ic_certification::{
     empty, labeled, labeled_hash, merge_hash_trees, AsHashTree, HashTree, NestedTree,
 };
 use ic_representation_independent_hash::Sha256Digest;
+use std::borrow::Borrow;
 
 type CertificationTree = NestedTree<CertificationTreePathSegment, Vec<u8>>;
 
@@ -56,7 +57,7 @@ impl HttpCertificationTree {
     ///
     /// `request_url` is required so that the witness can be generated with respect to the request URL.
     pub fn witness(&self, entry: &HttpCertificationTreeEntry, request_url: &str) -> HashTree {
-        let witness = match entry.path {
+        let witness = match entry.path.borrow() {
             HttpCertificationPath::Exact(_) => self.tree.witness(&entry.to_tree_path()),
 
             HttpCertificationPath::Wildcard(_) => {

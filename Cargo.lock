@@ -1561,6 +1561,7 @@ dependencies = [
  "hex",
  "ic-certification 2.3.0",
  "ic-certification-testing",
+ "ic-http-certification",
  "ic-types",
  "leb128",
  "serde",

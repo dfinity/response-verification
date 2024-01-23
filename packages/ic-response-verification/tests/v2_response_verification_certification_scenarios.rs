@@ -5,47 +5,54 @@ mod tests {
         MIN_REQUESTED_VERIFICATION_VERSION,
     };
     use crate::fixtures::{
-        content_encoding_deflate_response, content_encoding_gzip_response,
-        content_encoding_identity_response, etag_caching_match_request,
-        etag_caching_match_response, etag_caching_mismatch_request, etag_caching_mismatch_response,
-        etag_certificate_tree, index_js_response, not_found_response, redirect_response,
+        content_encoding_deflate_certification, content_encoding_deflate_response,
+        content_encoding_gzip_certification, content_encoding_gzip_response,
+        content_encoding_identity_certification, content_encoding_identity_response,
+        etag_caching_match_certification, etag_caching_match_request, etag_caching_match_response,
+        etag_caching_mismatch_certification, etag_caching_mismatch_request,
+        etag_caching_mismatch_response, etag_certificate_tree, index_html_certification,
+        index_js_certification, index_js_response, not_found_certification, not_found_response,
+        redirect_certification, redirect_response,
     };
-    use ic_http_certification::{HttpRequest, HttpResponse};
+    use ic_http_certification::{
+        HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
+        HttpResponse,
+    };
     use ic_response_verification::{
         types::{VerificationInfo, VerifiedResponse},
         verify_request_response_pair, ResponseVerificationError,
     };
     use ic_response_verification_test_utils::{
-        create_v2_certificate_fixture, create_v2_header, get_current_timestamp, ExprTree,
+        cbor_encode, create_v2_certificate_fixture, create_v2_header, get_current_timestamp,
         V2CertificateFixture,
     };
     use rstest::*;
 
     #[rstest]
     // assert that the index html fallback response is accepted for paths outside the js folder
-    #[case::index_html_path(&"/", &["<*>"], index_html_response())]
-    #[case::not_found_path(&"/not-found", &["<*>"], index_html_response())]
-    #[case::not_found_trailing_slash_path(&"/not-found/", &["<*>"], index_html_response())]
-    #[case::nested_not_found_path(&"/not/found", &["<*>"], index_html_response())]
-    #[case::nested_not_found_trailing_slash_path(&"/not/found/", &["<*>"], index_html_response())]
+    #[case::index_html_path(&"/", index_html_response(), index_html_certification())]
+    #[case::not_found_path(&"/not-found", index_html_response(), index_html_certification())]
+    #[case::not_found_trailing_slash_path(&"/not-found/", index_html_response(), index_html_certification())]
+    #[case::nested_not_found_path(&"/not/found", index_html_response(), index_html_certification())]
+    #[case::nested_not_found_trailing_slash_path(&"/not/found/", index_html_response(), index_html_certification())]
     // assert that the asset not found response is accepted for paths inside the js folder
-    #[case::index_js_path(&"/js/index.js", &["js", "index.js", "<$>"], index_js_response())]
-    #[case::index_js_encoded_path(&"/j%73/index.js", &["js", "index.js", "<$>"], index_js_response())]
-    #[case::js_not_found_path(&"/js/not-found", &["js", "<*>"], not_found_response())]
-    #[case::js_not_found_trailing_slash_path(&"/js/not-found/", &["js", "<*>"], not_found_response())]
-    #[case::js_nested_not_found_path(&"/js/not/found", &["js", "<*>"], not_found_response())]
-    #[case::js_nested_not_found_trailing_slash_path(&"/js/not/found/", &["js", "<*>"], not_found_response())]
+    #[case::index_js_path(&"/js/index.js", index_js_response(), index_js_certification())]
+    #[case::index_js_encoded_path(&"/j%73/index.js", index_js_response(), index_js_certification())]
+    #[case::js_not_found_path(&"/js/not-found", not_found_response(), not_found_certification())]
+    #[case::js_not_found_trailing_slash_path(&"/js/not-found/", not_found_response(), not_found_certification())]
+    #[case::js_nested_not_found_path(&"/js/not/found", not_found_response(), not_found_certification())]
+    #[case::js_nested_not_found_trailing_slash_path(&"/js/not/found/", not_found_response(), not_found_certification())]
     // assert that the redirect response is accepted for the correct path
-    #[case::old_path(&"/old-path", &["old-path", "<$>"], redirect_response())]
+    #[case::old_path(&"/old-path", redirect_response(), redirect_certification())]
     // assert that any encoded response is accepted for the correct path
-    #[case::identity_encoding(&"/multi-encoded-path", &["multi-encoded-path", "<$>"], content_encoding_identity_response())]
-    #[case::gzip_encoding(&"/multi-encoded-path", &["multi-encoded-path", "<$>"], content_encoding_gzip_response())]
-    #[case::deflate_encoding(&"/multi-encoded-path", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
+    #[case::identity_encoding(&"/multi-encoded-path", content_encoding_identity_response(), content_encoding_identity_certification())]
+    #[case::gzip_encoding(&"/multi-encoded-path", content_encoding_gzip_response(), content_encoding_gzip_certification())]
+    #[case::deflate_encoding(&"/multi-encoded-path", content_encoding_deflate_response(), content_encoding_deflate_certification())]
     fn certification_scenarios_pass_verification(
-        #[from(certificate_tree)] expr_tree: ExprTree,
+        #[from(certificate_tree)] certification_tree: HttpCertificationTree,
         #[case] req_path: &str,
-        #[case] expr_path: &[&str],
         #[case] mut expected_response: HttpResponse,
+        #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
         let request = HttpRequest {
             url: req_path.into(),
@@ -63,11 +70,11 @@ mod tests {
             root_key,
             canister_id,
             certificate_cbor,
-        } = create_v2_certificate_fixture(&expr_tree.get_certified_data(), &current_time);
+        } = create_v2_certificate_fixture(&certification_tree.root_hash(), &current_time);
         let certificate_header = create_v2_header(
-            &expr_path,
+            &certification_tree_entry,
             &certificate_cbor,
-            &expr_tree.serialize_to_cbor(),
+            &cbor_encode(&certification_tree.witness(&certification_tree_entry, req_path)),
         );
 
         let expected_certified_response = VerifiedResponse {
@@ -79,7 +86,7 @@ mod tests {
                 .filter(|(key, _)| key != "ic-certificateexpression")
                 .collect::<Vec<_>>()
                 .clone(),
-            status_code: Some(expected_response.status_code.clone()),
+            status_code: Some(expected_response.status_code),
         };
 
         expected_response
@@ -108,42 +115,42 @@ mod tests {
 
     #[rstest]
     // assert that the asset not found response is not accepted for assets outside the js folder
-    #[case::not_found_for_index_html_path(&"/", &["js",  "<*>"], not_found_response())]
-    #[case::not_found_for_not_found_path(&"/not-found", &["js",  "<*>"], not_found_response())]
-    #[case::not_found_for_not_found_trailing_slash_path(&"/not-found/", &["js",  "<*>"], not_found_response())]
-    #[case::not_found_for_nested_not_found_path(&"/not/found", &["js",  "<*>"], not_found_response())]
-    #[case::not_found_for_nested_not_found_trailing_slash_path(&"/not/found/", &["js",  "<*>"], not_found_response())]
-    #[case::not_found_for_old_path(&"/old-path", &["js",  "<*>"], not_found_response())]
+    #[case::not_found_for_index_html_path(&"/", not_found_response(), not_found_certification())]
+    #[case::not_found_for_not_found_path(&"/not-found", not_found_response(), not_found_certification())]
+    #[case::not_found_for_not_found_trailing_slash_path(&"/not-found/", not_found_response(), not_found_certification())]
+    #[case::not_found_for_nested_not_found_path(&"/not/found", not_found_response(), not_found_certification())]
+    #[case::not_found_for_nested_not_found_trailing_slash_path(&"/not/found/", not_found_response(), not_found_certification())]
+    #[case::not_found_for_old_path(&"/old-path", not_found_response(), not_found_certification())]
     // assert that the index html fallback response is not accepted for assets inside the js folder
-    #[case::index_html_for_js_path(&"/js/index.js", &["<*>"], index_html_response())]
-    #[case::index_html_for_js_not_found_path(&"/js/not-found", &["<*>"], index_html_response())]
-    #[case::index_html_for_js_not_found_trailing_slash_path(&"/js/not-found/", &["<*>"], index_html_response())]
-    #[case::index_html_for_js_nested_not_found_path(&"/js/not/found", &["<*>"], index_html_response())]
-    #[case::index_html_for_js_nested_not_found_trailing_slash_path(&"/js/not/found/", &["<*>"], index_html_response())]
-    #[case::index_html_for_old_path(&"/old-path", &["<*>"], index_html_response())]
+    #[case::index_html_for_js_path(&"/js/index.js", index_html_response(), index_html_certification())]
+    #[case::index_html_for_js_not_found_path(&"/js/not-found", index_html_response(), index_html_certification())]
+    #[case::index_html_for_js_not_found_trailing_slash_path(&"/js/not-found/", index_html_response(), index_html_certification())]
+    #[case::index_html_for_js_nested_not_found_path(&"/js/not/found", index_html_response(), index_html_certification())]
+    #[case::index_html_for_js_nested_not_found_trailing_slash_path(&"/js/not/found/", index_html_response(), index_html_certification())]
+    #[case::index_html_for_old_path(&"/old-path", index_html_response(), index_html_certification())]
     // assert that the redirect response is not accepted for incorrect paths
-    #[case::redirect_for_old_trailing_slash_path(&"/old-path/", &["old-path", "<$>"], redirect_response())]
-    #[case::redirect_for_index_html_path(&"/", &["old-path", "<$>"], redirect_response())]
-    #[case::redirect_for_not_found_path(&"/not-found", &["old-path", "<$>"], redirect_response())]
-    #[case::redirect_for_nested_not_found_path(&"/not/found", &["old-path", "<$>"], redirect_response())]
-    #[case::redirect_for_js_path(&"/js/index.js", &["<*>"], index_html_response())]
-    #[case::redirect_for_js_not_found_path(&"/js/not-found", &["<*>"], index_html_response())]
-    #[case::redirect_for_js_nested_not_found_path(&"/js/not/found", &["<*>"], index_html_response())]
+    #[case::redirect_for_old_trailing_slash_path(&"/old-path/", redirect_response(), redirect_certification())]
+    #[case::redirect_for_index_html_path(&"/", redirect_response(), redirect_certification())]
+    #[case::redirect_for_not_found_path(&"/not-found", redirect_response(), redirect_certification())]
+    #[case::redirect_for_nested_not_found_path(&"/not/found", redirect_response(), redirect_certification())]
+    #[case::redirect_for_js_path(&"/js/index.js", index_html_response(), redirect_certification())]
+    #[case::redirect_for_js_not_found_path(&"/js/not-found", index_html_response(), redirect_certification())]
+    #[case::redirect_for_js_nested_not_found_path(&"/js/not/found", index_html_response(), redirect_certification())]
     // assert that encoded responses are accepted for the incorrect paths
-    #[case::identity_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_identity_response())]
-    #[case::gzip_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_gzip_response())]
-    #[case::deflate_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
-    #[case::identity_encoding_for_index_html_path(&"/", &["multi-encoded-path", "<$>"], content_encoding_identity_response())]
-    #[case::gzip_encoding_for_not_found_path(&"/not-found", &["multi-encoded-path", "<$>"], content_encoding_gzip_response())]
-    #[case::gzip_encoding_for_nested_not_found_path(&"/not/found", &["multi-encoded-path", "<$>"], content_encoding_gzip_response())]
-    #[case::deflate_encoding_for_js_path(&"/js/index.js", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
-    #[case::deflate_encoding_for_js_not_found_path(&"/js/not-found", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
-    #[case::deflate_encoding_for_nested_js_not_found_path(&"/js/not/found", &["multi-encoded-path", "<$>"], content_encoding_deflate_response())]
+    #[case::identity_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_identity_response(), content_encoding_identity_certification())]
+    #[case::gzip_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_gzip_response(), content_encoding_gzip_certification())]
+    #[case::deflate_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    #[case::identity_encoding_for_index_html_path(&"/", content_encoding_identity_response(), content_encoding_identity_certification())]
+    #[case::gzip_encoding_for_not_found_path(&"/not-found", content_encoding_gzip_response(), content_encoding_gzip_certification())]
+    #[case::gzip_encoding_for_nested_not_found_path(&"/not/found", content_encoding_gzip_response(), content_encoding_gzip_certification())]
+    #[case::deflate_encoding_for_js_path(&"/js/index.js", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    #[case::deflate_encoding_for_js_not_found_path(&"/js/not-found", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    #[case::deflate_encoding_for_nested_js_not_found_path(&"/js/not/found", content_encoding_deflate_response(), content_encoding_deflate_certification())]
     fn certification_scenarios_fail_verification(
-        #[from(certificate_tree)] expr_tree: ExprTree,
+        #[from(certificate_tree)] certification_tree: HttpCertificationTree,
         #[case] req_path: &str,
-        #[case] expr_path: &[&str],
         #[case] mut expected_response: HttpResponse,
+        #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
         let request = HttpRequest {
             url: req_path.into(),
@@ -161,11 +168,11 @@ mod tests {
             root_key,
             canister_id,
             certificate_cbor,
-        } = create_v2_certificate_fixture(&expr_tree.get_certified_data(), &current_time);
+        } = create_v2_certificate_fixture(&certification_tree.root_hash(), &current_time);
         let certificate_header = create_v2_header(
-            &expr_path,
+            &certification_tree_entry,
             &certificate_cbor,
-            &expr_tree.serialize_to_cbor(),
+            &cbor_encode(&certification_tree.witness(&certification_tree_entry, req_path)),
         );
 
         expected_response
@@ -189,32 +196,39 @@ mod tests {
     }
 
     #[rstest]
-    #[case::etag_match(etag_caching_match_request(), etag_caching_match_response())]
+    #[case::etag_match(
+        etag_caching_match_request(),
+        etag_caching_match_response(),
+        etag_caching_match_certification(&HttpCertificationPath::Exact("/app"))
+    )]
     #[case::etag_match_mismatch_response(
         etag_caching_match_request(),
-        etag_caching_mismatch_response()
+        etag_caching_mismatch_response(),
+        etag_caching_mismatch_certification(&HttpCertificationPath::Exact("/app"))
     )]
     #[case::etag_match_mismatch_response(
         etag_caching_mismatch_request(),
-        etag_caching_mismatch_response()
+        etag_caching_mismatch_response(),
+        etag_caching_mismatch_certification(&HttpCertificationPath::Exact("/app"))
     )]
     fn etag_scenarios_pass_verification(
-        #[from(etag_certificate_tree)] expr_tree: ExprTree,
+        #[from(etag_certificate_tree)] certification_tree: HttpCertificationTree,
         #[case] request: HttpRequest,
         #[case] mut expected_response: HttpResponse,
+        #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
-        let expr_path = ["app", "<$>"];
+        let req_path = "/app";
         let current_time = get_current_timestamp();
 
         let V2CertificateFixture {
             root_key,
             canister_id,
             certificate_cbor,
-        } = create_v2_certificate_fixture(&expr_tree.get_certified_data(), &current_time);
+        } = create_v2_certificate_fixture(&certification_tree.root_hash(), &current_time);
         let certificate_header = create_v2_header(
-            &expr_path,
+            &certification_tree_entry,
             &certificate_cbor,
-            &expr_tree.serialize_to_cbor(),
+            &cbor_encode(&certification_tree.witness(&certification_tree_entry, &req_path)),
         );
 
         let expected_certified_response = VerifiedResponse {
@@ -226,7 +240,7 @@ mod tests {
                 .filter(|(key, _)| key != "ic-certificateexpression")
                 .collect::<Vec<_>>()
                 .clone(),
-            status_code: Some(expected_response.status_code.clone()),
+            status_code: Some(expected_response.status_code),
         };
 
         expected_response
@@ -255,22 +269,24 @@ mod tests {
 
     #[rstest]
     fn etag_scenarios_fail_verification(
-        #[from(etag_certificate_tree)] expr_tree: ExprTree,
+        #[from(etag_certificate_tree)] certification_tree: HttpCertificationTree,
         #[from(etag_caching_mismatch_request)] request: HttpRequest,
         #[from(etag_caching_match_response)] mut expected_response: HttpResponse,
     ) {
-        let expr_path = ["app", "<$>"];
+        let req_path = "/app";
+        let http_certification_tree_entry =
+            etag_caching_match_certification(&HttpCertificationPath::Exact("/app"));
         let current_time = get_current_timestamp();
 
         let V2CertificateFixture {
             root_key,
             canister_id,
             certificate_cbor,
-        } = create_v2_certificate_fixture(&expr_tree.get_certified_data(), &current_time);
+        } = create_v2_certificate_fixture(&certification_tree.root_hash(), &current_time);
         let certificate_header = create_v2_header(
-            &expr_path,
+            &http_certification_tree_entry,
             &certificate_cbor,
-            &expr_tree.serialize_to_cbor(),
+            &cbor_encode(&certification_tree.witness(&http_certification_tree_entry, req_path)),
         );
 
         expected_response
@@ -297,13 +313,13 @@ mod tests {
 #[cfg(not(target_arch = "wasm32"))]
 mod fixtures {
     use ic_http_certification::{
-        request_hash, response_hash, DefaultCelBuilder, DefaultFullCelExpression,
-        DefaultResponseCertification, DefaultResponseOnlyCelExpression, HttpRequest, HttpResponse,
+        DefaultCelBuilder, DefaultFullCelExpression, DefaultResponseCertification,
+        DefaultResponseOnlyCelExpression, HttpCertification, HttpCertificationPath,
+        HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
     };
-    use ic_response_verification_test_utils::{
-        create_expr_tree_path, deflate_encode, gzip_encode, hash, ExprTree,
-    };
+    use ic_response_verification_test_utils::{deflate_encode, gzip_encode, hash};
     use rstest::*;
+    use std::borrow::Cow;
 
     pub const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000;
     pub const MIN_REQUESTED_VERIFICATION_VERSION: u8 = 2;
@@ -330,6 +346,18 @@ mod fixtures {
     }
 
     #[fixture]
+    pub fn index_html_certification() -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(&HttpCertificationPath::Wildcard("")),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &asset_cel(),
+                &index_html_response(),
+                None,
+            )),
+        }
+    }
+
+    #[fixture]
     pub fn index_js_response() -> HttpResponse {
         let cel = asset_cel();
         let body = br#"window.onload=function(){console.log("Hello World")};"#;
@@ -343,6 +371,18 @@ mod fixtures {
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
             upgrade: None,
+        }
+    }
+
+    #[fixture]
+    pub fn index_js_certification() -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(&HttpCertificationPath::Exact("/js/index.js")),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &asset_cel(),
+                &index_js_response(),
+                None,
+            )),
         }
     }
 
@@ -364,6 +404,18 @@ mod fixtures {
     }
 
     #[fixture]
+    pub fn not_found_certification() -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(&HttpCertificationPath::Wildcard("/js")),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &asset_cel(),
+                &not_found_response(),
+                None,
+            )),
+        }
+    }
+
+    #[fixture]
     pub fn redirect_response() -> HttpResponse {
         let cel = redirect_cel();
         let body = br#"Moved Permanently"#;
@@ -376,6 +428,18 @@ mod fixtures {
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
             upgrade: None,
+        }
+    }
+
+    #[fixture]
+    pub fn redirect_certification() -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(&HttpCertificationPath::Exact("/old-path")),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &redirect_cel(),
+                &redirect_response(),
+                None,
+            )),
         }
     }
 
@@ -396,6 +460,18 @@ mod fixtures {
     }
 
     #[fixture]
+    pub fn content_encoding_identity_certification() -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(&HttpCertificationPath::Exact("/multi-encoded-path")),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &asset_cel(),
+                &content_encoding_identity_response(),
+                None,
+            )),
+        }
+    }
+
+    #[fixture]
     pub fn content_encoding_gzip_response() -> HttpResponse {
         let cel = asset_cel();
 
@@ -412,6 +488,18 @@ mod fixtures {
     }
 
     #[fixture]
+    pub fn content_encoding_gzip_certification() -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(&HttpCertificationPath::Exact("/multi-encoded-path")),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &asset_cel(),
+                &content_encoding_gzip_response(),
+                None,
+            )),
+        }
+    }
+
+    #[fixture]
     pub fn content_encoding_deflate_response() -> HttpResponse {
         let cel = asset_cel();
 
@@ -424,6 +512,18 @@ mod fixtures {
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
             upgrade: None,
+        }
+    }
+
+    #[fixture]
+    pub fn content_encoding_deflate_certification() -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(&HttpCertificationPath::Exact("/multi-encoded-path")),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &asset_cel(),
+                &content_encoding_deflate_response(),
+                None,
+            )),
         }
     }
 
@@ -461,6 +561,24 @@ mod fixtures {
     }
 
     #[fixture]
+    pub fn etag_caching_match_certification(
+        #[default(&HttpCertificationPath::Exact(""))] path: &'static HttpCertificationPath,
+    ) -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(path),
+            certification: Cow::Owned(
+                HttpCertification::full(
+                    &etag_caching_match_cel(),
+                    &etag_caching_match_request(),
+                    &etag_caching_match_response(),
+                    None,
+                )
+                .unwrap(),
+            ),
+        }
+    }
+
+    #[fixture]
     pub fn etag_caching_mismatch_request() -> HttpRequest {
         HttpRequest {
             url: "/app".into(),
@@ -492,6 +610,20 @@ mod fixtures {
                 ("IC-CertificateExpression".into(), cel.to_string()),
             ],
             upgrade: None,
+        }
+    }
+
+    #[fixture]
+    pub fn etag_caching_mismatch_certification(
+        #[default(&HttpCertificationPath::Exact(""))] path: &'static HttpCertificationPath,
+    ) -> HttpCertificationTreeEntry<'static> {
+        HttpCertificationTreeEntry {
+            path: Cow::Borrowed(path),
+            certification: Cow::Owned(HttpCertification::response_only(
+                &etag_caching_mismatch_cel(),
+                &etag_caching_mismatch_response(),
+                None,
+            )),
         }
     }
 
@@ -533,141 +665,37 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn certificate_tree() -> ExprTree {
-        let asset_certification = asset_cel();
-        let asset_cel = asset_certification.to_string();
-        let asset_cel_hash = hash(asset_cel.as_bytes());
+    pub fn certificate_tree() -> HttpCertificationTree {
+        let mut http_certification_tree = HttpCertificationTree::default();
 
-        let index_html_response_hash =
-            response_hash(&index_html_response(), &asset_certification.response, None);
-        let index_js_response_hash =
-            response_hash(&index_js_response(), &asset_certification.response, None);
-        let not_found_response_hash =
-            response_hash(&not_found_response(), &asset_certification.response, None);
+        http_certification_tree.insert(&index_html_certification());
+        http_certification_tree.insert(&index_js_certification());
+        http_certification_tree.insert(&not_found_certification());
+        http_certification_tree.insert(&redirect_certification());
+        http_certification_tree.insert(&content_encoding_identity_certification());
+        http_certification_tree.insert(&content_encoding_gzip_certification());
+        http_certification_tree.insert(&content_encoding_deflate_certification());
 
-        let redirect_certification = redirect_cel();
-        let redirect_cel = redirect_certification.to_string();
-        let redirect_cel_hash = hash(redirect_cel.as_bytes());
-
-        let redirect_response_hash =
-            response_hash(&redirect_response(), &redirect_certification.response, None);
-
-        let content_encoding_identity_response_hash = response_hash(
-            &content_encoding_identity_response(),
-            &asset_certification.response,
-            None,
-        );
-        let content_encoding_gzip_response_hash = response_hash(
-            &content_encoding_gzip_response(),
-            &asset_certification.response,
-            None,
-        );
-        let content_encoding_deflate_response_hash = response_hash(
-            &content_encoding_deflate_response(),
-            &asset_certification.response,
-            None,
-        );
-
-        let mut expr_tree = ExprTree::new();
-        expr_tree.insert(&create_expr_tree_path(
-            &["<*>"],
-            &asset_cel_hash,
-            None,
-            Some(&index_html_response_hash),
-        ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["js", "index.js", "<$>"],
-            &asset_cel_hash,
-            None,
-            Some(&index_js_response_hash),
-        ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["js", "<*>"],
-            &asset_cel_hash,
-            None,
-            Some(&not_found_response_hash),
-        ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["old-path", "<$>"],
-            &redirect_cel_hash,
-            None,
-            Some(&redirect_response_hash),
-        ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["multi-encoded-path", "<$>"],
-            &asset_cel_hash,
-            None,
-            Some(&content_encoding_identity_response_hash),
-        ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["multi-encoded-path", "<$>"],
-            &asset_cel_hash,
-            None,
-            Some(&content_encoding_gzip_response_hash),
-        ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["multi-encoded-path", "<$>"],
-            &asset_cel_hash,
-            None,
-            Some(&content_encoding_deflate_response_hash),
-        ));
-
-        expr_tree
+        http_certification_tree
     }
 
     #[fixture]
-    pub fn etag_certificate_tree() -> ExprTree {
-        let etag_caching_match_certification = etag_caching_match_cel();
-        let etag_caching_match_cel = etag_caching_match_certification.to_string();
-        let etag_caching_match_cel_hash = hash(etag_caching_match_cel.as_bytes());
+    pub fn etag_certificate_tree() -> HttpCertificationTree {
+        let mut http_certification_tree = HttpCertificationTree::default();
 
-        let etag_caching_match_response_hash = response_hash(
-            &etag_caching_match_response(),
-            &etag_caching_match_certification.response,
-            None,
-        );
-        let etag_caching_match_request_hash = request_hash(
-            &etag_caching_match_request(),
-            &etag_caching_match_certification.request,
-        )
-        .unwrap();
-
-        let etag_caching_mismatch_certification = etag_caching_mismatch_cel();
-        let etag_caching_mismatch_cel = etag_caching_mismatch_certification.to_string();
-        let etag_caching_mismatch_cel_hash = hash(etag_caching_mismatch_cel.as_bytes());
-
-        let etag_caching_mismatch_response_hash = response_hash(
-            &etag_caching_mismatch_response(),
-            &etag_caching_mismatch_certification.response,
-            None,
-        );
-
-        let mut expr_tree = ExprTree::new();
-        expr_tree.insert(&create_expr_tree_path(
-            &["app", "", "<$>"],
-            &etag_caching_mismatch_cel_hash,
-            None,
-            Some(&etag_caching_mismatch_response_hash),
+        http_certification_tree.insert(&etag_caching_match_certification(
+            &HttpCertificationPath::Exact("/app"),
         ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["app", "<$>"],
-            &etag_caching_mismatch_cel_hash,
-            None,
-            Some(&etag_caching_mismatch_response_hash),
+        http_certification_tree.insert(&etag_caching_match_certification(
+            &HttpCertificationPath::Exact("/app/"),
         ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["app", "", "<$>"],
-            &etag_caching_match_cel_hash,
-            Some(&etag_caching_match_request_hash),
-            Some(&etag_caching_match_response_hash),
+        http_certification_tree.insert(&etag_caching_mismatch_certification(
+            &HttpCertificationPath::Exact("/app"),
         ));
-        expr_tree.insert(&create_expr_tree_path(
-            &["app", "<$>"],
-            &etag_caching_match_cel_hash,
-            Some(&etag_caching_match_request_hash),
-            Some(&etag_caching_match_response_hash),
+        http_certification_tree.insert(&etag_caching_mismatch_certification(
+            &HttpCertificationPath::Exact("/app/"),
         ));
 
-        expr_tree
+        http_certification_tree
     }
 }

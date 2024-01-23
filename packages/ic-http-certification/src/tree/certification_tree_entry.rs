@@ -1,5 +1,6 @@
 use super::certification_tree_path::{HttpCertificationPath, InnerTreePath};
 use crate::HttpCertification;
+use std::borrow::Cow;
 
 /// An entry in an [HttpCertificationTree](crate::HttpCertificationTree).
 ///
@@ -12,18 +13,30 @@ use crate::HttpCertification;
 ///
 /// - [certification](HttpCertificationTreeEntry::certification) that specifies the
 /// [HttpCertification](crate::HttpCertification) definition itself.
+///
+/// Use the [new](HttpCertificationTreeEntry::new) associated function to create a new `HttpCertificationTreeEntry`.
 #[derive(Debug)]
 pub struct HttpCertificationTreeEntry<'a> {
     /// The path of an [HttpCertification](crate::HttpCertification) definition within the tree.
     /// This path will define what [HttpRequest](crate::HttpRequest) URLs the
     /// [certification](HttpCertificationTreeEntry::certification) will be valid for.
-    pub path: &'a HttpCertificationPath<'a>,
+    pub path: Cow<'a, HttpCertificationPath<'a>>,
 
     /// The [HttpCertification](crate::HttpCertification) definition itself.
-    pub certification: &'a HttpCertification,
+    pub certification: Cow<'a, HttpCertification>,
 }
 
-impl HttpCertificationTreeEntry<'_> {
+impl<'a> HttpCertificationTreeEntry<'a> {
+    /// Creates a new `HttpCertificationTreeEntry` with the given `path` and `certification`.
+    /// This is a convenience method for creating a `HttpCertificationTreeEntry` with references,
+    /// without having to directly deal with the `Cow` type.
+    pub fn new(path: &'a HttpCertificationPath, certification: &'a HttpCertification) -> Self {
+        Self {
+            path: Cow::Borrowed(path),
+            certification: Cow::Borrowed(certification),
+        }
+    }
+
     pub(super) fn to_tree_path(&self) -> InnerTreePath {
         let mut tree_path = vec![];
         tree_path.append(&mut self.path.to_tree_path());
@@ -63,10 +76,7 @@ mod tests {
         let cel_expr_hash = hash(cel_expr.as_bytes());
 
         let certification = HttpCertification::skip();
-        let entry = HttpCertificationTreeEntry {
-            path: &path,
-            certification: &certification,
-        };
+        let entry = HttpCertificationTreeEntry::new(&path, &certification);
 
         let result = entry.to_tree_path();
 
@@ -105,10 +115,7 @@ mod tests {
         let expected_response_hash = response_hash(&response, &cel_expr.response, None);
 
         let certification = HttpCertification::response_only(&cel_expr, &response, None);
-        let entry = HttpCertificationTreeEntry {
-            path: &path,
-            certification: &certification,
-        };
+        let entry = HttpCertificationTreeEntry::new(&path, &certification);
 
         let result = entry.to_tree_path();
 
@@ -155,10 +162,7 @@ mod tests {
         let expected_response_hash = response_hash(&response, &cel_expr.response, None);
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
-        let entry = HttpCertificationTreeEntry {
-            path: &path,
-            certification: &certification,
-        };
+        let entry = HttpCertificationTreeEntry::new(&path, &certification);
 
         let result = entry.to_tree_path();
 

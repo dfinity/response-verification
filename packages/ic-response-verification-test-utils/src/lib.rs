@@ -15,9 +15,6 @@ pub use hash::*;
 mod timestamp;
 pub use timestamp::*;
 
-mod expr_tree;
-pub use expr_tree::*;
-
 mod utils;
 pub use utils::*;
 
