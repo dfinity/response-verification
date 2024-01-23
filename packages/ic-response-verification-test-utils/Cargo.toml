@@ -19,3 +19,4 @@ leb128.workspace = true
 serde.workspace = true
 flate2.workspace = true
 ic-certification = { workspace = true, features = ["default"] }
+ic-http-certification = { workspace = true }

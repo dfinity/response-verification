@@ -21,7 +21,7 @@ pub(super) const WILDCARD_PATH_TERMINATOR_BYTES: &[u8] = WILDCARD_PATH_TERMINATO
 ///
 /// - The [Wildcard](HttpCertificationPath::Wildcard) variant is used for paths that match a URL path prefix.
 /// For example, `HttpCertificationPath::Wildcard('/foo')` will match the URL paths `/foo/bar` and `/foo/baz`.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum HttpCertificationPath<'a> {
     /// An exact path to an [HttpCertification](crate::HttpCertification) in an
     /// [HttpCertificationTree](crate::HttpCertificationTree). This path will match only

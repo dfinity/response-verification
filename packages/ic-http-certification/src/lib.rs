@@ -313,10 +313,7 @@ let certification = HttpCertification::full(&cel_expr, &request, &response, None
 
 let mut http_certification_tree = HttpCertificationTree::default();
 
-let entry = HttpCertificationTreeEntry {
-    path: &path,
-    certification: &certification,
-};
+let entry = HttpCertificationTreeEntry::new(&path, &certification);
 
 // insert the entry into the tree
 http_certification_tree.insert(&entry);
