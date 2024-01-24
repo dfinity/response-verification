@@ -49,7 +49,7 @@ fn extract_header_field(header_field: &str) -> Option<(&str, &str)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::test_utils::create_encoded_header_field;
+    use crate::test_utils::create_encoded_header_field;
     use ic_response_verification_test_utils::{base64_encode, cbor_encode, create_certificate};
 
     #[test]

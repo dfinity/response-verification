@@ -305,7 +305,7 @@ mod tests {
             canister_id.as_ref(),
             current_time,
             MAX_CERT_TIME_OFFSET_NS,
-            &root_key,
+            root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
         );
 

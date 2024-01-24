@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+
 mod cbor_parse_certificate;
 pub use cbor_parse_certificate::*;
 

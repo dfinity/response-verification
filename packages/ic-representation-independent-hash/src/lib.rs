@@ -1,11 +1,6 @@
 //! # Representation Independent Hash
 
-#![deny(
-    missing_docs,
-    missing_debug_implementations,
-    rustdoc::broken_intra_doc_links,
-    rustdoc::private_intra_doc_links
-)]
+#![deny(missing_docs, missing_debug_implementations, rustdoc::all, clippy::all)]
 
 /// Type alias for a SHA-256 hash.
 pub type Sha256Digest = [u8; 32];

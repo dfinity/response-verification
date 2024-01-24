@@ -558,12 +558,7 @@ Typically these requests have been routed through `raw` Internet Computer URLs i
 
 */
 
-#![deny(
-    missing_docs,
-    missing_debug_implementations,
-    rustdoc::broken_intra_doc_links,
-    rustdoc::private_intra_doc_links
-)]
+#![deny(missing_docs, missing_debug_implementations, rustdoc::all, clippy::all)]
 
 pub mod cel;
 pub use cel::{
@@ -581,5 +576,5 @@ pub use tree::*;
 
 // https://github.com/la10736/rstest/tree/master/rstest_reuse#cavelets
 #[cfg(test)]
-#[allow(unused_imports)]
+#[allow(clippy::single_component_path_imports)]
 use rstest_reuse;

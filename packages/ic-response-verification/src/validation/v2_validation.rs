@@ -163,7 +163,7 @@ pub fn validate_hashes(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::test_utils::{create_pruned, remove_whitespace, sha256_from_hex};
+    use crate::test_utils::{create_pruned, remove_whitespace, sha256_from_hex};
     use ic_certification::hash_tree::{fork, label, leaf};
     use ic_http_certification::{
         cel::{DefaultFullCelExpression, DefaultRequestCertification},

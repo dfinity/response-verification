@@ -175,7 +175,7 @@ fn validate_response_certification<'a>(
 pub(crate) fn map_cel_ast<'a>(cel: &'a CelValue<'a>) -> CelParserResult<CelExpression<'a>> {
     let default_certification = validate_function(cel, "default_certification")?;
 
-    let Some(validation_args) = default_certification.get(0) else {
+    let Some(validation_args) = default_certification.first() else {
         return Err(CelParserError::MissingFunctionParameter {
             function_name: "default_certification".into(),
             parameter_name: "ValidationArgs".into(),

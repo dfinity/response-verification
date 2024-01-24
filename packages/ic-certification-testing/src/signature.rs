@@ -36,7 +36,7 @@ pub(crate) fn generate_keypair() -> CertificationTestResult<KeyPair> {
     )
     .unwrap();
 
-    let private_key = secret_key_bytes.get(0).unwrap().clone();
+    let private_key = secret_key_bytes.first().unwrap().clone();
     let public_key = ThresholdSigPublicKey::from(CspThresholdSigPublicKey::from(
         combined_public_key(&public_coefficients).unwrap(),
     ));

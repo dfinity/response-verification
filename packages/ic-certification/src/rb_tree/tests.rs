@@ -7,7 +7,7 @@ fn insert(t: &mut TreeOfBytes, k: impl AsRef<[u8]>, v: impl AsRef<[u8]>) {
     t.insert(k.as_ref().to_vec(), v.as_ref().to_vec())
 }
 
-fn get_labels<'a>(ht: &'a HashTreeNode) -> Vec<&'a [u8]> {
+fn get_labels(ht: &HashTreeNode) -> Vec<&[u8]> {
     fn go<'a>(t: &'a HashTreeNode, keys: &mut Vec<&'a [u8]>) {
         match t {
             HashTreeNode::Labeled(key, _) => {
@@ -25,11 +25,11 @@ fn get_labels<'a>(ht: &'a HashTreeNode) -> Vec<&'a [u8]> {
     keys
 }
 
-fn get_leaf_values<'a>(ht: &'a HashTreeNode) -> Vec<&'a [u8]> {
+fn get_leaf_values(ht: &HashTreeNode) -> Vec<&[u8]> {
     fn go<'a>(t: &'a HashTreeNode, values: &mut Vec<&'a [u8]>) {
         match t {
             HashTreeNode::Leaf(value) => {
-                values.push(&value);
+                values.push(value);
             }
             HashTreeNode::Fork(lr) => {
                 go(&lr.0, values);
@@ -342,7 +342,9 @@ fn test_iter() {
         insert(&mut t, k.to_be_bytes(), (k + 10).to_be_bytes());
         v.push((k.to_be_bytes().to_vec(), (k + 10).to_be_bytes().to_vec()));
         assert!(
-            t.iter().eq(v.iter().map(|(k, v)| (k, v))),
+            t.iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .eq(v.iter().map(|(k, v)| (k.clone(), v.clone()))),
             "iterators aren't equal {:?} vs {:?}",
             &t.iter().collect::<Vec<_>>(),
             v

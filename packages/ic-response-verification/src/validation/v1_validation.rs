@@ -25,7 +25,7 @@ pub fn validate_body(tree: &HashTree, request_path: &str, body_sha: &Hash) -> bo
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::test_utils::{create_tree, CreateTreeOptions};
+    use crate::test_utils::{create_tree, CreateTreeOptions};
     use http::Uri;
     use ic_representation_independent_hash::hash;
 

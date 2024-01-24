@@ -19,9 +19,9 @@ pub struct ResponseHeaders {
 
 /// Filters the headers of an [HttpResponse] according to a CEL expression defined by
 /// [DefaultResponseCertification].
-pub fn filter_response_headers<'a>(
+pub fn filter_response_headers(
     response: &HttpResponse,
-    response_certification: &DefaultResponseCertification<'a>,
+    response_certification: &DefaultResponseCertification<'_>,
 ) -> ResponseHeaders {
     let headers_filter: Box<dyn Fn(_) -> _> = match response_certification {
         DefaultResponseCertification::CertifiedResponseHeaders(headers_to_include) => {
@@ -436,7 +436,7 @@ mod tests {
     /// of the expected hashes. Generating the hash for a string with so much whitespace manually
     /// may be prone to error in copy/pasting the string into a website and missing a leading/trailing
     /// newline or a tab character somewhere.
-    fn remove_whitespace<'a>(s: &'a str) -> String {
+    fn remove_whitespace(s: &str) -> String {
         s.chars().filter(|c| !c.is_whitespace()).collect()
     }
 }

@@ -1,11 +1,6 @@
 //! # Response Verification
 
-#![deny(
-    missing_docs,
-    missing_debug_implementations,
-    rustdoc::broken_intra_doc_links,
-    rustdoc::private_intra_doc_links
-)]
+#![deny(missing_docs, missing_debug_implementations, rustdoc::all, clippy::all)]
 
 mod verification;
 pub use verification::*;
@@ -16,5 +11,7 @@ pub mod cel;
 pub mod types;
 
 mod base64;
-mod test_utils;
 mod validation;
+
+#[cfg(test)]
+mod test_utils;

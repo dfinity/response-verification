@@ -1,3 +1,5 @@
+#![deny(clippy::all)]
+
 mod asset_tree;
 pub use asset_tree::*;
 
