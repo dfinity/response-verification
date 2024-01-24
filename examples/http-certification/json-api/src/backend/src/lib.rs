@@ -167,10 +167,7 @@ fn certify_response(
 
     HTTP_TREE.with_borrow_mut(|http_tree| {
         // insert the certification into the certification tree
-        http_tree.insert(&HttpCertificationTreeEntry {
-            path: &tree_path,
-            certification: &certification,
-        });
+        http_tree.insert(&HttpCertificationTreeEntry::new(&tree_path, &certification));
 
         // set the canister's certified data
         set_certified_data(&http_tree.root_hash());
@@ -193,10 +190,7 @@ fn list_todo_items_handler(req: &HttpRequest) -> HttpResponse {
 
         add_certificate_header(
             &mut response,
-            &HttpCertificationTreeEntry {
-                path: &TODOS_TREE_PATH,
-                certification: &certification,
-            },
+            &HttpCertificationTreeEntry::new(&TODOS_TREE_PATH, &certification),
             &req_path,
             &TODOS_TREE_PATH.to_expr_path(),
         );
@@ -250,10 +244,7 @@ fn not_found_handler(req: &HttpRequest) -> HttpResponse {
 
         add_certificate_header(
             &mut response,
-            &HttpCertificationTreeEntry {
-                path: &NOT_FOUND_TREE_PATH,
-                certification: &certification,
-            },
+            &HttpCertificationTreeEntry::new(&NOT_FOUND_TREE_PATH, &certification),
             &req_path,
             &NOT_FOUND_TREE_PATH.to_expr_path(),
         );
