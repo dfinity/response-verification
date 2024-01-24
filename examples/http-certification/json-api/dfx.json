@@ -1,5 +1,5 @@
 {
-  "dfx": "0.15.2",
+  "dfx": "0.15.3",
   "output_env_file": ".env",
   "canisters": {
     "backend": {
