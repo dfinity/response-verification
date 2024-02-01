@@ -1,8 +1,16 @@
-# HTTP Certified JSON API
+# Serving JSON over HTTP
 
-This example project demonstrates how to create a very simple HTTP Certified JSON API for managing todo items. There is no authentication or persistent storage, only the ability to create and list todos.
+## Overview
 
-This guide is not a canister development guide so it will omit or gloss over concepts that a relatively experienced canister developer will already know. Concepts specific to HTTP Certification will be called out here and can help to understand the full code example.
+This guide walks through an example project that demonstrates how to create a canister that can serve certified JSON over HTTP. The example project presents a very simple REST API for managing todo items. There is no authentication or persistent storage, only the ability to create and list todos.
+
+This is not a beginner's canister development guide so many foundational concepts that a relatively experienced canister developer should already know will be omitted or glossed over. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/json-api).
+
+## Prerequisites
+
+It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced here so as to not explain similar things again.
+
+- [x] Complete the "Custom HTTP Canisters" guide.
 
 ## Lifecycle
 
@@ -24,7 +32,7 @@ fn post_upgrade() {
 
 ## CEL Expressions
 
-CEL expressions only need to be setup once and can then be reused until the next canister upgrade. Responses can also be setup once and reused. If the response is static and will not change throughout the canister's lifetime then it only needs to certified once. If the response can change however, then it will need to be re-certified every time it changes.
+CEL expressions only need to be setup once and can then be reused until the next canister upgrade. Responses can also be setup once and reused. If the response is static and will not change throughout the canister's lifetime then it only needs to be certified once. If the response can change however, then it will need to be re-certified every time it changes.
 
 To store CEL expressions, a `HashMap` is created:
 
@@ -36,7 +44,7 @@ thread_local! {
 
 The `HashMap` uses the request path as the key, and a tuple of `(DefaultResponseOnlyCelExpression, String)` as the value. `DefaultResponseOnlyCelExpression` is a parsed CEL expression definition and `String` is the stringified version of it.
 
-`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified then `DefaultFullCelExpression` should be used. Separate `HashMap`s could be created to hold different types of CEL expressions, or the higher level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future there may be more schemes, and the even higher level `CelExpression` can hold CEL expressions from different schemes. It is up to the developer's how they want to store and organize their CEL expressions.
+`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified then `DefaultFullCelExpression` should be used. Separate `HashMap`s could be created to hold different types of CEL expressions, or the higher level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future there may be more schemes, and the even higher level `CelExpression` can hold CEL expressions from different schemes. It is up to developer's to decide how they want to store and organize their CEL expressions.
 
 In this example, there is only one CEL expression used. This CEL expression is cloned and used for both request paths that are being certified. For more information on defining CEL expressions, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#defining-cel-expressions).
 
@@ -71,7 +79,7 @@ fn prepare_cel_exprs() {
 
 ## Responses
 
-The certification tree has its own dedicated data structure while responses, similarly to CEL expressions, are stored in a `HashMap`, along with their respective certifications. The responses and certifications are stored separately from the CEL expressions because they are likely to change through the canister's lifetime, where as the CEL expressions are set once. They could all be stored within the same structure though if a developer wishes to follow that approach.
+The certification tree has its own dedicated data structure while responses, similarly to CEL expressions, are stored in a `HashMap`, along with their respective certifications. The responses and certifications are stored separately from the CEL expressions because they are likely to change throughout the canister's lifecycle, where as the CEL expressions are set once. They could all be stored within the same structure though if a developer wishes to follow that approach.
 
 ```rust
 struct CertifiedHttpResponse {
@@ -88,10 +96,10 @@ thread_local! {
 Responses are certified with a number of steps, which are encapsulated into a reusable function. The steps are:
 
 - Retreive the pre-computed CEL expression for the request path.
-- Insert the `Ic-CertificationExpression` header for the given response, with the relevant stringified CEL expression as it's value.
-- Together with the response, calculate the certification for the given response.
+- Insert the `Ic-CertificationExpression` header for the given response, with the corresponding stringified CEL expression as it's value.
+- Calculate the certification for the given response and CEL expression.
 - Store the response together with it's certification.
-- Insert the certification into the certification tree.
+- Insert the certification into the certification tree at the appropriate path.
 - Update the canister's [certified data](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data).
 
 For more information on creating certifications, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#creating-certifications).
@@ -141,7 +149,7 @@ fn certify_response(
 }
 ```
 
-These steps can now be re-used for each response:
+These steps can now be re-used for each response that needs to be certified:
 
 ```rust
 fn certify_list_todos_response() {
@@ -262,7 +270,7 @@ fn not_found_handler(req: &HttpRequest) -> HttpResponse {
 
 ## Updating state
 
-The todo list is updatable via `POST` requests. These calls will initially come in as [`query` calls](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-query), so we'll need to [upgrade it to an update call](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec#upgrade-to-update-calls).
+The todo list is updatable via `POST` requests. These calls will initially be received as [`query` calls](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-query), so we'll need to [upgrade to an update call](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec#upgrade-to-update-calls) to allow for the canister's state to change.
 
 ```rust
 fn upgrade_to_update_call_handler() -> HttpResponse {
@@ -275,7 +283,7 @@ fn upgrade_to_update_call_handler() -> HttpResponse {
 }
 ```
 
-This will tell the HTTP Gateway to remake the request as an [`update` call](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-call), allowing us to change state. Since it's an update call, the response to this request does not need to be certified. We will however need to re-certify the todo list response. We can reuse the same `certify_list_todos_response` from above to achieve this.
+This will tell the HTTP Gateway to remake the request as an [`update` call](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-call). Since it's an update call, the response to this request does not need to be certified. We will however need to re-certify the todo list response. We can reuse the same `certify_list_todos_response` from above to achieve this.
 
 ```rust
 fn create_todo_item_handler(req: &HttpRequest) -> HttpResponse {
@@ -309,3 +317,10 @@ fn create_todo_item_handler(req: &HttpRequest) -> HttpResponse {
     }
 }
 ```
+
+## Resources
+
+- [Example source code](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/json-api).
+- [`ic-http-certification` crate](https://crates.io/crates/ic-http-certification).
+- [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification).
+- [`ic-http-certification` source code](https://github.com/dfinity/response-verification/tree/main/packages/ic-http-certification).
