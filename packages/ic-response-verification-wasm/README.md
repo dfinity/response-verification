@@ -1,8 +1,8 @@
 # Response Verification
 
-[Response verification](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec#response-verification) on the [Internet Computer](https://dfinity.org) is the process of verifying that a canister's response to an HTTP [query call](https://internetcomputer.org/docs/current/references/ic-interface-spec#http-query) has gone through consensus with other replicas hosting the same canister.
+Response verification on the [Internet Computer](https://dfinity.org) is the process of verifying that an HTTP-compatible canister response from a replica has gone through consensus with other replicas hosting the same canister. It is the counterpart to [HTTP Certification](#http-certification).
 
-This package encapsulates the protocol for such verification. It is used by the [Service Worker](https://github.com/dfinity/ic/tree/master/typescript/service-worker), [ICX Proxy](https://github.com/dfinity/ic/tree/master/rs/boundary_node/icx_proxy), [HTTP Proxy](https://github.com/dfinity/http-proxy), and may be used by other implementations of the [HTTP Gateway Protocol](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec) in the future. These projects can be used as references when working on new integrations.
+The `ic-response-verification` and `@dfinity/response-verification` packages encapsulate this verification protocol. It is used by [ICX Proxy](https://github.com/dfinity/ic/tree/master/rs/boundary_node/icx_proxy) and the [local HTTP Proxy](https://github.com/dfinity/http-proxy) and may be used by other implementations of the [HTTP Gateway Protocol](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway) in the future.
 
 ## Usage
 
@@ -53,7 +53,6 @@ try {
 See the following for working examples:
 
 - [Web](https://github.com/dfinity/response-verification/tree/main/examples/web)
-- [Service Worker](https://github.com/dfinity/response-verification/tree/main/examples/service-worker)
 - [NodeJS](https://github.com/dfinity/response-verification/tree/main/examples/nodejs)
 
 Note that when bundling for a service worker with Webpack. The `target` property must be set to `webworker`.
