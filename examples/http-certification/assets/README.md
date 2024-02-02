@@ -331,7 +331,7 @@ const INDEX_FILE_PATH: &str = "index.html";
 
 fn certify_index_asset() {
     let additional_headers = vec![
-        ("content-type".progto_string(), "text/html".to_string()),
+        ("content-type".to_string(), "text/html".to_string()),
         (
             "cache-control".to_string(),
             "public, no-cache, no-store".to_string(),
