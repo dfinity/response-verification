@@ -44,7 +44,7 @@ thread_local! {
 
 The `HashMap` uses the request path as the key, and a tuple of `(DefaultResponseOnlyCelExpression, String)` as the value. `DefaultResponseOnlyCelExpression` is a parsed CEL expression definition and `String` is the stringified version of it.
 
-`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified then `DefaultFullCelExpression` should be used. Separate `HashMap`s could be created to hold different types of CEL expressions, or the higher level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future there may be more schemes, and the even higher level `CelExpression` can hold CEL expressions from different schemes. It is up to developer's to decide how they want to store and organize their CEL expressions.
+`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified then `DefaultFullCelExpression` should be used. Separate `HashMap`s could be created to hold different types of CEL expressions, or the higher level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future there may be more schemes, and the even higher level `CelExpression` can hold CEL expressions from different schemes. It is up to the developers to decide how they want to store and organize their CEL expressions.
 
 In this example, there is only one CEL expression used. This CEL expression is cloned and used for both request paths that are being certified. For more information on defining CEL expressions, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#defining-cel-expressions).
 
@@ -95,10 +95,10 @@ thread_local! {
 
 Responses are certified with a number of steps, which are encapsulated into a reusable function. The steps are:
 
-- Retreive the pre-computed CEL expression for the request path.
-- Insert the `Ic-CertificationExpression` header for the given response, with the corresponding stringified CEL expression as it's value.
+- Retrieve the pre-computed CEL expression for the request path.
+- Insert the `Ic-CertificationExpression` header for the given response, with the corresponding stringified CEL expression as its value.
 - Calculate the certification for the given response and CEL expression.
-- Store the response together with it's certification.
+- Store the response together with its certification.
 - Insert the certification into the certification tree at the appropriate path.
 - Update the canister's [certified data](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data).
 
@@ -179,7 +179,7 @@ fn certify_not_found_response() {
 
 ## Serving responses
 
-When serving a certified response, an additional header must be added to the response that will act as a proof of certification for the [HTTP Gateway](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into it's own function:
+When serving a certified response, an additional header must be added to the response that will act as a proof of certification for the [HTTP Gateway](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into its own function:
 
 ```rust
 const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
