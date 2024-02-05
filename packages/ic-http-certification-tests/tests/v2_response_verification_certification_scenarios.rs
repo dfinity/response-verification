@@ -1,4 +1,3 @@
-#[cfg(not(target_arch = "wasm32"))]
 mod tests {
     use super::fixtures::{
         certificate_tree, index_html_response, MAX_CERT_TIME_OFFSET_NS,

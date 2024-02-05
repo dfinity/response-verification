@@ -1,0 +1,24 @@
+[package]
+name = "ic-http-certification-tests"
+description = "Tests for the ic-http-certification and ic-response-verification packages"
+readme = "README.md"
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[dev-dependencies]
+ic-response-verification-test-utils.workspace = true
+ic-response-verification.workspace = true
+ic-http-certification.workspace = true
+ic-certificate-verification.workspace = true
+ic-certification-testing.workspace = true
+
+ic-types.workspace = true
+
+candid.workspace = true
+hex.workspace = true
+rstest.workspace = true

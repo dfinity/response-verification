@@ -2,8 +2,8 @@
 resolver = "2"
 
 members = [
-    "examples/rust",
-    "examples/certified-counter/src/backend",
+    "examples/response-verification/rust",
+    "examples/certification/certified-counter/src/backend",
     "examples/http-certification/json-api/src/backend",
     "examples/http-certification/assets/src/backend",
     "packages/ic-cbor",
@@ -11,6 +11,7 @@ members = [
     "packages/ic-certificate-verification",
     "packages/ic-certification-testing",
     "packages/ic-http-certification",
+    "packages/ic-http-certification-tests",
     "packages/ic-representation-independent-hash",
     "packages/ic-response-verification",
     "packages/ic-response-verification-test-utils",
@@ -22,7 +23,7 @@ members = [
 # https://github.com/rust-lang/cargo/issues/9406
 # includes all members except those that must be compiled to WASM
 default-members = [
-    "examples/rust",
+    "examples/response-verification/rust",
     "packages/ic-cbor",
     "packages/ic-certification",
     "packages/ic-certificate-verification",

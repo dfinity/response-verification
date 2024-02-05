@@ -1494,6 +1494,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-http-certification-tests"
+version = "2.3.0"
+dependencies = [
+ "candid",
+ "hex",
+ "ic-certificate-verification",
+ "ic-certification-testing",
+ "ic-http-certification",
+ "ic-response-verification",
+ "ic-response-verification-test-utils",
+ "ic-types",
+ "rstest",
+]
+
+[[package]]
 name = "ic-ic00-types"
 version = "0.9.0"
 source = "git+https://github.com/dfinity/ic?rev=1290256484f59c3d950c5e9a098e97383b248ad6#1290256484f59c3d950c5e9a098e97383b248ad6"
