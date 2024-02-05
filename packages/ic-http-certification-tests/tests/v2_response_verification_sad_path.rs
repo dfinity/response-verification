@@ -1,4 +1,3 @@
-#[cfg(not(target_arch = "wasm32"))]
 mod tests {
     use crate::fixtures::{
         self, expired_certificate, full_certification_cel, future_certificate,

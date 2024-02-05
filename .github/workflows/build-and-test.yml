@@ -53,7 +53,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: DFX prepare Certified Counter
-        working-directory: examples/certified-counter
+        working-directory: examples/certification/certified-counter
         run: |
           dfx canister create --all
           dfx generate backend

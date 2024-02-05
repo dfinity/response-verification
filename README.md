@@ -84,7 +84,7 @@ flowchart TB;
 
 - [`ic-certification` Cargo crate](https://crates.io/crates/ic-certification).
 - [`ic-certification` docs](https://docs.rs/ic-certification/latest/ic_certification).
-- [Example with a certified counter](./examples/certified-counter/README.md).
+- [Example with a certified counter](./examples/certification/certified-counter/README.md).
 - [`ic-certification` source code](./packages/ic-certification/README.md).
 - [`ic-representation-independant-hash` Cargo crate](https://crates.io/crates/ic-representation-independent-hash).
 - [`ic-representation-independant-hash` docs](https://docs.rs/ic-representation-independent-hash/2.3.0/ic_representation_independent_hash).
@@ -193,9 +193,9 @@ The `ic-response-verification` and `@dfinity/response-verification` packages enc
 
 - [`ic-response-verificaiton` source code](./packages/ic-response-verification/README.md)
 - [`@dfinity/response-verification` source code](./packages/ic-response-verification-wasm/README.md)
-- [Example project that verifies responses in NodeJS](./examples/nodejs/README.md)
-- [Example project that verifies responses in Rust](./examples/rust/README.md)
-- [Example project that verifies responses in the browser](./examples/web/README.md)
+- [Example project that verifies responses in NodeJS](./examples/response-verification/nodejs/README.md)
+- [Example project that verifies responses in Rust](./examples/response-verification/rust/README.md)
+- [Example project that verifies responses in the browser](./examples/response-verification/web/README.md)
 
 ## Miscellaneous Projects
 

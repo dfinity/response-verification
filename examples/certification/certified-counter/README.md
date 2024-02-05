@@ -7,7 +7,7 @@ This example project demonstrates how to create a certification for non-replicat
 From this project's directory:
 
 ```shell
-cd examples/certified-counter
+cd examples/certification/certified-counter
 ```
 
 Start DFX:
@@ -49,7 +49,7 @@ pnpm run --filter @dfinity/certificate-verification build
 Now change to this project's directory again:
 
 ```shell
-cd examples/certified-counter
+cd examples/certification/certified-counter
 ```
 
 Build and deploy the canisters:
