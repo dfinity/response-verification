@@ -125,7 +125,7 @@ The assets are imported from the frontend build directory:
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 ```
 
-With the assets loaded, similar to the JSON API, the pre-calculated responses and certifications need to be stored somewhere. In this example however, a slightly different structure is used. Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it essentially duplicate the original asset content that is statically embedded in the canister's WASM by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example however.
+With the assets loaded, similar to the JSON API, the pre-calculated responses and certifications need to be stored somewhere. In this example however, a slightly different structure is used. Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it would essentially duplicate the original asset content that is statically embedded in the canister's WASM by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example however.
 
 ```rust
 #[derive(Debug, Clone)]
@@ -162,7 +162,7 @@ Certifying responses is more involved here compared to the simpler approach used
 - `asset_file_path`: this is the relative file path of the asset on disk prior to being imported into the canister, for example `assets/app.js`.
 - `asset_req_path`: this is the absolute path that will be used to request the asset `/assets/app.js` from a browser.
 
-The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment. Note that when the certification in created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
+The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment. Note that when the certification is created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
 
 ```rust
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
@@ -322,7 +322,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
 }
 ```
 
-And finally, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any requests that don't match an existing file should fallback to `index.html`, so certification is handled differently for this file. Notably by using `HttpCertificationPath::Wildcard` instead of `HttpCertificationPath::Exact`. This will allow the canister to return this file for any path that does not exactly match any existing paths in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
+And finally, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file. Notably by using `HttpCertificationPath::Wildcard` instead of `HttpCertificationPath::Exact`. This will allow the canister to return this file for any path that does not exactly match an existing path in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
 
 ```rust
 const INDEX_REQ_PATH: &str = "";
@@ -353,7 +353,7 @@ fn certify_index_asset() {
 }
 ```
 
-And with all of the above functions it is now possible to certify all of the frontend projects assets simply.
+And with all of the above functions it is now possible to certify all of the frontend project's assets simply.
 
 ```rust
 fn certify_all_assets() {
@@ -367,14 +367,14 @@ fn certify_all_assets() {
 
 ## Serving assets
 
-With all assets certified, they can be served over HTTP. The steps to follow when certifying assets are:
+With all assets certified, they can be served over HTTP. The steps to follow when serving assets are:
 
-- Check if the requested path matches a file (ex. `/assets/app.js`).
-  - If the request path exactly matches an exissting file, serve that file.
+- Check if the requested path matches a file (e.g., `/assets/app.js`).
+  - If the request path exactly matches an existing file, serve that file.
   - Otherwise, serve the `index.html` file.
 - Extract the request `content-encoding` header.
-  - Serve the Brotli encoded asset if it exists and it was requests.
-  - Otherwise, serve the Gzip encoded asset if it exists and it was requests.
+  - Serve the Brotli encoded asset if it exists and it was requested.
+  - Otherwise, serve the Gzip encoded asset if it exists and it was requested.
   - Otherwise, serve the original asset.
 - Add the certificate header, this is the same process as with the JSON API.
 
