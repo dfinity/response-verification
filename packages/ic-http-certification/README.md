@@ -32,6 +32,7 @@ Alternatively:
 use ic_http_certification::cel::{CelExpression, DefaultCelExpression, create_cel_expr};
 
 let certification = CelExpression::Default(DefaultCelExpression::Skip);
+let cel_expr = create_cel_expr(&certification);
 ```
 
 ### Using the CEL builder
@@ -304,7 +305,7 @@ let response = HttpResponse {
     upgrade: None,
 };
 
-let request_url = "/something.json";
+let request_url = "/example.json";
 let path = HttpCertificationPath::Exact(request_url);
 let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
 
@@ -543,7 +544,3 @@ default_certification (
   }
 )
 ```
-
-Skipping certification may seem counter-intuitive at first, but it is not always possible to certify a request and response pair. For example, a canister method that will return different data for every user cannot be easily certified.
-
-Typically these requests have been routed through `raw` Internet Computer URLs in the past, but this is dangerous because `raw` URLs allow any responding replica to decide whether or not certification is required. In contrast, by skipping certification using the above method with a non-`raw` URL, a replica will no longer be able to decide whether or not certification is required and instead this decision will be made by the canister itself and the result will go through consensus.
