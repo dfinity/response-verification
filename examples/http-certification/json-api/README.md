@@ -10,7 +10,7 @@ This is not a beginner's canister development guide so many foundational concept
 
 It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced here so as to not explain similar things again.
 
-- [x] Complete the "Custom HTTP Canisters" guide.
+- [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
 
 ## Lifecycle
 
