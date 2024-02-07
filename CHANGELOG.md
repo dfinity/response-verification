@@ -8,6 +8,10 @@
 
 - **ic-certification**: allow empty hash trees to be merged with other hash trees
 
+### Refactor
+
+- restructure examples and http certification tests
+
 ## 2.3.0 (2024-01-15)
 
 ### Feat
