@@ -2,18 +2,20 @@
 
 ## Overview
 
-This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single page JavaScript application. Assets are embeeded into the canister at compile time.
+This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single page JavaScript application. Assets are embedded into the canister when it is compiled.
 
-This is not a beginner's canister development guide so many foundational concepts that a relatively experienced canister developer should already know will be omitted or glossed over. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
+:::caution
+This is not a beginner's canister development guide. Many foundational concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
+:::
 
 ## Prerequisites
 
-It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced here so as to not explain similar things again.
+It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced.
 
 - [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
 - [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) guide.
 
-## The Frontend Assets
+## The frontend assets
 
 The frontend project used for this example is a simple starter project generated with `npx degit solidjs/templates/ts my-app`. The only changes that have been made are in the `vite.config.ts` file. The `vite-plugin-compression` plugin was added and configured to generate Gzip and Brotli encoded assets, alongside the original assets. The `ext` configuration affects the file extension and it's important to keep this consistent with the backend canister code that will be seen later in this guide.
 
@@ -78,7 +80,7 @@ fn post_upgrade() {
 
 ## CEL Expressions
 
-CEL expressions are also stored similarly to the JSON API.
+CEL expressions are also stored similarly to the [JSON API example](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http).
 
 ```rust
 thread_local! {
@@ -117,7 +119,7 @@ fn prepare_cel_exprs() {
 
 ## Assets
 
-Assets are embedded into the canister's WASM at build time. This is achieved using the [`include_dir`](https://michael-f-bryan.github.io/include_dir/include_dir/index.html) crate. Note that this works fine for a small number of assets, but a larger number of assets may cause longer compile times, as mentioned in the [crate's documentation](https://michael-f-bryan.github.io/include_dir/include_dir/index.html#compile-time-considerations).
+Assets are embedded into the canister's Wasm at build time. This is achieved using the [`include_dir`](https://michael-f-bryan.github.io/include_dir/include_dir/index.html) crate. Note that this works fine for a small number of assets, but a larger number of assets may cause longer compile times, as mentioned in the [crate's documentation](https://michael-f-bryan.github.io/include_dir/include_dir/index.html#compile-time-considerations).
 
 The assets are imported from the frontend build directory:
 
@@ -125,7 +127,9 @@ The assets are imported from the frontend build directory:
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 ```
 
-With the assets loaded, similar to the JSON API, the pre-calculated responses and certifications need to be stored somewhere. In this example however, a slightly different structure is used. Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it would essentially duplicate the original asset content that is statically embedded in the canister's WASM by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example however.
+With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example however, a slightly different structure is used. 
+
+Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it would essentially duplicate the original asset content that is statically embedded in the canister's Wasm by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example however.
 
 ```rust
 #[derive(Debug, Clone)]
@@ -156,13 +160,17 @@ thread_local! {
 }
 ```
 
-Certifying responses is more involved here compared to the simpler approach used in the JSON API. There are a number of paths used in the following functions that warrant some explanation:
+Certifying responses is more involved here compared to the simpler approach used in the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http). There are a number of paths used in the following functions that warrant some explanation:
 
-- `asset_tree_path`: this is the `HttpCertificationPath` that will be used to store the asset in the tree, for example `HttpCertificationPath::exact("/assets/app.js")`.
-- `asset_file_path`: this is the relative file path of the asset on disk prior to being imported into the canister, for example `assets/app.js`.
-- `asset_req_path`: this is the absolute path that will be used to request the asset `/assets/app.js` from a browser.
+- `asset_tree_path`: the `HttpCertificationPath` that will be used to store the asset in the tree, for example `HttpCertificationPath::exact("/assets/app.js")`.
+- `asset_file_path`: the relative file path of the asset on disk prior to being imported into the canister, for example `assets/app.js`.
+- `asset_req_path`: the absolute path that will be used to request the asset `/assets/app.js` from a browser.
 
-The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment. Note that when the certification is created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
+The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment. 
+
+:::info 
+Note that when the certification is created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
+:::
 
 ```rust
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
@@ -222,7 +230,9 @@ fn certify_asset_response(
 }
 ```
 
-The next function to look at is another reusable function that builds upon the previous function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory. For example, when certifying `index.html` with `gzip` encoding this function will check for `index.html.gzip`. If the encoded asset exists, then it is certified using the previously defined `certify_asset_response` function. This function will silently fail if the encoded file does not exist. This is necessary because the frontend project contains assets that will not be encoded, images for example are already in a compressed format so they are not encoded.
+The next function to look at is another reusable function that builds upon the previous function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory. 
+
+For example, when certifying `index.html` with `gzip` encoding, this function will check for `index.html.gzip`. If the encoded asset exists, then it is certified using the previously defined `certify_asset_response` function. This function will silently fail if the encoded file does not exist. This is necessary because the frontend project contains assets that will not be encoded. Images, for example, are already in a compressed format so they are not encoded.
 
 ```rust
 fn certify_asset_with_encoding(
@@ -282,7 +292,7 @@ fn certify_asset(
 }
 ```
 
-Now, a slightly more complex function certifies a range of assets that match a glob, for example `assets/**/*.js`, with a content type, for example `text/javascript`.
+Now, a slightly more complex function certifies a range of assets that match a glob (for example `assets/**/*.js`) with a content type, (for example `text/javascript`).
 
 ```rust
 fn certify_asset_glob(glob: &str, content_type: &str) {
@@ -322,7 +332,9 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
 }
 ```
 
-And finally, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file. Notably by using `HttpCertificationPath::Wildcard` instead of `HttpCertificationPath::Exact`. This will allow the canister to return this file for any path that does not exactly match an existing path in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
+Lastly, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file, notably by using `HttpCertificationPath::Wildcard` instead of `HttpCertificationPath::Exact`. 
+
+This will allow the canister to return this file for any path that does not exactly match an existing path in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
 
 ```rust
 const INDEX_REQ_PATH: &str = "";
@@ -353,7 +365,7 @@ fn certify_index_asset() {
 }
 ```
 
-And with all of the above functions it is now possible to certify all of the frontend project's assets simply.
+With all of the above functions, it is now possible to certify all of the frontend project's assets simply.
 
 ```rust
 fn certify_all_assets() {
@@ -376,7 +388,7 @@ With all assets certified, they can be served over HTTP. The steps to follow whe
   - Serve the Brotli encoded asset if it exists and it was requested.
   - Otherwise, serve the Gzip encoded asset if it exists and it was requested.
   - Otherwise, serve the original asset.
-- Add the certificate header, this is the same process as with the JSON API.
+- Add the certificate header. This is the same process as with the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http).
 
 ```rust
 fn asset_handler(req: &HttpRequest) -> HttpResponse {
