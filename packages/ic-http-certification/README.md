@@ -24,9 +24,7 @@ CEL expressions can be created in two ways:
 
 ### Converting CEL expressions into their `String` representation
 
-:::info 
 Note that the `CelExpression` enum is not a CEL expression itself, but rather a Rust representation of a CEL expression. To convert a `CelExpression` into its `String` representation, use `CelExpression.to_string` or `create_cel_expr`. This applies to CEL expressions created both by the [CEL builder](#using-the-cel-builder) and [directly](#directly-creating-a-cel-expression).
-:::
 
 ```rust
 use ic_http_certification::cel::{CelExpression, DefaultCelExpression};
@@ -369,9 +367,7 @@ When certifying a response:
 
 - To certify response headers, use the `certified_response_headers` associated function of the `DefaultResponseCertification` enum. Or to certify all response headers, with some exclusions, use the `response_header_exclusions` associated function of the `DefaultResponseCertification` enum. Both associated functions take a `str` slice as an argument.
 
-:::info 
 Note that the example CEL expressions provided below are formatted for readability. The actual CEL expressions produced by `CelExpression::to_string` and `create_cel_expr` are minified. The minified CEL expression is preferred because it is more compact, resulting in a smaller payload and a faster evaluation time for the HTTP gateway that is verifying the certification, but the formatted versions are also accepted.
-:::
 
 ### Fully certified request / response pair
 
