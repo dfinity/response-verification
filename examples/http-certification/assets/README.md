@@ -1,12 +1,11 @@
-# HTTP Certified Assets
+# HTTP certified assets
 
 ## Overview
 
 This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single page JavaScript application. Assets are embedded into the canister when it is compiled.
 
-:::caution
 This is not a beginner's canister development guide. Many foundational concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
-:::
+
 
 ## Prerequisites
 
@@ -168,9 +167,7 @@ Certifying responses is more involved here compared to the simpler approach used
 
 The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment. 
 
-:::info 
 Note that when the certification is created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
-:::
 
 ```rust
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
