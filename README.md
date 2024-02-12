@@ -50,22 +50,22 @@ flowchart TB;
     init;
     post_upgrade;
   end
-  init --> certification;
-  post_upgrade --> certification;
+  init-->certification;
+  post_upgrade-->certification;
 
   subgraph update_calls
     update_call;
     update_state;
-    update_call --> update_state;
+    update_call-->update_state;
   end
-  update_state --> certification;
+  update_state-->certification;
 
   subgraph query_calls
     direction TB;
 
     query_call;
     serve_response[Serve pre-calculated response];
-    query_call --> serve_response;
+    query_call-->serve_response;
   end
 
   subgraph certification[Certification]
@@ -74,9 +74,9 @@ flowchart TB;
     certification_step_one[pre-calculate response];
     certification_step_two[insert response hash into merkle tree];
     certification_step_three[calculate root hash of merkle tree];
-    certification_step_four[set canister certified data]
+    certification_step_four[set canister certified data];
 
-    certification_step_one --> certification_step_two --> certification_step_three --> certification_step_four;
+    certification_step_one-->certification_step_two-->certification_step_three-->certification_step_four;
   end
 ```
 
@@ -135,8 +135,8 @@ flowchart TB;
     init;
     post_upgrade;
   end
-  init --> certification;
-  post_upgrade --> certification;
+  init-->certification;
+  post_upgrade-->certification;
 
   subgraph query_calls[Query calls]
     http_request;
@@ -144,19 +144,19 @@ flowchart TB;
     serve_response[Serve pre-calculated response];
     upgrade[Upgrade to update call];
 
-    http_request --> should_upgrade;
-    should_upgrade -- No --> serve_response;
-    should_upgrade -- Yes --> upgrade;
+    http_request-->should_upgrade;
+    should_upgrade -- No-->serve_response;
+    should_upgrade -- Yes-->upgrade;
   end
-  upgrade --> update_calls;
+  upgrade-->update_calls;
 
   subgraph update_calls[Update calls]
     http_request_update;
     update_state;
 
-    http_request_update --> update_state;
+    http_request_update-->update_state;
   end
-  update_state --> certification;
+  update_state-->certification;
 
   subgraph certification[Certification]
     direction TB;
@@ -169,9 +169,9 @@ flowchart TB;
     certification_step_two[pre-calculate CEL expression];
     certification_step_three[insert response hash into merkle tree];
     certification_step_four[calculate root hash of merkle tree];
-    certification_step_five[set canister certified data]
+    certification_step_five[set canister certified data];
 
-    certification_step_one --> certification_step_two --> certification_step_three --> certification_step_four --> certification_step_five;
+    certification_step_one-->certification_step_two-->certification_step_three-->certification_step_four-->certification_step_five;
   end
 ```
 
