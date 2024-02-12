@@ -6,7 +6,6 @@ This guide walks through an example project that demonstrates how to create a ca
 
 This is not a beginner's canister development guide. Many foundational concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
 
-
 ## Prerequisites
 
 It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced.
@@ -126,7 +125,7 @@ The assets are imported from the frontend build directory:
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 ```
 
-With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example however, a slightly different structure is used. 
+With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example however, a slightly different structure is used.
 
 Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it would essentially duplicate the original asset content that is statically embedded in the canister's Wasm by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example however.
 
@@ -165,7 +164,7 @@ Certifying responses is more involved here compared to the simpler approach used
 - `asset_file_path`: the relative file path of the asset on disk prior to being imported into the canister, for example `assets/app.js`.
 - `asset_req_path`: the absolute path that will be used to request the asset `/assets/app.js` from a browser.
 
-The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment. 
+The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment.
 
 Note that when the certification is created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
 
@@ -227,7 +226,7 @@ fn certify_asset_response(
 }
 ```
 
-The next function to look at is another reusable function that builds upon the previous function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory. 
+The next function to look at is another reusable function that builds upon the previous function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory.
 
 For example, when certifying `index.html` with `gzip` encoding, this function will check for `index.html.gzip`. If the encoded asset exists, then it is certified using the previously defined `certify_asset_response` function. This function will silently fail if the encoded file does not exist. This is necessary because the frontend project contains assets that will not be encoded. Images, for example, are already in a compressed format so they are not encoded.
 
@@ -329,7 +328,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
 }
 ```
 
-Lastly, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file, notably by using `HttpCertificationPath::Wildcard` instead of `HttpCertificationPath::Exact`. 
+Lastly, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file, notably by using `HttpCertificationPath::Wildcard` instead of `HttpCertificationPath::Exact`.
 
 This will allow the canister to return this file for any path that does not exactly match an existing path in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
 
