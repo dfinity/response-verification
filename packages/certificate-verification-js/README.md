@@ -51,4 +51,4 @@ if (treeDataHash !== responseDataHash) {
 
 ## Examples
 
-See the [certified counter example](https://github.com/dfinity/response-verification/tree/main/examples/certified-counter) for a full e2e example of how to create a certification and verify it using this package.
+See the [certified counter example](https://github.com/dfinity/response-verification/tree/main/examples/certification/certified-counter) for a full e2e example of how to create a certification and verify it using this package.

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Internet Computer Protocol features two primary types of calls that be used to interact with canisters: query calls and update calls.
+The Internet Computer Protocol features two primary types of calls that can be used to interact with canisters: query calls and update calls.
 
 | Query Calls                                            | Update Calls                                        |
 | ------------------------------------------------------ | --------------------------------------------------- |
@@ -18,7 +18,7 @@ Canister certification is enabled by the [Certified data](https://internetcomput
 
 In the next consensus round following this 32 byte blob being set (via [`ic0.certified_data_set`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data)), the Internet Computer will prepare a certificate for the canister. This certificate, and the process for verifying it, is described in detail in the [interface spec](https://internetcomputer.org/docs/current/references/ic-interface-spec/#certification).
 
-When responding to query calls, a canister can request the certificate (via [`ic0.certified_data_size`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data) and [`ic0.certified_data_copy`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data)) and then include this certificate in the response, to allow for clients to validate the responses's authenticity.
+When responding to query calls, a canister can request the certificate (via [`ic0.certified_data_size`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data) and [`ic0.certified_data_copy`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data)) and then include this certificate in the response, to allow for clients to validate the response's authenticity.
 
 ## Standard Certification
 
@@ -29,18 +29,18 @@ The standard, or default, method of certification is the simplest form of certif
 3. Calculate the root hash of the merkle tree.
 4. Set the root hash as the canister's certified data.
 5. If an update call is received that changes state, return to step 1.
-6. If a query call is received, return the pre-calculated response along with the certified data certifiate.
+6. If a query call is received, return the pre-calculated response along with the certified data certificate.
 
 There are a number of questions that a developer needs to answer on a per-project basis when using this style of certification that should be agreed upon with clients beforehand and done consistently by both client and canister:
 
 - How are responses hashed?
-  - What properties are included/excluded? (Ex. `response_timestamp` is excluded but `id` is included).
-  - What format of each property is hashed? (Ex. leb, big/little endian encoding for numbers).
-  - In what order are properties hashed? (Ex. sort properties alphabetically).
+  - What properties are included/excluded? (e.g., `response_timestamp` is excluded but `id` is included).
+  - What format of each property is hashed? (e.g., leb, big/little endian encoding for numbers).
+  - In what order are properties hashed? (e.g., sort properties alphabetically).
   - The [representation independent hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map) from the Internet Computer Protocol spec can be used, or serve as inspiration for developers.
 - How are response hashes arranged in the tree?
-  - Each exposed canister method should have a pre-determined path where it's response hash will be presented in the merkle tree. (Ex. the `get_count` method returns a response and the hash of this response is present at the `["count"]` path of the merkle tree).
-  - This pre-determined path may use parameters of the request or calling principal to arrange more dynamic data in the tree. (Ex. the `get_account` method returns a response and the hash of this response is present at the `["account", caller.to_text()]` path of the merkle tree).
+  - Each exposed canister method should have a pre-determined path where its response hash will be presented in the merkle tree (e.g., the `get_count` method returns a response and the hash of this response is present at the `["count"]` path of the merkle tree).
+  - This pre-determined path may use parameters of the request or calling principal to arrange more dynamic data in the tree (e.g., the `get_account` method returns a response and the hash of this response is present at the `["account", caller.to_text()]` path of the merkle tree).
 
 ### Process Flow
 
@@ -84,7 +84,7 @@ flowchart TB;
 
 - [`ic-certification` Cargo crate](https://crates.io/crates/ic-certification).
 - [`ic-certification` docs](https://docs.rs/ic-certification/latest/ic_certification).
-- [Example with a certified counter](./examples/certified-counter/README.md).
+- [Example with a certified counter](./examples/certification/certified-counter/README.md).
 - [`ic-certification` source code](./packages/ic-certification/README.md).
 - [`ic-representation-independant-hash` Cargo crate](https://crates.io/crates/ic-representation-independent-hash).
 - [`ic-representation-independant-hash` docs](https://docs.rs/ic-representation-independent-hash/2.3.0/ic_representation_independent_hash).
@@ -193,9 +193,9 @@ The `ic-response-verification` and `@dfinity/response-verification` packages enc
 
 - [`ic-response-verificaiton` source code](./packages/ic-response-verification/README.md)
 - [`@dfinity/response-verification` source code](./packages/ic-response-verification-wasm/README.md)
-- [Example project that verifies responses in NodeJS](./examples/nodejs/README.md)
-- [Example project that verifies responses in Rust](./examples/rust/README.md)
-- [Example project that verifies responses in the browser](./examples/web/README.md)
+- [Example project that verifies responses in NodeJS](./examples/response-verification/nodejs/README.md)
+- [Example project that verifies responses in Rust](./examples/response-verification/rust/README.md)
+- [Example project that verifies responses in the browser](./examples/response-verification/web/README.md)
 
 ## Miscellaneous Projects
 

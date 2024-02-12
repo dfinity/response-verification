@@ -33,11 +33,11 @@ importers:
         specifier: ^0.32.2
         version: 0.32.2
 
-  examples/certified-counter:
+  examples/certification/certified-counter:
     dependencies:
       '@dfinity/certificate-verification':
         specifier: workspace:*
-        version: link:../../packages/certificate-verification-js
+        version: link:../../../packages/certificate-verification-js
     devDependencies:
       '@dfinity/agent':
         specifier: 0.19.3
@@ -107,14 +107,14 @@ importers:
         specifier: ^2.7.0
         version: 2.7.0(solid-js@1.7.6)(vite@4.3.9)
 
-  examples/nodejs:
+  examples/response-verification/nodejs:
     dependencies:
       '@dfinity/principal':
         specifier: ~0.15.7
         version: 0.15.7(@types/node@20.3.1)(typescript@4.8.4)
       '@dfinity/response-verification':
         specifier: workspace:*
-        version: link:../../packages/ic-response-verification-wasm
+        version: link:../../../packages/ic-response-verification-wasm
     devDependencies:
       '@tsconfig/node16':
         specifier: ^1.0.3
@@ -129,14 +129,14 @@ importers:
         specifier: ^4.8.4
         version: 4.8.4
 
-  examples/web:
+  examples/response-verification/web:
     dependencies:
       '@dfinity/principal':
         specifier: ~0.15.7
         version: 0.15.7(@types/node@20.4.2)(typescript@4.8.4)
       '@dfinity/response-verification':
         specifier: workspace:*
-        version: link:../../packages/ic-response-verification-wasm
+        version: link:../../../packages/ic-response-verification-wasm
     devDependencies:
       html-webpack-plugin:
         specifier: ^5.5.0
@@ -146,7 +146,7 @@ importers:
         version: 14.1.1
       ts-loader:
         specifier: ^9.4.1
-        version: 9.4.1(typescript@4.8.4)(webpack@5.76.0)
+        version: 9.4.3(typescript@4.8.4)(webpack@5.76.0)
       ts-node:
         specifier: ^10.9.1
         version: 10.9.1(@types/node@20.4.2)(typescript@4.8.4)
@@ -1817,17 +1817,6 @@ packages:
       fill-range: 7.0.1
     dev: true
 
-  /browserslist@4.21.9:
-    resolution: {integrity: sha512-M0MFoZzbUrRU4KNfCrDLnvyE7gub+peetoTid3TBIqtunaDJyXlwhakT+/VkvSXcfIzFfK/nkCs4nmyTmxdNSg==}
-    engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
-    hasBin: true
-    dependencies:
-      caniuse-lite: 1.0.30001508
-      electron-to-chromium: 1.4.440
-      node-releases: 2.0.12
-      update-browserslist-db: 1.0.11(browserslist@4.21.9)
-    dev: true
-
   /browserslist@4.22.2:
     resolution: {integrity: sha512-0UgcrvQmBDvZHFGdYUehrCNIazki7/lUP3kkoi/r3YB2amZbFM9J43ZRkJTXBUZK4gmx56+Sqk9+Vs9mwZx9+A==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
@@ -1883,10 +1872,6 @@ packages:
     dependencies:
       pascal-case: 3.1.2
       tslib: 2.5.3
-    dev: true
-
-  /caniuse-lite@1.0.30001508:
-    resolution: {integrity: sha512-sdQZOJdmt3GJs1UMNpCCCyeuS2IEGLXnHyAo9yIO5JJDjbjoVRij4M1qep6P6gFpptD1PqIYgzM+gwJbOi92mw==}
     dev: true
 
   /caniuse-lite@1.0.30001577:
@@ -2284,10 +2269,6 @@ packages:
 
   /ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
-    dev: true
-
-  /electron-to-chromium@1.4.440:
-    resolution: {integrity: sha512-r6dCgNpRhPwiWlxbHzZQ/d9swfPaEJGi8ekqRBwQYaR3WmA5VkqQfBWSDDjuJU1ntO+W9tHx8OHV/96Q8e0dVw==}
     dev: true
 
   /electron-to-chromium@1.4.632:
@@ -3392,10 +3373,6 @@ packages:
     engines: {node: '>= 6.13.0'}
     dev: true
 
-  /node-releases@2.0.12:
-    resolution: {integrity: sha512-QzsYKWhXTWx8h1kIvqfnC++o0pEmpRQA/aenALsL2F4pqNVr7YzcdMlDij5WBnwftRbJCNJL/O7zdKaxKPHqgQ==}
-    dev: true
-
   /node-releases@2.0.14:
     resolution: {integrity: sha512-y10wOWt8yZpqXmOgRo77WaHEmhYQYGNA6y421PKsKYWEK8aW+cqAphborZDhqfyKrbZEN92CN1X2KbafY2s7Yw==}
     dev: true
@@ -4211,8 +4188,8 @@ packages:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
     dev: false
 
-  /ts-loader@9.4.1(typescript@4.8.4)(webpack@5.76.0):
-    resolution: {integrity: sha512-384TYAqGs70rn9F0VBnh6BPTfhga7yFNdC5gXbQpDrBj9/KsT4iRkGqKXhziofHOlE2j6YEaiTYVGKKvPhGWvw==}
+  /ts-loader@9.4.3(typescript@4.8.4)(webpack@5.76.0):
+    resolution: {integrity: sha512-n3hBnm6ozJYzwiwt5YRiJZkzktftRpMiBApHaJPoWLA+qetQBAXkHqCLM6nwSdRDimqVtA5ocIkcTRLMTt7yzA==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
       typescript: '*'
@@ -4415,17 +4392,6 @@ packages:
   /unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
-    dev: true
-
-  /update-browserslist-db@1.0.11(browserslist@4.21.9):
-    resolution: {integrity: sha512-dCwEFf0/oT85M1fHBg4F0jtLwJrutGoHSQXCh7u4o2t1drG+c0a9Flnqww6XUKSfQMPpJBRjU8d4RXB09qtvaA==}
-    hasBin: true
-    peerDependencies:
-      browserslist: '>= 4.21.0'
-    dependencies:
-      browserslist: 4.21.9
-      escalade: 3.1.1
-      picocolors: 1.0.0
     dev: true
 
   /update-browserslist-db@1.0.13(browserslist@4.22.2):
@@ -4963,7 +4929,7 @@ packages:
       '@webassemblyjs/wasm-parser': 1.11.1
       acorn: 8.9.0
       acorn-import-assertions: 1.9.0(acorn@8.9.0)
-      browserslist: 4.21.9
+      browserslist: 4.22.2
       chrome-trace-event: 1.0.3
       enhanced-resolve: 5.15.0
       es-module-lexer: 0.9.3
