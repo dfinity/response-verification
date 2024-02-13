@@ -7,7 +7,6 @@ use ic_http_certification::{
     },
     DefaultResponseCertification,
 };
-use std::borrow::Cow;
 use std::collections::HashMap;
 
 fn validate_object<'a>(
@@ -122,10 +121,10 @@ fn validate_request_certification<'a>(
             let certified_query_parameters =
                 validate_string_array(certified_query_parameters, "certified_query_parameters")?;
 
-            Ok(Some(DefaultRequestCertification {
-                headers: Cow::Owned(certified_request_headers),
-                query_parameters: Cow::Owned(certified_query_parameters),
-            }))
+            Ok(Some(DefaultRequestCertification::new(
+                certified_request_headers,
+                certified_query_parameters,
+            )))
         }
     };
 }
@@ -163,11 +162,11 @@ fn validate_response_certification<'a>(
     match (certified_response_headers, response_header_exclusions) {
         (Some(_), Some(_)) => Err(CelParserError::ExtraneousResponseCertificationProperty),
         (None, None) => Err(CelParserError::MissingResponseCertificationProperty),
-        (Some(headers), None) => Ok(DefaultResponseCertification::CertifiedResponseHeaders(
-            Cow::Owned(headers),
+        (Some(headers), None) => Ok(DefaultResponseCertification::certified_response_headers(
+            headers,
         )),
-        (None, Some(headers)) => Ok(DefaultResponseCertification::ResponseHeaderExclusions(
-            Cow::Owned(headers),
+        (None, Some(headers)) => Ok(DefaultResponseCertification::response_header_exclusions(
+            headers,
         )),
     }
 }

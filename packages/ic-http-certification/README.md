@@ -66,9 +66,9 @@ For example:
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::full_certification()
-    .with_request_headers(&["Accept", "Accept-Encoding", "If-None-Match"])
-    .with_request_query_parameters(&["foo", "bar", "baz"])
-    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
+    .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
+    .with_request_query_parameters(vec!["foo", "bar", "baz"])
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
         "Cache-Control",
         "ETag",
     ]))
@@ -85,7 +85,7 @@ For example, to certify only the request body and method:
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::full_certification()
-    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
         "Cache-Control",
         "ETag",
     ]))
@@ -98,9 +98,9 @@ Alternatively, this can be done more explicitly:
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::full_certification()
-    .with_request_headers(&[])
-    .with_request_query_parameters(&[])
-    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
+    .with_request_headers(vec![])
+    .with_request_query_parameters(vec![])
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
         "Cache-Control",
         "ETag",
     ]))
@@ -117,7 +117,7 @@ For example:
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::response_only_certification()
-    .with_response_certification(DefaultResponseCertification::response_header_exclusions(&[
+    .with_response_certification(DefaultResponseCertification::response_header_exclusions(vec![
         "Date",
         "Cookie",
         "Set-Cookie",
@@ -143,7 +143,7 @@ This can also be done more explicitly:
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::response_only_certification()
-    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[]))
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![]))
     .build();
 ```
 
@@ -153,8 +153,8 @@ The same applies when both when using `DefaultCelBuilder::response_only_certific
 use ic_http_certification::DefaultCelBuilder;
 
 let cel_expr = DefaultCelBuilder::full_certification()
-    .with_request_headers(&["Accept", "Accept-Encoding", "If-None-Match"])
-    .with_request_query_parameters(&["foo", "bar", "baz"])
+    .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
+    .with_request_query_parameters(vec!["foo", "bar", "baz"])
     .build();
 ```
 
@@ -192,9 +192,9 @@ For example:
 use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::full_certification()
-    .with_request_headers(&["Accept", "Accept-Encoding", "If-None-Match"])
-    .with_request_query_parameters(&["foo", "bar", "baz"])
-    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
+    .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
+    .with_request_query_parameters(vec!["foo", "bar", "baz"])
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
         "Cache-Control",
         "ETag",
     ]))
@@ -234,7 +234,7 @@ For example:
 use ic_http_certification::{HttpCertification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
 
 let cel_expr = DefaultCelBuilder::response_only_certification()
-    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
         "Cache-Control",
         "ETag",
     ]))
@@ -278,7 +278,7 @@ In this example, the certification entered into the tree with this path will be 
 ```rust
 use ic_http_certification::HttpCertificationPath;
 
-let path = HttpCertificationPath::Wildcard("/js");
+let path = HttpCertificationPath::wildcard("/js");
 ```
 
 Exact paths are used to match an entire request URL. An exact path ending with a trailing slash refers to a file system directory, where as one without a trailing slash refers to an individual file. Both are separate paths within the certification tree and will be treated completely independently.
@@ -288,7 +288,7 @@ In this example, the certification entered into the tree with this path will onl
 ```rust
 use ic_http_certification::HttpCertificationPath;
 
-let path = HttpCertificationPath::Exact("/js/example.js");
+let path = HttpCertificationPath::exact("/js/example.js");
 ```
 
 ### Using the HTTP certification tree
@@ -301,9 +301,9 @@ For example:
 use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath};
 
 let cel_expr = DefaultCelBuilder::full_certification()
-    .with_request_headers(&["Accept", "Accept-Encoding", "If-None-Match"])
-    .with_request_query_parameters(&["foo", "bar", "baz"])
-    .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
+    .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
+    .with_request_query_parameters(vec!["foo", "bar", "baz"])
+    .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
         "Cache-Control",
         "ETag",
     ]))
@@ -331,7 +331,7 @@ let response = HttpResponse {
 };
 
 let request_url = "/example.json";
-let path = HttpCertificationPath::Exact(request_url);
+let path = HttpCertificationPath::exact(request_url);
 let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
 
 let mut http_certification_tree = HttpCertificationTree::default();
@@ -376,11 +376,11 @@ use ic_http_certification::cel::{CelExpression, DefaultCelExpression, DefaultFul
 
 let cel_expr = CelExpression::Default(DefaultCelExpression::Full(
   DefaultFullCelExpression {
-    request: DefaultRequestCertification {
-      headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-None-Match"]),
-      query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-    },
-    response: DefaultResponseCertification::certified_response_headers(&[
+    request: DefaultRequestCertification::new(
+      vec!["Accept", "Accept-Encoding", "If-None-Match"],
+      vec!["foo", "bar", "baz"],
+    ),
+    response: DefaultResponseCertification::certified_response_headers(vec![
       "ETag",
       "Cache-Control",
     ]),
@@ -420,11 +420,11 @@ use ic_http_certification::cel::{CelExpression, DefaultCelExpression, DefaultFul
 
 let cel_expr = CelExpression::Default(DefaultCelExpression::Full(
   DefaultFullCelExpression {
-    request: DefaultRequestCertification {
-      headers: Cow::Borrowed(&[]),
-      query_parameters: Cow::Borrowed(&[]),
-    },
-    response: DefaultResponseCertification::certified_response_headers(&[
+    request: DefaultRequestCertification::new(
+      vec![],
+      vec![],
+    ),
+    response: DefaultResponseCertification::certified_response_headers(vec![
       "ETag",
       "Cache-Control",
     ]),
@@ -464,7 +464,7 @@ use ic_http_certification::cel::{CelExpression, DefaultCelExpression, DefaultRes
 
 let cel_expr = CelExpression::Default(DefaultCelExpression::ResponseOnly(
   DefaultResponseOnlyCelExpression {
-    response: DefaultResponseCertification::certified_response_headers(&[
+    response: DefaultResponseCertification::certified_response_headers(vec![
       "ETag",
       "Cache-Control",
     ]),
@@ -500,11 +500,11 @@ use std::borrow::Cow;
 use ic_http_certification::cel::{CelExpression, DefaultCertification, DefaultRequestCertification, DefaultResponseCertification};
 
 let cel_expr = CelExpression::DefaultCertification(Some(DefaultCertification {
-  request_certification: Some(DefaultRequestCertification {
-    headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-None-Match"]),
-    query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-  }),
-  response_certification: DefaultResponseCertification::certified_response_headers(&[]),
+  request: DefaultRequestCertification::new(
+    vec!["Accept", "Accept-Encoding", "If-None-Match"],
+    vec!["foo", "bar", "baz"],
+  ),
+  response_certification: DefaultResponseCertification::certified_response_headers(vec![]),
 }));
 ```
 
@@ -534,11 +534,11 @@ use ic_http_certification::cel::{CelExpression, DefaultCelExpression, DefaultFul
 
 let cel_expr = CelExpression::Default(DefaultCelExpression::Full(
   DefaultFullCelExpression {
-    request: DefaultRequestCertification {
-      headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-None-Match"]),
-      query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-    },
-    response: DefaultResponseCertification::response_header_exclusions(&[]),
+    request: DefaultRequestCertification::new(
+      vec!["Accept", "Accept-Encoding", "If-None-Match"],
+      vec!["foo", "bar", "baz"],
+    ),
+    response: DefaultResponseCertification::response_header_exclusions(vec![]),
   }));
 ```
 

@@ -86,14 +86,10 @@ fn get_filtered_query(query: &str, request_certification: &DefaultRequestCertifi
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::borrow::Cow;
 
     #[test]
     fn request_hash_without_query() {
-        let request_certification = DefaultRequestCertification {
-            headers: Cow::Borrowed(&["host"]),
-            query_parameters: Cow::Borrowed(&[]),
-        };
+        let request_certification = DefaultRequestCertification::new(vec!["host"], vec![]);
         let request = create_request("https://ic0.app");
         let expected_hash =
             hex::decode("10796453466efb3e333891136b8a5931269f77e40ead9d437fcee94a02fa833c")
@@ -106,10 +102,8 @@ mod tests {
 
     #[test]
     fn request_hash_with_query() {
-        let request_certification = DefaultRequestCertification {
-            headers: Cow::Borrowed(&["host"]),
-            query_parameters: Cow::Borrowed(&["q", "name"]),
-        };
+        let request_certification =
+            DefaultRequestCertification::new(vec!["host"], vec!["q", "name"]);
         let request =
             create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");
         let expected_hash =
@@ -123,10 +117,8 @@ mod tests {
 
     #[test]
     fn request_hash_query_order_matters() {
-        let request_certification = DefaultRequestCertification {
-            headers: Cow::Borrowed(&["host"]),
-            query_parameters: Cow::Borrowed(&["q", "name"]),
-        };
+        let request_certification =
+            DefaultRequestCertification::new(vec!["host"], vec!["q", "name"]);
         let request =
             create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");
         let reordered_request =
@@ -140,10 +132,8 @@ mod tests {
 
     #[test]
     fn request_hash_query_with_fragment_does_not_change() {
-        let request_certification = DefaultRequestCertification {
-            headers: Cow::Borrowed(&["host"]),
-            query_parameters: Cow::Borrowed(&["q", "name"]),
-        };
+        let request_certification =
+            DefaultRequestCertification::new(vec!["host"], vec!["q", "name"]);
         let request =
             create_request("https://ic0.app?q=hello+world&name=foo&name=bar&color=purple");
         let request_with_fragment = create_request(

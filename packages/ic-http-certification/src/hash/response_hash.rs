@@ -1,5 +1,5 @@
 use super::Hash;
-use crate::{DefaultResponseCertification, HttpResponse};
+use crate::{cel::DefaultResponseCertificationType, DefaultResponseCertification, HttpResponse};
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
@@ -23,15 +23,15 @@ pub fn filter_response_headers(
     response: &HttpResponse,
     response_certification: &DefaultResponseCertification<'_>,
 ) -> ResponseHeaders {
-    let headers_filter: Box<dyn Fn(_) -> _> = match response_certification {
-        DefaultResponseCertification::CertifiedResponseHeaders(headers_to_include) => {
+    let headers_filter: Box<dyn Fn(_) -> _> = match response_certification.get_type() {
+        DefaultResponseCertificationType::CertifiedResponseHeaders(headers_to_include) => {
             Box::new(move |header_name: &String| {
                 headers_to_include.iter().any(|header_to_include| {
                     header_to_include.eq_ignore_ascii_case(&header_name.to_string())
                 })
             })
         }
-        DefaultResponseCertification::ResponseHeaderExclusions(headers_to_exclude) => {
+        DefaultResponseCertificationType::ResponseHeaderExclusions(headers_to_exclude) => {
             Box::new(move |header_name: &String| {
                 !headers_to_exclude.iter().any(|header_to_exclude| {
                     header_to_exclude.eq_ignore_ascii_case(&header_name.to_string())
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn response_with_certified_headers_without_excluded_headers() {
         let response_certification =
-            DefaultResponseCertification::certified_response_headers(&["Accept-Encoding"]);
+            DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_headers = filter_response_headers(&response, &response_certification);
 
@@ -183,10 +183,11 @@ mod tests {
 
     #[test]
     fn response_with_certified_headers() {
-        let response_certification = DefaultResponseCertification::certified_response_headers(&[
-            "Accept-Encoding",
-            "Cache-Control",
-        ]);
+        let response_certification =
+            DefaultResponseCertification::certified_response_headers(vec![
+                "Accept-Encoding",
+                "Cache-Control",
+            ]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_headers = filter_response_headers(&response, &response_certification);
 
@@ -202,10 +203,11 @@ mod tests {
 
     #[test]
     fn response_hash_with_certified_headers() {
-        let response_certification = DefaultResponseCertification::certified_response_headers(&[
-            "Accept-Encoding",
-            "Cache-Control",
-        ]);
+        let response_certification =
+            DefaultResponseCertification::certified_response_headers(vec![
+                "Accept-Encoding",
+                "Cache-Control",
+            ]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let expected_hash =
             hex::decode("3393250e3cedc30408dcb7e8963898c3d7549b8a0b76496b82fdfeae99c2ac78")
@@ -219,7 +221,7 @@ mod tests {
     #[test]
     fn response_hash_with_certified_headers_without_excluded_headers() {
         let response_certification =
-            DefaultResponseCertification::certified_response_headers(&["Accept-Encoding"]);
+            DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse {
             status_code: 200,
@@ -246,10 +248,11 @@ mod tests {
 
     #[test]
     fn response_hash_with_header_exclusions() {
-        let response_certification = DefaultResponseCertification::response_header_exclusions(&[
-            "Accept-Encoding",
-            "Cache-Control",
-        ]);
+        let response_certification =
+            DefaultResponseCertification::response_header_exclusions(vec![
+                "Accept-Encoding",
+                "Cache-Control",
+            ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let expected_hash =
             hex::decode("a2ffb50ef8971650c2fb46c0a2788b7d5ac5a027d635175e8e06b419ce6c4cda")
@@ -263,7 +266,9 @@ mod tests {
     #[test]
     fn response_hash_with_header_exclusions_without_excluded_headers() {
         let response_certification =
-            DefaultResponseCertification::response_header_exclusions(&["Content-Security-Policy"]);
+            DefaultResponseCertification::response_header_exclusions(vec![
+                "Content-Security-Policy",
+            ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse {
             status_code: 200,
@@ -292,10 +297,11 @@ mod tests {
 
     #[test]
     fn response_headers_hash_with_certified_headers() {
-        let response_certification = DefaultResponseCertification::certified_response_headers(&[
-            "Accept-Encoding",
-            "Cache-Control",
-        ]);
+        let response_certification =
+            DefaultResponseCertification::certified_response_headers(vec![
+                "Accept-Encoding",
+                "Cache-Control",
+            ]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let expected_hash =
             hex::decode("eac859a99d5bd7b71f46dbacecff4aaa0a7a7131802c136a77a76c8e018af5f7")
@@ -310,7 +316,7 @@ mod tests {
     #[test]
     fn response_headers_hash_with_certified_headers_without_excluded_headers() {
         let response_certification =
-            DefaultResponseCertification::certified_response_headers(&["Accept-Encoding"]);
+            DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse {
             status_code: 200,
@@ -340,10 +346,11 @@ mod tests {
 
     #[test]
     fn response_headers_hash_with_header_exclusions() {
-        let response_certification = DefaultResponseCertification::response_header_exclusions(&[
-            "Accept-Encoding",
-            "Cache-Control",
-        ]);
+        let response_certification =
+            DefaultResponseCertification::response_header_exclusions(vec![
+                "Accept-Encoding",
+                "Cache-Control",
+            ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let expected_hash =
             hex::decode("d618f70bf2578d5a672374ffbaade3910e858384f42d01ac2863946ab596bcac")
@@ -358,7 +365,9 @@ mod tests {
     #[test]
     fn response_headers_hash_with_header_exclusions_without_excluded_headers() {
         let response_certification =
-            DefaultResponseCertification::response_header_exclusions(&["Content-Security-Policy"]);
+            DefaultResponseCertification::response_header_exclusions(vec![
+                "Content-Security-Policy",
+            ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse {
             status_code: 200,
@@ -391,10 +400,11 @@ mod tests {
 
     #[test]
     fn response_hash_with_body_hash_override() {
-        let response_certification = DefaultResponseCertification::certified_response_headers(&[
-            "Accept-Encoding",
-            "Cache-Control",
-        ]);
+        let response_certification =
+            DefaultResponseCertification::certified_response_headers(vec![
+                "Accept-Encoding",
+                "Cache-Control",
+            ]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_body_hash: Hash =
             hex::decode("5462fc394013080effc31d578ec3fff8b44cdf24738b38a77ce4afacbc93a7f5")
