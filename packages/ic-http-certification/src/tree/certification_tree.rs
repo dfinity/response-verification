@@ -7,7 +7,7 @@ use ic_certification::{
     empty, labeled, labeled_hash, merge_hash_trees, AsHashTree, HashTree, NestedTree,
 };
 use ic_representation_independent_hash::Sha256Digest;
-use std::borrow::Borrow;
+use std::borrow::{Borrow, Cow};
 
 type CertificationTree = NestedTree<CertificationTreePathSegment, Vec<u8>>;
 
@@ -61,7 +61,7 @@ impl HttpCertificationTree {
             HttpCertificationPath::Exact(_) => self.tree.witness(&entry.to_tree_path()),
 
             HttpCertificationPath::Wildcard(_) => {
-                let request_url_path = HttpCertificationPath::Exact(request_url).to_tree_path();
+                let request_url_path = HttpCertificationPath::Exact(Cow::Borrowed(request_url)).to_tree_path();
 
                 // For wildcards we need to prove that there is not a more specific wildcard in the tree that
                 // matches the request URL. So we step through the path and generate a witness for each subpath,

@@ -1,23 +1,27 @@
 /*!
-# Internet Computer HTTP Certification
+# HTTP Certification
 
-HTTP Certification is a sub-protocol of the [Internet Computer](https://internetcomputer.org/) [HTTP Gateway Protocol](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec). It is used to verify HTTP responses received by an HTTP Gateway from a [canister](https://internetcomputer.org/how-it-works/canister-lifecycle/), with respect to the corresponding HTTP request sent by the HTTP Gateway to the canister. This allows HTTP Gateways to verify that the responses they receive from canisters are authentic and have not been tampered with by a malicious replica.
+## Overview
 
-This crate provides a foundation for implementing the HTTP Certification protocol in Rust canisters. Certification is implemented in a number of steps:
+HTTP certification is a sub-protocol of the [ICP](https://internetcomputer.org/) [HTTP gateway protocol](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec). It is used to verify HTTP responses received by an HTTP gateway from a [canister](https://internetcomputer.org/how-it-works/canister-lifecycle/), with respect to the corresponding HTTP request. This allows HTTP gateways to verify that the responses they receive from canisters are authentic and have not been tampered with.
+
+The `ic-http-certification` crate provides a foundation for implementing the HTTP certification protocol in Rust canisters. Certification is implemented in a number of steps:
 
 1. [Defining CEL expressions](#defining-cel-expressions)
 2. [Creating certifications](#creating-certifications)
 3. [Creating an HTTP certification tree](#creating-an-http-certification-tree)
 
-## Defining CEL Expressions
+## Defining CEL expressions
 
-[CEL](https://github.com/google/cel-spec) (Common Expression Language) is a portable expression language that can be used to enable different applications to more easily interoperate. It can be seen as the computation or expression counterpart to [Protocol Buffers](https://github.com/protocolbuffers/protobuf).
+[CEL](https://github.com/google/cel-spec) (Common Expression Language) is a portable expression language that can be used for different applications to easily interoperate. It can be seen as the computation or expression counterpart to [protocol buffers](https://github.com/protocolbuffers/protobuf).
 
-CEL expressions lie at the heart of the Internet Computer's HTTP certification system. They are used to define the conditions under which a request and response pair should be certified and what should be included from the corresponding request and response objects in the certification.
+CEL expressions are at the core of ICP's HTTP certification system. They are used to define the conditions under which a request and response pair should be certified. They also define what should be included from the corresponding request and response objects in the certification.
 
-CEL expressions can be created in two ways, by using the [CEL builder](#using-the-cel-builder), or by directly creating a [CEL expression](#directly-creating-a-cel-expression).
+CEL expressions can be created in two ways:
+- Using the [CEL builder](#using-the-cel-builder)
+- Directly creating a [CEL expression](#directly-creating-a-cel-expression).
 
-### Converting CEL expressions to their `String` representation
+### Converting CEL expressions into their `String` representation
 
 Note that the [CelExpression](cel::CelExpression) enum is not a CEL expression itself, but rather a Rust representation of a CEL expression. To convert a [CelExpression](cel::CelExpression) into its [String] representation, use [CelExpression.to_string](cel::CelExpression::to_string()) or [create_cel_expr](cel::create_cel_expr()). This applies to CEL expressions created both by the [CEL builder](#using-the-cel-builder) and [directly](#directly-creating-a-cel-expression).
 
@@ -38,15 +42,25 @@ let cel_expr = create_cel_expr(&certification);
 
 ### Using the CEL builder
 
-The CEL builder interface is provided to ease the creation of CEL expressions through an ergonomic interface. If this interface does not meet your needs, you can also [create CEL expressions directly](#directly-creating-a-cel-expression). To define a CEL expression, start with [DefaultCelBuilder]. This struct provides a set of associated functions that can be used to define how your request and response pair should be certified.
+The CEL builder interface is provided to ease the creation of CEL expressions through an ergonomic interface. It is also possible to [create CEL expressions directly](#directly-creating-a-cel-expression). To define a CEL expression, start with [DefaultCelBuilder]. This struct provides a set of associated functions that can be used to define how a request and response pair should be certified.
 
-When certifying requests, the request body and method are always certified. To additionally certify request headers and query parameters, use [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) and [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()) respectively. Both associated functions take a [str] slice as an argument.
+When certifying requests:
 
-When certifying a response, the response body and status code are always certified. To additionally certify response headers, use [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). This associated function takes the [DefaultResponseCertification](DefaultResponseCertification) enum as an argument. To specify header inclusions, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both associated functions take a [str] slice as an argument.
+- The request body and method are always certified.
+- To certify request headers and query parameters, use [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) and [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()) respectively. Both associated functions take a [str] slice as an argument.
+
+When certifying responses:
+
+- The response body and status code are always certified.
+- To certify response headers, use [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). This associated function takes the [DefaultResponseCertification](DefaultResponseCertification) enum as an argument.
+  - To specify header inclusions, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum.
+  - To certify all response headers (with some exclusions) use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both associated functions take a [str] slice as an argument.
 
 #### Fully certified request / response pair
 
-To define a fully certified request and response pair, including request headers, query parameters, and response headers use [DefaultCelBuilder::full_certification](DefaultCelBuilder::full_certification()). For example:
+To define a fully certified request and response pair, including request headers, query parameters, and response headers use [DefaultCelBuilder::full_certification](DefaultCelBuilder::full_certification()).
+
+For example:
 
 ```rust
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
@@ -63,7 +77,7 @@ let cel_expr = DefaultCelBuilder::full_certification()
 
 #### Partially certified request
 
-Any number of request headers or request query parameters can be certified via [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) and [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()) respectively. Both methods will accept empty arrays, which is the same as not calling them at all. If [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) is called with an empty array, or it is not called at all, then no request headers will be certified. Likewise for [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()), if it is called with an empty array, or not called at all, then no request query parameters will be certified. If both are called with an empty array, or neither are called, then only the request body and method will be certified.
+Any number of request headers or request query parameters can be certified via [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) and [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()) respectively. Both methods will accept empty arrays, which is the same as not calling them at all. Likewise for [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()), if it is called with an empty array, or not called at all, then no request query parameters will be certified. If both are called with an empty array, or neither are called, then only the request body and method will be certified.
 
 For example, to certify only the request body and method:
 
@@ -95,7 +109,9 @@ let cel_expr = DefaultCelBuilder::full_certification()
 
 #### Skipping request certification
 
-Request certification can be skipped entirely by using [DefaultCelBuilder::response_only_certification](DefaultCelBuilder::response_only_certification()) instead of [DefaultCelBuilder::full_certification](DefaultCelBuilder::full_certification()). For example:
+Request certification can be skipped entirely by using [DefaultCelBuilder::response_only_certification](DefaultCelBuilder::response_only_certification()) instead of [DefaultCelBuilder::full_certification](DefaultCelBuilder::full_certification()).
+
+For example:
 
 ```rust
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
@@ -111,7 +127,7 @@ let cel_expr = DefaultCelBuilder::response_only_certification()
 
 #### Partially certified response
 
-Similiarly to request certification, any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum when calling [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). The provided array can also be empty. If the array is empty, or the associated function is not called, then no response headers will be certified.
+Any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum when calling [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). The provided array can also be empty. If the array is empty, or the associated function is not called, no response headers will be certified.
 
 For example, to certify only the response body and status code:
 
@@ -143,7 +159,7 @@ let cel_expr = DefaultCelBuilder::full_certification()
     .build();
 ```
 
-To skip response certification completely, then certification overall must be skipped completely. It wouldn't be useful to certify a request without certifying a response. So if anything is certified, then it must at least include the response. See the next section for more details on skipping certification entirely.
+To skip response certification completely, certification overall must be skipped completely. It wouldn't be useful to certify a request without certifying a response.
 
 #### Skipping certification
 
@@ -157,7 +173,7 @@ let cel_expr = DefaultCelBuilder::skip_certification();
 
 Skipping certification may seem counter-intuitive at first, but it is not always possible to certify a request and response pair. For example, a canister method that will return different data for every user cannot be easily certified.
 
-Typically these requests have been routed through `raw` Internet Computer URLs in the past, but this is dangerous because `raw` URLs allow any responding replica to decide whether or not certification is required. In contrast, by skipping certification using the above method with a non-`raw` URL, a replica will no longer be able to decide whether or not certification is required and instead this decision will be made by the canister itself and the result will go through consensus.
+Typically, these requests have been routed through `raw` ICP URLs in the past, but this is dangerous because `raw` URLs allow any responding replica to decide whether or not certification is required. In contrast, by skipping certification using the above method with a non-`raw` URL, a replica will no longer be able to decide whether or not certification is required and instead this decision will be made by the canister itself and the result will go through consensus.
 
 ## Creating certifications
 
@@ -169,7 +185,9 @@ Once a CEL expression has been defined, it can be used in conjunction with an [H
 
 ### Full certification
 
-To perform a full certification, a CEL expression created from [DefaultCelBuilder::full_certification] is required, along with an [HttpRequest] and [HttpResponse] and optionally, a pre-calculated response body hash. For example:
+To perform a full certification, a CEL expression created from [DefaultCelBuilder::full_certification] is required, along with an [HttpRequest] and [HttpResponse] and optionally, a pre-calculated response body hash.
+
+For example:
 
 ```rust
 use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
@@ -209,7 +227,9 @@ let certification = HttpCertification::full(&cel_expr, &request, &response, None
 
 ### Response-only certification
 
-To perform a response-only certification, a CEL expression created from [DefaultCelBuilder::response_only_certification] is required, along with an [HttpResponse] and optionally, a pre-calculated response body hash. For example:
+To perform a response-only certification, a CEL expression created from [DefaultCelBuilder::response_only_certification] is required, along with an [HttpResponse] and optionally, a pre-calculated response body hash.
+
+For example:
 
 ```rust
 use ic_http_certification::{HttpCertification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
@@ -236,7 +256,9 @@ let certification = HttpCertification::response_only(&cel_expr, &response, None)
 
 ### Skipping certification
 
-Skipping certification does not need an explicit CEL expression to be defined since it's always the same. For example:
+Skipping certification does not need an explicit CEL expression to be defined since it's always the same.
+
+For example:
 
 ```rust
 use ic_http_certification::HttpCertification;
@@ -248,9 +270,9 @@ let certification = HttpCertification::skip();
 
 ### Defining tree paths
 
-Paths for the tree can be defined using the [HttpCertificationPath] enum and come in two flavours - [Wildcard](HttpCertificationPath::Wildcard) and [Exact](HttpCertificationPath::Exact). Both types of paths may end with, or without a trailing slash, but note that a path ending in a trailing slash is a distinct path from one that does not end with a trailing slash and they will be treated as such by the tree.
+Paths for the tree can be defined using the [HttpCertificationPath] enum and come in two types - [Wildcard](HttpCertificationPath::Wildcard) and [Exact](HttpCertificationPath::Exact). Both types of paths may end with or without a trailing slash but note that a path ending in a trailing slash is a distinct path from one that does not end with a trailing slash and they will be treated as such by the tree.
 
-Wildcard paths can be used to match sub-path of a request URL. This can be useful for 404 responses, fallbacks or rewrites. They are defined using the [Wildcard](HttpCertificationPath::Wildcard) variant.
+Wildcard paths can be used to match a sub-path of a request URL. This can be useful for 404 responses, fallbacks or rewrites. They are defined using the [Wildcard](HttpCertificationPath::Wildcard) variant.
 
 In this example, the certification entered into the tree with this path will be valid for any request URL that begins with `/js`, unless there is a more specific path in the tree (ex. `/js/example.js` or `/js/example`).
 
@@ -260,7 +282,7 @@ use ic_http_certification::HttpCertificationPath;
 let path = HttpCertificationPath::Wildcard("/js");
 ```
 
-Exact paths are used to match the entire request URL. An exact path ending with a trailing slash referes to a file system directory, where as one without a trailing slash refers to an individual file. Both are separate paths within the certification tree and will be treated completely independently.
+Exact paths are used to match an entire request URL. An exact path ending with a trailing slash referes to a file system directory, where as one without a trailing slash refers to an individual file. Both are separate paths within the certification tree and will be treated completely independently.
 
 In this example, the certification entered into the tree with this path will only be valid for a request URL that is exactly `/js/example.js`.
 
@@ -272,7 +294,9 @@ let path = HttpCertificationPath::Exact("/js/example.js");
 
 ### Using the HTTP certification tree
 
-The [HttpCertificationTree] can be easily initialized with the [Default] trait and entries can be added to, removed from, or have witnesses generated by the tree using the [HttpCertificationTreeEntry] struct. The [HttpCertificationTreeEntry] requires an [HttpCertification] and an [HttpCertificationPath]. For example:
+The [HttpCertificationTree] can be easily initialized with the [Default] trait and entries can be added to, removed from, or have witnesses generated by the tree using the [HttpCertificationTreeEntry] struct. The [HttpCertificationTreeEntry] requires an [HttpCertification] and an [HttpCertificationPath].
+
+For example:
 
 ```rust
 use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath};
@@ -327,11 +351,17 @@ http_certification_tree.delete(&entry);
 
 ## Directly creating a CEL expression
 
-To define a CEL expression, start with the [CelExpression](cel::CelExpression) enum. This enum provides a set of variants that can be used to define different types of CEL expressions supported by Internet Computer HTTP Gateways. Currently only one variant is supported, known as the "default" certification expression, but more may be added in the future as the HTTP certification protocol evolves over time.
+To define a CEL expression, start with the [CelExpression](cel::CelExpression) enum. This enum provides a set of variants that can be used to define different types of CEL expressions supported by ICP HTTP gateways. Currently only one variant is supported, known as the "default" certification expression, but more may be added in the future as the HTTP certification protocol evolves over time.
 
-When certifying requests, the request body and method are always certified. To additionally certify request headers and query parameters, use the [headers](cel::DefaultRequestCertification::headers) and [query_parameters](cel::DefaultRequestCertification::query_parameters) fields of the [DefaultRequestCertification](cel::DefaultRequestCertification) struct. Both fields take a [str] slice as an argument.
+When certifying requests:
 
-When certifying a response, the response body and status code are always certified. To additionally certify response headers, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both associated functions take a [str] slice as an argument.
+- The request body and method are always certified.
+- To certify request headers and query parameters, use the [headers](cel::DefaultRequestCertification::headers) and [query_parameters](cel::DefaultRequestCertification::query_parameters) fields of the [DefaultRequestCertification](cel::DefaultRequestCertification) struct. Both fields take a [str] slice as an argument.
+
+When certifying responses:
+
+- The response body and status code are always certified.
+- To certify response headers, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both associated functions take a [str] slice as an argument.
 
 Note that the example CEL expressions provided below are formatted for readability. The actual CEL expressions produced by [CelExpression::to_string](cel::CelExpression::to_string()) and [create_cel_expr](cel::create_cel_expr()) are minified. The minified CEL expression is preferred because it is more compact, resulting in a smaller payload and a faster evaluation time for the HTTP Gateway that is verifying the certification, but the formatted versions are also accepted.
 
@@ -423,7 +453,9 @@ default_certification (
 
 ### Skipping request certification
 
-Request certification can be skipped entirely by using the [ResponseOnly](DefaultCelExpression::ResponseOnly) variant of the [DefaultCelExpression](DefaultCelExpression). For example:
+Request certification can be skipped entirely by using the [ResponseOnly](DefaultCelExpression::ResponseOnly) variant of the [DefaultCelExpression](DefaultCelExpression).
+
+For example:
 
 ```rust
 use std::borrow::Cow;
@@ -458,7 +490,9 @@ default_certification (
 
 ### Partially certified response
 
-Similiarly to request certification, any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum, and it can also be an empty array. If the array is empty, no response headers will be certified. For example:
+Similiarly to request certification, any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum, and it can also be an empty array. If the array is empty, no response headers will be certified.
+
+For example:
 
 ```rust
 use std::borrow::Cow;
@@ -527,7 +561,7 @@ default_certification (
 )
 ```
 
-To skip response certification completely, then certification overall must be skipped completely. It wouldn't be useful to certify a request without certifying a response. So if anything is certified, then it must at least include the response. See the next section for more details on skipping certification entirely.
+To skip response certification completely, then certification overall must be skipped completely. It wouldn't be useful to certify a request without certifying a response.
 
 ### Skipping certification
 

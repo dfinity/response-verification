@@ -1,5 +1,5 @@
 [package]
-name = "http_certification_new_assets_backend"
+name = "http_certification_assets_backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -14,8 +14,6 @@ ic-cdk-macros.workspace = true
 serde.workspace = true
 serde_cbor.workspace = true
 sha2.workspace = true
-ic-certification.workspace = true
 ic-http-certification = { workspace = true, features = ["serde"] }
-ic-asset-certification.workspace = true
 base64.workspace = true
 include_dir = { version = "0.7", features = ["glob"] }

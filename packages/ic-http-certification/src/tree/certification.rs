@@ -4,6 +4,7 @@ use crate::{
 };
 use ic_certification::Hash;
 use ic_representation_independent_hash::hash;
+use std::borrow::Cow;
 
 /// A certified [request](crate::HttpResponse) and [response](crate::HttpResponse) pair.
 ///
@@ -21,7 +22,7 @@ use ic_representation_independent_hash::hash;
 /// - The [Full](HttpCertification::Full) variant includes both an [HTTP response](crate::HttpResponse) and
 /// the corresponding [HTTP request](crate::HttpRequest) in certification. Create this variant using
 /// the [full()](HttpCertification::full()) function.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpCertification {
     /// A certification that excludes both the [HTTP request](crate::HttpRequest) and
     /// the corresponding [HTTP response](crate::HttpResponse).
@@ -196,6 +197,18 @@ impl HttpCertification {
                 response_hash.to_vec(),
             ],
         }
+    }
+}
+
+impl<'a> Into<Cow<'a, HttpCertification>> for HttpCertification {
+    fn into(self) -> Cow<'a, HttpCertification> {
+        Cow::Owned(self)
+    }
+}
+
+impl<'a> Into<Cow<'a, HttpCertification>> for &'a HttpCertification {
+    fn into(self) -> Cow<'a, HttpCertification> {
+        Cow::Borrowed(self)
     }
 }
 
