@@ -4,7 +4,7 @@
 
 HTTP certification is a sub-protocol of the [ICP](https://internetcomputer.org/) [HTTP gateway protocol](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec). It is used to verify HTTP responses received by an HTTP gateway from a [canister](https://internetcomputer.org/how-it-works/canister-lifecycle/), with respect to the corresponding HTTP request. This allows HTTP gateways to verify that the responses they receive from canisters are authentic and have not been tampered with.
 
-The ic-http-certification crate provides a foundation for implementing the HTTP certification protocol in Rust canisters. Certification is implemented in a number of steps:
+The `ic-http-certification` crate provides a foundation for implementing the HTTP certification protocol in Rust canisters. Certification is implemented in a number of steps:
 
 1. [Defining CEL expressions](#defining-cel-expressions)
 2. [Creating certifications](#creating-certifications)
@@ -42,17 +42,16 @@ let cel_expr = create_cel_expr(&certification);
 
 ### Using the CEL builder
 
-The CEL builder interface is provided to ease the creation of CEL expressions through an ergonomic interface. You can also [create CEL expressions directly](#directly-creating-a-cel-expression). To define a CEL expression, start with `DefaultCelBuilder`. This struct provides a set of associated functions that can be used to define how your request and response pair should be certified.
+The CEL builder interface is provided to ease the creation of CEL expressions through an ergonomic interface. It is also possible to [create CEL expressions directly](#directly-creating-a-cel-expression). To define a CEL expression, start with `DefaultCelBuilder`. This struct provides a set of associated functions that can be used to define how a request and response pair should be certified.
 
 When certifying requests:
 
 - The request body and method are always certified.
 - To certify request headers and query parameters, use `with_request_headers` and `with_request_query_parameters` respectively. Both associated functions take a `str` slice as an argument.
 
-When certifying a response:
+When certifying responses:
 
 - The response body and status code are always certified.
-
 - To certify response headers, use `with_response_certification`. This associated function takes the `DefaultResponseCertification` enum as an argument.
   - To specify header inclusions, use the `certified_response_headers` associated function of the `DefaultResponseCertification` enum.
   - To certify all response headers (with some exclusions) use the `response_header_exclusions` associated function of the `DefaultResponseCertification` enum. Both functions take a `str` slice as an argument.
@@ -272,7 +271,7 @@ let certification = HttpCertification::skip();
 
 Paths for the tree can be defined using the `HttpCertificationPath` enum and come in two types: `Wildcard` and `Exact`. Both types of paths may end with or without a trailing slash, but note that a path ending in a trailing slash is a distinct path from one that does not end with a trailing slash, and they will be treated as such by the tree.
 
-Wildcard paths can be used to match the sub-path of a request URL. This can be useful for 404 responses, fallbacks or rewrites. They are defined using the `Wildcard` variant.
+Wildcard paths can be used to match a sub-path of a request URL. This can be useful for 404 responses, fallbacks or rewrites. They are defined using the `Wildcard` variant.
 
 In this example, the certification entered into the tree with this path will be valid for any request URL that begins with `/js`, unless there is a more specific path in the tree (ex. `/js/example.js`).
 
@@ -282,7 +281,7 @@ use ic_http_certification::HttpCertificationPath;
 let path = HttpCertificationPath::Wildcard("/js");
 ```
 
-Exact paths are used to match the entire request URL. An exact path ending with a trailing slash referes to a file system directory, where as one without a trailing slash refers to an individual file. Both are separate paths within the certification tree and will be treated completely independently.
+Exact paths are used to match an entire request URL. An exact path ending with a trailing slash referes to a file system directory, where as one without a trailing slash refers to an individual file. Both are separate paths within the certification tree and will be treated completely independently.
 
 In this example, the certification entered into the tree with this path will only be valid for a request URL that is exactly `/js/example.js`.
 
@@ -359,7 +358,7 @@ When certifying requests:
 
 - To certify request headers and query parameters, use the `headers` and `query_paramters` fields of the `DefaultRequestCertification` struct. Both fields take a `str` slice as an argument.
 
-When certifying a response:
+When certifying responses:
 
 - The response body and status code are always certified.
 
