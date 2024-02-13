@@ -180,7 +180,7 @@ flowchart TB;
 - [`ic-http-certification` Cargo crate](https://crates.io/crates/ic-http-certification).
 - [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification).
 - [Example project serving a REST API](./examples/http-certification/json-api/README.md).
-- [Example project serving static assets](./examples/http-certification/assets/README.md).
+- [Example project with a custom implementation serving static assets](./examples/http-certification/custom-assets/README.md).
 - [`ic-http-certification` source code](./packages/ic-http-certification/README.md).
 
 ## Response Verification
