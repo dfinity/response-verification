@@ -1,6 +1,7 @@
 use super::{
     CelExpression, DefaultCelExpression, DefaultFullCelExpression, DefaultRequestCertification,
-    DefaultResponseCertification, DefaultResponseOnlyCelExpression,
+    DefaultResponseCertification, DefaultResponseCertificationType,
+    DefaultResponseOnlyCelExpression,
 };
 
 /// Converts a CEL expression from a [CelExpression] struct into it's [String] representation.
@@ -103,12 +104,12 @@ fn create_response_cel_expr(
 ) {
     cel_expr.push_str("response_certification:ResponseCertification{");
 
-    let headers = match response_certification {
-        DefaultResponseCertification::CertifiedResponseHeaders(headers) => {
+    let headers = match response_certification.get_type() {
+        DefaultResponseCertificationType::CertifiedResponseHeaders(headers) => {
             cel_expr.push_str("certified_response_headers");
             headers
         }
-        DefaultResponseCertification::ResponseHeaderExclusions(headers) => {
+        DefaultResponseCertificationType::ResponseHeaderExclusions(headers) => {
             cel_expr.push_str("response_header_exclusions");
             headers
         }
@@ -128,7 +129,6 @@ mod tests {
     use super::*;
     use crate::cel::fixtures::*;
     use rstest::*;
-    use std::borrow::Cow;
 
     #[rstest]
     #[case::no_certification(no_certification(), no_certification_cel())]
@@ -185,7 +185,7 @@ mod tests {
     fn no_request_response_inclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::ResponseOnly(
             DefaultResponseOnlyCelExpression {
-                response: DefaultResponseCertification::certified_response_headers(&[
+                response: DefaultResponseCertification::certified_response_headers(vec![
                     "Cache-Control",
                     "ETag",
                     "Content-Length",
@@ -199,7 +199,7 @@ mod tests {
     fn no_request_response_exclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::ResponseOnly(
             DefaultResponseOnlyCelExpression {
-                response: DefaultResponseCertification::response_header_exclusions(&[
+                response: DefaultResponseCertification::response_header_exclusions(vec![
                     "Date",
                     "Cookie",
                     "Set-Cookie",
@@ -211,7 +211,7 @@ mod tests {
     fn no_request_empty_response_inclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::ResponseOnly(
             DefaultResponseOnlyCelExpression {
-                response: DefaultResponseCertification::certified_response_headers(&[]),
+                response: DefaultResponseCertification::certified_response_headers(vec![]),
             },
         ))
     }
@@ -219,18 +219,18 @@ mod tests {
     fn no_request_empty_response_exclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::ResponseOnly(
             DefaultResponseOnlyCelExpression {
-                response: DefaultResponseCertification::response_header_exclusions(&[]),
+                response: DefaultResponseCertification::response_header_exclusions(vec![]),
             },
         ))
     }
 
     fn include_request_response_header_inclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
-                query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            },
-            response: DefaultResponseCertification::certified_response_headers(&[
+            request: DefaultRequestCertification::new(
+                vec!["Accept", "Accept-Encoding", "If-Match"],
+                vec!["foo", "bar", "baz"],
+            ),
+            response: DefaultResponseCertification::certified_response_headers(vec![
                 "Cache-Control",
                 "ETag",
                 "Content-Length",
@@ -242,11 +242,11 @@ mod tests {
 
     fn include_request_response_header_exclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
-                query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            },
-            response: DefaultResponseCertification::response_header_exclusions(&[
+            request: DefaultRequestCertification::new(
+                vec!["Accept", "Accept-Encoding", "If-Match"],
+                vec!["foo", "bar", "baz"],
+            ),
+            response: DefaultResponseCertification::response_header_exclusions(vec![
                 "Date",
                 "Cookie",
                 "Set-Cookie",
@@ -256,41 +256,35 @@ mod tests {
 
     fn include_request_empty_response_inclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
-                query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            },
-            response: DefaultResponseCertification::certified_response_headers(&[]),
+            request: DefaultRequestCertification::new(
+                vec!["Accept", "Accept-Encoding", "If-Match"],
+                vec!["foo", "bar", "baz"],
+            ),
+            response: DefaultResponseCertification::certified_response_headers(vec![]),
         }))
     }
 
     fn include_request_empty_response_exclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&["Accept", "Accept-Encoding", "If-Match"]),
-                query_parameters: Cow::Borrowed(&["foo", "bar", "baz"]),
-            },
-            response: DefaultResponseCertification::response_header_exclusions(&[]),
+            request: DefaultRequestCertification::new(
+                vec!["Accept", "Accept-Encoding", "If-Match"],
+                vec!["foo", "bar", "baz"],
+            ),
+            response: DefaultResponseCertification::response_header_exclusions(vec![]),
         }))
     }
 
     fn empty_request_response_inclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&[]),
-                query_parameters: Cow::Borrowed(&[]),
-            },
-            response: DefaultResponseCertification::certified_response_headers(&[]),
+            request: DefaultRequestCertification::new(vec![], vec![]),
+            response: DefaultResponseCertification::certified_response_headers(vec![]),
         }))
     }
 
     fn empty_request_response_exclusions() -> CelExpression<'static> {
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&[]),
-                query_parameters: Cow::Borrowed(&[]),
-            },
-            response: DefaultResponseCertification::response_header_exclusions(&[]),
+            request: DefaultRequestCertification::new(vec![], vec![]),
+            response: DefaultResponseCertification::response_header_exclusions(vec![]),
         }))
     }
 }

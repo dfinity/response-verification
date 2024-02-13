@@ -15,7 +15,7 @@ use std::borrow::Cow;
 /// [HttpCertification](crate::HttpCertification) definition itself.
 ///
 /// Use the [new](HttpCertificationTreeEntry::new) associated function to create a new `HttpCertificationTreeEntry`.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpCertificationTreeEntry<'a> {
     /// The path of an [HttpCertification](crate::HttpCertification) definition within the tree.
     /// This path will define what [HttpRequest](crate::HttpRequest) URLs the
@@ -27,13 +27,16 @@ pub struct HttpCertificationTreeEntry<'a> {
 }
 
 impl<'a> HttpCertificationTreeEntry<'a> {
-    /// Creates a new `HttpCertificationTreeEntry` with the given `path` and `certification`.
-    /// This is a convenience method for creating a `HttpCertificationTreeEntry` with references,
-    /// without having to directly deal with the `Cow` type.
-    pub fn new(path: &'a HttpCertificationPath, certification: &'a HttpCertification) -> Self {
+    /// Creates a new [HttpCertificationTreeEntry] with the given `path` and `certification`.
+    /// This is a convenience method for creating a [HttpCertificationTreeEntry]
+    /// without having to directly deal with the [Cow] type.
+    pub fn new(
+        path: impl Into<Cow<'a, HttpCertificationPath<'a>>>,
+        certification: impl Into<Cow<'a, HttpCertification>>,
+    ) -> Self {
         Self {
-            path: Cow::Borrowed(path),
-            certification: Cow::Borrowed(certification),
+            path: path.into(),
+            certification: certification.into(),
         }
     }
 
@@ -59,8 +62,8 @@ mod tests {
 
     #[template]
     #[rstest]
-    #[case(HttpCertificationPath::Exact("/foo/bar"), vec!["foo", "bar", "<$>"])]
-    #[case(HttpCertificationPath::Wildcard("/foo/bar"), vec!["foo", "bar", "<*>"])]
+    #[case(HttpCertificationPath::exact("/foo/bar"), vec!["foo", "bar", "<$>"])]
+    #[case(HttpCertificationPath::wildcard("/foo/bar"), vec!["foo", "bar", "<*>"])]
     fn certification_paths(
         #[case] path: HttpCertificationPath<'static>,
         #[case] expected: Vec<&str>,
@@ -76,7 +79,7 @@ mod tests {
         let cel_expr_hash = hash(cel_expr.as_bytes());
 
         let certification = HttpCertification::skip();
-        let entry = HttpCertificationTreeEntry::new(&path, &certification);
+        let entry = HttpCertificationTreeEntry::new(&path, certification);
 
         let result = entry.to_tree_path();
 
@@ -101,7 +104,7 @@ mod tests {
     ) {
         let cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &[],
+                vec![],
             ))
             .build();
         let cel_expr_hash = hash(cel_expr.to_string().as_bytes());
@@ -115,7 +118,7 @@ mod tests {
         let expected_response_hash = response_hash(&response, &cel_expr.response, None);
 
         let certification = HttpCertification::response_only(&cel_expr, &response, None);
-        let entry = HttpCertificationTreeEntry::new(&path, &certification);
+        let entry = HttpCertificationTreeEntry::new(&path, certification);
 
         let result = entry.to_tree_path();
 
@@ -162,7 +165,7 @@ mod tests {
         let expected_response_hash = response_hash(&response, &cel_expr.response, None);
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
-        let entry = HttpCertificationTreeEntry::new(&path, &certification);
+        let entry = HttpCertificationTreeEntry::new(&path, certification);
 
         let result = entry.to_tree_path();
 

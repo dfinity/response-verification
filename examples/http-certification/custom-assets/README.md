@@ -96,7 +96,7 @@ The CEL expression definition is slightly more complex in the case of assets. Th
 ```rust
 fn prepare_cel_exprs() {
     let asset_cel_expr_def = DefaultCelBuilder::response_only_certification()
-        .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
+        .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
             "content-type",
             "content-length",
             "content-encoding",
@@ -173,12 +173,12 @@ const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 fn certify_asset_response(
     body: &'static [u8],
     additional_headers: Vec<HeaderField>,
-    asset_tree_path: HttpCertificationPath,
+    asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
 ) {
     CEL_EXPRS.with_borrow(|cel_exprs| {
         // get the relevant CEL expression
-        let (cel_expr_def, cel_expr_str) = cel_exprs.get(ASSET_CEL_EXPR_PATH).unwrap();
+        let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
 
         // set up our default headers and include additional headers provided by the caller
         let mut headers = vec![
@@ -214,10 +214,10 @@ fn certify_asset_response(
 
         HTTP_TREE.with_borrow_mut(|http_tree| {
             // add the certification to the certification tree
-            http_tree.insert(&HttpCertificationTreeEntry {
-                path: &asset_tree_path,
-                certification: &certification,
-            });
+            http_tree.insert(&HttpCertificationTreeEntry::new(
+                asset_tree_path,
+                &certification,
+            ));
 
             // set the canister's certified data
             set_certified_data(&http_tree.root_hash());
@@ -233,7 +233,7 @@ For example, when certifying `index.html` with `gzip` encoding, this function wi
 ```rust
 fn certify_asset_with_encoding(
     asset_file_path: &str,
-    asset_tree_path: HttpCertificationPath,
+    asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
     encoding: &str,
     additional_headers: Vec<HeaderField>,
@@ -261,7 +261,7 @@ Next is another simple function that will certify an asset for all encodings: Id
 fn certify_asset(
     body: &'static [u8],
     asset_file_path: String,
-    asset_tree_path: HttpCertificationPath,
+    asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
     additional_headers: Vec<HeaderField>,
 ) {
@@ -292,7 +292,7 @@ Now, a slightly more complex function certifies a range of assets that match a g
 
 ```rust
 fn certify_asset_glob(glob: &str, content_type: &str) {
-    // iterate over every asset matching the globa
+    // iterate over every asset matching the glob
     for identity_file in ASSETS_DIR
         .find(glob)
         .unwrap()
@@ -305,7 +305,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
         } else {
             asset_file_path.clone()
         };
-        let asset_tree_path = HttpCertificationPath::Exact(&asset_req_path);
+        let asset_tree_path = HttpCertificationPath::exact(&asset_req_path);
 
         // add the content-type and cache-control headers
         let additional_headers = vec![
@@ -320,7 +320,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
         certify_asset(
             body,
             asset_file_path.to_string(),
-            asset_tree_path,
+            &asset_tree_path,
             asset_req_path.to_string(),
             additional_headers,
         );
@@ -333,9 +333,11 @@ Lastly, a function specifically to certify the `index.html` file. Since the fron
 This will allow the canister to return this file for any path that does not exactly match an existing path in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
 
 ```rust
-const INDEX_REQ_PATH: &str = "";
-const INDEX_TREE_PATH: HttpCertificationPath = HttpCertificationPath::Wildcard(INDEX_REQ_PATH);
-const INDEX_FILE_PATH: &str = "index.html";
+lazy_static! {
+    static ref INDEX_REQ_PATH: &'static str = "";
+    static ref INDEX_TREE_PATH: HttpCertificationPath<'static> = HttpCertificationPath::wildcard(*INDEX_REQ_PATH);
+    static ref INDEX_FILE_PATH: &'static str = "index.html";
+}
 
 fn certify_index_asset() {
     let additional_headers = vec![
@@ -347,14 +349,14 @@ fn certify_index_asset() {
     ];
 
     let identity_file = ASSETS_DIR
-        .get_file(INDEX_FILE_PATH)
+        .get_file(*INDEX_FILE_PATH)
         .expect("No index.html file found!!!");
     let body = identity_file.contents();
 
     certify_asset(
         body,
         INDEX_FILE_PATH.to_string(),
-        INDEX_TREE_PATH,
+        &*INDEX_TREE_PATH,
         INDEX_REQ_PATH.to_string(),
         additional_headers,
     );
@@ -396,15 +398,15 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
             if let Some(identity_response) = responses.get(&req_path) {
                 (
                     req_path.to_string(),
-                    HttpCertificationPath::Exact(&req_path),
+                    HttpCertificationPath::exact(&req_path),
                     identity_response,
                 )
             // otherwise serve the index.html
             } else {
                 (
                     INDEX_REQ_PATH.to_string(),
-                    INDEX_TREE_PATH,
-                    responses.get(INDEX_REQ_PATH).unwrap(),
+                    INDEX_TREE_PATH.to_owned(),
+                    responses.get(*INDEX_REQ_PATH).unwrap(),
                 )
             };
 
@@ -424,7 +426,6 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
             .and_then(|encoding| {
                 // if the request asks for Brotli and it's available for this file, serve that version
                 if encoding.contains("br") {
-                    ic_cdk::println!("{}.br", asset_req_path);
                     if let Some(br_response) = responses.get(&format!("{}.br", asset_req_path)) {
                         return Some(br_response);
                     }
@@ -447,10 +448,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
 
         add_certificate_header(
             &mut response,
-            &HttpCertificationTreeEntry {
-                path: &asset_tree_path,
-                certification: &certification,
-            },
+            &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
             &req_path,
             &asset_tree_path.to_expr_path(),
         );

@@ -10,6 +10,7 @@ use ic_http_certification::{
     HttpRequest, HttpResponse,
 };
 use include_dir::{include_dir, Dir};
+use lazy_static::lazy_static;
 use serde::Serialize;
 use std::{borrow::Cow, cell::RefCell, collections::HashMap};
 
@@ -64,22 +65,26 @@ thread_local! {
 
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 
-const ASSET_CEL_EXPR_PATH: &str = "assets";
-
-const INDEX_REQ_PATH: &str = "";
-const INDEX_TREE_PATH: HttpCertificationPath = HttpCertificationPath::Wildcard(INDEX_REQ_PATH);
-const INDEX_FILE_PATH: &str = "index.html";
+lazy_static! {
+    static ref ASSET_CEL_EXPR_PATH: &'static str = "assets";
+    static ref INDEX_REQ_PATH: &'static str = "";
+    static ref INDEX_TREE_PATH: HttpCertificationPath<'static> =
+        HttpCertificationPath::wildcard(*INDEX_REQ_PATH);
+    static ref INDEX_FILE_PATH: &'static str = "index.html";
+}
 
 // Certification
 
 fn prepare_cel_exprs() {
     let asset_cel_expr_def = DefaultCelBuilder::response_only_certification()
-        .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
-            "content-type",
-            "content-length",
-            "content-encoding",
-            "cache-control",
-        ]))
+        .with_response_certification(DefaultResponseCertification::certified_response_headers(
+            vec![
+                "content-type",
+                "content-length",
+                "content-encoding",
+                "cache-control",
+            ],
+        ))
         .build();
 
     let asset_cel_expr = asset_cel_expr_def.to_string();
@@ -110,33 +115,36 @@ fn certify_index_asset() {
     ];
 
     let identity_file = ASSETS_DIR
-        .get_file(INDEX_FILE_PATH)
+        .get_file(*INDEX_FILE_PATH)
         .expect("No index.html file found!!!");
     let body = identity_file.contents();
 
     certify_asset(
         body,
         INDEX_FILE_PATH.to_string(),
-        INDEX_TREE_PATH,
+        &*INDEX_TREE_PATH,
         INDEX_REQ_PATH.to_string(),
         additional_headers,
     );
 }
 
 fn certify_asset_glob(glob: &str, content_type: &str) {
+    // iterate over every asset matching the glob
     for identity_file in ASSETS_DIR
         .find(glob)
         .unwrap()
         .map(|entry| entry.as_file().unwrap())
     {
+        // compute the different paths we need for this asset
         let asset_file_path = identity_file.path().to_str().unwrap().to_string();
         let asset_req_path = if !asset_file_path.starts_with("/") {
             format!("/{}", asset_file_path)
         } else {
             asset_file_path.clone()
         };
-        let asset_tree_path = HttpCertificationPath::Exact(&asset_req_path);
+        let asset_tree_path = HttpCertificationPath::exact(&asset_req_path);
 
+        // add the content-type and cache-control headers
         let additional_headers = vec![
             ("content-type".to_string(), content_type.to_string()),
             (
@@ -149,7 +157,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
         certify_asset(
             body,
             asset_file_path.to_string(),
-            asset_tree_path,
+            &asset_tree_path,
             asset_req_path.to_string(),
             additional_headers,
         );
@@ -159,7 +167,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
 fn certify_asset(
     body: &'static [u8],
     asset_file_path: String,
-    asset_tree_path: HttpCertificationPath,
+    asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
     additional_headers: Vec<HeaderField>,
 ) {
@@ -187,13 +195,15 @@ fn certify_asset(
 
 fn certify_asset_with_encoding(
     asset_file_path: &str,
-    asset_tree_path: HttpCertificationPath,
+    asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
     encoding: &str,
     additional_headers: Vec<HeaderField>,
 ) {
+    // check if the file exists before certifying it
     if let Some(file) = ASSETS_DIR.get_file(format!("{}.{}", asset_file_path, encoding)) {
         let body = file.contents();
+        // add the content encoding header
         let mut headers = vec![("content-encoding".to_string(), encoding.to_string())];
         headers.extend(additional_headers);
 
@@ -210,12 +220,12 @@ const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 fn certify_asset_response(
     body: &'static [u8],
     additional_headers: Vec<HeaderField>,
-    asset_tree_path: HttpCertificationPath,
+    asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
 ) {
     CEL_EXPRS.with_borrow(|cel_exprs| {
         // get the relevant CEL expression
-        let (cel_expr_def, cel_expr_str) = cel_exprs.get(ASSET_CEL_EXPR_PATH).unwrap();
+        let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
 
         // set up our default headers and include additional headers provided by the caller
         let mut headers = vec![
@@ -238,8 +248,8 @@ fn certify_asset_response(
         let certification =
             HttpCertification::response_only(cel_expr_def, &response.clone().into(), None);
 
-        // store the response for later retrieval
         RESPONSES.with_borrow_mut(|responses| {
+            // store the response for later retrieval
             responses.insert(
                 asset_req_path,
                 CertifiedHttpResponse {
@@ -249,13 +259,14 @@ fn certify_asset_response(
             );
         });
 
-        // add the certification to the tree
         HTTP_TREE.with_borrow_mut(|http_tree| {
+            // add the certification to the certification tree
             http_tree.insert(&HttpCertificationTreeEntry::new(
-                &asset_tree_path,
+                asset_tree_path,
                 &certification,
             ));
 
+            // set the canister's certified data
             set_certified_data(&http_tree.root_hash());
         });
     });
@@ -267,20 +278,23 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
 
     RESPONSES.with_borrow(|responses| {
         let (asset_req_path, asset_tree_path, identity_response) =
+            // if the requested path matches a static asset, serve that
             if let Some(identity_response) = responses.get(&req_path) {
                 (
                     req_path.to_string(),
-                    HttpCertificationPath::Exact(&req_path),
+                    HttpCertificationPath::exact(&req_path),
                     identity_response,
                 )
+            // otherwise serve the index.html
             } else {
                 (
                     INDEX_REQ_PATH.to_string(),
-                    INDEX_TREE_PATH,
-                    responses.get(INDEX_REQ_PATH).unwrap(),
+                    INDEX_TREE_PATH.to_owned(),
+                    responses.get(*INDEX_REQ_PATH).unwrap(),
                 )
             };
 
+        // extract the content encoding header
         let content_encoding = req.headers.iter().find_map(|(name, value)| {
             if name.to_lowercase() == "accept-encoding" {
                 Some(value)
@@ -294,13 +308,14 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
             response,
         } = content_encoding
             .and_then(|encoding| {
+                // if the request asks for Brotli and it's available for this file, serve that version
                 if encoding.contains("br") {
-                    ic_cdk::println!("{}.br", asset_req_path);
                     if let Some(br_response) = responses.get(&format!("{}.br", asset_req_path)) {
                         return Some(br_response);
                     }
                 }
 
+                // if the request asks for Gzip and it's available for this file, serve that version
                 if encoding.contains("gzip") {
                     if let Some(gzip_response) = responses.get(&format!("{}.gzip", asset_req_path))
                     {
@@ -310,13 +325,14 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
 
                 None
             })
+            // otherwise serve the identity version
             .unwrap_or(identity_response);
 
         let mut response: HttpResponse = response.clone().into();
 
         add_certificate_header(
             &mut response,
-            &HttpCertificationTreeEntry::new(&asset_tree_path, &certification),
+            &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
             &req_path,
             &asset_tree_path.to_expr_path(),
         );

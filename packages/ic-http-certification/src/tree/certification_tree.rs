@@ -2,12 +2,14 @@ use super::{
     certification_tree_entry::HttpCertificationTreeEntry,
     certification_tree_path::{CertificationTreePathSegment, PATH_PREFIX_BYTES},
 };
-use crate::{tree::WILDCARD_PATH_TERMINATOR_BYTES, HttpCertificationPath};
+use crate::{
+    tree::{HttpCertificationPathType, WILDCARD_PATH_TERMINATOR_BYTES},
+    HttpCertificationPath,
+};
 use ic_certification::{
     empty, labeled, labeled_hash, merge_hash_trees, AsHashTree, HashTree, NestedTree,
 };
 use ic_representation_independent_hash::Sha256Digest;
-use std::borrow::Borrow;
 
 type CertificationTree = NestedTree<CertificationTreePathSegment, Vec<u8>>;
 
@@ -57,18 +59,18 @@ impl HttpCertificationTree {
     ///
     /// `request_url` is required so that the witness can be generated with respect to the request URL.
     pub fn witness(&self, entry: &HttpCertificationTreeEntry, request_url: &str) -> HashTree {
-        let witness = match entry.path.borrow() {
-            HttpCertificationPath::Exact(_) => self.tree.witness(&entry.to_tree_path()),
+        let witness = match entry.path.get_type() {
+            HttpCertificationPathType::Exact(_) => self.tree.witness(&entry.to_tree_path()),
 
-            HttpCertificationPath::Wildcard(_) => {
-                let request_url_path = HttpCertificationPath::Exact(request_url).to_tree_path();
+            HttpCertificationPathType::Wildcard(_) => {
+                let requested_tree_path = HttpCertificationPath::exact(request_url).to_tree_path();
 
                 // For wildcards we need to prove that there is not a more specific wildcard in the tree that
                 // matches the request URL. So we step through the path and generate a witness for each subpath,
                 // with and without trailing slashes.
-                (0..request_url_path.len())
+                (0..requested_tree_path.len())
                     .flat_map(|index| {
-                        let sub_path = request_url_path[0..index].to_vec();
+                        let sub_path = requested_tree_path[0..index].to_vec();
 
                         let without_trailing_slash = [
                             sub_path.clone(),

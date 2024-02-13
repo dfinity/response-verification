@@ -16,4 +16,5 @@ serde_cbor.workspace = true
 sha2.workspace = true
 ic-http-certification = { workspace = true, features = ["serde"] }
 base64.workspace = true
+lazy_static.workspace = true
 serde_json = "1.0"

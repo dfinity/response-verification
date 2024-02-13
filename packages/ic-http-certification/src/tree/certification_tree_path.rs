@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 pub(super) type CertificationTreePathSegment = Vec<u8>;
 pub(super) type InnerTreePath = Vec<CertificationTreePathSegment>;
 
@@ -10,6 +12,12 @@ pub(super) const EXACT_PATH_TERMINATOR_BYTES: &[u8] = EXACT_PATH_TERMINATOR.as_b
 pub(super) const WILDCARD_PATH_TERMINATOR: &str = "<*>";
 pub(super) const WILDCARD_PATH_TERMINATOR_BYTES: &[u8] = WILDCARD_PATH_TERMINATOR.as_bytes();
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) enum HttpCertificationPathType<'a> {
+    Exact(Cow<'a, str>),
+    Wildcard(Cow<'a, str>),
+}
+
 /// A path to an [HttpCertification](crate::HttpCertification) in an
 /// [HttpCertificationTree](crate::HttpCertificationTree).
 ///
@@ -21,32 +29,48 @@ pub(super) const WILDCARD_PATH_TERMINATOR_BYTES: &[u8] = WILDCARD_PATH_TERMINATO
 ///
 /// - The [Wildcard](HttpCertificationPath::Wildcard) variant is used for paths that match a URL path prefix.
 /// For example, `HttpCertificationPath::Wildcard('/foo')` will match the URL paths `/foo/bar` and `/foo/baz`.
-#[derive(Debug, Clone, Copy)]
-pub enum HttpCertificationPath<'a> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HttpCertificationPath<'a>(HttpCertificationPathType<'a>);
+
+impl<'a> HttpCertificationPath<'a> {
     /// An exact path to an [HttpCertification](crate::HttpCertification) in an
     /// [HttpCertificationTree](crate::HttpCertificationTree). This path will match only
     /// [HttpRequest](crate::HttpRequest) URL paths that are exactly the same as the given path.
-    Exact(&'a str),
+    pub fn exact(path: impl Into<Cow<'a, str>>) -> Self {
+        Self(HttpCertificationPathType::Exact(path.into()))
+    }
 
     /// A wildcard path to an [HttpCertification](crate::HttpCertification) in an
     /// [HttpCertificationTree](crate::HttpCertificationTree). This path will match all
     /// [HttpRequest](crate::HttpRequest) URL paths that start with the given prefix.
-    Wildcard(&'a str),
-}
+    pub fn wildcard(path: impl Into<Cow<'a, str>>) -> Self {
+        Self(HttpCertificationPathType::Wildcard(path.into()))
+    }
 
-impl<'a> HttpCertificationPath<'a> {
-    pub(super) fn to_tree_path(self) -> InnerTreePath {
-        match self {
-            Self::Exact(path) => Self::path_to_segments(path, EXACT_PATH_TERMINATOR_BYTES),
-            Self::Wildcard(path) => Self::path_to_segments(path, WILDCARD_PATH_TERMINATOR_BYTES),
+    pub(super) fn to_tree_path(&self) -> InnerTreePath {
+        match &self.0 {
+            HttpCertificationPathType::Exact(path) => {
+                Self::path_to_segments(path.as_ref(), EXACT_PATH_TERMINATOR_BYTES)
+            }
+            HttpCertificationPathType::Wildcard(path) => {
+                Self::path_to_segments(path.as_ref(), WILDCARD_PATH_TERMINATOR_BYTES)
+            }
         }
+    }
+
+    pub(super) fn get_type(&self) -> &HttpCertificationPathType<'a> {
+        &self.0
     }
 
     /// Converts this path into a format suitable for use in the `expr_path` field of the `IC-Certificate` header.
     pub fn to_expr_path(&self) -> Vec<String> {
-        match self {
-            Self::Exact(path) => Self::path_to_string_segments(path, EXACT_PATH_TERMINATOR),
-            Self::Wildcard(path) => Self::path_to_string_segments(path, WILDCARD_PATH_TERMINATOR),
+        match &self.0 {
+            HttpCertificationPathType::Exact(path) => {
+                Self::path_to_string_segments(path.as_ref(), EXACT_PATH_TERMINATOR)
+            }
+            HttpCertificationPathType::Wildcard(path) => {
+                Self::path_to_string_segments(path.as_ref(), WILDCARD_PATH_TERMINATOR)
+            }
         }
     }
 
@@ -82,6 +106,18 @@ impl<'a> HttpCertificationPath<'a> {
         path_segments.push(terminator.to_string());
 
         path_segments
+    }
+}
+
+impl<'a> From<HttpCertificationPath<'a>> for Cow<'a, HttpCertificationPath<'a>> {
+    fn from(path: HttpCertificationPath<'a>) -> Cow<'a, HttpCertificationPath<'a>> {
+        Cow::Owned(path)
+    }
+}
+
+impl<'a> From<&'a HttpCertificationPath<'a>> for Cow<'a, HttpCertificationPath<'a>> {
+    fn from(path: &'a HttpCertificationPath<'a>) -> Cow<'a, HttpCertificationPath<'a>> {
+        Cow::Borrowed(path)
     }
 }
 
@@ -121,7 +157,7 @@ mod tests {
 
     #[apply(exact_paths)]
     fn exact_path_to_tree_path(#[case] path: &str, #[case] expected: Vec<&str>) {
-        let path = HttpCertificationPath::Exact(path);
+        let path = HttpCertificationPath::exact(path);
 
         let result = path.to_tree_path();
         let expected = expected
@@ -134,7 +170,7 @@ mod tests {
 
     #[apply(wildcard_paths)]
     fn wildcard_path_to_tree_path(#[case] path: &str, #[case] expected: Vec<&str>) {
-        let path = HttpCertificationPath::Wildcard(path);
+        let path = HttpCertificationPath::wildcard(path);
 
         let result = path.to_tree_path();
         let expected = expected
@@ -147,7 +183,7 @@ mod tests {
 
     #[apply(exact_paths)]
     fn exact_path_to_expr_path(#[case] path: &str, #[case] expected: Vec<&str>) {
-        let path = HttpCertificationPath::Exact(path);
+        let path = HttpCertificationPath::exact(path);
 
         let result = path.to_expr_path();
         let expected = [PATH_PREFIX]
@@ -161,7 +197,7 @@ mod tests {
 
     #[apply(wildcard_paths)]
     fn wildcard_path_to_expr_path(#[case] path: &str, #[case] expected: Vec<&str>) {
-        let path = HttpCertificationPath::Wildcard(path);
+        let path = HttpCertificationPath::wildcard(path);
 
         let result = path.to_expr_path();
         let expected = [PATH_PREFIX]

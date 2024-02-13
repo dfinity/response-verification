@@ -125,6 +125,27 @@ pub struct DefaultRequestCertification<'a> {
     pub query_parameters: Cow<'a, [&'a str]>,
 }
 
+impl<'a> DefaultRequestCertification<'a> {
+    /// Creates a new [DefaultRequestCertification] with the given `headers` and `query_parameters`.
+    /// This is a convenience method for creating a [DefaultRequestCertification]
+    /// without having to directly deal with the [Cow] type.
+    pub fn new(
+        headers: impl Into<Cow<'a, [&'a str]>>,
+        query_parameters: impl Into<Cow<'a, [&'a str]>>,
+    ) -> Self {
+        Self {
+            headers: headers.into(),
+            query_parameters: query_parameters.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum DefaultResponseCertificationType<'a> {
+    CertifiedResponseHeaders(Cow<'a, [&'a str]>),
+    ResponseHeaderExclusions(Cow<'a, [&'a str]>),
+}
+
 /// Options for configuring certification of a response.
 ///
 /// The response body and status code are always certified, but this struct allows configuring the
@@ -133,46 +154,36 @@ pub struct DefaultRequestCertification<'a> {
 /// and response headers may be excluded using the
 /// [ResponseHeaderExclusions](DefaultResponseCertification::ResponseHeaderExclusions) variant.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum DefaultResponseCertification<'a> {
-    /// A list of response headers to include in certification.
-    ///
-    /// As many or as little headers can be provided as desired.
-    /// Providing an empty list will result in no response headers being certified.
-    ///
-    /// See [certified_response_headers](DefaultResponseCertification::certified_response_headers())
-    /// for a more ergonomic way of doing this.
-    CertifiedResponseHeaders(Cow<'a, [&'a str]>),
-
-    /// A list of response headers to exclude from certification.
-    ///
-    /// As many or as little headers can be provided as desired.
-    /// Providing an empty list will result in all response headers being certified.
-    ///
-    /// See [response_header_exclusions](DefaultResponseCertification::response_header_exclusions())
-    /// for a more ergonomic way of doing this.
-    ResponseHeaderExclusions(Cow<'a, [&'a str]>),
-}
+pub struct DefaultResponseCertification<'a>(DefaultResponseCertificationType<'a>);
 
 impl<'a> DefaultResponseCertification<'a> {
     /// A list of response headers to include in certification.
     ///
     /// As many or as little headers can be provided as desired.
     /// Providing an empty list will result in no response headers being certified.
-    pub fn certified_response_headers(headers: &'a [&'a str]) -> Self {
-        Self::CertifiedResponseHeaders(Cow::Borrowed(headers))
+    pub fn certified_response_headers(headers: impl Into<Cow<'a, [&'a str]>>) -> Self {
+        Self(DefaultResponseCertificationType::CertifiedResponseHeaders(
+            headers.into(),
+        ))
     }
 
     /// A list of response headers to exclude from certification.
     ///
     /// As many or as little headers can be provided as desired.
     /// Providing an empty list will result in all response headers being certified.
-    pub fn response_header_exclusions(headers: &'a [&'a str]) -> Self {
-        Self::ResponseHeaderExclusions(Cow::Borrowed(headers))
+    pub fn response_header_exclusions(headers: impl Into<Cow<'a, [&'a str]>>) -> Self {
+        Self(DefaultResponseCertificationType::ResponseHeaderExclusions(
+            headers.into(),
+        ))
+    }
+
+    pub(crate) fn get_type(&self) -> &DefaultResponseCertificationType<'a> {
+        &self.0
     }
 }
 
 impl Default for DefaultResponseCertification<'_> {
     fn default() -> Self {
-        DefaultResponseCertification::CertifiedResponseHeaders(Cow::Borrowed(&[]))
+        Self::certified_response_headers(vec![])
     }
 }

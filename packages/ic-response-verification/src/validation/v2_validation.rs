@@ -171,7 +171,6 @@ mod tests {
     };
     use ic_representation_independent_hash::hash;
     use ic_response_verification_test_utils::hex_decode;
-    use std::borrow::Cow;
 
     const REQUEST_HASH: &str = "5fac69685533f0650991441a2b818e8ad5ab2fec51de8cfdbea1276135494815";
     const RESPONSE_HASH: &str = "07b7c729f4083db0e266fef3f8f5acf1315135605bf38884c07ebb59fbf91ce8";
@@ -1049,11 +1048,8 @@ mod tests {
 
     fn create_certification<'a>() -> CelExpression<'a> {
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&["Host"]),
-                query_parameters: Cow::Borrowed(&[]),
-            },
-            response: DefaultResponseCertification::certified_response_headers(&[
+            request: DefaultRequestCertification::new(vec!["Host"], vec![]),
+            response: DefaultResponseCertification::certified_response_headers(vec![
                 "Accept-Encoding",
                 "Cache-Control",
             ]),

@@ -9,6 +9,7 @@ use ic_http_certification::{
     HttpCertification, HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry,
     HttpRequest, HttpResponse,
 };
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, collections::HashMap};
 
@@ -70,11 +71,14 @@ thread_local! {
     static CEL_EXPRS: RefCell<HashMap<String, (DefaultResponseOnlyCelExpression<'static>, String)>> = RefCell::new(HashMap::new());
 }
 
-const TODOS_PATH: &str = "todos";
-const TODOS_TREE_PATH: HttpCertificationPath = HttpCertificationPath::Exact(TODOS_PATH);
-
-const NOT_FOUND_PATH: &str = "";
-const NOT_FOUND_TREE_PATH: HttpCertificationPath = HttpCertificationPath::Wildcard(NOT_FOUND_PATH);
+lazy_static! {
+    static ref TODOS_PATH: &'static str = "todos";
+    static ref TODOS_TREE_PATH: HttpCertificationPath<'static> =
+        HttpCertificationPath::exact(*TODOS_PATH);
+    static ref NOT_FOUND_PATH: &'static str = "";
+    static ref NOT_FOUND_TREE_PATH: HttpCertificationPath<'static> =
+        HttpCertificationPath::wildcard(*NOT_FOUND_PATH);
+}
 
 #[derive(Debug, Clone, Serialize)]
 struct TodoItem {
@@ -93,9 +97,9 @@ struct CreateTodoItemRequest {
 fn prepare_cel_exprs() {
     // define a response-only CEL expression that will certify the response status code and body (they are included by default) and the `content-type` response header.
     let cel_expr_def = DefaultCelBuilder::response_only_certification()
-        .with_response_certification(DefaultResponseCertification::certified_response_headers(&[
-            "content-type",
-        ]))
+        .with_response_certification(DefaultResponseCertification::certified_response_headers(
+            vec!["content-type"],
+        ))
         .build();
 
     // also pre-compute the stringified CEL expression
@@ -124,7 +128,7 @@ fn certify_list_todos_response() {
         upgrade: None,
     };
 
-    certify_response(response, TODOS_TREE_PATH, TODOS_PATH.to_string());
+    certify_response(response, &TODOS_TREE_PATH, TODOS_PATH.to_string());
 }
 
 fn certify_not_found_response() {
@@ -135,13 +139,13 @@ fn certify_not_found_response() {
         upgrade: None,
     };
 
-    certify_response(response, NOT_FOUND_TREE_PATH, NOT_FOUND_PATH.to_string());
+    certify_response(response, &NOT_FOUND_TREE_PATH, NOT_FOUND_PATH.to_string());
 }
 
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 fn certify_response(
     mut response: HttpResponse,
-    tree_path: HttpCertificationPath,
+    tree_path: &HttpCertificationPath,
     request_path: String,
 ) {
     let certification = CEL_EXPRS.with_borrow(|cel_exprs| {
@@ -171,7 +175,7 @@ fn certify_response(
 
     HTTP_TREE.with_borrow_mut(|http_tree| {
         // insert the certification into the certification tree
-        http_tree.insert(&HttpCertificationTreeEntry::new(&tree_path, &certification));
+        http_tree.insert(&HttpCertificationTreeEntry::new(tree_path, &certification));
 
         // set the canister's certified data
         set_certified_data(&http_tree.root_hash());
@@ -188,13 +192,13 @@ fn list_todo_items_handler(req: &HttpRequest) -> HttpResponse {
             certification,
             response,
         } = responses
-            .get(TODOS_PATH)
+            .get(*TODOS_PATH)
             .expect("No certified response for /todos");
         let mut response = response.clone();
 
         add_certificate_header(
             &mut response,
-            &HttpCertificationTreeEntry::new(&TODOS_TREE_PATH, &certification),
+            &HttpCertificationTreeEntry::new(&*TODOS_TREE_PATH, certification),
             &req_path,
             &TODOS_TREE_PATH.to_expr_path(),
         );
@@ -242,13 +246,13 @@ fn not_found_handler(req: &HttpRequest) -> HttpResponse {
             certification,
             response,
         } = responses
-            .get(NOT_FOUND_PATH)
+            .get(*NOT_FOUND_PATH)
             .expect("No certified response for not found");
         let mut response = response.clone();
 
         add_certificate_header(
             &mut response,
-            &HttpCertificationTreeEntry::new(&NOT_FOUND_TREE_PATH, &certification),
+            &HttpCertificationTreeEntry::new(&*NOT_FOUND_TREE_PATH, certification),
             &req_path,
             &NOT_FOUND_TREE_PATH.to_expr_path(),
         );

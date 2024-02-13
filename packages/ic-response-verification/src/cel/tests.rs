@@ -7,7 +7,6 @@ use ic_http_certification::{
     DefaultResponseCertification,
 };
 use ic_response_verification_test_utils::remove_whitespace;
-use std::borrow::Cow;
 
 #[test]
 fn parses_no_certification_expression() {
@@ -51,7 +50,7 @@ fn parses_no_request_certification_expression() {
     .to_string();
     let expected_result = CelExpression::Default(DefaultCelExpression::ResponseOnly(
         DefaultResponseOnlyCelExpression {
-            response: DefaultResponseCertification::response_header_exclusions(&[
+            response: DefaultResponseCertification::response_header_exclusions(vec![
                 "Server",
                 "Date",
                 "X-Cache-Status",
@@ -91,11 +90,8 @@ fn parses_full_certification_expression() {
     "#.to_string();
     let expected_result =
         CelExpression::Default(DefaultCelExpression::Full(DefaultFullCelExpression {
-            request: DefaultRequestCertification {
-                headers: Cow::Borrowed(&["host"]),
-                query_parameters: Cow::Borrowed(&["filter"]),
-            },
-            response: DefaultResponseCertification::response_header_exclusions(&[
+            request: DefaultRequestCertification::new(vec!["host"], vec!["filter"]),
+            response: DefaultResponseCertification::response_header_exclusions(vec![
                 "Content-Type",
                 "X-Frame-Options",
                 "Content-Security-Policy",
