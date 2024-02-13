@@ -295,7 +295,6 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
         } = content_encoding
             .and_then(|encoding| {
                 if encoding.contains("br") {
-                    ic_cdk::println!("{}.br", asset_req_path);
                     if let Some(br_response) = responses.get(&format!("{}.br", asset_req_path)) {
                         return Some(br_response);
                     }
