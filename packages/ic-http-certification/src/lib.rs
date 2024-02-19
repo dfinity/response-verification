@@ -282,7 +282,7 @@ use ic_http_certification::HttpCertificationPath;
 let path = HttpCertificationPath::Wildcard("/js");
 ```
 
-Exact paths are used to match an entire request URL. An exact path ending with a trailing slash referes to a file system directory, where as one without a trailing slash refers to an individual file. Both are separate paths within the certification tree and will be treated completely independently.
+Exact paths are used to match an entire request URL. An exact path ending with a trailing slash refers to a file system directory, where as one without a trailing slash refers to an individual file. Both are separate paths within the certification tree and will be treated completely independently.
 
 In this example, the certification entered into the tree with this path will only be valid for a request URL that is exactly `/js/example.js`.
 
