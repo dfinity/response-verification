@@ -38,7 +38,7 @@ jobs:
         run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
 
       - name: DFX prepare Certified Counter
-        working-directory: examples/certified-counter
+        working-directory: examples/certification/certified-counter
         run: |
           dfx canister create --all
           dfx generate backend
