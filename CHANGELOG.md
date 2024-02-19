@@ -2,6 +2,7 @@
 
 ### Feat
 
+- hide enums from interfaces that provide factories/constructors
 - **ic-http-certification**: add HttpCertificationTree
 
 ### Fix
