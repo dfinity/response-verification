@@ -7,7 +7,6 @@
     "build": "webpack"
   },
   "dependencies": {
-    "@dfinity/principal": "~0.15.7",
     "@dfinity/response-verification": "workspace:*"
   },
   "devDependencies": {

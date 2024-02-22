@@ -47,7 +47,7 @@ buttonElement.addEventListener('click', async event => {
   }
 
   const responseHash = await hashUInt32(count);
-  if (!equal(responseHash, treeHash)) {
+  if (!(treeHash instanceof ArrayBuffer) || !equal(responseHash, treeHash)) {
     throw new Error('Count hash does not match');
   }
 
