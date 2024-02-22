@@ -8,7 +8,7 @@ use crate::{
     },
 };
 use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
-use ic_certificate_verification::{validate_certificate_time, VerifyCertificate};
+use ic_certificate_verification::VerifyCertificate;
 use ic_certification::{hash_tree::Hash, Certificate, HashTree};
 use ic_http_certification::{
     cel::{
@@ -153,8 +153,12 @@ fn v1_verification(
         ic_public_key,
     }: V1VerificationOpts<'_>,
 ) -> ResponseVerificationResult<VerificationInfo> {
-    validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-    certificate.verify(canister_id, ic_public_key)?;
+    certificate.verify(
+        canister_id,
+        ic_public_key,
+        &current_time_ns,
+        &max_cert_time_offset_ns,
+    )?;
 
     let request_path = request.get_path()?;
     let decoded_body = decode_body(&response.body, encoding)?;
@@ -215,8 +219,12 @@ fn v2_verification(
 ) -> ResponseVerificationResult<VerificationInfo> {
     let request_path = request.get_path()?;
 
-    validate_certificate_time(&certificate, &current_time_ns, &max_cert_time_offset_ns)?;
-    certificate.verify(canister_id, ic_public_key)?;
+    certificate.verify(
+        canister_id,
+        ic_public_key,
+        &current_time_ns,
+        &max_cert_time_offset_ns,
+    )?;
 
     if !validate_tree(canister_id, &certificate, &tree) {
         return Err(ResponseVerificationError::InvalidTree);

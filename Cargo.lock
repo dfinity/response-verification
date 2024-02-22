@@ -1260,6 +1260,7 @@ dependencies = [
  "ic-certification 2.4.0",
  "ic-certification-testing",
  "ic-response-verification-test-utils",
+ "ic-types",
  "lazy_static",
  "leb128",
  "miracl_core_bls12381",

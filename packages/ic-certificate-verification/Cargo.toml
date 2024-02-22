@@ -33,6 +33,7 @@ parking_lot.workspace = true
 
 ic-certification = { workspace = true }
 ic-cbor.workspace = true
+ic-types.workspace = true
 
 [dev-dependencies]
 ic-response-verification-test-utils.workspace = true
