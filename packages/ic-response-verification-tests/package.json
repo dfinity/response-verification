@@ -2,9 +2,6 @@
   "name": "ic-response-verification-tests",
   "version": "2.4.0",
   "dependencies": {
-    "@dfinity/agent": "~0.19.3",
-    "@dfinity/principal": "~0.19.3",
-    "@dfinity/candid": "~0.19.3",
     "@dfinity/response-verification": "workspace:*",
     "isomorphic-fetch": "^3.0.0"
   },
