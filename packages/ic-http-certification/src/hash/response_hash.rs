@@ -121,7 +121,7 @@ pub fn response_hash(
     response_certification: &DefaultResponseCertification,
     response_body_hash: Option<Hash>,
 ) -> Hash {
-    let response_body_hash = response_body_hash.unwrap_or(hash(&response.body));
+    let response_body_hash = response_body_hash.unwrap_or_else(|| hash(&response.body));
 
     let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
