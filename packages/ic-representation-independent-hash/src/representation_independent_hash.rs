@@ -49,7 +49,7 @@ fn hash_value(value: &Value) -> Sha256Digest {
 }
 
 // Arrays are hashed by hashing the concatenation of the hashes of the array elements.
-fn hash_array(elements: &Vec<Value>) -> Sha256Digest {
+fn hash_array(elements: &[Value]) -> Sha256Digest {
     let mut hasher = Sha256::new();
     elements
         .iter()
