@@ -1,3 +1,13 @@
+## Unreleased
+
+### Feat
+
+- add support for hashing arrays of Value-objects
+
+### Fix
+
+- clippy
+
 ## 2.4.0 (2024-02-19)
 
 ### Feat
