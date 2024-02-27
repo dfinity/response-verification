@@ -112,12 +112,12 @@ mod tests {
         let response = HttpResponse {
             status_code: 200,
             body: vec![],
-            headers: vec![],
+            headers: vec![("IC-CertificateExpression".to_string(), cel_expr.to_string())],
             upgrade: None,
         };
         let expected_response_hash = response_hash(&response, &cel_expr.response, None);
 
-        let certification = HttpCertification::response_only(&cel_expr, &response, None);
+        let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
         let entry = HttpCertificationTreeEntry::new(&path, certification);
 
         let result = entry.to_tree_path();
@@ -159,7 +159,7 @@ mod tests {
         let response = HttpResponse {
             status_code: 200,
             body: vec![],
-            headers: vec![],
+            headers: vec![("IC-CertificateExpression".to_string(), cel_expr.to_string())],
             upgrade: None,
         };
         let expected_response_hash = response_hash(&response, &cel_expr.response, None);

@@ -1,6 +1,7 @@
 use crate::{
     request_hash, response_hash, DefaultCelBuilder, DefaultFullCelExpression,
-    DefaultResponseOnlyCelExpression, HttpCertificationResult, HttpRequest, HttpResponse,
+    DefaultResponseOnlyCelExpression, HttpCertificationError, HttpCertificationResult, HttpRequest,
+    HttpResponse,
 };
 use ic_certification::Hash;
 use ic_representation_independent_hash::hash;
@@ -51,30 +52,36 @@ impl HttpCertification {
     /// Creates a certification that includes an [HTTP response](crate::HttpResponse), but excludes the
     /// corresponding [HTTP request](crate::HttpRequest).
     pub fn response_only(
-        cel_expr: &DefaultResponseOnlyCelExpression,
+        cel_expr_def: &DefaultResponseOnlyCelExpression,
         response: &HttpResponse,
         response_body_hash: Option<Hash>,
-    ) -> HttpCertification {
-        let cel_expr_hash = hash(cel_expr.to_string().as_bytes());
-        let response_hash = response_hash(response, &cel_expr.response, response_body_hash);
+    ) -> HttpCertificationResult<HttpCertification> {
+        let cel_expr = cel_expr_def.to_string();
+        Self::validate_response(response, &cel_expr)?;
 
-        Self(HttpCertificationType::ResponseOnly {
+        let cel_expr_hash = hash(cel_expr.as_bytes());
+        let response_hash = response_hash(response, &cel_expr_def.response, response_body_hash);
+
+        Ok(Self(HttpCertificationType::ResponseOnly {
             cel_expr_hash,
             response_hash,
-        })
+        }))
     }
 
     /// Creates a certification that includes both an [HTTP response](crate::HttpResponse) and the corresponding
     /// [HTTP request](crate::HttpRequest).
     pub fn full(
-        cel_expr: &DefaultFullCelExpression,
+        cel_expr_def: &DefaultFullCelExpression,
         request: &HttpRequest,
         response: &HttpResponse,
         response_body_hash: Option<Hash>,
     ) -> HttpCertificationResult<HttpCertification> {
-        let cel_expr_hash = hash(cel_expr.to_string().as_bytes());
-        let request_hash = request_hash(request, &cel_expr.request)?;
-        let response_hash = response_hash(response, &cel_expr.response, response_body_hash);
+        let cel_expr = cel_expr_def.to_string();
+        Self::validate_response(response, &cel_expr)?;
+
+        let cel_expr_hash = hash(cel_expr.as_bytes());
+        let request_hash = request_hash(request, &cel_expr_def.request)?;
+        let response_hash = response_hash(response, &cel_expr_def.response, response_body_hash);
 
         Ok(Self(HttpCertificationType::Full {
             cel_expr_hash,
@@ -103,6 +110,44 @@ impl HttpCertification {
                 request_hash.to_vec(),
                 response_hash.to_vec(),
             ],
+        }
+    }
+
+    fn validate_response(response: &HttpResponse, cel_expr: &str) -> HttpCertificationResult {
+        let mut found_header = false;
+
+        for (header_name, header_value) in &response.headers {
+            if header_name.to_lowercase() == "ic-certificateexpression" {
+                match header_value == cel_expr {
+                    true => {
+                        if found_header {
+                            return Err(
+                                HttpCertificationError::MultipleCertificateExpressionHeaders {
+                                    expected: cel_expr.to_string(),
+                                },
+                            );
+                        }
+
+                        found_header = true;
+                    }
+                    false => {
+                        return Err(
+                            HttpCertificationError::CertificateExpressionHeaderMismatch {
+                                expected: cel_expr.to_string(),
+                                actual: header_value.clone(),
+                            },
+                        )
+                    }
+                };
+            }
+        }
+
+        if found_header {
+            Ok(())
+        } else {
+            Err(HttpCertificationError::CertificateExpressionHeaderMissing {
+                expected: cel_expr.to_string(),
+            })
         }
     }
 }
@@ -151,12 +196,12 @@ mod tests {
         let response = &HttpResponse {
             status_code: 200,
             body: vec![],
-            headers: vec![],
+            headers: vec![("IC-CertificateExpression".to_string(), cel_expr.to_string())],
             upgrade: None,
         };
         let expected_response_hash = response_hash(response, &cel_expr.response, None);
 
-        let result = HttpCertification::response_only(&cel_expr, response, None);
+        let result = HttpCertification::response_only(&cel_expr, response, None).unwrap();
 
         assert!(matches!(
             result.0,
@@ -174,6 +219,84 @@ mod tests {
                 expected_response_hash.to_vec()
             ]
         );
+    }
+
+    #[rstest]
+    fn response_only_certification_without_expression_header() {
+        let cel_expr = DefaultCelBuilder::response_only_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["ETag", "Cache-Control"],
+            ))
+            .build();
+
+        let response = &HttpResponse {
+            status_code: 200,
+            body: vec![],
+            headers: vec![],
+            upgrade: None,
+        };
+
+        let result = HttpCertification::response_only(&cel_expr, response, None).unwrap_err();
+
+        assert!(matches!(
+            result,
+            HttpCertificationError::CertificateExpressionHeaderMissing { expected } if expected == cel_expr.to_string()
+        ));
+    }
+
+    #[rstest]
+    fn response_only_certification_with_wrong_expression_header() {
+        let cel_expr = DefaultCelBuilder::response_only_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["ETag", "Cache-Control"],
+            ))
+            .build();
+        let wrong_cel_expr = DefaultCelBuilder::full_certification().build();
+
+        let response = &HttpResponse {
+            status_code: 200,
+            body: vec![],
+            headers: vec![(
+                "IC-CertificateExpression".to_string(),
+                wrong_cel_expr.to_string(),
+            )],
+            upgrade: None,
+        };
+
+        let result = HttpCertification::response_only(&cel_expr, response, None).unwrap_err();
+
+        assert!(matches!(
+            result,
+            HttpCertificationError::CertificateExpressionHeaderMismatch { expected, actual }
+                if expected == cel_expr.to_string()
+                && actual == wrong_cel_expr.to_string()
+        ));
+    }
+
+    #[rstest]
+    fn response_only_certification_with_multiple_expression_headers() {
+        let cel_expr = DefaultCelBuilder::response_only_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["ETag", "Cache-Control"],
+            ))
+            .build();
+
+        let response = &HttpResponse {
+            status_code: 200,
+            body: vec![],
+            headers: vec![
+                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+            ],
+            upgrade: None,
+        };
+
+        let result = HttpCertification::response_only(&cel_expr, response, None).unwrap_err();
+
+        assert!(matches!(
+            result,
+            HttpCertificationError::MultipleCertificateExpressionHeaders { expected } if expected == cel_expr.to_string()
+        ));
     }
 
     #[rstest]
@@ -198,7 +321,7 @@ mod tests {
         let response = &HttpResponse {
             status_code: 200,
             body: vec![],
-            headers: vec![],
+            headers: vec![("IC-CertificateExpression".to_string(), cel_expr.to_string())],
             upgrade: None,
         };
         let expected_response_hash = response_hash(response, &cel_expr.response, None);
@@ -223,5 +346,110 @@ mod tests {
                 expected_response_hash.to_vec()
             ]
         );
+    }
+
+    #[rstest]
+    fn full_certification_without_expression_header() {
+        let cel_expr = DefaultCelBuilder::full_certification()
+            .with_request_headers(vec!["If-Match"])
+            .with_request_query_parameters(vec!["foo", "bar", "baz"])
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["ETag", "Cache-Control"],
+            ))
+            .build();
+
+        let request = &HttpRequest {
+            body: vec![],
+            headers: vec![],
+            method: "GET".to_string(),
+            url: "/index.html".to_string(),
+        };
+
+        let response = &HttpResponse {
+            status_code: 200,
+            body: vec![],
+            headers: vec![],
+            upgrade: None,
+        };
+
+        let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();
+
+        assert!(matches!(
+            result,
+            HttpCertificationError::CertificateExpressionHeaderMissing { expected } if expected == cel_expr.to_string()
+        ));
+    }
+
+    #[rstest]
+    fn full_certification_with_wrong_expression_header() {
+        let cel_expr = DefaultCelBuilder::full_certification()
+            .with_request_headers(vec!["If-Match"])
+            .with_request_query_parameters(vec!["foo", "bar", "baz"])
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["ETag", "Cache-Control"],
+            ))
+            .build();
+        let wrong_cel_expr = DefaultCelBuilder::response_only_certification().build();
+
+        let request = &HttpRequest {
+            body: vec![],
+            headers: vec![],
+            method: "GET".to_string(),
+            url: "/index.html".to_string(),
+        };
+
+        let response = &HttpResponse {
+            status_code: 200,
+            body: vec![],
+            headers: vec![(
+                "IC-CertificateExpression".to_string(),
+                wrong_cel_expr.to_string(),
+            )],
+            upgrade: None,
+        };
+
+        let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();
+
+        assert!(matches!(
+            result,
+            HttpCertificationError::CertificateExpressionHeaderMismatch { expected, actual }
+                if expected == cel_expr.to_string()
+                && actual == wrong_cel_expr.to_string()
+        ));
+    }
+
+    #[rstest]
+    fn full_certification_with_multiple_expression_headers() {
+        let cel_expr = DefaultCelBuilder::full_certification()
+            .with_request_headers(vec!["If-Match"])
+            .with_request_query_parameters(vec!["foo", "bar", "baz"])
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["ETag", "Cache-Control"],
+            ))
+            .build();
+
+        let request = &HttpRequest {
+            body: vec![],
+            headers: vec![],
+            method: "GET".to_string(),
+            url: "/index.html".to_string(),
+        };
+
+        let response = &HttpResponse {
+            status_code: 200,
+            body: vec![],
+            headers: vec![
+                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+            ],
+            upgrade: None,
+        };
+
+        let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();
+
+        assert!(matches!(
+            result,
+            HttpCertificationError::MultipleCertificateExpressionHeaders { expected } if expected == cel_expr.to_string()
+        ));
     }
 }
