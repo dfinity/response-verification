@@ -25,7 +25,7 @@ mod tests {
         let req_path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
 
         let request = HttpRequest {
             url: req_path.into(),
@@ -92,7 +92,7 @@ mod tests {
         let req_path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
 
         let request = HttpRequest {
             url: req_path.into(),
@@ -161,7 +161,7 @@ mod tests {
         let req_path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certification_path = HttpCertificationPath::Exact("");
+        let certification_path = HttpCertificationPath::exact("");
 
         let request = HttpRequest {
             url: req_path.into(),
@@ -222,9 +222,9 @@ mod tests {
     }
 
     #[rstest]
-    #[case::does_not_exist_in_tree(HttpCertificationPath::Wildcard("/assets/css"))]
-    #[case::more_specific_path_exists_in_tree(HttpCertificationPath::Wildcard("/assets"))]
-    #[case::does_not_match_request_url(HttpCertificationPath::Exact("/assets/js/dashboard.js"))]
+    #[case::does_not_exist_in_tree(HttpCertificationPath::wildcard("/assets/css"))]
+    #[case::more_specific_path_exists_in_tree(HttpCertificationPath::wildcard("/assets"))]
+    #[case::does_not_match_request_url(HttpCertificationPath::exact("/assets/js/dashboard.js"))]
     fn invalid_expr_path_fails_verification(
         #[from(skip_certification_cel)] cel_expr: CelExpression<'static>,
         #[case] certification_path: HttpCertificationPath,
@@ -248,15 +248,15 @@ mod tests {
         let certification = HttpCertification::skip();
         let mut certification_tree = HttpCertificationTree::default();
         certification_tree.insert(&HttpCertificationTreeEntry::new(
-            &HttpCertificationPath::Wildcard("/assets"),
+            &HttpCertificationPath::wildcard("/assets"),
             &certification,
         ));
         certification_tree.insert(&HttpCertificationTreeEntry::new(
-            &HttpCertificationPath::Wildcard("/assets/js"),
+            &HttpCertificationPath::wildcard("/assets/js"),
             &certification,
         ));
         certification_tree.insert(&HttpCertificationTreeEntry::new(
-            &HttpCertificationPath::Exact("/assets/js/dashboard.js"),
+            &HttpCertificationPath::exact("/assets/js/dashboard.js"),
             &certification,
         ));
 
@@ -392,10 +392,10 @@ mod fixtures {
     #[fixture]
     pub fn full_certification_cel() -> DefaultFullCelExpression<'static> {
         DefaultCelBuilder::full_certification()
-            .with_request_headers(&["Cache-Control"])
-            .with_request_query_parameters(&["q"])
+            .with_request_headers(vec!["Cache-Control"])
+            .with_request_query_parameters(vec!["q"])
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &["Cache-Control"],
+                vec!["Cache-Control"],
             ))
             .build()
     }
@@ -408,7 +408,7 @@ mod fixtures {
     pub fn invalid_root_key_certificate() -> (V2Fixture, u128, String) {
         let cel_expr = skip_certification_cel().to_string();
         let req_path = "/";
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
         let current_time = get_current_timestamp();
         let certification = HttpCertification::skip();
         let certification_tree_entry =
@@ -431,7 +431,7 @@ mod fixtures {
     pub fn expired_certificate() -> (V2Fixture, u128, String) {
         let cel_expr = skip_certification_cel().to_string();
         let req_path = "/";
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
         let current_time = get_current_timestamp();
         let certification = HttpCertification::skip();
         let certification_tree_entry =
@@ -451,7 +451,7 @@ mod fixtures {
     pub fn future_certificate() -> (V2Fixture, u128, String) {
         let cel_expr = skip_certification_cel().to_string();
         let req_path = "/";
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
         let current_time = get_current_timestamp();
         let certification = HttpCertification::skip();
         let certification_tree_entry =
@@ -471,7 +471,7 @@ mod fixtures {
     pub fn wrong_canister_certificate() -> (V2Fixture, u128, String) {
         let cel_expr = skip_certification_cel().to_string();
         let req_path = "/";
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
         let other_canister_id = CanisterId::from_u64(15);
         let current_time = get_current_timestamp();
         let certification = HttpCertification::skip();

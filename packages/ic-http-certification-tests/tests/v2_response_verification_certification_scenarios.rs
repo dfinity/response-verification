@@ -198,17 +198,17 @@ mod tests {
     #[case::etag_match(
         etag_caching_match_request(),
         etag_caching_match_response(),
-        etag_caching_match_certification(&HttpCertificationPath::Exact("/app"))
+        etag_caching_match_certification(HttpCertificationPath::exact("/app"))
     )]
     #[case::etag_match_mismatch_response(
         etag_caching_match_request(),
         etag_caching_mismatch_response(),
-        etag_caching_mismatch_certification(&HttpCertificationPath::Exact("/app"))
+        etag_caching_mismatch_certification(HttpCertificationPath::exact("/app"))
     )]
     #[case::etag_match_mismatch_response(
         etag_caching_mismatch_request(),
         etag_caching_mismatch_response(),
-        etag_caching_mismatch_certification(&HttpCertificationPath::Exact("/app"))
+        etag_caching_mismatch_certification(HttpCertificationPath::exact("/app"))
     )]
     fn etag_scenarios_pass_verification(
         #[from(etag_certificate_tree)] certification_tree: HttpCertificationTree,
@@ -274,7 +274,7 @@ mod tests {
     ) {
         let req_path = "/app";
         let http_certification_tree_entry =
-            etag_caching_match_certification(&HttpCertificationPath::Exact("/app"));
+            etag_caching_match_certification(HttpCertificationPath::exact("/app"));
         let current_time = get_current_timestamp();
 
         let V2CertificateFixture {
@@ -318,7 +318,6 @@ mod fixtures {
     };
     use ic_response_verification_test_utils::{deflate_encode, gzip_encode, hash};
     use rstest::*;
-    use std::borrow::Cow;
 
     pub const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000;
     pub const MIN_REQUESTED_VERIFICATION_VERSION: u8 = 2;
@@ -346,14 +345,10 @@ mod fixtures {
 
     #[fixture]
     pub fn index_html_certification() -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(&HttpCertificationPath::Wildcard("")),
-            certification: Cow::Owned(HttpCertification::response_only(
-                &asset_cel(),
-                &index_html_response(),
-                None,
-            )),
-        }
+        HttpCertificationTreeEntry::new(
+            HttpCertificationPath::wildcard(""),
+            HttpCertification::response_only(&asset_cel(), &index_html_response(), None),
+        )
     }
 
     #[fixture]
@@ -375,14 +370,10 @@ mod fixtures {
 
     #[fixture]
     pub fn index_js_certification() -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(&HttpCertificationPath::Exact("/js/index.js")),
-            certification: Cow::Owned(HttpCertification::response_only(
-                &asset_cel(),
-                &index_js_response(),
-                None,
-            )),
-        }
+        HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact("/js/index.js"),
+            HttpCertification::response_only(&asset_cel(), &index_js_response(), None),
+        )
     }
 
     #[fixture]
@@ -404,14 +395,10 @@ mod fixtures {
 
     #[fixture]
     pub fn not_found_certification() -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(&HttpCertificationPath::Wildcard("/js")),
-            certification: Cow::Owned(HttpCertification::response_only(
-                &asset_cel(),
-                &not_found_response(),
-                None,
-            )),
-        }
+        HttpCertificationTreeEntry::new(
+            HttpCertificationPath::wildcard("/js"),
+            HttpCertification::response_only(&asset_cel(), &not_found_response(), None),
+        )
     }
 
     #[fixture]
@@ -432,14 +419,10 @@ mod fixtures {
 
     #[fixture]
     pub fn redirect_certification() -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(&HttpCertificationPath::Exact("/old-path")),
-            certification: Cow::Owned(HttpCertification::response_only(
-                &redirect_cel(),
-                &redirect_response(),
-                None,
-            )),
-        }
+        HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact("/old-path"),
+            HttpCertification::response_only(&redirect_cel(), &redirect_response(), None),
+        )
     }
 
     #[fixture]
@@ -460,14 +443,14 @@ mod fixtures {
 
     #[fixture]
     pub fn content_encoding_identity_certification() -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(&HttpCertificationPath::Exact("/multi-encoded-path")),
-            certification: Cow::Owned(HttpCertification::response_only(
+        HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact("/multi-encoded-path"),
+            HttpCertification::response_only(
                 &asset_cel(),
                 &content_encoding_identity_response(),
                 None,
-            )),
-        }
+            ),
+        )
     }
 
     #[fixture]
@@ -488,14 +471,10 @@ mod fixtures {
 
     #[fixture]
     pub fn content_encoding_gzip_certification() -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(&HttpCertificationPath::Exact("/multi-encoded-path")),
-            certification: Cow::Owned(HttpCertification::response_only(
-                &asset_cel(),
-                &content_encoding_gzip_response(),
-                None,
-            )),
-        }
+        HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact("/multi-encoded-path"),
+            HttpCertification::response_only(&asset_cel(), &content_encoding_gzip_response(), None),
+        )
     }
 
     #[fixture]
@@ -516,14 +495,14 @@ mod fixtures {
 
     #[fixture]
     pub fn content_encoding_deflate_certification() -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(&HttpCertificationPath::Exact("/multi-encoded-path")),
-            certification: Cow::Owned(HttpCertification::response_only(
+        HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact("/multi-encoded-path"),
+            HttpCertification::response_only(
                 &asset_cel(),
                 &content_encoding_deflate_response(),
                 None,
-            )),
-        }
+            ),
+        )
     }
 
     #[fixture]
@@ -561,20 +540,18 @@ mod fixtures {
 
     #[fixture]
     pub fn etag_caching_match_certification(
-        #[default(&HttpCertificationPath::Exact(""))] path: &'static HttpCertificationPath,
+        #[default(HttpCertificationPath::exact(""))] path: HttpCertificationPath<'static>,
     ) -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(path),
-            certification: Cow::Owned(
-                HttpCertification::full(
-                    &etag_caching_match_cel(),
-                    &etag_caching_match_request(),
-                    &etag_caching_match_response(),
-                    None,
-                )
-                .unwrap(),
-            ),
-        }
+        HttpCertificationTreeEntry::new(
+            path,
+            HttpCertification::full(
+                &etag_caching_match_cel(),
+                &etag_caching_match_request(),
+                &etag_caching_match_response(),
+                None,
+            )
+            .unwrap(),
+        )
     }
 
     #[fixture]
@@ -614,23 +591,23 @@ mod fixtures {
 
     #[fixture]
     pub fn etag_caching_mismatch_certification(
-        #[default(&HttpCertificationPath::Exact(""))] path: &'static HttpCertificationPath,
+        #[default(HttpCertificationPath::exact(""))] path: HttpCertificationPath<'static>,
     ) -> HttpCertificationTreeEntry<'static> {
-        HttpCertificationTreeEntry {
-            path: Cow::Borrowed(path),
-            certification: Cow::Owned(HttpCertification::response_only(
+        HttpCertificationTreeEntry::new(
+            path,
+            HttpCertification::response_only(
                 &etag_caching_mismatch_cel(),
                 &etag_caching_mismatch_response(),
                 None,
-            )),
-        }
+            ),
+        )
     }
 
     #[fixture]
     pub fn asset_cel() -> DefaultResponseOnlyCelExpression<'static> {
         DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &["Content-Type", "Content-Encoding"],
+                vec!["Content-Type", "Content-Encoding"],
             ))
             .build()
     }
@@ -639,7 +616,7 @@ mod fixtures {
     pub fn redirect_cel() -> DefaultResponseOnlyCelExpression<'static> {
         DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &["Location"],
+                vec!["Location"],
             ))
             .build()
     }
@@ -647,9 +624,9 @@ mod fixtures {
     #[fixture]
     pub fn etag_caching_match_cel() -> DefaultFullCelExpression<'static> {
         DefaultCelBuilder::full_certification()
-            .with_request_headers(&["If-None-Match"])
+            .with_request_headers(vec!["If-None-Match"])
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &["Content-Type", "Content-Encoding", "ETag"],
+                vec!["Content-Type", "Content-Encoding", "ETag"],
             ))
             .build()
     }
@@ -658,7 +635,7 @@ mod fixtures {
     pub fn etag_caching_mismatch_cel() -> DefaultResponseOnlyCelExpression<'static> {
         DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &["Content-Type", "Content-Encoding", "ETag"],
+                vec!["Content-Type", "Content-Encoding", "ETag"],
             ))
             .build()
     }
@@ -683,16 +660,16 @@ mod fixtures {
         let mut http_certification_tree = HttpCertificationTree::default();
 
         http_certification_tree.insert(&etag_caching_match_certification(
-            &HttpCertificationPath::Exact("/app"),
+            HttpCertificationPath::exact("/app"),
         ));
         http_certification_tree.insert(&etag_caching_match_certification(
-            &HttpCertificationPath::Exact("/app/"),
+            HttpCertificationPath::exact("/app/"),
         ));
         http_certification_tree.insert(&etag_caching_mismatch_certification(
-            &HttpCertificationPath::Exact("/app"),
+            HttpCertificationPath::exact("/app"),
         ));
         http_certification_tree.insert(&etag_caching_mismatch_certification(
-            &HttpCertificationPath::Exact("/app/"),
+            HttpCertificationPath::exact("/app/"),
         ));
 
         http_certification_tree

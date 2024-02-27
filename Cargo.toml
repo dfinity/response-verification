@@ -29,6 +29,7 @@ default-members = [
     "packages/ic-certificate-verification",
     "packages/ic-certification-testing",
     "packages/ic-http-certification",
+    "packages/ic-http-certification-tests",
     "packages/ic-representation-independent-hash",
     "packages/ic-response-verification",
     "packages/ic-response-verification-test-utils",

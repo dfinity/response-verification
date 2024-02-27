@@ -328,7 +328,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
 }
 ```
 
-Lastly, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file, notably by using `HttpCertificationPath::Wildcard` instead of `HttpCertificationPath::Exact`.
+Lastly, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file, notably by using `HttpCertificationPath::wildcard()` instead of `HttpCertificationPath::exact()`.
 
 This will allow the canister to return this file for any path that does not exactly match an existing path in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
 
