@@ -14,4 +14,28 @@ pub enum HttpCertificationError {
     /// Error converting UTF-8 string.
     #[error(r#"Error converting UTF8 string bytes: "{0}""#)]
     Utf8ConversionError(#[from] std::string::FromUtf8Error),
+
+    /// The `IC-CertificateExpression` header in a response did not match the Cel expression used to certify the [HttpResponse](crate::HttpResponse).
+    #[error(r#"The IC-CertificateExpression header in the response did not match the Cel expression used to certify the response. Expected: "{expected}", Actual: "{actual}""#)]
+    CertificateExpressionHeaderMismatch {
+        /// The expected value of the `IC-CertificateExpression` header. This is the Cel expression used to certify the [HttpResponse](crate::HttpResponse).
+        expected: String,
+
+        /// The actual value of the `IC-CertificateExpression` header.
+        actual: String,
+    },
+
+    /// The `IC-CertificateExpression header` was missing from the [HttpResponse](crate::HttpResponse).
+    #[error(r#"The IC-CertificateExpression header was missing from the response. Expected: "{expected}""#)]
+    CertificateExpressionHeaderMissing {
+        /// The expected value of the `IC-CertificateExpression` header. This is the Cel expression used to certify the [HttpResponse](crate::HttpResponse).
+        expected: String,
+    },
+
+    /// The `IC-CertificateExpression` header in a response contained multiple values.
+    #[error(r#"The IC-CertificateExpression header in the response contained multiple values. Expected only one: "{expected}""#)]
+    MultipleCertificateExpressionHeaders {
+        /// The expected value of the `IC-CertificateExpression` header. This is the Cel expression used to certify the [HttpResponse](crate::HttpResponse).
+        expected: String,
+    },
 }

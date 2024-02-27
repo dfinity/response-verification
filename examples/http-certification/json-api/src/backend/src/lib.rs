@@ -159,7 +159,7 @@ fn certify_response(
         ));
 
         // create the certification for this response and CEL expression pair
-        HttpCertification::response_only(cel_expr_def, &response, None)
+        HttpCertification::response_only(cel_expr_def, &response, None).unwrap()
     });
 
     RESPONSES.with_borrow_mut(|responses| {

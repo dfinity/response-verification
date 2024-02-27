@@ -246,7 +246,7 @@ fn certify_asset_response(
 
         // certify the response
         let certification =
-            HttpCertification::response_only(cel_expr_def, &response.clone().into(), None);
+            HttpCertification::response_only(cel_expr_def, &response.clone().into(), None).unwrap();
 
         RESPONSES.with_borrow_mut(|responses| {
             // store the response for later retrieval
