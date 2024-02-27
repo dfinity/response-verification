@@ -19,7 +19,7 @@ mod tests {
         let req_path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
         let cel_expr = DefaultCelBuilder::skip_certification();
 
         let request = HttpRequest {
@@ -77,11 +77,11 @@ mod tests {
         let req_path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
 
         let cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &["Cache-Control"],
+                vec!["Cache-Control"],
             ))
             .build();
 
@@ -146,13 +146,13 @@ mod tests {
         let req_path = "/?q=greeting";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let certification_path = HttpCertificationPath::Exact("/");
+        let certification_path = HttpCertificationPath::exact("/");
 
         let cel_expr = DefaultCelBuilder::full_certification()
-            .with_request_headers(&["Cache-Control"])
-            .with_request_query_parameters(&["q"])
+            .with_request_headers(vec!["Cache-Control"])
+            .with_request_query_parameters(vec!["q"])
             .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                &["Cache-Control"],
+                vec!["Cache-Control"],
             ))
             .build();
 
@@ -220,11 +220,11 @@ mod tests {
         let req_path = "/";
         let body = "Hello World!";
         let current_time = get_current_timestamp();
-        let expr_path = HttpCertificationPath::Exact("/");
+        let expr_path = HttpCertificationPath::exact("/");
 
         let cel_expr = DefaultCelBuilder::response_only_certification()
             .with_response_certification(DefaultResponseCertification::response_header_exclusions(
-                &["Content-Language", "Content-Encoding"],
+                vec!["Content-Language", "Content-Encoding"],
             ))
             .build();
 

@@ -270,9 +270,9 @@ let certification = HttpCertification::skip();
 
 ### Defining tree paths
 
-Paths for the tree can be defined using the [HttpCertificationPath] enum and come in two types - [Wildcard](HttpCertificationPath::Wildcard) and [Exact](HttpCertificationPath::Exact). Both types of paths may end with or without a trailing slash but note that a path ending in a trailing slash is a distinct path from one that does not end with a trailing slash and they will be treated as such by the tree.
+Paths for the tree can be defined using the [HttpCertificationPath] struct and come in two types - [Wildcard](HttpCertificationPath::wildcard()) and [Exact](HttpCertificationPath::exact()). Both types of paths may end with or without a trailing slash but note that a path ending in a trailing slash is a distinct path from one that does not end with a trailing slash and they will be treated as such by the tree.
 
-Wildcard paths can be used to match a sub-path of a request URL. This can be useful for 404 responses, fallbacks or rewrites. They are defined using the [Wildcard](HttpCertificationPath::Wildcard) variant.
+Wildcard paths can be used to match a sub-path of a request URL. This can be useful for 404 responses, fallbacks or rewrites. They are defined using the [Wildcard](HttpCertificationPath::wildcard()) associated function.
 
 In this example, the certification entered into the tree with this path will be valid for any request URL that begins with `/js`, unless there is a more specific path in the tree (ex. `/js/example.js` or `/js/example`).
 
