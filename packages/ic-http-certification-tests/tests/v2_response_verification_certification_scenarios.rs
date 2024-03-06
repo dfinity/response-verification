@@ -73,7 +73,11 @@ mod tests {
         let certificate_header = create_v2_header(
             &certification_tree_entry,
             &certificate_cbor,
-            &cbor_encode(&certification_tree.witness(&certification_tree_entry, req_path)),
+            &cbor_encode(
+                &certification_tree
+                    .witness(&certification_tree_entry, req_path)
+                    .unwrap(),
+            ),
         );
 
         let expected_certified_response = VerifiedResponse {
@@ -171,7 +175,11 @@ mod tests {
         let certificate_header = create_v2_header(
             &certification_tree_entry,
             &certificate_cbor,
-            &cbor_encode(&certification_tree.witness(&certification_tree_entry, req_path)),
+            &cbor_encode(
+                &certification_tree
+                    .witness(&certification_tree_entry, req_path)
+                    .unwrap(),
+            ),
         );
 
         expected_response
@@ -227,7 +235,11 @@ mod tests {
         let certificate_header = create_v2_header(
             &certification_tree_entry,
             &certificate_cbor,
-            &cbor_encode(&certification_tree.witness(&certification_tree_entry, req_path)),
+            &cbor_encode(
+                &certification_tree
+                    .witness(&certification_tree_entry, req_path)
+                    .unwrap(),
+            ),
         );
 
         let expected_certified_response = VerifiedResponse {
@@ -285,7 +297,11 @@ mod tests {
         let certificate_header = create_v2_header(
             &http_certification_tree_entry,
             &certificate_cbor,
-            &cbor_encode(&certification_tree.witness(&http_certification_tree_entry, req_path)),
+            &cbor_encode(
+                &certification_tree
+                    .witness(&http_certification_tree_entry, req_path)
+                    .unwrap(),
+            ),
         );
 
         expected_response
@@ -347,7 +363,7 @@ mod fixtures {
     pub fn index_html_certification() -> HttpCertificationTreeEntry<'static> {
         HttpCertificationTreeEntry::new(
             HttpCertificationPath::wildcard(""),
-            HttpCertification::response_only(&asset_cel(), &index_html_response(), None),
+            HttpCertification::response_only(&asset_cel(), &index_html_response(), None).unwrap(),
         )
     }
 
@@ -372,7 +388,7 @@ mod fixtures {
     pub fn index_js_certification() -> HttpCertificationTreeEntry<'static> {
         HttpCertificationTreeEntry::new(
             HttpCertificationPath::exact("/js/index.js"),
-            HttpCertification::response_only(&asset_cel(), &index_js_response(), None),
+            HttpCertification::response_only(&asset_cel(), &index_js_response(), None).unwrap(),
         )
     }
 
@@ -397,7 +413,7 @@ mod fixtures {
     pub fn not_found_certification() -> HttpCertificationTreeEntry<'static> {
         HttpCertificationTreeEntry::new(
             HttpCertificationPath::wildcard("/js"),
-            HttpCertification::response_only(&asset_cel(), &not_found_response(), None),
+            HttpCertification::response_only(&asset_cel(), &not_found_response(), None).unwrap(),
         )
     }
 
@@ -421,7 +437,7 @@ mod fixtures {
     pub fn redirect_certification() -> HttpCertificationTreeEntry<'static> {
         HttpCertificationTreeEntry::new(
             HttpCertificationPath::exact("/old-path"),
-            HttpCertification::response_only(&redirect_cel(), &redirect_response(), None),
+            HttpCertification::response_only(&redirect_cel(), &redirect_response(), None).unwrap(),
         )
     }
 
@@ -449,7 +465,8 @@ mod fixtures {
                 &asset_cel(),
                 &content_encoding_identity_response(),
                 None,
-            ),
+            )
+            .unwrap(),
         )
     }
 
@@ -473,7 +490,8 @@ mod fixtures {
     pub fn content_encoding_gzip_certification() -> HttpCertificationTreeEntry<'static> {
         HttpCertificationTreeEntry::new(
             HttpCertificationPath::exact("/multi-encoded-path"),
-            HttpCertification::response_only(&asset_cel(), &content_encoding_gzip_response(), None),
+            HttpCertification::response_only(&asset_cel(), &content_encoding_gzip_response(), None)
+                .unwrap(),
         )
     }
 
@@ -501,7 +519,8 @@ mod fixtures {
                 &asset_cel(),
                 &content_encoding_deflate_response(),
                 None,
-            ),
+            )
+            .unwrap(),
         )
     }
 
@@ -599,7 +618,8 @@ mod fixtures {
                 &etag_caching_mismatch_cel(),
                 &etag_caching_mismatch_response(),
                 None,
-            ),
+            )
+            .unwrap(),
         )
     }
 

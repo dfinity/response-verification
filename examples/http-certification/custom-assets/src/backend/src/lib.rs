@@ -349,8 +349,11 @@ fn add_certificate_header(
     expr_path: &[String],
 ) {
     let certified_data = data_certificate().expect("No data certificate available");
-    let witness =
-        HTTP_TREE.with_borrow(|http_tree| cbor_encode(&http_tree.witness(entry, request_url)));
+    let witness = HTTP_TREE.with_borrow(|http_tree| {
+        let witness = http_tree.witness(entry, request_url).unwrap();
+
+        cbor_encode(&witness)
+    });
     let expr_path = cbor_encode(&expr_path);
 
     response.headers.push((

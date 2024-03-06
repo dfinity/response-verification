@@ -15,6 +15,16 @@ pub enum HttpCertificationError {
     #[error(r#"Error converting UTF8 string bytes: "{0}""#)]
     Utf8ConversionError(#[from] std::string::FromUtf8Error),
 
+    /// Error converting bytes to string.
+    #[error(r#"Wildcard path "{wildcard_path}" is too specific for request path "{request_path}", use a less specific wildcard path"#)]
+    WildcardPathNotValidForRequestPath {
+        /// The wildcard path that was not valid for the request path.
+        wildcard_path: String,
+
+        /// The request path that was not valid for the wildcard path.
+        request_path: String,
+    },
+
     /// The `IC-CertificateExpression` header in a response did not match the Cel expression used to certify the [HttpResponse](crate::HttpResponse).
     #[error(r#"The IC-CertificateExpression header in the response did not match the Cel expression used to certify the response. Expected: "{expected}", Actual: "{actual}""#)]
     CertificateExpressionHeaderMismatch {
