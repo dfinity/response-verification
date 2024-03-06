@@ -16,7 +16,7 @@ pub fn create_v2_tree_fixture(
     tree.insert(certification_tree_entry);
 
     let certified_data = tree.root_hash();
-    let witness = tree.witness(certification_tree_entry, req_path);
+    let witness = tree.witness(certification_tree_entry, req_path).unwrap();
     let tree_cbor = cbor_encode(&witness);
 
     V2TreeFixture {

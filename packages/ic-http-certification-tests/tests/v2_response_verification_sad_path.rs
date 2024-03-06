@@ -176,10 +176,7 @@ mod tests {
             status_code: 200,
             body: body.as_bytes().to_vec(),
             headers: vec![
-                (
-                    "IC-CertificateExpression".into(),
-                    wrong_cel_expr.to_string(),
-                ),
+                ("IC-CertificateExpression".into(), cel_expr.to_string()),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ],
             upgrade: None,
@@ -204,6 +201,13 @@ mod tests {
         response
             .headers
             .push(("IC-Certificate".into(), certificate_header));
+        let _ = std::mem::replace(
+            &mut response.headers[0],
+            (
+                "IC-CertificateExpression".into(),
+                wrong_cel_expr.to_string(),
+            ),
+        );
 
         let result = verify_request_response_pair(
             request,
@@ -263,7 +267,9 @@ mod tests {
         let certification_tree_entry =
             HttpCertificationTreeEntry::new(&certification_path, &certification);
         let certified_data = certification_tree.root_hash();
-        let witness = certification_tree.witness(&certification_tree_entry, req_path);
+        let witness = certification_tree
+            .witness(&certification_tree_entry, req_path)
+            .unwrap();
         let tree_cbor = cbor_encode(&witness);
         let V2CertificateFixture {
             root_key,

@@ -101,7 +101,7 @@ mod tests {
             upgrade: None,
         };
 
-        let certification = HttpCertification::response_only(&cel_expr, &response, None);
+        let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
         let certification_tree_entry =
             HttpCertificationTreeEntry::new(&certification_path, &certification);
 
@@ -247,7 +247,7 @@ mod tests {
             upgrade: None,
         };
 
-        let certification = HttpCertification::response_only(&cel_expr, &response, None);
+        let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
         let certification_tree_entry = HttpCertificationTreeEntry::new(&expr_path, &certification);
 
         let V2Fixture {

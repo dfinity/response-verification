@@ -190,8 +190,10 @@ fn add_certificate_header(
     let certified_data = data_certificate().expect("No data certificate available");
 
     // generate a witness for the certification entry and current request URL
-    let witness =
-        HTTP_TREE.with_borrow(|http_tree| cbor_encode(&http_tree.witness(entry, request_url)));
+    let witness = HTTP_TREE.with_borrow(|http_tree| {
+        let witness = http_tree.witness(entry, request_url).unwrap();
+        cbor_encode(&witness)
+    });
 
     // encode the path in the tree that holds the certification
     let expr_path = cbor_encode(&expr_path);
