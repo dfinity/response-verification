@@ -2,10 +2,15 @@
 
 ### Feat
 
+- **ic-http-certification**: add certificate expression header validation
+- **certificate-verification-js**: update agent-js and associated packages to v1.0.1
+- **ic-certificate-verification**: consolidate certification time check into overall cerificate verification check
 - add support for hashing arrays of Value-objects
 
 ### Fix
 
+- **ic-http-certification**: incorrect witness generation
+- **ic-http-certification**: only calculate response body hash when necessary
 - clippy
 
 ## 2.4.0 (2024-02-19)
