@@ -1,6 +1,6 @@
 {
   "name": "ic-response-verification-tests",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "dependencies": {
     "@dfinity/response-verification": "workspace:*",
     "isomorphic-fetch": "^3.0.0"

@@ -1,7 +1,7 @@
 {
   "name": "@dfinity/response-verification",
   "description": "Client side response verification for the Internet Computer",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "author": "DFINITY Stiftung",
   "license": "Apache-2.0",
   "repository": "github:dfinity/response-verification",
