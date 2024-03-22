@@ -1,3 +1,9 @@
+## Unreleased
+
+### Fix
+
+- **ic-certificate-verification**: redundant dependency
+
 ## 2.5.0 (2024-03-19)
 
 ### Feat
