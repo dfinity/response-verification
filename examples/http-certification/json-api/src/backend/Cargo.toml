@@ -1,5 +1,5 @@
 [package]
-name = "http_certification_backend"
+name = "http_certification_json_api_backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -18,3 +18,4 @@ ic-http-certification = { workspace = true, features = ["serde"] }
 base64.workspace = true
 lazy_static.workspace = true
 serde_json = "1.0"
+matchit = "0.8"

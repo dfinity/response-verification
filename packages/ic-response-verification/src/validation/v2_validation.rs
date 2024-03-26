@@ -1,3 +1,4 @@
+use crate::{ResponseVerificationError, ResponseVerificationResult};
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Hash, HashTree, Label, SubtreeLookupResult};
 use ic_http_certification::cel::DefaultCelExpression;
@@ -26,10 +27,13 @@ fn is_wildcard_path_valid_for_request_path(
     wildcard_path: &[Label],
     request_path: &[Label],
 ) -> bool {
+    // request_path must be a superset of wildcard_path
     if request_path.starts_with(wildcard_path) {
         return true;
     }
 
+    // if the wildcard path includes a trailing slash then remove it and try the same check again
+    // request paths will not include trailing slashes between path elements
     if wildcard_path.ends_with(&["".into()]) {
         return request_path.starts_with(&wildcard_path[..wildcard_path.len() - 1]);
     }
@@ -41,10 +45,25 @@ fn expr_path_has_valid_suffix(expr_path: &[String]) -> bool {
     expr_path.ends_with(&["<$>".to_string()]) || expr_path.ends_with(&["<*>".to_string()])
 }
 
-pub fn validate_expr_path(expr_path: &[String], request_path: &str, tree: &HashTree) -> bool {
-    // if a path does not end with a valid delimiter then it is invalid
+fn expr_path_has_valid_prefix(expr_path: &[String]) -> bool {
+    expr_path.starts_with(&["http_expr".to_string()])
+}
+
+pub fn validate_expr_path(
+    expr_path: &[String],
+    request_path: &str,
+    tree: &HashTree,
+) -> ResponseVerificationResult {
+    if !expr_path_has_valid_prefix(expr_path) {
+        return Err(ResponseVerificationError::UnexpectedExpressionPathPrefix {
+            provided_expr_path: expr_path.to_vec(),
+        });
+    }
+
     if !expr_path_has_valid_suffix(expr_path) {
-        return false;
+        return Err(ResponseVerificationError::UnexpectedExpressionPathSuffix {
+            provided_expr_path: expr_path.to_vec(),
+        });
     }
 
     let mut request_url_parts = vec!["http_expr"];
@@ -58,38 +77,68 @@ pub fn validate_expr_path(expr_path: &[String], request_path: &str, tree: &HashT
     }
 
     let original_path = path_from_parts(expr_path);
-    let mut potential_path = path_from_parts(expr_path);
     let mut request_url_path = path_from_parts(&request_url_parts);
 
     // if the expr_path matches the full URL, there can't be a more precise path in the tree
     request_url_path.push("<$>".into());
-    if potential_path.eq(&request_url_path) {
-        return path_exists_in_tree(&original_path, tree);
+    if original_path.eq(&request_url_path) {
+        return if path_exists_in_tree(&original_path, tree) {
+            Ok(())
+        } else {
+            Err(
+                ResponseVerificationError::ExactExpressionPathNotFoundInTree {
+                    provided_expr_path: expr_path.to_vec(),
+                },
+            )
+        };
     }
 
     // at this point there are no more valid exact paths,
     // so validation fails if the certified_path ends with an exact path suffix,
-    if potential_path.ends_with(&[Label::from("<$>")]) {
-        return false;
+    if original_path.ends_with(&[Label::from("<$>")]) {
+        return Err(ResponseVerificationError::ExactExpressionPathMismatch {
+            request_path: request_url_path.iter().map(|e| e.to_string()).collect(),
+            provided_expr_path: expr_path.to_vec(),
+        });
     }
 
-    // validation fails if the expr_path does not match full URL and the full URL exists in the tree
+    // validation fails if the expr_path does not match full URL and the full URL might exist in the tree
     if path_might_exist_in_tree(&request_url_path, tree) {
-        return false;
+        return Err(
+            ResponseVerificationError::ExactExpressionPathMightExistInTree {
+                potential_expr_path: request_url_path.iter().map(|e| e.to_string()).collect(),
+                provided_expr_path: expr_path.to_vec(),
+                request_path: request_path.to_string(),
+            },
+        );
     }
     request_url_path.pop(); // pop "<$>"
 
     // if the expr_path matches the full URL with a wildcard
     // there can't be a more precise path in the tree
     request_url_path.push("<*>".into());
-    if potential_path.eq(&request_url_path) {
-        return path_exists_in_tree(&original_path, tree);
+    if original_path.eq(&request_url_path) {
+        return if path_exists_in_tree(&original_path, tree) {
+            Ok(())
+        } else {
+            Err(
+                ResponseVerificationError::WildcardExpressionPathNotFoundInTree {
+                    provided_expr_path: expr_path.to_vec(),
+                    request_path: request_path.to_string(),
+                },
+            )
+        };
     }
+
+    let mut potential_path = original_path.clone();
     request_url_path.pop(); // pop "<*>"
     potential_path.pop(); // pop "<*>"
 
     if !is_wildcard_path_valid_for_request_path(&potential_path, &request_url_path) {
-        return false;
+        return Err(ResponseVerificationError::WildcardExpressionPathMismatch {
+            provided_expr_path: potential_path.iter().map(|e| e.to_string()).collect(),
+            request_path: request_path.to_string(),
+        });
     }
 
     // recursively check for partial URL matches with wildcards that are more precise than the expr_path
@@ -99,7 +148,16 @@ pub fn validate_expr_path(expr_path: &[String], request_path: &str, tree: &HashT
         // check wildcard
         request_url_path.push("<*>".into());
         if path_might_exist_in_tree(&request_url_path, tree) {
-            return false;
+            return Err(
+                ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree {
+                    provided_expr_path: expr_path.to_vec(),
+                    more_specific_expr_path: request_url_path
+                        .iter()
+                        .map(|e| e.to_string())
+                        .collect(),
+                    request_path: request_path.to_string(),
+                },
+            );
         }
         request_url_path.pop(); // pop "<*>"
 
@@ -113,7 +171,16 @@ pub fn validate_expr_path(expr_path: &[String], request_path: &str, tree: &HashT
 
     // if we haven't found a more specific path in the tree,
     // then the provided path is valid if it exists in the tree
-    path_exists_in_tree(&original_path, tree)
+    if path_exists_in_tree(&original_path, tree) {
+        Ok(())
+    } else {
+        Err(
+            ResponseVerificationError::WildcardExpressionPathNotFoundInTree {
+                provided_expr_path: expr_path.to_vec(),
+                request_path: request_path.to_string(),
+            },
+        )
+    }
 }
 
 pub fn validate_expr_hash(
@@ -627,9 +694,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
-
-        assert!(result);
+        validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap();
     }
 
     #[test]
@@ -641,9 +706,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
-
-        assert!(result);
+        validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap();
     }
 
     #[test]
@@ -663,9 +726,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
-
-        assert!(result);
+        validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap();
     }
 
     #[test]
@@ -683,9 +744,7 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
-
-        assert!(result);
+        validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap();
     }
 
     #[test]
@@ -706,9 +765,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree { .. }
+        ));
     }
 
     #[test]
@@ -729,9 +791,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::ExactExpressionPathNotFoundInTree { .. }
+        ));
     }
 
     #[test]
@@ -751,9 +816,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::ExactExpressionPathMismatch { .. }
+        ));
     }
 
     #[test]
@@ -779,9 +847,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::WildcardExpressionPathMismatch { .. }
+        ));
     }
 
     #[test]
@@ -804,9 +875,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::ExactExpressionPathMightExistInTree { .. }
+        ));
     }
 
     #[test]
@@ -829,9 +903,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::ExactExpressionPathMightExistInTree { .. }
+        ));
     }
 
     #[test]
@@ -846,9 +923,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree { .. }
+        ));
     }
 
     #[test]
@@ -872,9 +952,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::UnexpectedExpressionPathPrefix { .. }
+        ));
     }
 
     #[test]
@@ -886,9 +969,12 @@ mod tests {
             create_pruned("c01f7c0681a684be0a016b800981951832b53d5ffb55c49c27f6e83f7d2749c3"),
         );
 
-        let result = validate_expr_path(&expr_path, request_uri.path(), &tree);
+        let result = validate_expr_path(&expr_path, request_uri.path(), &tree).unwrap_err();
 
-        assert!(!result);
+        assert!(matches!(
+            result,
+            ResponseVerificationError::UnexpectedExpressionPathSuffix { .. }
+        ));
     }
 
     #[test]
@@ -984,38 +1070,28 @@ mod tests {
         ] {
             path.insert(0, "http_expr");
             let expr_path: Vec<String> = path.iter().map(|x| x.to_string()).collect();
-            let result = validate_expr_path(
+            validate_expr_path(
                 &expr_path,
                 http::Uri::try_from(request_uri).unwrap().path(),
                 &tree,
-            );
-            assert!(result);
+            )
+            .unwrap();
         }
 
-        // validations that should fail
+        // expression paths that are missing in the tree
         for (request_uri, mut path, tree) in [
-            ("/a/b", vec!["a", "", "<*>"], tree_a_b_slash.clone()),
-            ("/a/b/", vec!["a", "b", "<*>"], tree_a_b_slash.clone()),
-            ("/a/b", vec!["a", "", "<*>"], tree_a_b.clone()),
-            ("/a/b/", vec!["a", "", "<*>"], tree_a_b.clone()),
             ("/a/b/", vec!["a", "b", "", "<*>"], tree_a_b.clone()),
-            ("/a/b", vec!["a", "<*>"], tree_a_slash.clone()),
             ("/a/b", vec!["a", "b", "<*>"], tree_a_slash.clone()),
-            ("/a/b/", vec!["a", "<*>"], tree_a_slash.clone()),
             ("/a/b/", vec!["a", "b", "<*>"], tree_a_slash.clone()),
             ("/a/b/", vec!["a", "b", "", "<*>"], tree_a_slash.clone()),
-            ("/a/b", vec!["", "<*>"], tree_a.clone()),
             ("/a/b", vec!["a", "", "<*>"], tree_a.clone()),
             ("/a/b", vec!["a", "b", "<*>"], tree_a.clone()),
-            ("/a/b/", vec!["", "<*>"], tree_a.clone()),
             ("/a/b/", vec!["a", "", "<*>"], tree_a.clone()),
             ("/a/b/", vec!["a", "b", "<*>"], tree_a.clone()),
             ("/a/b/", vec!["a", "b", "", "<*>"], tree_a.clone()),
-            ("/a/b", vec!["<*>"], tree_slash.clone()),
             ("/a/b", vec!["a", "<*>"], tree_slash.clone()),
             ("/a/b", vec!["a", "", "<*>"], tree_slash.clone()),
             ("/a/b", vec!["a", "b", "<*>"], tree_slash.clone()),
-            ("/a/b/", vec!["<*>"], tree_slash.clone()),
             ("/a/b/", vec!["a", "<*>"], tree_slash.clone()),
             ("/a/b/", vec!["a", "", "<*>"], tree_slash.clone()),
             ("/a/b/", vec!["a", "b", "<*>"], tree_slash.clone()),
@@ -1029,8 +1105,54 @@ mod tests {
             ("/a/b/", vec!["a", "", "<*>"], tree_star.clone()),
             ("/a/b/", vec!["a", "b", "<*>"], tree_star.clone()),
             ("/a/b/", vec!["a", "b", "", "<*>"], tree_star.clone()),
-            ("/", vec!["<*>"], tree_a_b_slash.clone()),
             ("/", vec!["", "<*>"], tree_star.clone()),
+        ] {
+            path.insert(0, "http_expr");
+            let expr_path: Vec<String> = path.iter().map(|x| x.to_string()).collect();
+            let result = validate_expr_path(
+                &expr_path,
+                http::Uri::try_from(request_uri).unwrap().path(),
+                &tree,
+            )
+            .unwrap_err();
+
+            assert!(matches!(
+                result,
+                ResponseVerificationError::WildcardExpressionPathNotFoundInTree { .. }
+            ));
+        }
+
+        // expression paths that are not the most precise in the tree
+        for (request_uri, mut path, tree) in [
+            ("/", vec!["<*>"], tree_a_b_slash.clone()),
+            ("/a/b", vec!["a", "", "<*>"], tree_a_b_slash.clone()),
+            ("/a/b/", vec!["a", "b", "<*>"], tree_a_b_slash.clone()),
+            ("/a/b", vec!["a", "", "<*>"], tree_a_b.clone()),
+            ("/a/b/", vec!["a", "", "<*>"], tree_a_b.clone()),
+            ("/a/b", vec!["a", "<*>"], tree_a_slash.clone()),
+            ("/a/b/", vec!["a", "<*>"], tree_a_slash.clone()),
+            ("/a/b", vec!["", "<*>"], tree_a.clone()),
+            ("/a/b/", vec!["", "<*>"], tree_a.clone()),
+            ("/a/b", vec!["<*>"], tree_slash.clone()),
+            ("/a/b/", vec!["<*>"], tree_slash.clone()),
+        ] {
+            path.insert(0, "http_expr");
+            let expr_path: Vec<String> = path.iter().map(|x| x.to_string()).collect();
+            let result = validate_expr_path(
+                &expr_path,
+                http::Uri::try_from(request_uri).unwrap().path(),
+                &tree,
+            )
+            .unwrap_err();
+
+            assert!(matches!(
+                result,
+                ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree { .. }
+            ));
+        }
+
+        // expression paths that are not valid for the request path
+        for (request_uri, mut path, tree) in [
             ("/", vec!["a", "<*>"], tree_a_b_slash.clone()),
             ("/a/b", vec!["a", "c", "<*>"], tree_a_b_slash.clone()),
             ("/a/b", vec!["c", "b", "<*>"], tree_a_b_slash.clone()),
@@ -1041,8 +1163,13 @@ mod tests {
                 &expr_path,
                 http::Uri::try_from(request_uri).unwrap().path(),
                 &tree,
-            );
-            assert!(!result);
+            )
+            .unwrap_err();
+
+            assert!(matches!(
+                result,
+                ResponseVerificationError::WildcardExpressionPathMismatch { .. }
+            ));
         }
     }
 

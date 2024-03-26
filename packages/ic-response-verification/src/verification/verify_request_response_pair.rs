@@ -230,9 +230,7 @@ fn v2_verification(
         return Err(ResponseVerificationError::InvalidTree);
     }
 
-    if !validate_expr_path(&expr_path, &request_path, &tree) {
-        return Err(ResponseVerificationError::InvalidExpressionPath);
-    }
+    validate_expr_path(&expr_path, &request_path, &tree)?;
 
     let (request_certification, response_certification) = match &certification {
         CelExpression::Default(DefaultCelExpression::Skip) => {

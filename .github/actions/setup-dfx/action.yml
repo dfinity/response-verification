@@ -13,7 +13,7 @@ runs:
     - name: Install dfx
       uses: dfinity/setup-dfx@main
       with:
-        dfx-version: '0.15.3'
+        dfx-version: '0.18.0'
 
     - name: Configure DFX
       shell: bash
