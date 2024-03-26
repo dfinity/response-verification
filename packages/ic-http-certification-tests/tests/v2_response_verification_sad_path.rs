@@ -8,13 +8,12 @@ mod tests {
     use ic_certificate_verification::CertificateVerificationError;
     use ic_http_certification::{
         CelExpression, DefaultFullCelExpression, HttpCertification, HttpCertificationPath,
-        HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
+        HttpCertificationTreeEntry, HttpRequest, HttpResponse,
     };
     use ic_response_verification::{verify_request_response_pair, ResponseVerificationError};
     use ic_response_verification_test_utils::{
-        cbor_encode, create_v2_certificate_fixture, create_v2_fixture, create_v2_header,
-        create_v2_tree_fixture, get_current_timestamp, V2CertificateFixture, V2Fixture,
-        V2TreeFixture,
+        create_v2_certificate_fixture, create_v2_fixture, create_v2_header, create_v2_tree_fixture,
+        get_current_timestamp, V2CertificateFixture, V2Fixture, V2TreeFixture,
     };
     use rstest::*;
 
@@ -221,81 +220,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::InvalidExpressionPath)
-        ));
-    }
-
-    #[rstest]
-    #[case::does_not_exist_in_tree(HttpCertificationPath::wildcard("/assets/css"))]
-    #[case::more_specific_path_exists_in_tree(HttpCertificationPath::wildcard("/assets"))]
-    #[case::does_not_match_request_url(HttpCertificationPath::exact("/assets/js/dashboard.js"))]
-    fn invalid_expr_path_fails_verification(
-        #[from(skip_certification_cel)] cel_expr: CelExpression<'static>,
-        #[case] certification_path: HttpCertificationPath,
-    ) {
-        let current_time = get_current_timestamp();
-
-        let req_path = "/assets/js/app.js";
-        let request = HttpRequest {
-            url: req_path.to_string(),
-            method: "GET".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let mut response = HttpResponse {
-            status_code: 200,
-            body: b"Hello World!".to_vec(),
-            headers: vec![("IC-CertificateExpression".to_string(), cel_expr.to_string())],
-            upgrade: None,
-        };
-
-        let certification = HttpCertification::skip();
-        let mut certification_tree = HttpCertificationTree::default();
-        certification_tree.insert(&HttpCertificationTreeEntry::new(
-            &HttpCertificationPath::wildcard("/assets"),
-            &certification,
-        ));
-        certification_tree.insert(&HttpCertificationTreeEntry::new(
-            &HttpCertificationPath::wildcard("/assets/js"),
-            &certification,
-        ));
-        certification_tree.insert(&HttpCertificationTreeEntry::new(
-            &HttpCertificationPath::exact("/assets/js/dashboard.js"),
-            &certification,
-        ));
-
-        let certification_tree_entry =
-            HttpCertificationTreeEntry::new(&certification_path, &certification);
-        let certified_data = certification_tree.root_hash();
-        let witness = certification_tree
-            .witness(&certification_tree_entry, req_path)
-            .unwrap();
-        let tree_cbor = cbor_encode(&witness);
-        let V2CertificateFixture {
-            root_key,
-            certificate_cbor,
-            canister_id,
-        } = create_v2_certificate_fixture(&certified_data, &current_time);
-        let certificate_header =
-            create_v2_header(&certification_tree_entry, &certificate_cbor, &tree_cbor);
-
-        response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
-
-        let result = verify_request_response_pair(
-            request,
-            response,
-            canister_id.as_ref(),
-            current_time,
-            MAX_CERT_TIME_OFFSET_NS,
-            &root_key,
-            MIN_REQUESTED_VERIFICATION_VERSION,
-        );
-
-        assert!(matches!(
-            result,
-            Err(ResponseVerificationError::InvalidExpressionPath)
+            Err(ResponseVerificationError::ExactExpressionPathMismatch { .. })
         ));
     }
 

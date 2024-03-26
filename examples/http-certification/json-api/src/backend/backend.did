@@ -8,13 +8,69 @@ type HttpRequest = record {
     certificate_version : opt nat16;
 };
 
-type HttpResponse = record {
-    status_code : nat16;
+type HttpUpdateRequest = record {
+    method : text;
+    url : text;
     headers : vec HeaderField;
     body : blob;
 };
 
+type HttpResponse = record {
+    status_code : nat16;
+    headers : vec HeaderField;
+    body : blob;
+    upgrade : opt bool;
+};
+
+type ErrResponse = record {
+    code : nat16;
+    message : text;
+};
+
+type TodoItem = record {
+    id : nat32;
+    title : text;
+    completed : bool;
+};
+
+type CreateTodoItemRequest = record {
+    title : text;
+};
+
+type CreateTodoItemResponse = variant {
+    ok : record {
+        data : TodoItem;
+    };
+    err : ErrResponse;
+};
+
+type UpdateTodoItemRequest = variant {
+    title : text;
+    completed : bool;
+};
+
+type UpdateTodoItemResponse = variant {
+    ok : record {
+        data : null;
+    };
+    err : ErrResponse;
+};
+
+type DeleteTodoItemResponse = variant {
+    ok : record {
+        data : null;
+    };
+    err : ErrResponse;
+};
+
+type ListTodoItemsResponse = variant {
+    ok : record {
+        data : vec TodoItem;
+    };
+    err : ErrResponse;
+};
+
 service : {
     http_request : (request : HttpRequest) -> (HttpResponse) query;
-    http_request_update : (request : HttpRequest) -> (HttpResponse);
+    http_request_update : (request : HttpUpdateRequest) -> (HttpResponse);
 };
