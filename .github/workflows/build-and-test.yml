@@ -58,6 +58,13 @@ jobs:
           dfx canister create --all
           dfx generate backend
 
+      - name: DFX prepare HTTP Certification JSON API
+        working-directory: examples/http-certification/json-api
+        run: |
+          dfx canister create backend
+          dfx generate backend
+          dfx build backend --check
+
       - name: Build NPM packages
         run: pnpm build
 

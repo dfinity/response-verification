@@ -1,4 +1,7 @@
 {
+  "dfx": "0.18.0",
+  "version": 1,
+  "output_env_file": ".env",
   "canisters": {
     "backend": {
       "candid": "src/backend/backend.did",
@@ -13,8 +16,5 @@
       "source": ["src/frontend/assets", "dist/frontend/"],
       "type": "assets"
     }
-  },
-  "output_env_file": ".env",
-  "dfx": "0.15.3",
-  "version": 1
+  }
 }
