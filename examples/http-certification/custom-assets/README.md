@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single page JavaScript application. Assets are embedded into the canister when it is compiled.
+This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single-page JavaScript application. Assets are embedded into the canister when it is compiled.
 
 This is not a beginner's canister development guide. Many foundational concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/custom-assets).
 
@@ -61,7 +61,7 @@ The rest of this guide will address the canister code.
 
 ## Lifecycle
 
-The lifecycle hooks are setup in a similar fashion to the JSON API.
+The lifecycle hooks are set up similarly to the JSON API.
 
 ```rust
 #[init]
@@ -86,22 +86,12 @@ thread_local! {
 }
 ```
 
-The CEL expression definition is slightly more complex in the case of assets. The same CEL expression is used for every asset, but a number of additional headers are certified here, namely:
-
-- `content-type` represents the type of content, such as HTML, CSS, JS etc...
-- `content-length` represents the byte length of the content.
-- `content-encoding` represents the compression algorithm used, such as `identity`, `gzip` or `br` (Brotli).
-- `cache-control` is used to tell browsers how to cache assets.
+The CEL expression definition is simpler in the case of assets as the same CEL expression is used for every asset, including the fallback response.
 
 ```rust
 fn prepare_cel_exprs() {
     let asset_cel_expr_def = DefaultCelBuilder::response_only_certification()
-        .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
-            "content-type",
-            "content-length",
-            "content-encoding",
-            "cache-control",
-        ]))
+        .with_response_certification(DefaultResponseCertification::response_header_exclusions(vec![]))
         .build();
 
     let asset_cel_expr = asset_cel_expr_def.to_string();
@@ -125,9 +115,11 @@ The assets are imported from the frontend build directory:
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 ```
 
-With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example however, a slightly different structure is used.
+With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example, however, a slightly different structure is used.
 
-Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it would essentially duplicate the original asset content that is statically embedded in the canister's Wasm by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example however.
+Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it would essentially duplicate the original asset content that is statically embedded in the canister's Wasm by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example, however.
+
+Encoded assets are stored in a separate `HashMap` to make routing easier. This will be more apparent later in this guide.
 
 ```rust
 #[derive(Debug, Clone)]
@@ -155,16 +147,48 @@ struct CertifiedHttpResponse<'a> {
 
 thread_local! {
     static RESPONSES: RefCell<HashMap<String, CertifiedHttpResponse<'static>>> = RefCell::new(HashMap::new());
+    static ENCODED_RESPONSES: RefCell<HashMap<(String, String), CertifiedHttpResponse<'static>>> = RefCell::new(HashMap::new());
 }
 ```
 
-Certifying responses is more involved here compared to the simpler approach used in the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http). There are a number of paths used in the following functions that warrant some explanation:
+Certifying responses is more involved here compared to the simpler approach used in the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) example. There are some paths used in the following functions that warrant some explanation:
 
-- `asset_tree_path`: the `HttpCertificationPath` that will be used to store the asset in the tree, for example `HttpCertificationPath::exact("/assets/app.js")`.
-- `asset_file_path`: the relative file path of the asset on disk prior to being imported into the canister, for example `assets/app.js`.
+- `asset_tree_path`: the `HttpCertificationPath` that will be used to store the asset in the tree, for example, `HttpCertificationPath::exact("/assets/app.js")`.
+- `asset_file_path`: the relative file path of the asset on disk before being imported into the canister, for example, `assets/app.js`.
 - `asset_req_path`: the absolute path that will be used to request the asset `/assets/app.js` from a browser.
 
-The first function to look at is a reusable function that can certify any asset. It sets up the `content-length` header, while more headers are setup in other functions which will be seen in a moment.
+The first step is defining a reusable function to create a response with all of the necessary default headers. This function is very similar to the counterpart in the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) example with the biggest difference being in the headers that are used. Since the responses from an API serving static assets will be rendered directly in the browser, more security-focused headers are necessary:
+
+```rust
+fn create_asset_response(
+    additional_headers: Vec<HeaderField>,
+    body: &[u8],
+    cel_expr: String,
+) -> HttpAssetResponse {
+    // set up the default headers and include additional headers provided by the caller
+    let mut headers = vec![
+        ("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
+        ("x-frame-options".to_string(), "DENY".to_string()),
+        ("x-content-type-options".to_string(), "nosniff".to_string()),
+        ("content-security-policy".to_string(), "default-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content".to_string()),
+        ("referrer-policy".to_string(), "no-referrer".to_string()),
+        ("permissions-policy".to_string(), "accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()".to_string()),
+        ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
+        ("cross-origin-opener-policy".to_string(), "same-origin".to_string()),
+        ("content-length".to_string(), body.len().to_string()),
+        (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+    ];
+    headers.extend(additional_headers);
+
+    HttpAssetResponse {
+        status_code: 200,
+        headers,
+        body: Cow::Borrowed(body),
+    }
+}
+```
+
+The next function to look at is a reusable function that can certify any asset.
 
 Note that when the certification is created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
 
@@ -180,22 +204,8 @@ fn certify_asset_response(
         // get the relevant CEL expression
         let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
 
-        // set up our default headers and include additional headers provided by the caller
-        let mut headers = vec![
-            ("content-length".to_string(), body.len().to_string()),
-            (
-                IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
-                cel_expr_str.to_string(),
-            ),
-        ];
-        headers.extend(additional_headers);
-
         // create the response
-        let response = HttpAssetResponse {
-            status_code: 200,
-            headers,
-            body: Cow::Borrowed(body),
-        };
+        let response = create_asset_response(additional_headers, body, cel_expr_str.to_string());
 
         // certify the response
         let certification =
@@ -226,9 +236,11 @@ fn certify_asset_response(
 }
 ```
 
-The next function to look at is another reusable function that builds upon the previous function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory.
+The next function to look at is another reusable function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory.
 
-For example, when certifying `index.html` with `gzip` encoding, this function will check for `index.html.gzip`. If the encoded asset exists, then it is certified using the previously defined `certify_asset_response` function. This function will silently fail if the encoded file does not exist. This is necessary because the frontend project contains assets that will not be encoded. Images, for example, are already in a compressed format so they are not encoded.
+For example, when certifying `index.html` with `gzip` encoding, this function will check for `index.html.gzip`. If the encoded asset exists, then it is certified using a procedure similar to the previously defined `certify_asset_response` function. The primary difference in this function is where the encoded asset response is stored.
+
+This function will silently fail if the encoded file does not exist. This is necessary because the frontend project contains assets that will not be encoded. Images, for example, are already in a compressed format so they are not encoded.
 
 ```rust
 fn certify_asset_with_encoding(
@@ -241,21 +253,50 @@ fn certify_asset_with_encoding(
     // check if the file exists before certifying it
     if let Some(file) = ASSETS_DIR.get_file(format!("{}.{}", asset_file_path, encoding)) {
         let body = file.contents();
+
         // add the content encoding header
         let mut headers = vec![("content-encoding".to_string(), encoding.to_string())];
         headers.extend(additional_headers);
 
-        certify_asset_response(
-            body,
-            headers,
-            asset_tree_path,
-            format!("{}.{}", asset_req_path, encoding),
-        );
+        CEL_EXPRS.with_borrow(|cel_exprs| {
+            // get the relevant CEL expression
+            let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
+
+            // create the response
+            let response = create_asset_response(headers, body, cel_expr_str.to_string());
+
+            // certify the response
+            let certification =
+                HttpCertification::response_only(cel_expr_def, &response.clone().into(), None)
+                    .unwrap();
+
+            ENCODED_RESPONSES.with_borrow_mut(|responses| {
+                // store the response for later retrieval
+                responses.insert(
+                    (asset_req_path, encoding.to_string()),
+                    CertifiedHttpResponse {
+                        response,
+                        certification: certification.clone(),
+                    },
+                );
+            });
+
+            HTTP_TREE.with_borrow_mut(|http_tree| {
+                // add the certification to the certification tree
+                http_tree.insert(&HttpCertificationTreeEntry::new(
+                    asset_tree_path,
+                    &certification,
+                ));
+
+                // set the canister's certified data
+                set_certified_data(&http_tree.root_hash());
+            });
+        });
     };
 }
 ```
 
-Next is another simple function that will certify an asset for all encodings: Identity (the original), Gzip and Brotli. This function leverages the `certify_asset_response` for the Identity encoding and `certify_asset_with_encoding` for the other encodings.
+Next is another simple function that will certify an asset for all encodings: Identity (the original), Gzip, and Brotli. This function leverages the `certify_asset_response` for the Identity encoding and `certify_asset_with_encoding` for the other encodings.
 
 ```rust
 fn certify_asset(
@@ -298,7 +339,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
         .unwrap()
         .map(|entry| entry.as_file().unwrap())
     {
-        // compute the different paths we need for this asset
+        // compute the different paths needed for this asset
         let asset_file_path = identity_file.path().to_str().unwrap().to_string();
         let asset_req_path = if !asset_file_path.starts_with("/") {
             format!("/{}", asset_file_path)
@@ -328,7 +369,7 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
 }
 ```
 
-Lastly, a function specifically to certify the `index.html` file. Since the frontend project is a single page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file, notably by using `HttpCertificationPath::wildcard()` instead of `HttpCertificationPath::exact()`.
+Lastly, a function specifically to certify the `index.html` file. Since the frontend project is a single-page application, any request that doesn't match an existing file should fallback to `index.html`, so certification is handled differently for this file, notably by using `HttpCertificationPath::wildcard()` instead of `HttpCertificationPath::exact()` as the certification tree path.
 
 This will allow the canister to return this file for any path that does not exactly match an existing path in the tree. If the canister tries to return this file instead of an exact match that exists, verification will fail.
 
@@ -393,7 +434,8 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
     let req_path = req.get_path().expect("Failed to get req path");
 
     RESPONSES.with_borrow(|responses| {
-        let (asset_req_path, asset_tree_path, identity_response) =
+        ENCODED_RESPONSES.with_borrow(|encoded_responses| {
+            let (asset_req_path, asset_tree_path, identity_response) =
             // if the requested path matches a static asset, serve that
             if let Some(identity_response) = responses.get(&req_path) {
                 (
@@ -410,50 +452,54 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
                 )
             };
 
-        // extract the content encoding header
-        let content_encoding = req.headers.iter().find_map(|(name, value)| {
-            if name.to_lowercase() == "accept-encoding" {
-                Some(value)
-            } else {
-                None
-            }
-        });
-
-        let CertifiedHttpResponse {
-            certification,
-            response,
-        } = content_encoding
-            .and_then(|encoding| {
-                // if the request asks for Brotli and it's available for this file, serve that version
-                if encoding.contains("br") {
-                    if let Some(br_response) = responses.get(&format!("{}.br", asset_req_path)) {
-                        return Some(br_response);
-                    }
+            // extract the content encoding header
+            let content_encoding = req.headers.iter().find_map(|(name, value)| {
+                if name.to_lowercase() == "accept-encoding" {
+                    Some(value)
+                } else {
+                    None
                 }
+            });
 
-                // if the request asks for Gzip and it's available for this file, serve that version
-                if encoding.contains("gzip") {
-                    if let Some(gzip_response) = responses.get(&format!("{}.gzip", asset_req_path))
-                    {
-                        return Some(gzip_response);
+            let CertifiedHttpResponse {
+                certification,
+                response,
+            } = content_encoding
+                .and_then(|encoding| {
+                    // if the request asks for Brotli and it's available for this file, serve that version
+                    if encoding.contains("br") {
+                        if let Some(br_response) =
+                            encoded_responses.get(&(asset_req_path.clone(), "br".to_string()))
+                        {
+                            return Some(br_response);
+                        }
                     }
-                }
 
-                None
-            })
-            // otherwise serve the identity version
-            .unwrap_or(identity_response);
+                    // if the request asks for Gzip and it's available for this file, serve that version
+                    if encoding.contains("gzip") {
+                        if let Some(gzip_response) =
+                            encoded_responses.get(&(asset_req_path, "gzip".to_string()))
+                        {
+                            return Some(gzip_response);
+                        }
+                    }
 
-        let mut response: HttpResponse = response.clone().into();
+                    None
+                })
+                // otherwise serve the identity version
+                .unwrap_or(identity_response);
 
-        add_certificate_header(
-            &mut response,
-            &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
-            &req_path,
-            &asset_tree_path.to_expr_path(),
-        );
+            let mut response: HttpResponse = response.clone().into();
 
-        response
+            add_certificate_header(
+                &mut response,
+                &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
+                &req_path,
+                &asset_tree_path.to_expr_path(),
+            );
+
+            response
+        })
     })
 }
 ```
