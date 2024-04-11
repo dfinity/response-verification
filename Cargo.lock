@@ -933,9 +933,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.24"
+version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb2c4422095b67ee78da96fbb51a4cc413b3b25883c7717ff7ca1ab31022c9c9"
+checksum = "81fe527a889e1532da5c525686d96d4c2e74cdd345badf8dfef9f6b39dd5f5e8"
 dependencies = [
  "bytes",
  "fnv",
@@ -1039,7 +1039,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "http_certification_backend"
+name = "http_certification_json_api_backend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1049,6 +1049,7 @@ dependencies = [
  "ic-cdk-macros",
  "ic-http-certification",
  "lazy_static",
+ "matchit",
  "serde",
  "serde_cbor",
  "serde_json",
@@ -1936,6 +1937,12 @@ name = "maplit"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e2e65a1a2e43cfcb47a895c4c8b10d1f4a61097f9f254f183aee60cad9c651d"
+
+[[package]]
+name = "matchit"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56e8fcd7bd6025a951597d6ba2f8e48a121af7e262f2b52a006a09c8d61f9304"
 
 [[package]]
 name = "memchr"

@@ -117,38 +117,72 @@ mod tests {
     }
 
     #[rstest]
-    // assert that the asset not found response is not accepted for assets outside the js folder
-    #[case::not_found_for_index_html_path(&"/", not_found_response(), not_found_certification())]
-    #[case::not_found_for_not_found_path(&"/not-found", not_found_response(), not_found_certification())]
-    #[case::not_found_for_not_found_trailing_slash_path(&"/not-found/", not_found_response(), not_found_certification())]
-    #[case::not_found_for_nested_not_found_path(&"/not/found", not_found_response(), not_found_certification())]
-    #[case::not_found_for_nested_not_found_trailing_slash_path(&"/not/found/", not_found_response(), not_found_certification())]
-    #[case::not_found_for_old_path(&"/old-path", not_found_response(), not_found_certification())]
     // assert that the index html fallback response is not accepted for assets inside the js folder
-    #[case::index_html_for_js_path(&"/js/index.js", index_html_response(), index_html_certification())]
     #[case::index_html_for_js_not_found_path(&"/js/not-found", index_html_response(), index_html_certification())]
     #[case::index_html_for_js_not_found_trailing_slash_path(&"/js/not-found/", index_html_response(), index_html_certification())]
     #[case::index_html_for_js_nested_not_found_path(&"/js/not/found", index_html_response(), index_html_certification())]
     #[case::index_html_for_js_nested_not_found_trailing_slash_path(&"/js/not/found/", index_html_response(), index_html_certification())]
+
+    fn more_specific_wildcard_might_exist_fails_verification(
+        #[from(certificate_tree)] certification_tree: HttpCertificationTree,
+        #[case] req_path: &str,
+        #[case] mut expected_response: HttpResponse,
+        #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
+    ) {
+        let request = HttpRequest {
+            url: req_path.into(),
+            method: "GET".into(),
+            headers: vec![
+                ("Accept".into(), "text/html".into()),
+                ("Accept-Encoding".into(), "gzip, deflate, br".into()),
+            ],
+            body: vec![],
+        };
+
+        let current_time = get_current_timestamp();
+
+        let V2CertificateFixture {
+            root_key,
+            canister_id,
+            certificate_cbor,
+        } = create_v2_certificate_fixture(&certification_tree.root_hash(), &current_time);
+        let certificate_header = create_v2_header(
+            &certification_tree_entry,
+            &certificate_cbor,
+            &cbor_encode(
+                &certification_tree
+                    .witness(&certification_tree_entry, req_path)
+                    .unwrap(),
+            ),
+        );
+
+        expected_response
+            .headers
+            .push(("IC-Certificate".to_string(), certificate_header));
+
+        let result = verify_request_response_pair(
+            request,
+            expected_response,
+            canister_id.as_ref(),
+            current_time,
+            MAX_CERT_TIME_OFFSET_NS,
+            &root_key,
+            MIN_REQUESTED_VERIFICATION_VERSION,
+        );
+
+        assert!(matches!(
+            result,
+            Err(ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree { .. })
+        ));
+    }
+
+    #[rstest]
+    // assert that the asset not found response is not accepted for assets outside the js folder
+    #[case::not_found_for_old_path(&"/old-path", not_found_response(), not_found_certification())]
+    // assert that the index html fallback response is not accepted for assets inside the js folder
     #[case::index_html_for_old_path(&"/old-path", index_html_response(), index_html_certification())]
-    // assert that the redirect response is not accepted for incorrect paths
-    #[case::redirect_for_old_trailing_slash_path(&"/old-path/", redirect_response(), redirect_certification())]
-    #[case::redirect_for_index_html_path(&"/", redirect_response(), redirect_certification())]
-    #[case::redirect_for_not_found_path(&"/not-found", redirect_response(), redirect_certification())]
-    #[case::redirect_for_nested_not_found_path(&"/not/found", redirect_response(), redirect_certification())]
-    #[case::redirect_for_js_path(&"/js/index.js", index_html_response(), redirect_certification())]
-    #[case::redirect_for_js_not_found_path(&"/js/not-found", index_html_response(), redirect_certification())]
-    #[case::redirect_for_js_nested_not_found_path(&"/js/not/found", index_html_response(), redirect_certification())]
-    // assert that encoded responses are accepted for the incorrect paths
-    #[case::identity_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_identity_response(), content_encoding_identity_certification())]
-    #[case::gzip_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_gzip_response(), content_encoding_gzip_certification())]
-    #[case::deflate_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_deflate_response(), content_encoding_deflate_certification())]
-    #[case::identity_encoding_for_index_html_path(&"/", content_encoding_identity_response(), content_encoding_identity_certification())]
-    #[case::gzip_encoding_for_not_found_path(&"/not-found", content_encoding_gzip_response(), content_encoding_gzip_certification())]
-    #[case::gzip_encoding_for_nested_not_found_path(&"/not/found", content_encoding_gzip_response(), content_encoding_gzip_certification())]
-    #[case::deflate_encoding_for_js_path(&"/js/index.js", content_encoding_deflate_response(), content_encoding_deflate_certification())]
-    #[case::deflate_encoding_for_js_not_found_path(&"/js/not-found", content_encoding_deflate_response(), content_encoding_deflate_certification())]
-    #[case::deflate_encoding_for_nested_js_not_found_path(&"/js/not/found", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    // assert that the index html fallback response is not accepted for assets inside the js folder
+    #[case::index_html_for_js_path(&"/js/index.js", index_html_response(), index_html_certification())]
     fn certification_scenarios_fail_verification(
         #[from(certificate_tree)] certification_tree: HttpCertificationTree,
         #[case] req_path: &str,
@@ -198,7 +232,139 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::InvalidExpressionPath)
+            Err(ResponseVerificationError::ExactExpressionPathMightExistInTree { .. })
+        ));
+    }
+
+    #[rstest]
+    // assert that the redirect response is not accepted for incorrect paths
+    #[case::redirect_for_not_found_path(&"/not-found", redirect_response(), redirect_certification())]
+    #[case::redirect_for_js_path(&"/js/index.js", index_html_response(), redirect_certification())]
+    #[case::redirect_for_js_not_found_path(&"/js/not-found", index_html_response(), redirect_certification())]
+    #[case::redirect_for_js_nested_not_found_path(&"/js/not/found", index_html_response(), redirect_certification())]
+    #[case::redirect_for_nested_not_found_path(&"/not/found", redirect_response(), redirect_certification())]
+    #[case::redirect_for_index_html_path(&"/", redirect_response(), redirect_certification())]
+    #[case::redirect_for_old_trailing_slash_path(&"/old-path/", redirect_response(), redirect_certification())]
+    // assert that encoded responses are not accepted for the incorrect paths
+    #[case::identity_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_identity_response(), content_encoding_identity_certification())]
+    #[case::gzip_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_gzip_response(), content_encoding_gzip_certification())]
+    #[case::deflate_encoding_for_encoded_trailing_slash_path(&"/multi-encoded-path/", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    #[case::identity_encoding_for_index_html_path(&"/", content_encoding_identity_response(), content_encoding_identity_certification())]
+    #[case::gzip_encoding_for_not_found_path(&"/not-found", content_encoding_gzip_response(), content_encoding_gzip_certification())]
+    #[case::gzip_encoding_for_nested_not_found_path(&"/not/found", content_encoding_gzip_response(), content_encoding_gzip_certification())]
+    #[case::deflate_encoding_for_js_path(&"/js/index.js", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    #[case::deflate_encoding_for_js_not_found_path(&"/js/not-found", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    #[case::deflate_encoding_for_nested_js_not_found_path(&"/js/not/found", content_encoding_deflate_response(), content_encoding_deflate_certification())]
+    fn exact_expr_path_mismatch_fails_verification(
+        #[from(certificate_tree)] certification_tree: HttpCertificationTree,
+        #[case] req_path: &str,
+        #[case] mut expected_response: HttpResponse,
+        #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
+    ) {
+        let request = HttpRequest {
+            url: req_path.into(),
+            method: "GET".into(),
+            headers: vec![
+                ("Accept".into(), "text/html".into()),
+                ("Accept-Encoding".into(), "gzip, deflate, br".into()),
+            ],
+            body: vec![],
+        };
+
+        let current_time = get_current_timestamp();
+
+        let V2CertificateFixture {
+            root_key,
+            canister_id,
+            certificate_cbor,
+        } = create_v2_certificate_fixture(&certification_tree.root_hash(), &current_time);
+        let certificate_header = create_v2_header(
+            &certification_tree_entry,
+            &certificate_cbor,
+            &cbor_encode(
+                &certification_tree
+                    .witness(&certification_tree_entry, req_path)
+                    .unwrap(),
+            ),
+        );
+
+        expected_response
+            .headers
+            .push(("IC-Certificate".to_string(), certificate_header));
+
+        let result = verify_request_response_pair(
+            request,
+            expected_response,
+            canister_id.as_ref(),
+            current_time,
+            MAX_CERT_TIME_OFFSET_NS,
+            &root_key,
+            MIN_REQUESTED_VERIFICATION_VERSION,
+        );
+
+        assert!(matches!(
+            result,
+            Err(ResponseVerificationError::ExactExpressionPathMismatch { .. })
+        ));
+    }
+
+    #[rstest]
+    // assert that the asset not found response is not accepted for assets outside the js folder
+    #[case::not_found_for_index_html_path(&"/", not_found_response(), not_found_certification())]
+    #[case::not_found_for_nested_not_found_trailing_slash_path(&"/not/found/", not_found_response(), not_found_certification())]
+    #[case::not_found_for_nested_not_found_path(&"/not/found", not_found_response(), not_found_certification())]
+    #[case::not_found_for_not_found_path(&"/not-found", not_found_response(), not_found_certification())]
+    #[case::not_found_for_not_found_trailing_slash_path(&"/not-found/", not_found_response(), not_found_certification())]
+    fn wildcard_expr_path_mismatch_fails_verification(
+        #[from(certificate_tree)] certification_tree: HttpCertificationTree,
+        #[case] req_path: &str,
+        #[case] mut expected_response: HttpResponse,
+        #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
+    ) {
+        let request = HttpRequest {
+            url: req_path.into(),
+            method: "GET".into(),
+            headers: vec![
+                ("Accept".into(), "text/html".into()),
+                ("Accept-Encoding".into(), "gzip, deflate, br".into()),
+            ],
+            body: vec![],
+        };
+
+        let current_time = get_current_timestamp();
+
+        let V2CertificateFixture {
+            root_key,
+            canister_id,
+            certificate_cbor,
+        } = create_v2_certificate_fixture(&certification_tree.root_hash(), &current_time);
+        let certificate_header = create_v2_header(
+            &certification_tree_entry,
+            &certificate_cbor,
+            &cbor_encode(
+                &certification_tree
+                    .witness(&certification_tree_entry, req_path)
+                    .unwrap(),
+            ),
+        );
+
+        expected_response
+            .headers
+            .push(("IC-Certificate".to_string(), certificate_header));
+
+        let result = verify_request_response_pair(
+            request,
+            expected_response,
+            canister_id.as_ref(),
+            current_time,
+            MAX_CERT_TIME_OFFSET_NS,
+            &root_key,
+            MIN_REQUESTED_VERIFICATION_VERSION,
+        );
+
+        assert!(matches!(
+            result,
+            Err(ResponseVerificationError::WildcardExpressionPathMismatch { .. })
         ));
     }
 

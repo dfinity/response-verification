@@ -12,6 +12,55 @@ type HttpResponse = record {
     status_code : nat16;
     headers : vec HeaderField;
     body : blob;
+    upgrade : opt bool;
+};
+
+type ErrResponse = record {
+    code : nat16;
+    message : text;
+};
+
+type TodoItem = record {
+    id : nat32;
+    title : text;
+    completed : bool;
+};
+
+type CreateTodoItemRequest = record {
+    title : text;
+};
+
+type CreateTodoItemResponse = variant {
+    ok : record {
+        data : TodoItem;
+    };
+    err : ErrResponse;
+};
+
+type UpdateTodoItemRequest = variant {
+    title : text;
+    completed : bool;
+};
+
+type UpdateTodoItemResponse = variant {
+    ok : record {
+        data : null;
+    };
+    err : ErrResponse;
+};
+
+type DeleteTodoItemResponse = variant {
+    ok : record {
+        data : null;
+    };
+    err : ErrResponse;
+};
+
+type ListTodoItemsResponse = variant {
+    ok : record {
+        data : vec TodoItem;
+    };
+    err : ErrResponse;
 };
 
 service : {
