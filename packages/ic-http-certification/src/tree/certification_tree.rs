@@ -77,7 +77,10 @@ impl HttpCertificationTree {
 
                 // For wildcards we start by witnessing the path that was requested so the verifier can be sure
                 // that there is no exact match in the tree.
-                let requested_witness = self.tree.witness(&requested_tree_path);
+                let witness = self.tree.witness(&requested_tree_path);
+
+                // Then we witness the wildcard path that we will be responding with.
+                let witness = merge_hash_trees(witness, self.tree.witness(&responding_tree_path));
 
                 // Then we need to prove that there is not a more specific wildcard in the tree that
                 // matches the request URL. So we step through the path and generate a witness for each subpath,
@@ -100,7 +103,7 @@ impl HttpCertificationTree {
 
                         [without_trailing_slash, with_trailing_slash]
                     })
-                    .fold(requested_witness, |acc, path| {
+                    .fold(witness, |acc, path| {
                         merge_hash_trees(acc, self.tree.witness(&path))
                     })
             }
@@ -244,6 +247,49 @@ mod tests {
         assert!(matches!(
             witness,
             Err(HttpCertificationError::WildcardPathNotValidForRequestPath { .. })
+        ));
+    }
+
+    #[rstest]
+    fn test_witness_wildcard_matches_asset() {
+        let mut tree = HttpCertificationTree::default();
+
+        let cel_expr = DefaultCelBuilder::full_certification()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build();
+
+        let index_html_request = HttpRequest {
+            url: "/".to_string(),
+            method: "GET".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let index_html_body = b"<html><body><h1>Hello World!</h1></body></html>".to_vec();
+        let index_html_response = HttpResponse {
+            status_code: 400,
+            body: index_html_body,
+            headers: vec![("IC-CertificateExpression".into(), cel_expr.to_string())],
+            upgrade: None,
+        };
+
+        let certification =
+            HttpCertification::full(&cel_expr, &index_html_request, &index_html_response, None)
+                .unwrap();
+        let index_html_entry =
+            HttpCertificationTreeEntry::new(HttpCertificationPath::wildcard("/"), certification);
+        tree.insert(&index_html_entry);
+
+        let witness = tree.witness(&index_html_entry, "/").unwrap();
+
+        let mut path = index_html_entry.to_tree_path();
+        path.insert(0, b"http_expr".to_vec());
+
+        assert!(matches!(
+            witness.lookup_subtree(&path),
+            SubtreeLookupResult::Found(_)
         ));
     }
 }
