@@ -23,25 +23,25 @@ enum HttpCertificationType {
     },
 }
 
-/// A certified [request](crate::HttpResponse) and [response](crate::HttpResponse) pair.
+/// A certified [HttpRequest] and [HttpResponse] pair.
 ///
 /// It supports three types of certification via associated functions:
 ///
-/// - [skip()](HttpCertification::skip()) excludes both an [HTTP request](crate::HttpRequest) and the
-/// corresponding [HTTP response](crate::HttpResponse) from certification.
+/// - [skip()](HttpCertification::skip()) excludes both an [HttpRequest] and the
+/// corresponding [HttpResponse] from certification.
 ///
 /// - [response_only()](HttpCertification::response_only()) includes an
-/// [HTTP response](crate::HttpResponse) but excludes the corresponding [HTTP request](crate::HttpRequest)
+/// [HttpResponse] but excludes the corresponding [HttpRequest]
 /// from certification.
 ///
-/// - [full()](HttpCertification::full()) includes both an [HTTP response](crate::HttpResponse) and
-/// the corresponding [HTTP request](crate::HttpRequest) in certification.
+/// - [full()](HttpCertification::full()) includes both an [HttpResponse] and
+/// the corresponding [HttpRequest] in certification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HttpCertification(HttpCertificationType);
 
 impl HttpCertification {
-    /// Creates a certification that excludes both the [HTTP request](crate::HttpRequest) and
-    /// the corresponding [HTTP response](crate::HttpResponse).
+    /// Creates a certification that excludes both the [HttpRequest] and
+    /// the corresponding [HttpResponse].
     pub fn skip() -> HttpCertification {
         let cel_expr = DefaultCelBuilder::skip_certification().to_string();
         let cel_expr_hash = hash(cel_expr.as_bytes());
@@ -49,8 +49,8 @@ impl HttpCertification {
         Self(HttpCertificationType::Skip { cel_expr_hash })
     }
 
-    /// Creates a certification that includes an [HTTP response](crate::HttpResponse), but excludes the
-    /// corresponding [HTTP request](crate::HttpRequest).
+    /// Creates a certification that includes an [HttpResponse], but excludes the
+    /// corresponding [HttpRequest].
     pub fn response_only(
         cel_expr_def: &DefaultResponseOnlyCelExpression,
         response: &HttpResponse,
@@ -68,8 +68,8 @@ impl HttpCertification {
         }))
     }
 
-    /// Creates a certification that includes both an [HTTP response](crate::HttpResponse) and the corresponding
-    /// [HTTP request](crate::HttpRequest).
+    /// Creates a certification that includes both an [HttpResponse] and the corresponding
+    /// [HttpRequest].
     pub fn full(
         cel_expr_def: &DefaultFullCelExpression,
         request: &HttpRequest,

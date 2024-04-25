@@ -176,11 +176,11 @@ Typically, these requests have been routed through `raw` ICP URLs in the past, b
 
 ## Creating certifications
 
-Once a CEL expression has been defined, it can be used in conjunction with an `HttpRequest` and `HttpResponse` to create an instance of the `HttpCertification` enum. The `HttpCertification` enum has three variants, each with a corresponding associated function used to create that particular variant:
+Once a CEL expression has been defined, it can be used in conjunction with an `HttpRequest` and `HttpResponse` to create an instance of the `HttpCertification` struct. The `HttpCertification` struct has three associated functions:
 
-- The `Full` variant is used to include both the `HttpRequest` and the corresponding `HttpResponse` in certification.
-- The `ResponseOnly` variant is used to include only the `HttpResponse` in certification and exclude the corresponding `HttpRequest` from certification.
-- The `Skip` variant is used to skip certification entirely.
+- The `full` associated function is used to include both the `HttpRequest` and the corresponding `HttpResponse` in certification.
+- The `response_only` associated function is used to include only the `HttpResponse` in certification and exclude the corresponding `HttpRequest` from certification.
+- The `skip` associated function is used to skip certification entirely.
 
 ### Full certification
 

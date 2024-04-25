@@ -1,6 +1,6 @@
 //! Utilities for calculating
 //! [Representation Independent Hashes](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
-//! of [crate::HttpRequest] and [crate::HttpRequest] objects.
+//! of [HttpRequest](crate::HttpRequest) and [HttpResponse](crate::HttpRequest) objects.
 
 mod request_hash;
 pub use request_hash::*;

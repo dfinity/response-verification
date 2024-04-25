@@ -23,7 +23,7 @@ CEL expressions can be created in two ways:
 
 ### Converting CEL expressions into their `String` representation
 
-Note that the [CelExpression](cel::CelExpression) enum is not a CEL expression itself, but rather a Rust representation of a CEL expression. To convert a [CelExpression](cel::CelExpression) into its [String] representation, use [CelExpression.to_string](cel::CelExpression::to_string()) or [create_cel_expr](cel::create_cel_expr()). This applies to CEL expressions created both by the [CEL builder](#using-the-cel-builder) and [directly](#directly-creating-a-cel-expression).
+Note that the [CelExpression] enum is not a CEL expression itself, but rather a Rust representation of a CEL expression. To convert a [CelExpression] into its [String] representation, use [CelExpression.to_string](cel::CelExpression::to_string()) or [create_cel_expr](cel::create_cel_expr()). This applies to CEL expressions created both by the [CEL builder](#using-the-cel-builder) and [directly](#directly-creating-a-cel-expression).
 
 ```rust
 use ic_http_certification::cel::{CelExpression, DefaultCelExpression};
@@ -52,9 +52,9 @@ When certifying requests:
 When certifying responses:
 
 - The response body and status code are always certified.
-- To certify response headers, use [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). This associated function takes the [DefaultResponseCertification](DefaultResponseCertification) enum as an argument.
-  - To specify header inclusions, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum.
-  - To certify all response headers (with some exclusions) use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both associated functions take a [str] slice as an argument.
+- To certify response headers, use [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). This associated function takes the [DefaultResponseCertification] enum as an argument.
+  - To specify header inclusions, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification] enum.
+  - To certify all response headers (with some exclusions) use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification] enum. Both associated functions take a [str] slice as an argument.
 
 #### Fully certified request / response pair
 
@@ -127,7 +127,7 @@ let cel_expr = DefaultCelBuilder::response_only_certification()
 
 #### Partially certified response
 
-Any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum when calling [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). The provided array can also be empty. If the array is empty, or the associated function is not called, no response headers will be certified.
+Any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification] enum when calling [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). The provided array can also be empty. If the array is empty, or the associated function is not called, no response headers will be certified.
 
 For example, to certify only the response body and status code:
 
@@ -177,11 +177,11 @@ Typically, these requests have been routed through `raw` ICP URLs in the past, b
 
 ## Creating certifications
 
-Once a CEL expression has been defined, it can be used in conjunction with an [HTTP request](HttpRequest) and [HTTP response](HttpResponse) to create an instance of the [HttpCertification] enum. The [HttpCertification] enum has three variants, each with a corresponding associated function used to create that particular variant:
+Once a CEL expression has been defined, it can be used in conjunction with an [HttpRequest] and [HttpResponse] to create an instance of the [HttpCertification] struct. The [HttpCertification] struct has three associated functions:
 
-- The [Full](HttpCertification::Full) variant is used to include both the [HTTP request](HttpRequest) and the corresponding [HTTP response](HttpResponse) in certification.
-- The [ResponseOnly](HttpCertification::ResponseOnly) variant is used to include only the [HTTP response](HttpResponse) in certification and exclude the corresponding [HTTP request](HttpRequest) from certification.
-- The [Skip](HttpCertification::Skip) variant is used to skip certification entirely.
+- The [full](HttpCertification::full) associated function is used to include both the [HttpRequest] and the corresponding [HttpResponse] in certification.
+- The [response_only](HttpCertification::response_only) associated function is used to include only the [HttpResponse] in certification and exclude the corresponding [HttpRequest] from certification.
+- The [skip](HttpCertification::skip) associated function is used to skip certification entirely.
 
 ### Full certification
 
@@ -354,7 +354,7 @@ http_certification_tree.delete(&entry);
 
 ## Directly creating a CEL expression
 
-To define a CEL expression, start with the [CelExpression](cel::CelExpression) enum. This enum provides a set of variants that can be used to define different types of CEL expressions supported by ICP HTTP gateways. Currently only one variant is supported, known as the "default" certification expression, but more may be added in the future as the HTTP certification protocol evolves over time.
+To define a CEL expression, start with the [CelExpression] enum. This enum provides a set of variants that can be used to define different types of CEL expressions supported by ICP HTTP gateways. Currently only one variant is supported, known as the "default" certification expression, but more may be added in the future as the HTTP certification protocol evolves over time.
 
 When certifying requests:
 
@@ -364,7 +364,7 @@ When certifying requests:
 When certifying responses:
 
 - The response body and status code are always certified.
-- To certify response headers, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Or to certify all response headers, with some exclusions, use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum. Both associated functions take a [str] slice as an argument.
+- To certify response headers, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification] enum. Or to certify all response headers, with some exclusions, use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification] enum. Both associated functions take a [str] slice as an argument.
 
 Note that the example CEL expressions provided below are formatted for readability. The actual CEL expressions produced by [CelExpression::to_string](cel::CelExpression::to_string()) and [create_cel_expr](cel::create_cel_expr()) are minified. The minified CEL expression is preferred because it is more compact, resulting in a smaller payload and a faster evaluation time for the HTTP Gateway that is verifying the certification, but the formatted versions are also accepted.
 
@@ -456,7 +456,7 @@ default_certification (
 
 ### Skipping request certification
 
-Request certification can be skipped entirely by using the [ResponseOnly](DefaultCelExpression::ResponseOnly) variant of the [DefaultCelExpression](DefaultCelExpression).
+Request certification can be skipped entirely by using the [ResponseOnly](DefaultCelExpression::ResponseOnly) variant of the [DefaultCelExpression].
 
 For example:
 
@@ -493,7 +493,7 @@ default_certification (
 
 ### Partially certified response
 
-Similiarly to request certification, any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification](DefaultResponseCertification) enum, and it can also be an empty array. If the array is empty, no response headers will be certified.
+Similiarly to request certification, any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification] enum, and it can also be an empty array. If the array is empty, no response headers will be certified.
 
 For example:
 

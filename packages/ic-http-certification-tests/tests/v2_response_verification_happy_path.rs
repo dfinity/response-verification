@@ -40,7 +40,7 @@ mod tests {
 
         let certification = HttpCertification::skip();
         let certification_tree_entry =
-            HttpCertificationTreeEntry::new(&certification_path, &certification);
+            HttpCertificationTreeEntry::new(&certification_path, certification);
 
         let V2Fixture {
             root_key,
@@ -103,7 +103,7 @@ mod tests {
 
         let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
         let certification_tree_entry =
-            HttpCertificationTreeEntry::new(&certification_path, &certification);
+            HttpCertificationTreeEntry::new(&certification_path, certification);
 
         let V2Fixture {
             root_key,
@@ -177,7 +177,7 @@ mod tests {
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
-            HttpCertificationTreeEntry::new(&certification_path, &certification);
+            HttpCertificationTreeEntry::new(&certification_path, certification);
 
         let V2Fixture {
             root_key,
@@ -248,7 +248,7 @@ mod tests {
         };
 
         let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
-        let certification_tree_entry = HttpCertificationTreeEntry::new(&expr_path, &certification);
+        let certification_tree_entry = HttpCertificationTreeEntry::new(&expr_path, certification);
 
         let V2Fixture {
             root_key,

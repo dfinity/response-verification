@@ -10,7 +10,7 @@
       "gzip": true,
       "optimize": "cycles",
       "build": [
-        "pnpm -F http-certification-assets-frontend build",
+        "pnpm -F http-certification-custom-assets-frontend build",
         "cargo build --target wasm32-unknown-unknown --release -p http_certification_assets_backend --locked"
       ]
     }

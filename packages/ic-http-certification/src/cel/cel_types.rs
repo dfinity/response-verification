@@ -30,30 +30,30 @@ impl ToString for CelExpression<'_> {
 ///
 /// This enum has three variants:
 ///
-/// - The [Full](DefaultCelExpression::Full) variant includes both the [HTTP request](crate::HttpRequest) and the
-/// corresponding [HTTP response](crate::HttpResponse) in certification. See the [DefaultFullCelExpression] struct
+/// - The [Full](DefaultCelExpression::Full) variant includes both the [HttpRequest](crate::HttpRequest) and the
+/// corresponding [HttpResponse](crate::HttpResponse) in certification. See the [DefaultFullCelExpression] struct
 /// for details on how to configure this variant.
 ///
 /// - The [ResponseOnly](DefaultCelExpression::ResponseOnly) variant includes the
-/// [HTTP response](crate::HttpResponse) in certification, but excludes the corresponding
-/// [HTTP request](crate::HttpRequest) from certification. See the [DefaultResponseOnlyCelExpression] struct for
+/// [HttpResponse](crate::HttpResponse) in certification, but excludes the corresponding
+/// [HttpRequest](crate::HttpRequest) from certification. See the [DefaultResponseOnlyCelExpression] struct for
 /// details on how to configure this variant.
 ///
-/// - The [Skip](DefaultCelExpression::Skip) variant excludes both the [HTTP request](crate::HttpRequest) and the
-/// corresponding [HTTP response](crate::HttpResponse) from certification. This variant does not require any
+/// - The [Skip](DefaultCelExpression::Skip) variant excludes both the [HttpRequest](crate::HttpRequest) and the
+/// corresponding [HttpResponse](crate::HttpResponse) from certification. This variant does not require any
 /// configuration.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DefaultCelExpression<'a> {
-    /// Includes both the [HTTP request](crate::HttpRequest) and the corresponding
-    /// [HTTP response](crate::HttpResponse) in certification.
+    /// Includes both the [HttpRequest](crate::HttpRequest) and the corresponding
+    /// [HttpResponse](crate::HttpResponse) in certification.
     Full(DefaultFullCelExpression<'a>),
 
-    /// Includes an [HTTP response](crate::HttpResponse) in certification, but excludes the corresponding
-    /// [HTTP request](crate::HttpRequest) from certification.
+    /// Includes an [HttpResponse](crate::HttpResponse) in certification, but excludes the corresponding
+    /// [HttpRequest](crate::HttpRequest) from certification.
     ResponseOnly(DefaultResponseOnlyCelExpression<'a>),
 
-    /// Skips certification entirely by excluding both the [HTTP request](crate::HttpRequest) and
-    /// [HTTP response](crate::HttpResponse) from certification.
+    /// Skips certification entirely by excluding both the [HttpRequest](crate::HttpRequest) and
+    /// [HttpResponse](crate::HttpResponse) from certification.
     Skip,
 }
 
@@ -66,8 +66,8 @@ impl ToString for DefaultCelExpression<'_> {
     }
 }
 
-/// Options for configuring a CEL expression that includes only the [HTTP response](crate::HttpResponse) in
-/// certification and excludes the [HTTP request](crate::HttpRequest) from certification.
+/// Options for configuring a CEL expression that includes only the [HttpResponse](crate::HttpResponse) in
+/// certification and excludes the [HttpRequest](crate::HttpRequest) from certification.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefaultResponseOnlyCelExpression<'a> {
     /// Options for configuring response certification for this CEL expression.
@@ -84,8 +84,8 @@ impl ToString for DefaultResponseOnlyCelExpression<'_> {
     }
 }
 
-/// Options for configuring a CEL expression that includes both the [HTTP response](crate::HttpResponse) and
-/// [HTTP request](crate::HttpRequest) in certification.
+/// Options for configuring a CEL expression that includes both the [HttpResponse](crate::HttpResponse) and
+/// [HttpRequest](crate::HttpRequest) in certification.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefaultFullCelExpression<'a> {
     /// Options for configuring request certification for this CEL expression.
@@ -150,9 +150,9 @@ pub(crate) enum DefaultResponseCertificationType<'a> {
 ///
 /// The response body and status code are always certified, but this struct allows configuring the
 /// certification of response headers. Response headers may be included using the
-/// [CertifiedResponseHeaders](DefaultResponseCertification::CertifiedResponseHeaders) variant,
+/// [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function,
 /// and response headers may be excluded using the
-/// [ResponseHeaderExclusions](DefaultResponseCertification::ResponseHeaderExclusions) variant.
+/// [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefaultResponseCertification<'a>(DefaultResponseCertificationType<'a>);
 

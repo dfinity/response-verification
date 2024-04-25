@@ -1,4 +1,4 @@
-# Custom HTTP asset certification
+# Serving static assets over HTTP (custom)
 
 ## Overview
 
@@ -8,8 +8,9 @@ This is not a beginner's canister development guide. Many foundational concepts 
 
 ## Prerequisites
 
-It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced.
+It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced and the previous static assets guide will be best suited for most projects. The approach followed in this guide is better tailored for extreme edge cases that require additional flexibility.
 
+- [x] Complete the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guide.
 - [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
 - [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) guide.
 
