@@ -24,7 +24,7 @@ impl Default for HttpCertificationTree {
 }
 
 impl HttpCertificationTree {
-    /// Creates a new empty [HttpCertificationTree] from a given [CertificationTree].
+    /// Creates a new empty [HttpCertificationTree] from a given [CertificationTree](ic_certification::NestedTree).
     /// The [default](HttpCertificationTree::default) implementation should be used in most cases.
     pub fn new(tree: CertificationTree) -> Self {
         Self { tree }

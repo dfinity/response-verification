@@ -36,8 +36,8 @@ pub fn create_default_skip_cel_expr() -> String {
     cel_expr
 }
 
-/// Converts a CEL expression that only certifies the [HTTP response](crate::HttpResponse), excluding the
-/// [HTTP request](crate::HttpRequest) from certification, from a [DefaultResponseOnlyCelExpression] struct into
+/// Converts a CEL expression that only certifies the [HttpResponse](crate::HttpResponse), excluding the
+/// [HttpRequest](crate::HttpRequest) from certification, from a [DefaultResponseOnlyCelExpression] struct into
 /// it's [String] representation.
 ///
 /// [DefaultResponseOnlyCelExpression::to_string](DefaultResponseOnlyCelExpression::to_string()) is an
@@ -58,8 +58,8 @@ pub fn create_default_response_only_cel_expr(
     cel_expr
 }
 
-/// Converts a CEL expression that certifies both the [HTTP request](crate::HttpRequest) and
-/// [HTTP response](crate::HttpResponse), from a [DefaultFullCelExpression] struct into it's [String] representation.
+/// Converts a CEL expression that certifies both the [HttpRequest](crate::HttpRequest) and
+/// [HttpResponse](crate::HttpResponse), from a [DefaultFullCelExpression] struct into it's [String] representation.
 /// [DefaultFullCelExpression::to_string](DefaultFullCelExpression::to_string()) is an alias of this method and can
 /// be used for ergonomics.
 pub fn create_default_full_cel_expr(certification: &DefaultFullCelExpression) -> String {

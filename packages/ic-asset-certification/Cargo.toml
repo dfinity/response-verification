@@ -1,0 +1,24 @@
+[package]
+name = "ic-asset-certification"
+description = "Certification for static assets served over HTTP on the Internet Computer"
+readme = "README.md"
+documentation = "https://docs.rs/ic-asset-certification"
+categories = ["api-bindings", "data-structures", "no-std"]
+keywords = ["internet-computer", "agent", "utility", "icp", "dfinity"]
+include = ["src", "Cargo.toml", "LICENSE", "README.md"]
+
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[dependencies]
+ic-certification.workspace = true
+ic-http-certification.workspace = true
+thiserror.workspace = true
+globset = "0.4"
+
+[dev-dependencies]
+rstest.workspace = true

@@ -7,5 +7,6 @@ packages:
   - 'examples/certification/certified-counter'
   - 'examples/response-verification/nodejs'
   - 'examples/response-verification/web'
+  - 'examples/http-certification/assets/src/frontend'
   - 'examples/http-certification/custom-assets/src/frontend'
   - 'examples/http-certification/json-api/src/tests'

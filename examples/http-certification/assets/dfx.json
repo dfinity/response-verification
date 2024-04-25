@@ -1,0 +1,18 @@
+{
+  "dfx": "0.18.0",
+  "version": 1,
+  "output_env_file": ".env",
+  "canisters": {
+    "backend": {
+      "type": "custom",
+      "candid": "src/backend/backend.did",
+      "wasm": "../../../target/wasm32-unknown-unknown/release/http_certification_new_assets_backend.wasm",
+      "gzip": true,
+      "optimize": "cycles",
+      "build": [
+        "pnpm -F http-certification-assets-frontend build",
+        "cargo build --target wasm32-unknown-unknown --release -p http_certification_new_assets_backend --locked"
+      ]
+    }
+  }
+}

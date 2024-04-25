@@ -781,7 +781,7 @@ mod serde_impl {
     }
 }
 
-/// Identifiably hashes a fork in the branch. Used for hashing [`HashTree::Fork`].
+/// Identifiably hashes a fork in the branch. Used for hashing [HashTreeNode::Fork].
 pub fn fork_hash(l: &Hash, r: &Hash) -> Hash {
     let mut h = domain_sep("ic-hashtree-fork");
     h.update(&l[..]);
@@ -789,14 +789,14 @@ pub fn fork_hash(l: &Hash, r: &Hash) -> Hash {
     h.finalize().into()
 }
 
-/// Identifiably hashes a leaf node's data. Used for hashing [`HashTree::Leaf`].
+/// Identifiably hashes a leaf node's data. Used for hashing [HashTreeNode::Leaf].
 pub fn leaf_hash(data: &[u8]) -> Hash {
     let mut h = domain_sep("ic-hashtree-leaf");
     h.update(data);
     h.finalize().into()
 }
 
-/// Identifiably hashes a label for this branch. Used for hashing [`HashTree::Labeled`].
+/// Identifiably hashes a label for this branch. Used for hashing [HashTreeNode::Labeled].
 pub fn labeled_hash(label: &[u8], content_hash: &Hash) -> Hash {
     let mut h = domain_sep("ic-hashtree-labeled");
     h.update(label);

@@ -7,22 +7,22 @@ use std::borrow::Cow;
 /// It requires two properties:
 ///
 /// - [path](HttpCertificationTreeEntry::path) specifies the path of an
-/// [HttpCertification](crate::HttpCertification) definition within the tree. This path will define
+/// [HttpCertification] definition within the tree. This path will define
 /// what [HttpRequest](crate::HttpRequest) URLs the
 /// [certification](HttpCertificationTreeEntry::certification) will be valid for.
 ///
 /// - [certification](HttpCertificationTreeEntry::certification) that specifies the
-/// [HttpCertification](crate::HttpCertification) definition itself.
+/// [HttpCertification] definition itself.
 ///
 /// Use the [new](HttpCertificationTreeEntry::new) associated function to create a new `HttpCertificationTreeEntry`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpCertificationTreeEntry<'a> {
-    /// The path of an [HttpCertification](crate::HttpCertification) definition within the tree.
+    /// The path of an [HttpCertification] definition within the tree.
     /// This path will define what [HttpRequest](crate::HttpRequest) URLs the
     /// [certification](HttpCertificationTreeEntry::certification) will be valid for.
     pub path: Cow<'a, HttpCertificationPath<'a>>,
 
-    /// The [HttpCertification](crate::HttpCertification) definition itself.
+    /// The [HttpCertification] definition itself.
     pub certification: Cow<'a, HttpCertification>,
 }
 

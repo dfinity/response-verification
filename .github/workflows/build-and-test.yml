@@ -29,6 +29,9 @@ jobs:
       - name: Test Cargo crates
         run: cargo test --all-features
 
+      - name: Build Cargo docs
+        run: cargo doc --no-deps
+
       - name: Lint Rust
         run: cargo clippy --all-targets --all-features
 
