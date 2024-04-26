@@ -2,6 +2,7 @@
 
 ### Fix
 
+- **ic-http-certification**: fixed an issue where an asset that has a wildcard but not an exact path is not witnessed correctly
 - **ic-certificate-verification**: redundant dependency
 
 ## 2.5.0 (2024-03-19)
