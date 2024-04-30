@@ -46,9 +46,9 @@ struct CertifiedAssetResponse<'a> {
 ///             "cache-control".to_string(),
 ///             "public, no-cache, no-store".to_string(),
 ///         )],
-///         fallback_for: Some(AssetFallbackConfig {
+///         fallback_for: vec![AssetFallbackConfig {
 ///             scope: "/".to_string(),
-///         }),
+///         }],
 ///     },
 ///     AssetConfig::Pattern {
 ///         pattern: "**/*.js".to_string(),
@@ -276,9 +276,9 @@ impl<'a> AssetRouter<'a> {
             }) => {
                 self.insert_static_asset(asset.clone(), content_type.clone(), headers.clone())?;
 
-                if let Some(fallback_for) = fallback_for {
+                for fallback_for in fallback_for.iter() {
                     self.insert_fallback_asset(
-                        asset,
+                        asset.clone(),
                         content_type.clone(),
                         headers.clone(),
                         fallback_for.clone(),
@@ -535,6 +535,46 @@ mod tests {
     }
 
     #[rstest]
+    fn test_not_found_css(
+        not_found_html_body: Vec<u8>,
+        asset_cel_expr: String,
+        asset_router: AssetRouter,
+    ) {
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            url: "/css/core-8d4jhgy2.js".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+        let expected_response = HttpResponse {
+            status_code: 200,
+            body: not_found_html_body.to_vec(),
+            headers: vec![
+                (
+                    "content-length".to_string(),
+                    not_found_html_body.len().to_string(),
+                ),
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
+            ],
+            upgrade: None,
+        };
+
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
+        assert_eq!(expr_path, vec!["http_expr", "css", "<*>"]);
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
+    }
+
+    #[rstest]
     fn test_app_js(app_js_body: Vec<u8>, asset_cel_expr: String, asset_router: AssetRouter) {
         let request = HttpRequest {
             method: "GET".to_string(),
@@ -621,9 +661,9 @@ mod tests {
                 "cache-control".to_string(),
                 "public, no-cache, no-store".to_string(),
             )],
-            fallback_for: Some(AssetFallbackConfig {
+            fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
-            }),
+            }],
         };
 
         asset_router
@@ -710,8 +750,8 @@ mod tests {
         let assets = vec![
             Asset::new("index.html", index_html_body),
             Asset::new("js/app-488df671.js", app_js_body),
-            Asset::new("js/not-found.html", not_found_html_body),
             Asset::new("css/app-ba74b708.css", app_css_body),
+            Asset::new("not-found.html", not_found_html_body),
         ];
 
         let asset_configs = vec![
@@ -722,9 +762,9 @@ mod tests {
                     "cache-control".to_string(),
                     "public, no-cache, no-store".to_string(),
                 )],
-                fallback_for: Some(AssetFallbackConfig {
+                fallback_for: vec![AssetFallbackConfig {
                     scope: "/".to_string(),
-                }),
+                }],
             },
             AssetConfig::Pattern {
                 pattern: "**/*.js".to_string(),
@@ -734,17 +774,6 @@ mod tests {
                     "public, max-age=31536000, immutable".to_string(),
                 )],
             },
-            AssetConfig::File {
-                path: "js/not-found.html".to_string(),
-                content_type: Some("text/html".to_string()),
-                headers: vec![(
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                )],
-                fallback_for: Some(AssetFallbackConfig {
-                    scope: "/js".to_string(),
-                }),
-            },
             AssetConfig::Pattern {
                 pattern: "**/*.css".to_string(),
                 content_type: Some("text/css".to_string()),
@@ -752,6 +781,22 @@ mod tests {
                     "cache-control".to_string(),
                     "public, max-age=31536000, immutable".to_string(),
                 )],
+            },
+            AssetConfig::File {
+                path: "not-found.html".to_string(),
+                content_type: Some("text/html".to_string()),
+                headers: vec![(
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                )],
+                fallback_for: vec![
+                    AssetFallbackConfig {
+                        scope: "/js".to_string(),
+                    },
+                    AssetFallbackConfig {
+                        scope: "/css".to_string(),
+                    },
+                ],
             },
         ];
 

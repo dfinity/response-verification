@@ -29,11 +29,11 @@ use globset::{Glob, GlobMatcher};
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
 ///    ],
-///    fallback_for: None,
+///    fallback_for: vec![],
 /// };
 /// ```
 ///
-/// ## HTML file with fallback
+/// ## Index HTML file with fallback
 ///
 /// This example configures an individual HTML file to be served by the
 /// [AssetRouter](crate::AssetRouter) on the `/index.html` path. In addition,
@@ -50,9 +50,38 @@ use globset::{Glob, GlobMatcher};
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
 ///     ],
-///     fallback_for: Some(AssetFallbackConfig {
+///     fallback_for: vec![AssetFallbackConfig {
 ///         scope: "/".to_string(),
-///     }),
+///     }],
+/// };
+/// ```
+///
+/// ## 404 HTML file with multiple fallbacks
+///
+/// This example configures an individual HTML file to be served by the
+/// [AssetRouter](crate::AssetRouter) on the `/404.html` path. In addition,
+/// it is configured as the fallback for the `/js`, and `/css` scopes. This
+/// means that any request that does not exactly match an asset in the `/js` or
+/// `/css` directories, will be given this response. The content type is set to
+/// `text/html` and a `cache-control` header is added.
+///
+/// ```
+/// use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
+///
+/// let config = AssetConfig::File {
+///     path: "404.html".to_string(),
+///     content_type: Some("text/html".to_string()),
+///     headers: vec![
+///         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
+///     ],
+///     fallback_for: vec![
+///         AssetFallbackConfig {
+///             scope: "/css".to_string(),
+///         },
+///         AssetFallbackConfig {
+///             scope: "/js".to_string(),
+///         },
+///     ],
 /// };
 /// ```
 ///
@@ -103,11 +132,11 @@ pub enum AssetConfig {
         /// [AssetRouter](crate::AssetRouter) for matching [Assets](Asset).
         headers: Vec<(String, String)>,
 
-        /// Configure this asset as a fallback for a specific scope.
+        /// Configure this asset as a fallback for a set of scopes.
         ///
         /// When serving assets, if a requested path does not exactly match any
         /// assets then the [AssetRouter](crate::AssetRouter) will search for an
-        /// asset configured with the fallback scope that most closely matches
+        /// asset configured with a fallback scope that most closely matches
         /// the requested asset's path.
         ///
         /// For example, if a request is made for `/app.js` and no asset with
@@ -128,7 +157,7 @@ pub enum AssetConfig {
         /// If multiple fallback assets are configured, the first one found will
         /// be used. If no asset is found with any of these fallback scopes, no
         /// response will be returned.
-        fallback_for: Option<AssetFallbackConfig>,
+        fallback_for: Vec<AssetFallbackConfig>,
     },
 
     /// Matches files using a glob pattern.
@@ -199,7 +228,7 @@ pub(crate) enum NormalizedAssetConfig {
         path: String,
         content_type: Option<String>,
         headers: Vec<(String, String)>,
-        fallback_for: Option<AssetFallbackConfig>,
+        fallback_for: Vec<AssetFallbackConfig>,
     },
     Pattern {
         pattern: GlobMatcher,
@@ -267,7 +296,7 @@ mod tests {
             path: config_path.to_string(),
             content_type: None,
             headers: vec![],
-            fallback_for: None,
+            fallback_for: vec![],
         }
         .try_into()
         .unwrap();

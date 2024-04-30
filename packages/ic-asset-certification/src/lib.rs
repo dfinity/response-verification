@@ -139,9 +139,34 @@ let config = AssetConfig::File {
     headers: vec![
         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
     ],
-    fallback_for: Some(AssetFallbackConfig {
+    fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
-    }),
+    }],
+};
+```
+
+It's also possible to configure multiple fallbacks for a single asset. The
+following example configures an individual HTML file to be served by the on the
+`/404.html` path, in addition to serving as the fallback for the `/js` and `/css`
+scopes.
+
+```rust
+use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
+
+let config = AssetConfig::File {
+    path: "404.html".to_string(),
+    content_type: Some("text/html".to_string()),
+    headers: vec![
+        ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
+    ],
+    fallback_for: vec![
+        AssetFallbackConfig {
+            scope: "/css".to_string(),
+        },
+        AssetFallbackConfig {
+            scope: "/js".to_string(),
+        },
+    ],
 };
 ```
 
@@ -212,9 +237,9 @@ let asset_config = AssetConfig::File {
   headers: vec![
       ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
   ],
-  fallback_for: Some(AssetFallbackConfig {
+  fallback_for: vec![AssetFallbackConfig {
       scope: "/".to_string(),
-  }),
+  }],
 };
 
 asset_router.certify_asset(asset, Some(asset_config)).unwrap();
@@ -250,9 +275,9 @@ let asset_configs = vec![
           "cache-control".to_string(),
           "public, no-cache, no-store".to_string(),
       )],
-      fallback_for: Some(AssetFallbackConfig {
+      fallback_for: vec![AssetFallbackConfig {
           scope: "/".to_string(),
-      }),
+      }],
   },
   AssetConfig::Pattern {
       pattern: "**/*.js".to_string(),
@@ -322,9 +347,9 @@ let asset_config = AssetConfig::File {
     headers: vec![
       ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
       ],
-      fallback_for: Some(AssetFallbackConfig {
+      fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
-      }),
+      }],
     };
 
 let http_request = HttpRequest {
