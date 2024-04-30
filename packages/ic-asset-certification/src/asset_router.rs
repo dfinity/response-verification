@@ -4,10 +4,11 @@ use crate::{
 };
 use ic_certification::HashTree;
 use ic_http_certification::{
-    DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpCertificationPath,
-    HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
+    DefaultCelBuilder, DefaultResponseCertification, Hash, HttpCertification,
+    HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
+    HttpResponse,
 };
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
 struct CertifiedAssetResponse<'a> {
@@ -22,11 +23,10 @@ struct CertifiedAssetResponse<'a> {
 /// # Example
 ///
 /// ```
-/// use ic_http_certification::{HttpRequest, HttpCertificationTree};
+/// use ic_http_certification::HttpRequest;
 /// use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 ///
 /// let mut asset_router = AssetRouter::default();
-/// let mut http_certification_tree = HttpCertificationTree::default();
 ///
 /// let index_html_body = b"<html><body><h1>Hello World!</h1></body></html>".as_slice();
 /// let app_js_body = b"console.log('Hello World!');".as_slice();
@@ -69,7 +69,7 @@ struct CertifiedAssetResponse<'a> {
 /// ];
 ///
 /// asset_router
-///     .certify_assets(&mut http_certification_tree, assets, asset_configs)
+///     .certify_assets(assets, asset_configs)
 ///     .unwrap();
 ///
 /// let index_html_request = HttpRequest {
@@ -80,12 +80,25 @@ struct CertifiedAssetResponse<'a> {
 /// };
 ///
 /// let (index_html_response, index_html_tree, index_html_expr_path) = asset_router
-///     .serve_asset(&http_certification_tree, &index_html_request)
+///     .serve_asset(&index_html_request)
 ///     .unwrap();
+/// ```
 ///
+/// It's also possible to initialize the [AssetRouter] with an external
+/// [HttpCertificationTree], for cases where the tree needs to be used to
+/// certify other HTTP responses.
+///
+/// ```
+/// use std::{cell::RefCell, rc::Rc};
+/// use ic_http_certification::HttpCertificationTree;
+/// use ic_asset_certification::AssetRouter;
+///
+/// let mut http_certification_tree: Rc<RefCell<HttpCertificationTree>> = Default::default();
+/// let mut asset_router = AssetRouter::with_tree(http_certification_tree.clone());
 /// ```
 #[derive(Debug)]
 pub struct AssetRouter<'a> {
+    tree: Rc<RefCell<HttpCertificationTree>>,
     responses: HashMap<String, CertifiedAssetResponse<'a>>,
     fallback_responses: HashMap<String, CertifiedAssetResponse<'a>>,
 }
@@ -96,6 +109,18 @@ impl<'a> AssetRouter<'a> {
     /// Creates a new [AssetRouter].
     pub fn new() -> Self {
         AssetRouter {
+            tree: Default::default(),
+            responses: HashMap::new(),
+            fallback_responses: HashMap::new(),
+        }
+    }
+
+    /// Creates a new [AssetRouter] using the provided
+    /// [HttpCertificationTree](ic_http_certification::HttpCertificationTree)
+    /// for certifying assets.
+    pub fn with_tree(tree: Rc<RefCell<HttpCertificationTree>>) -> Self {
+        AssetRouter {
+            tree,
             responses: HashMap::new(),
             fallback_responses: HashMap::new(),
         }
@@ -119,7 +144,6 @@ impl<'a> AssetRouter<'a> {
     /// given [HttpRequest](ic_http_certification::HttpRequest).
     pub fn serve_asset(
         &self,
-        http_certification_tree: &HttpCertificationTree,
         request: &HttpRequest,
     ) -> AssetCertificationResult<(HttpResponse, HashTree, Vec<String>)> {
         if let Some(CertifiedAssetResponse {
@@ -127,7 +151,7 @@ impl<'a> AssetRouter<'a> {
             tree_entry,
         }) = self.responses.get(&request.url)
         {
-            let witness = http_certification_tree.witness(tree_entry, &request.url)?;
+            let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
             let expr_path = tree_entry.path.to_expr_path();
 
             return Ok((response.clone().into(), witness, expr_path));
@@ -145,7 +169,7 @@ impl<'a> AssetRouter<'a> {
                 tree_entry,
             }) = self.fallback_responses.get(&scope)
             {
-                let witness = http_certification_tree.witness(tree_entry, &request.url)?;
+                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -158,7 +182,7 @@ impl<'a> AssetRouter<'a> {
                 tree_entry,
             }) = self.fallback_responses.get(&scope)
             {
-                let witness = http_certification_tree.witness(tree_entry, &request.url)?;
+                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -185,7 +209,6 @@ impl<'a> AssetRouter<'a> {
     /// as-is, without headers.
     pub fn certify_asset(
         &mut self,
-        http_certification_tree: &mut HttpCertificationTree,
         asset: Asset<'a>,
         asset_config: Option<AssetConfig>,
     ) -> AssetCertificationResult {
@@ -193,7 +216,7 @@ impl<'a> AssetRouter<'a> {
             .map(TryInto::<NormalizedAssetConfig>::try_into)
             .transpose()?;
 
-        self.certify_asset_impl(http_certification_tree, asset, asset_config.as_ref())
+        self.certify_asset_impl(asset, asset_config.as_ref())
     }
 
     /// Certifies multiple assets and inserts them into the router, to be served
@@ -209,7 +232,6 @@ impl<'a> AssetRouter<'a> {
     /// served and certified as-is, without headers.
     pub fn certify_assets(
         &mut self,
-        http_certification_tree: &mut HttpCertificationTree,
         assets: impl IntoIterator<Item = Asset<'a>>,
         asset_configs: impl IntoIterator<Item = AssetConfig>,
     ) -> AssetCertificationResult {
@@ -221,15 +243,20 @@ impl<'a> AssetRouter<'a> {
         for asset in assets {
             let asset_config = asset_configs.iter().find(|e| e.matches_asset(&asset));
 
-            self.certify_asset_impl(http_certification_tree, asset, asset_config)?;
+            self.certify_asset_impl(asset, asset_config)?;
         }
 
         Ok(())
     }
 
+    /// Returns the root hash of the underlying
+    /// [HttpCertificationTree](ic_http_certification::HttpCertificationTree).
+    pub fn root_hash(&self) -> Hash {
+        self.tree.borrow().root_hash()
+    }
+
     fn certify_asset_impl(
         &mut self,
-        http_certification_tree: &mut HttpCertificationTree,
         asset: Asset<'a>,
         asset_config: Option<&NormalizedAssetConfig>,
     ) -> AssetCertificationResult {
@@ -239,12 +266,7 @@ impl<'a> AssetRouter<'a> {
                 headers,
                 ..
             }) => {
-                self.insert_static_asset(
-                    http_certification_tree,
-                    asset,
-                    content_type.clone(),
-                    headers.clone(),
-                )?;
+                self.insert_static_asset(asset, content_type.clone(), headers.clone())?;
             }
             Some(NormalizedAssetConfig::File {
                 content_type,
@@ -252,16 +274,10 @@ impl<'a> AssetRouter<'a> {
                 fallback_for,
                 ..
             }) => {
-                self.insert_static_asset(
-                    http_certification_tree,
-                    asset.clone(),
-                    content_type.clone(),
-                    headers.clone(),
-                )?;
+                self.insert_static_asset(asset.clone(), content_type.clone(), headers.clone())?;
 
                 if let Some(fallback_for) = fallback_for {
                     self.insert_fallback_asset(
-                        http_certification_tree,
                         asset,
                         content_type.clone(),
                         headers.clone(),
@@ -270,7 +286,7 @@ impl<'a> AssetRouter<'a> {
                 }
             }
             None => {
-                self.insert_static_asset(http_certification_tree, asset, None, vec![])?;
+                self.insert_static_asset(asset, None, vec![])?;
             }
         }
 
@@ -279,7 +295,6 @@ impl<'a> AssetRouter<'a> {
 
     fn insert_static_asset(
         &mut self,
-        http_certification_tree: &mut HttpCertificationTree,
         asset: Asset<'a>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
@@ -293,7 +308,7 @@ impl<'a> AssetRouter<'a> {
             certification,
         );
 
-        http_certification_tree.insert(&tree_entry);
+        self.tree.borrow_mut().insert(&tree_entry);
 
         self.responses.insert(
             asset_url,
@@ -308,7 +323,6 @@ impl<'a> AssetRouter<'a> {
 
     fn insert_fallback_asset(
         &mut self,
-        http_certification_tree: &mut HttpCertificationTree,
         asset: Asset<'a>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
@@ -322,7 +336,7 @@ impl<'a> AssetRouter<'a> {
             certification,
         );
 
-        http_certification_tree.insert(&tree_entry);
+        self.tree.borrow_mut().insert(&tree_entry);
 
         self.fallback_responses.insert(
             fallback_for.scope,
@@ -400,10 +414,8 @@ mod tests {
     fn test_index_html_root_fallback(
         index_html_body: Vec<u8>,
         asset_cel_expr: String,
-        certification_fixture: (HttpCertificationTree, AssetRouter),
+        asset_router: AssetRouter,
     ) {
-        let (http_certification_tree, asset_router) = certification_fixture;
-
         let request = HttpRequest {
             method: "GET".to_string(),
             url: "/".to_string(),
@@ -429,9 +441,7 @@ mod tests {
             upgrade: None,
         };
 
-        let (response, witness, expr_path) = asset_router
-            .serve_asset(&http_certification_tree, &request)
-            .unwrap();
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
@@ -445,10 +455,8 @@ mod tests {
     fn test_index_html_nested_fallback(
         index_html_body: Vec<u8>,
         asset_cel_expr: String,
-        certification_fixture: (HttpCertificationTree, AssetRouter),
+        asset_router: AssetRouter,
     ) {
-        let (http_certification_tree, asset_router) = certification_fixture;
-
         let expected_response = HttpResponse {
             status_code: 200,
             body: index_html_body.clone(),
@@ -476,9 +484,7 @@ mod tests {
         let requested_expr_path =
             HttpCertificationPath::exact("/assets/css/app.css").to_expr_path();
 
-        let (response, witness, expr_path) = asset_router
-            .serve_asset(&http_certification_tree, &request)
-            .unwrap();
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -492,13 +498,7 @@ mod tests {
     }
 
     #[rstest]
-    fn text_app_css(
-        app_css_body: Vec<u8>,
-        asset_cel_expr: String,
-        certification_fixture: (HttpCertificationTree, AssetRouter),
-    ) {
-        let (http_certification_tree, asset_router) = certification_fixture;
-
+    fn text_app_css(app_css_body: Vec<u8>, asset_cel_expr: String, asset_router: AssetRouter) {
         let request = HttpRequest {
             method: "GET".to_string(),
             url: "/css/app-ba74b708.css".to_string(),
@@ -521,9 +521,7 @@ mod tests {
             upgrade: None,
         };
 
-        let (response, witness, expr_path) = asset_router
-            .serve_asset(&http_certification_tree, &request)
-            .unwrap();
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
         assert_eq!(
             expr_path,
@@ -537,13 +535,7 @@ mod tests {
     }
 
     #[rstest]
-    fn test_app_js(
-        app_js_body: Vec<u8>,
-        asset_cel_expr: String,
-        certification_fixture: (HttpCertificationTree, AssetRouter),
-    ) {
-        let (http_certification_tree, asset_router) = certification_fixture;
-
+    fn test_app_js(app_js_body: Vec<u8>, asset_cel_expr: String, asset_router: AssetRouter) {
         let request = HttpRequest {
             method: "GET".to_string(),
             url: "/js/app-488df671.js".to_string(),
@@ -566,9 +558,7 @@ mod tests {
             upgrade: None,
         };
 
-        let (response, witness, expr_path) = asset_router
-            .serve_asset(&http_certification_tree, &request)
-            .unwrap();
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
         assert_eq!(expr_path, vec!["http_expr", "js", "app-488df671.js", "<$>"]);
         assert!(matches!(
@@ -582,10 +572,8 @@ mod tests {
     fn test_not_found_js(
         not_found_html_body: Vec<u8>,
         asset_cel_expr: String,
-        certification_fixture: (HttpCertificationTree, AssetRouter),
+        asset_router: AssetRouter,
     ) {
-        let (http_certification_tree, asset_router) = certification_fixture;
-
         let request = HttpRequest {
             method: "GET".to_string(),
             url: "/js/core-7dk12y45.js".to_string(),
@@ -610,9 +598,7 @@ mod tests {
             upgrade: None,
         };
 
-        let (response, witness, expr_path) = asset_router
-            .serve_asset(&http_certification_tree, &request)
-            .unwrap();
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
         assert_eq!(expr_path, vec!["http_expr", "js", "<*>"]);
         assert!(matches!(
@@ -620,6 +606,67 @@ mod tests {
             SubtreeLookupResult::Found(_)
         ));
         assert_eq!(response, expected_response);
+    }
+
+    #[rstest]
+    fn test_init_with_tree(index_html_body: Vec<u8>, asset_cel_expr: String) {
+        let http_certification_tree: Rc<RefCell<HttpCertificationTree>> = Default::default();
+        let mut asset_router = AssetRouter::with_tree(http_certification_tree.clone());
+
+        let index_html_asset = Asset::new("index.html", &index_html_body);
+        let index_html_config = AssetConfig::File {
+            path: "index.html".to_string(),
+            content_type: Some("text/html".to_string()),
+            headers: vec![(
+                "cache-control".to_string(),
+                "public, no-cache, no-store".to_string(),
+            )],
+            fallback_for: Some(AssetFallbackConfig {
+                scope: "/".to_string(),
+            }),
+        };
+
+        asset_router
+            .certify_asset(index_html_asset, Some(index_html_config))
+            .unwrap();
+
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            url: "/".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let expected_response = HttpResponse {
+            status_code: 200,
+            body: index_html_body.clone(),
+            headers: vec![
+                (
+                    "content-length".to_string(),
+                    index_html_body.len().to_string(),
+                ),
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
+            ],
+            upgrade: None,
+        };
+
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
+        assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
+        assert_eq!(
+            asset_router.root_hash(),
+            http_certification_tree.borrow().root_hash()
+        );
     }
 
     #[fixture]
@@ -653,15 +700,13 @@ mod tests {
     }
 
     #[fixture]
-    fn certification_fixture(
+    fn asset_router(
         index_html_body: Vec<u8>,
         app_js_body: Vec<u8>,
         app_css_body: Vec<u8>,
         not_found_html_body: Vec<u8>,
-    ) -> (HttpCertificationTree, AssetRouter<'static>) {
+    ) -> AssetRouter<'static> {
         let mut asset_router = AssetRouter::default();
-        let mut http_certification_tree = HttpCertificationTree::default();
-
         let assets = vec![
             Asset::new("index.html", index_html_body),
             Asset::new("js/app-488df671.js", app_js_body),
@@ -710,10 +755,8 @@ mod tests {
             },
         ];
 
-        asset_router
-            .certify_assets(&mut http_certification_tree, assets, asset_configs)
-            .unwrap();
+        asset_router.certify_assets(assets, asset_configs).unwrap();
 
-        (http_certification_tree, asset_router)
+        asset_router
     }
 }

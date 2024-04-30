@@ -150,8 +150,12 @@ The `certify_all_assets` function performs the following steps:
 
 ```rust
 thread_local! {
-    static HTTP_TREE: RefCell<HttpCertificationTree> = RefCell::new(HttpCertificationTree::default());
-    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::default());
+    static HTTP_TREE: Rc<RefCell<HttpCertificationTree>> = Default::default();
+
+    // initializing the asset router with an HTTP certification tree is optional.
+    // if direct access to the HTTP certification tree is not needed for certifying
+    // requests and responses outside of the asset router, then this step can be skipped.
+    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::with_tree(HTTP_TREE.with(|tree| tree.clone())));
 }
 
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
@@ -208,16 +212,14 @@ fn certify_all_assets() {
     let mut assets = Vec::new();
     collect_assets(&ASSETS_DIR, &mut assets);
 
-    HTTP_TREE.with_borrow_mut(|http_tree| {
-        ASSET_ROUTER.with_borrow_mut(|asset_router| {
-            // 3. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
-            if let Err(err) = asset_router.certify_assets(http_tree, assets, asset_configs) {
-                ic_cdk::trap(&format!("Failed to certify assets: {}", err));
-            }
-        });
+    ASSET_ROUTER.with_borrow_mut(|asset_router| {
+        // 3. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
+        if let Err(err) = asset_router.certify_assets(assets, asset_configs) {
+            ic_cdk::trap(&format!("Failed to certify assets: {}", err));
+        }
 
         // 4. Set the canister's certified data.
-        set_certified_data(&http_tree.root_hash());
+        set_certified_data(&asset_router.root_hash());
     });
 }
 ```
@@ -228,17 +230,14 @@ The `serve_asset` function is responsible for serving assets. It uses the `serve
 
 ```rust
 fn serve_asset(req: &HttpRequest) -> HttpResponse {
-    HTTP_TREE.with_borrow(|http_tree| {
-        ASSET_ROUTER.with_borrow(|asset_router| {
-            if let Ok((mut response, witness, expr_path)) = asset_router.serve_asset(http_tree, req)
-            {
-                add_certificate_header(&mut response, &witness, &expr_path);
+    ASSET_ROUTER.with_borrow(|asset_router| {
+        if let Ok((mut response, witness, expr_path)) = asset_router.serve_asset(req) {
+            add_certificate_header(&mut response, &witness, &expr_path);
 
-                response
-            } else {
-                ic_cdk::trap("Failed to serve asset");
-            }
-        })
+            response
+        } else {
+            ic_cdk::trap("Failed to serve asset");
+        }
     })
 }
 ```
