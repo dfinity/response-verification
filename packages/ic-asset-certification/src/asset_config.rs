@@ -30,6 +30,7 @@ use globset::{Glob, GlobMatcher};
 ///         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
 ///    ],
 ///    fallback_for: vec![],
+///    aliased_by: vec![],
 /// };
 /// ```
 ///
@@ -53,17 +54,29 @@ use globset::{Glob, GlobMatcher};
 ///     fallback_for: vec![AssetFallbackConfig {
 ///         scope: "/".to_string(),
 ///     }],
+///     aliased_by: vec!["/".to_string()],
 /// };
 /// ```
 ///
-/// ## 404 HTML file with multiple fallbacks
+/// ## 404 HTML file with multiple fallbacks and aliases
 ///
 /// This example configures an individual HTML file to be served by the
-/// [AssetRouter](crate::AssetRouter) on the `/404.html` path. In addition,
-/// it is configured as the fallback for the `/js`, and `/css` scopes. This
-/// means that any request that does not exactly match an asset in the `/js` or
-/// `/css` directories, will be given this response. The content type is set to
-/// `text/html` and a `cache-control` header is added.
+/// [AssetRouter](crate::AssetRouter) on the `/404.html` path.
+///
+/// In addition, it is configured as the fallback for the `/js`, and `/css`
+/// scopes. This means that any request that does not exactly match an asset in
+/// the `/js` or `/css` directories, will be given this response. The content
+/// type is set to `text/html` and a `cache-control` header is added.
+///
+/// The asset is also aliased by multiple paths. This means that any request
+/// made to one of these aliases will be served the asset at `/404.html`.
+/// The asset is aliased by the following paths:
+///     - `/404`
+///     - `/404/`
+///     - `/404.html`
+///     - `/not-found`
+///     - `/not-found/`
+///     - `/not-found/index.html`
 ///
 /// ```
 /// use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
@@ -82,6 +95,14 @@ use globset::{Glob, GlobMatcher};
 ///             scope: "/js".to_string(),
 ///         },
 ///     ],
+///     aliased_by: vec![
+///         "/404".to_string(),
+///         "/404/".to_string(),
+///         "/404.html".to_string(),
+///         "/not-found".to_string(),
+///         "/not-found/".to_string(),
+///         "/not-found/index.html".to_string(),
+///    ],
 /// };
 /// ```
 ///
@@ -158,6 +179,15 @@ pub enum AssetConfig {
         /// be used. If no asset is found with any of these fallback scopes, no
         /// response will be returned.
         fallback_for: Vec<AssetFallbackConfig>,
+
+        /// A list of aliases for this asset. If a request is made for one of
+        /// these aliases, the asset will be served as if the request was made
+        /// for the original path.
+        ///
+        /// For example, if an asset is configured with the path `index.html` and
+        /// the alias `/`, a request for `/` will be served the
+        /// asset at `index.html`.
+        aliased_by: Vec<String>,
     },
 
     /// Matches files using a glob pattern.
@@ -229,6 +259,7 @@ pub(crate) enum NormalizedAssetConfig {
         content_type: Option<String>,
         headers: Vec<(String, String)>,
         fallback_for: Vec<AssetFallbackConfig>,
+        aliased_by: Vec<String>,
     },
     Pattern {
         pattern: GlobMatcher,
@@ -247,11 +278,13 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
                 content_type,
                 headers,
                 fallback_for,
+                aliased_by,
             } => Ok(NormalizedAssetConfig::File {
                 path,
                 content_type,
                 headers,
                 fallback_for,
+                aliased_by,
             }),
             AssetConfig::Pattern {
                 pattern,
@@ -267,7 +300,7 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
 }
 
 impl NormalizedAssetConfig {
-    pub(crate) fn matches_asset<'a>(&self, asset: &'a Asset<'a>) -> bool {
+    pub(crate) fn matches_asset(&self, asset: &Asset) -> bool {
         match self {
             Self::File { path, .. } => path == asset.path.as_ref(),
             Self::Pattern { pattern, .. } => pattern.is_match(asset.path.as_ref()),
@@ -297,6 +330,7 @@ mod tests {
             content_type: None,
             headers: vec![],
             fallback_for: vec![],
+            aliased_by: vec![],
         }
         .try_into()
         .unwrap();

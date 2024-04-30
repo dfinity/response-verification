@@ -40,7 +40,10 @@ static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist"
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
 
 /// Rescursively collect all assets from the provided directory
-fn collect_assets<'a>(dir: &'a Dir, assets: &mut Vec<Asset<'a>>) {
+fn collect_assets<'content, 'path>(
+    dir: &'content Dir<'path>,
+    assets: &mut Vec<Asset<'content, 'path>>,
+) {
     for file in dir.files() {
         assets.push(Asset::new(file.path().to_string_lossy(), file.contents()));
     }
@@ -64,6 +67,7 @@ fn certify_all_assets() {
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
             }],
+            aliased_by: vec!["/".to_string()],
         },
         AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),

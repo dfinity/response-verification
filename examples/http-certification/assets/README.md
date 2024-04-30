@@ -99,7 +99,10 @@ With the assets loaded, they need to be converted into the `Asset` type that the
 
 ```rust
 /// Rescursively collect all assets from the provided directory
-fn collect_assets<'a>(dir: &'a Dir, assets: &mut Vec<Asset<'a>>) {
+fn collect_assets<'content, 'path>(
+    dir: &'content Dir<'path>,
+    assets: &mut Vec<Asset<'content, 'path>>,
+) {
     for file in dir.files() {
         assets.push(Asset::new(file.path().to_string_lossy(), file.contents()));
     }
@@ -137,7 +140,7 @@ fn get_asset_headers(additional_headers: Vec<HeaderField>) -> Vec<HeaderField> {
 }
 ```
 
-For the `index.html` file, the `AssetConfig::File` variant is used to target the configuration to that file specifically. The `fallback_for` field of this variant is used to specify that this asset is the fallback for all paths that don't exactly match a file.
+For the `index.html` file, the `AssetConfig::File` variant is used to target the configuration to that file specifically. The `fallback_for` field of this variant is used to specify that this asset is the fallback for all paths that don't exactly match a file and the `aliased_by` field is used to specify alternative paths that will serve the asset.
 
 For the remaining files, they can all be configured in bulk using the `AssetConfig::Pattern` variant. This variant uses a glob pattern to match multiple files.
 
@@ -170,9 +173,10 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 "public, no-cache, no-store".to_string(),
             )]),
-            fallback_for: Some(AssetFallbackConfig {
+            fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
-            }),
+            }],
+            aliased_by: vec!["/".to_string()],
         },
         AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),
