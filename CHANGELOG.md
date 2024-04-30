@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Feat
+
+- **ic-asset-certification**: add initial asset router
+
 ### Fix
 
 - **ic-http-certification**: fixed an issue where an asset that has a wildcard but not an exact path is not witnessed correctly
