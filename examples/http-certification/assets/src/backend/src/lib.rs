@@ -61,9 +61,9 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 "public, no-cache, no-store".to_string(),
             )]),
-            fallback_for: Some(AssetFallbackConfig {
+            fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
-            }),
+            }],
         },
         AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),
