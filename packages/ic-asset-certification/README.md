@@ -192,22 +192,12 @@ let config = AssetConfig::Pattern {
 The `AssetRouter` is responsible for certifying responses and routing requests to
 the appropriate response.
 
-```rust
-use ic_http_certification::HttpCertificationTree;
-use ic_asset_certification::AssetRouter;
-
-let mut asset_router = AssetRouter::default();
-let mut http_certification_tree = HttpCertificationTree::default();
-```
-
 Assets can be inserted one by one using the `certify_asset` method:
 
 ```rust
-use ic_http_certification::HttpCertificationTree;
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 
 let mut asset_router = AssetRouter::default();
-let mut http_certification_tree = HttpCertificationTree::default();
 
 let asset = Asset::new(
     "index.html",
@@ -225,17 +215,15 @@ let asset_config = AssetConfig::File {
     }),
 };
 
-asset_router.certify_asset(&mut http_certification_tree, asset, Some(asset_config)).unwrap();
+asset_router.certify_asset(asset, Some(asset_config)).unwrap();
 ```
 
 Or in bulk using the `certify_assets` method:
 
 ```rust
-use ic_http_certification::HttpCertificationTree;
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 
 let mut asset_router = AssetRouter::default();
-let mut http_certification_tree = HttpCertificationTree::default();
 
 let assets = vec![
     Asset::new(
@@ -282,7 +270,35 @@ let asset_configs = vec![
     },
 ];
 
-asset_router.certify_assets(&mut http_certification_tree, assets, asset_configs).unwrap();
+asset_router.certify_assets(assets, asset_configs).unwrap();
+```
+
+After certifying assets, make sure to set the canister's
+certified data:
+
+```rust
+use ic_cdk::api::set_certified_data;
+
+set_certified_data(&asset_router.root_hash());
+```
+
+After creating the `AssetRouter`, it's also possible to initialize the router
+with an `HttpCertificationTree`. This is useful when direct access to the
+`HttpCertificationTree` is required for certifying `HttpRequest`s and
+`HttpResponse`s outside of the `AssetRouter`.
+
+The initialization of the `AssetRouter` must be done before certifying any assets
+as the initialization function will reset the internal state of the `AssetRouter`.
+
+```rust
+use std::{cell::RefCell, rc::Rc};
+use ic_http_certification::HttpCertificationTree;
+use ic_asset_certification::AssetRouter;
+
+let mut http_certification_tree: Rc<RefCell<HttpCertificationTree>> = Default::default();
+let mut asset_router = AssetRouter::default();
+
+asset_router.init_with_tree(http_certification_tree.clone());
 ```
 
 ## Serving assets
@@ -290,11 +306,10 @@ asset_router.certify_assets(&mut http_certification_tree, assets, asset_configs)
 Assets can be served by calling the `serve_asset` method on the `AssetRouter`:
 
 ```rust
-use ic_http_certification::{HttpCertificationTree, HttpRequest};
+use ic_http_certification::HttpRequest;
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 
 let mut asset_router = AssetRouter::default();
-let mut http_certification_tree = HttpCertificationTree::default();
 
 let asset = Asset::new(
     "index.html",
@@ -319,9 +334,9 @@ let http_request = HttpRequest {
     body: vec![],
 };
 
-asset_router.certify_asset(&mut http_certification_tree, asset, Some(asset_config)).unwrap();
+asset_router.certify_asset(asset, Some(asset_config)).unwrap();
 
-let (response, witness, expr_path) = asset_router.serve_asset(&http_certification_tree, &http_request).unwrap();
+let (response, witness, expr_path) = asset_router.serve_asset(&http_request).unwrap();
 ```
 
 Some additional steps are then required to prepare the response for sending:
