@@ -29,17 +29,17 @@ use std::borrow::Cow;
 /// let asset = Asset::new(path, content);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Asset<'a> {
-    pub(crate) path: Cow<'a, str>,
+pub struct Asset<'content, 'path> {
+    pub(crate) path: Cow<'path, str>,
     pub(crate) url: String,
-    pub(crate) content: Cow<'a, [u8]>,
+    pub(crate) content: Cow<'content, [u8]>,
 }
 
-impl<'a> Asset<'a> {
+impl<'content, 'path> Asset<'content, 'path> {
     /// Creates a new asset with the given path and content.
     /// Both parameters may be owned values, or references so developers are free to
     /// choose whichever option is best suited for their use case.
-    pub fn new(path: impl Into<Cow<'a, str>>, content: impl Into<Cow<'a, [u8]>>) -> Self {
+    pub fn new(path: impl Into<Cow<'path, str>>, content: impl Into<Cow<'content, [u8]>>) -> Self {
         let path = path.into();
 
         Asset {

@@ -49,6 +49,7 @@ struct CertifiedAssetResponse<'a> {
 ///         fallback_for: vec![AssetFallbackConfig {
 ///             scope: "/".to_string(),
 ///         }],
+///         aliased_by: vec!["/".to_string()],
 ///     },
 ///     AssetConfig::Pattern {
 ///         pattern: "**/*.js".to_string(),
@@ -97,15 +98,15 @@ struct CertifiedAssetResponse<'a> {
 /// let mut asset_router = AssetRouter::with_tree(http_certification_tree.clone());
 /// ```
 #[derive(Debug)]
-pub struct AssetRouter<'a> {
+pub struct AssetRouter<'content> {
     tree: Rc<RefCell<HttpCertificationTree>>,
-    responses: HashMap<String, CertifiedAssetResponse<'a>>,
-    fallback_responses: HashMap<String, CertifiedAssetResponse<'a>>,
+    responses: HashMap<String, CertifiedAssetResponse<'content>>,
+    fallback_responses: HashMap<String, CertifiedAssetResponse<'content>>,
 }
 
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 
-impl<'a> AssetRouter<'a> {
+impl<'content> AssetRouter<'content> {
     /// Creates a new [AssetRouter].
     pub fn new() -> Self {
         AssetRouter {
@@ -207,9 +208,9 @@ impl<'a> AssetRouter<'a> {
     ///
     /// If no configuration is provided, the asset will be certified and served
     /// as-is, without headers.
-    pub fn certify_asset(
+    pub fn certify_asset<'path>(
         &mut self,
-        asset: Asset<'a>,
+        asset: Asset<'content, 'path>,
         asset_config: Option<AssetConfig>,
     ) -> AssetCertificationResult {
         let asset_config = asset_config
@@ -230,9 +231,9 @@ impl<'a> AssetRouter<'a> {
     ///
     /// If no configuration matches an individual asset, the asset will be
     /// served and certified as-is, without headers.
-    pub fn certify_assets(
+    pub fn certify_assets<'path>(
         &mut self,
-        assets: impl IntoIterator<Item = Asset<'a>>,
+        assets: impl IntoIterator<Item = Asset<'content, 'path>>,
         asset_configs: impl IntoIterator<Item = AssetConfig>,
     ) -> AssetCertificationResult {
         let asset_configs: Vec<NormalizedAssetConfig> = asset_configs
@@ -255,9 +256,9 @@ impl<'a> AssetRouter<'a> {
         self.tree.borrow().root_hash()
     }
 
-    fn certify_asset_impl(
+    fn certify_asset_impl<'path>(
         &mut self,
-        asset: Asset<'a>,
+        asset: Asset<'content, 'path>,
         asset_config: Option<&NormalizedAssetConfig>,
     ) -> AssetCertificationResult {
         match asset_config {
@@ -272,6 +273,7 @@ impl<'a> AssetRouter<'a> {
                 content_type,
                 headers,
                 fallback_for,
+                aliased_by,
                 ..
             }) => {
                 self.insert_static_asset(asset.clone(), content_type.clone(), headers.clone())?;
@@ -284,6 +286,14 @@ impl<'a> AssetRouter<'a> {
                         fallback_for.clone(),
                     )?;
                 }
+
+                for aliased_by in aliased_by.iter() {
+                    self.insert_static_asset(
+                        Asset::new(aliased_by, asset.content.clone()),
+                        content_type.clone(),
+                        headers.clone(),
+                    )?;
+                }
             }
             None => {
                 self.insert_static_asset(asset, None, vec![])?;
@@ -293,9 +303,9 @@ impl<'a> AssetRouter<'a> {
         Ok(())
     }
 
-    fn insert_static_asset(
+    fn insert_static_asset<'path>(
         &mut self,
-        asset: Asset<'a>,
+        asset: Asset<'content, 'path>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
     ) -> AssetCertificationResult<()> {
@@ -321,9 +331,9 @@ impl<'a> AssetRouter<'a> {
         Ok(())
     }
 
-    fn insert_fallback_asset(
+    fn insert_fallback_asset<'path>(
         &mut self,
-        asset: Asset<'a>,
+        asset: Asset<'content, 'path>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
@@ -349,11 +359,11 @@ impl<'a> AssetRouter<'a> {
         Ok(())
     }
 
-    fn prepare_response_and_certification(
-        asset: Asset<'a>,
+    fn prepare_response_and_certification<'path>(
+        asset: Asset<'content, 'path>,
         additional_headers: Vec<(String, String)>,
         content_type: Option<String>,
-    ) -> AssetCertificationResult<(AssetResponse<'a>, HttpCertification)> {
+    ) -> AssetCertificationResult<(AssetResponse<'content>, HttpCertification)> {
         let mut headers = vec![(
             "content-length".to_string(),
             asset.content.len().to_string(),
@@ -409,6 +419,48 @@ mod tests {
     use ic_certification::hash_tree::SubtreeLookupResult;
     use ic_http_certification::cel::DefaultFullCelExpressionBuilder;
     use rstest::*;
+    use std::vec;
+
+    #[rstest]
+    fn test_index_html(
+        index_html_body: Vec<u8>,
+        asset_cel_expr: String,
+        asset_router: AssetRouter,
+    ) {
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            url: "/".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let expected_response = HttpResponse {
+            status_code: 200,
+            body: index_html_body.clone(),
+            headers: vec![
+                (
+                    "content-length".to_string(),
+                    index_html_body.len().to_string(),
+                ),
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
+            ],
+            upgrade: None,
+        };
+
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
+        assert_eq!(expr_path, vec!["http_expr", "", "<$>"]);
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
+    }
 
     #[rstest]
     fn test_index_html_root_fallback(
@@ -418,7 +470,7 @@ mod tests {
     ) {
         let request = HttpRequest {
             method: "GET".to_string(),
-            url: "/".to_string(),
+            url: "/something".to_string(),
             headers: vec![],
             body: vec![],
         };
@@ -649,6 +701,84 @@ mod tests {
     }
 
     #[rstest]
+    fn test_not_found_alias(
+        not_found_html_body: Vec<u8>,
+        asset_cel_expr: String,
+        asset_router: AssetRouter,
+    ) {
+        let requests = vec![
+            HttpRequest {
+                method: "GET".to_string(),
+                url: "/404".to_string(),
+                headers: vec![],
+                body: vec![],
+            },
+            HttpRequest {
+                method: "GET".to_string(),
+                url: "/404/".to_string(),
+                headers: vec![],
+                body: vec![],
+            },
+            HttpRequest {
+                method: "GET".to_string(),
+                url: "/404.html".to_string(),
+                headers: vec![],
+                body: vec![],
+            },
+            HttpRequest {
+                method: "GET".to_string(),
+                url: "/not-found".to_string(),
+                headers: vec![],
+                body: vec![],
+            },
+            HttpRequest {
+                method: "GET".to_string(),
+                url: "/not-found/".to_string(),
+                headers: vec![],
+                body: vec![],
+            },
+            HttpRequest {
+                method: "GET".to_string(),
+                url: "/not-found/index.html".to_string(),
+                headers: vec![],
+                body: vec![],
+            },
+        ];
+
+        let expected_response = HttpResponse {
+            status_code: 200,
+            body: not_found_html_body.to_vec(),
+            headers: vec![
+                (
+                    "content-length".to_string(),
+                    not_found_html_body.len().to_string(),
+                ),
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
+            ],
+            upgrade: None,
+        };
+
+        for request in requests {
+            let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
+            assert_eq!(
+                expr_path,
+                HttpCertificationPath::exact(request.url).to_expr_path()
+            );
+            assert!(matches!(
+                witness.lookup_subtree(&expr_path),
+                SubtreeLookupResult::Found(_)
+            ));
+            assert_eq!(response, expected_response);
+        }
+    }
+
+    #[rstest]
     fn test_init_with_tree(index_html_body: Vec<u8>, asset_cel_expr: String) {
         let http_certification_tree: Rc<RefCell<HttpCertificationTree>> = Default::default();
         let mut asset_router = AssetRouter::with_tree(http_certification_tree.clone());
@@ -664,6 +794,7 @@ mod tests {
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
             }],
+            aliased_by: vec!["/".to_string()],
         };
 
         asset_router
@@ -697,7 +828,7 @@ mod tests {
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
-        assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
+        assert_eq!(expr_path, vec!["http_expr", "", "<$>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
@@ -765,6 +896,7 @@ mod tests {
                 fallback_for: vec![AssetFallbackConfig {
                     scope: "/".to_string(),
                 }],
+                aliased_by: vec!["/".to_string()],
             },
             AssetConfig::Pattern {
                 pattern: "**/*.js".to_string(),
@@ -796,6 +928,14 @@ mod tests {
                     AssetFallbackConfig {
                         scope: "/css".to_string(),
                     },
+                ],
+                aliased_by: vec![
+                    "/404".to_string(),
+                    "/404/".to_string(),
+                    "/404.html".to_string(),
+                    "/not-found".to_string(),
+                    "/not-found/".to_string(),
+                    "/not-found/index.html".to_string(),
                 ],
             },
         ];

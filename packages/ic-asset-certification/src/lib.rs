@@ -126,9 +126,14 @@ If multiple fallback assets are configured, the first one found will be used,
 since that will be the most specific one available for that path. If no asset is
 found with any of these fallback scopes, no response will be returned.
 
+It's also possible to register aliases for an asset. This can be useful for
+configuring multiple paths that should serve the same asset. For example, if an
+asset is configured with the path `index.html`, it can be aliased by the path
+`/`.
+
 The following example configures an individual HTML file to be served by the
 on the `/index.html` path, in addition to serving as the fallback for the `/`
-scope.
+scope and setting `/` as an alias for this asset.
 
 ```rust
 use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
@@ -142,6 +147,7 @@ let config = AssetConfig::File {
     fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
     }],
+    aliased_by: vec!["/".to_string()],
 };
 ```
 
@@ -149,6 +155,19 @@ It's also possible to configure multiple fallbacks for a single asset. The
 following example configures an individual HTML file to be served by the on the
 `/404.html` path, in addition to serving as the fallback for the `/js` and `/css`
 scopes.
+
+Any request to paths starting in `/js` and `/css` directories that don't exactly
+match an asset will be routed to the `/404.html` asset.
+
+Multiple aliases are also configured for this asset, namely:
+- `/404`,
+- `/404/`,
+- `/404.html`
+- `/not-found`
+- `/not-found/`
+- `/not-found/index.html`
+
+Requests to any of those aliases will serve the `/404.html` asset.
 
 ```rust
 use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
@@ -166,6 +185,14 @@ let config = AssetConfig::File {
         AssetFallbackConfig {
             scope: "/js".to_string(),
         },
+    ],
+    aliased_by: vec![
+        "/404".to_string(),
+        "/404/".to_string(),
+        "/404.html".to_string(),
+        "/not-found".to_string(),
+        "/not-found/".to_string(),
+        "/not-found/index.html".to_string(),
     ],
 };
 ```
@@ -240,6 +267,7 @@ let asset_config = AssetConfig::File {
   fallback_for: vec![AssetFallbackConfig {
       scope: "/".to_string(),
   }],
+  aliased_by: vec!["/".to_string()],
 };
 
 asset_router.certify_asset(asset, Some(asset_config)).unwrap();
@@ -278,6 +306,7 @@ let asset_configs = vec![
       fallback_for: vec![AssetFallbackConfig {
           scope: "/".to_string(),
       }],
+      aliased_by: vec!["/".to_string()],
   },
   AssetConfig::Pattern {
       pattern: "**/*.js".to_string(),
@@ -346,11 +375,12 @@ let asset_config = AssetConfig::File {
     content_type: Some("text/html".to_string()),
     headers: vec![
       ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
-      ],
-      fallback_for: vec![AssetFallbackConfig {
+    ],
+    fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
-      }],
-    };
+    }],
+    aliased_by: vec!["/".to_string()],
+};
 
 let http_request = HttpRequest {
   method: "GET".to_string(),
