@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **ic-asset-certification**: add support for multiple fallbacks per asset
 - **ic-asset-certification**: optionally init asset router with HTTP Certification tree
 - **ic-asset-certification**: add initial asset router
 
