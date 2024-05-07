@@ -1,6 +1,6 @@
 use crate::{
     Asset, AssetCertificationError, AssetCertificationResult, AssetConfig, AssetFallbackConfig,
-    AssetResponse, NormalizedAssetConfig,
+    AssetRedirectKind, AssetResponse, NormalizedAssetConfig,
 };
 use ic_certification::HashTree;
 use ic_http_certification::{
@@ -8,7 +8,7 @@ use ic_http_certification::{
     HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
     HttpResponse,
 };
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{borrow::Cow, cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
 struct CertifiedAssetResponse<'a> {
@@ -24,7 +24,7 @@ struct CertifiedAssetResponse<'a> {
 ///
 /// ```
 /// use ic_http_certification::HttpRequest;
-/// use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
+/// use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind};
 ///
 /// let mut asset_router = AssetRouter::default();
 ///
@@ -66,6 +66,16 @@ struct CertifiedAssetResponse<'a> {
 ///             "cache-control".to_string(),
 ///             "public, max-age=31536000, immutable".to_string(),
 ///         )],
+///     },
+///     AssetConfig::Redirect {
+///         from: "/old-url".to_string(),
+///         to: "/".to_string(),
+///         kind: AssetRedirectKind::Permanent,
+///     },
+///     AssetConfig::Redirect {
+///         from: "/css/app.css".to_string(),
+///         to: "/css/app-ba74b708.css".to_string(),
+///         kind: AssetRedirectKind::Temporary,
 ///     },
 /// ];
 ///
@@ -247,6 +257,12 @@ impl<'content> AssetRouter<'content> {
             self.certify_asset_impl(asset, asset_config)?;
         }
 
+        for asset_config in asset_configs {
+            if let NormalizedAssetConfig::Redirect { from, to, kind } = asset_config {
+                self.insert_redirect(from, to, kind)?;
+            }
+        }
+
         Ok(())
     }
 
@@ -295,7 +311,7 @@ impl<'content> AssetRouter<'content> {
                     )?;
                 }
             }
-            None => {
+            _ => {
                 self.insert_static_asset(asset, None, vec![])?;
             }
         }
@@ -310,8 +326,11 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
-        let (response, certification) =
-            Self::prepare_response_and_certification(asset, additional_headers, content_type)?;
+        let (response, certification) = Self::prepare_asset_response_and_certification(
+            asset,
+            additional_headers,
+            content_type,
+        )?;
 
         let tree_entry = HttpCertificationTreeEntry::new(
             HttpCertificationPath::exact(asset_url.clone()),
@@ -338,8 +357,11 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
     ) -> AssetCertificationResult<()> {
-        let (response, certification) =
-            Self::prepare_response_and_certification(asset, additional_headers, content_type)?;
+        let (response, certification) = Self::prepare_asset_response_and_certification(
+            asset,
+            additional_headers,
+            content_type,
+        )?;
 
         let tree_entry = HttpCertificationTreeEntry::new(
             HttpCertificationPath::wildcard(fallback_for.scope.clone()),
@@ -359,21 +381,69 @@ impl<'content> AssetRouter<'content> {
         Ok(())
     }
 
-    fn prepare_response_and_certification<'path>(
+    fn insert_redirect(
+        &mut self,
+        from: String,
+        to: String,
+        kind: AssetRedirectKind,
+    ) -> AssetCertificationResult<()> {
+        let status_code = match kind {
+            AssetRedirectKind::Permanent => 301,
+            AssetRedirectKind::Temporary => 307,
+        };
+
+        let headers = vec![("location".to_string(), to)];
+
+        let (response, certification) = Self::prepare_response_and_certification(
+            from.clone(),
+            status_code,
+            Cow::Owned(vec![]),
+            headers,
+        )?;
+
+        let tree_entry = HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact(from.clone()),
+            certification,
+        );
+
+        self.tree.borrow_mut().insert(&tree_entry);
+
+        self.responses.insert(
+            from,
+            CertifiedAssetResponse {
+                response,
+                tree_entry,
+            },
+        );
+
+        Ok(())
+    }
+
+    fn prepare_asset_response_and_certification<'path>(
         asset: Asset<'content, 'path>,
         additional_headers: Vec<(String, String)>,
         content_type: Option<String>,
     ) -> AssetCertificationResult<(AssetResponse<'content>, HttpCertification)> {
-        let mut headers = vec![(
-            "content-length".to_string(),
-            asset.content.len().to_string(),
-        )];
+        let mut headers = vec![];
 
         headers.extend(additional_headers);
 
         if let Some(content_type) = content_type {
             headers.push(("content-type".to_string(), content_type));
         }
+
+        Self::prepare_response_and_certification(asset.url, 200, asset.content, headers)
+    }
+
+    fn prepare_response_and_certification(
+        url: String,
+        status_code: u16,
+        body: Cow<'content, [u8]>,
+        additional_headers: Vec<(String, String)>,
+    ) -> AssetCertificationResult<(AssetResponse<'content>, HttpCertification)> {
+        let mut headers = vec![("content-length".to_string(), body.len().to_string())];
+
+        headers.extend(additional_headers);
 
         let header_keys = headers.clone();
         let header_keys = header_keys
@@ -391,12 +461,12 @@ impl<'content> AssetRouter<'content> {
 
         let request = HttpRequest {
             method: "GET".to_string(),
-            url: asset.url.to_string(),
+            url,
             headers: vec![],
             body: vec![],
         };
 
-        let response = AssetResponse::new(200, asset.content, headers);
+        let response = AssetResponse::new(status_code, body, headers);
 
         let http_response: HttpResponse = response.clone().into();
 
@@ -779,6 +849,72 @@ mod tests {
     }
 
     #[rstest]
+    fn test_redirects(asset_router: AssetRouter) {
+        let cel_expr = DefaultFullCelExpressionBuilder::default()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["content-length", "location"],
+            ))
+            .build()
+            .to_string();
+
+        let css_request = HttpRequest {
+            method: "GET".to_string(),
+            url: "/css/app.css".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+        let old_url_request = HttpRequest {
+            method: "GET".to_string(),
+            url: "/old-url".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+
+        let expected_css_response = HttpResponse {
+            status_code: 307,
+            body: vec![],
+            headers: vec![
+                ("content-length".to_string(), "0".to_string()),
+                ("location".to_string(), "/css/app-ba74b708.css".to_string()),
+                (
+                    IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+                    cel_expr.clone(),
+                ),
+            ],
+            upgrade: None,
+        };
+        let expected_old_url_response = HttpResponse {
+            status_code: 301,
+            body: vec![],
+            headers: vec![
+                ("content-length".to_string(), "0".to_string()),
+                ("location".to_string(), "/".to_string()),
+                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+            ],
+            upgrade: None,
+        };
+
+        let (css_response, css_witness, css_expr_path) =
+            asset_router.serve_asset(&css_request).unwrap();
+        let (old_url_response, old_url_witness, old_url_expr_path) =
+            asset_router.serve_asset(&old_url_request).unwrap();
+
+        assert_eq!(css_expr_path, vec!["http_expr", "css", "app.css", "<$>"]);
+        assert!(matches!(
+            css_witness.lookup_subtree(&css_expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(css_response, expected_css_response);
+
+        assert_eq!(old_url_expr_path, vec!["http_expr", "old-url", "<$>"]);
+        assert!(matches!(
+            old_url_witness.lookup_subtree(&old_url_expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(old_url_response, expected_old_url_response);
+    }
+
+    #[rstest]
     fn test_init_with_tree(index_html_body: Vec<u8>, asset_cel_expr: String) {
         let http_certification_tree: Rc<RefCell<HttpCertificationTree>> = Default::default();
         let mut asset_router = AssetRouter::with_tree(http_certification_tree.clone());
@@ -937,6 +1073,16 @@ mod tests {
                     "/not-found/".to_string(),
                     "/not-found/index.html".to_string(),
                 ],
+            },
+            AssetConfig::Redirect {
+                from: "/old-url".to_string(),
+                to: "/".to_string(),
+                kind: AssetRedirectKind::Permanent,
+            },
+            AssetConfig::Redirect {
+                from: "/css/app.css".to_string(),
+                to: "/css/app-ba74b708.css".to_string(),
+                kind: AssetRedirectKind::Temporary,
             },
         ];
 

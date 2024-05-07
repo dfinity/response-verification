@@ -240,6 +240,45 @@ let config = AssetConfig::Pattern {
 };
 ```
 
+### Configuring redirects
+
+Redirects can be configured using the [AssetConfig::Redirect] variant. This
+variant takes a `from` and `to` paths, and a redirect [kind](AssetRedirectKind).
+When a request is made to the `from` path, the client will be redirected to the
+`to` path. The [AssetConfig::Redirect] config is not matched against any [Asset]s.
+
+Redirects can be configured as either [permanent](AssetRedirectKind::Permanent)
+or [temporary](AssetRedirectKind::Temporary).
+
+The browser will cache permanent redirects and will not request the old
+location again. This is useful when the resource has permanently moved to a new
+location. The browser will update its bookmarks and search engine results.
+
+See the
+[MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/301)
+for more information on permanent redirects.
+
+The browser will not cache temporary redirects and will request
+the old location again. This is useful when the resource has temporarily moved
+to a new location. The browser will not update its bookmarks and search engine
+results.
+
+See the
+[MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307)
+for more information on temporary redirects.
+
+The following example configures a permanent redirect from `/old` to `/new`:
+
+```rust
+use ic_asset_certification::{AssetConfig, AssetRedirectKind};
+
+let config = AssetConfig::Redirect {
+  from: "/old".to_string(),
+  to: "/new".to_string(),
+  kind: AssetRedirectKind::Permanent,
+};
+```
+
 ## Inserting assets into the asset router
 
 The [AssetRouter] is responsible for certifying responses and routing requests to
@@ -276,7 +315,7 @@ asset_router.certify_asset(asset, Some(asset_config)).unwrap();
 Or in bulk using the [certify_assets](AssetRouter::certify_assets) method:
 
 ```rust
-use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
+use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind};
 
 let mut asset_router = AssetRouter::default();
 
@@ -323,6 +362,11 @@ let asset_configs = vec![
           "cache-control".to_string(),
           "public, max-age=31536000, immutable".to_string(),
       )],
+  },
+  AssetConfig::Redirect {
+    from: "/old".to_string(),
+    to: "/new".to_string(),
+    kind: AssetRedirectKind::Permanent,
   },
 ];
 
