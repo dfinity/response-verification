@@ -124,6 +124,35 @@ use globset::{Glob, GlobMatcher};
 /// };
 /// ```
 ///
+/// ## Temporary redirect
+///
+/// This example configures a redirect from `/old` to `/new`. The redirect is
+/// configured as a temporary redirect (307).
+///
+/// ```
+/// use ic_asset_certification::{AssetConfig, AssetRedirectKind};
+///
+/// let config = AssetConfig::Redirect {
+///     from: "/old".to_string(),
+///     to: "/new".to_string(),
+///     kind: AssetRedirectKind::Temporary,
+/// };
+/// ```
+///
+/// ## Permanent redirect
+///
+/// This example configures a redirect from `/old` to `/new`. The redirect is
+/// configured as a permanent redirect (301).
+///
+/// ```
+/// use ic_asset_certification::{AssetConfig, AssetRedirectKind};
+///
+/// let config = AssetConfig::Redirect {
+///     from: "/old".to_string(),
+///     to: "/new".to_string(),
+///     kind: AssetRedirectKind::Permanent,
+/// };
+/// ```
 #[derive(Debug, Clone)]
 pub enum AssetConfig {
     /// Matches a specific file.
@@ -237,6 +266,19 @@ pub enum AssetConfig {
         /// [AssetRouter](crate::AssetRouter) for matching [Assets](Asset).
         headers: Vec<(String, String)>,
     },
+
+    /// Redirects the request to another URL. This config type is not matched
+    /// against any assets.
+    Redirect {
+        /// The URL to redirect from.
+        from: String,
+
+        /// The URL to redirect to.
+        to: String,
+
+        /// The kind redirect to configure.
+        kind: AssetRedirectKind,
+    },
 }
 
 /// Configuration for an asset to be used as a fallback for a specific scope.
@@ -252,6 +294,36 @@ pub struct AssetFallbackConfig {
     pub scope: String,
 }
 
+/// The type of redirect to use. Redirects can be either
+/// [permanent](AssetRedirectKind::Permanent) or
+/// [temporary](AssetRedirectKind::Temporary).
+#[derive(Debug, Clone)]
+pub enum AssetRedirectKind {
+    /// A permanent redirect (301).
+    ///
+    /// The browser will cache this redirect and will not make a request to the
+    /// old location again. This is useful when the resource has permanently
+    /// moved to a new location. The browser will update its bookmarks and
+    /// search engine results.
+    ///
+    /// See the
+    /// [MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/301)
+    /// for more information.
+    Permanent,
+
+    /// A temporary redirect (307).
+    ///
+    /// The browser will not cache this redirect and will make a request to the
+    /// old location again. This is useful when the resource has temporarily
+    /// moved to a new location. The browser will not update its bookmarks and
+    /// search engine results.
+    ///
+    /// See the
+    /// [MDN Web Docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307)
+    /// for more information.
+    Temporary,
+}
+
 #[derive(Debug, Clone)]
 pub(crate) enum NormalizedAssetConfig {
     File {
@@ -265,6 +337,11 @@ pub(crate) enum NormalizedAssetConfig {
         pattern: GlobMatcher,
         content_type: Option<String>,
         headers: Vec<(String, String)>,
+    },
+    Redirect {
+        from: String,
+        to: String,
+        kind: AssetRedirectKind,
     },
 }
 
@@ -295,6 +372,9 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
                 content_type,
                 headers,
             }),
+            AssetConfig::Redirect { from, to, kind } => {
+                Ok(NormalizedAssetConfig::Redirect { from, to, kind })
+            }
         }
     }
 }
@@ -304,6 +384,7 @@ impl NormalizedAssetConfig {
         match self {
             Self::File { path, .. } => path == asset.path.as_ref(),
             Self::Pattern { pattern, .. } => pattern.is_match(asset.path.as_ref()),
+            Self::Redirect { .. } => false,
         }
     }
 }
@@ -433,5 +514,23 @@ mod tests {
         .unwrap();
 
         assert_eq!(config.matches_asset(&asset), expected);
+    }
+
+    #[rstest]
+    #[case("index.html")]
+    #[case("app.js")]
+    #[case("index.js")]
+    #[case("index.css")]
+    fn does_not_match_asset_redirect(#[case] asset_path: &str) {
+        let asset = Asset::new(asset_path, vec![]);
+        let config: NormalizedAssetConfig = AssetConfig::Redirect {
+            from: asset_path.to_string(),
+            to: asset_path.to_string(),
+            kind: AssetRedirectKind::Permanent,
+        }
+        .try_into()
+        .unwrap();
+
+        assert!(!config.matches_asset(&asset));
     }
 }

@@ -1,6 +1,8 @@
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
-use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
+use ic_asset_certification::{
+    Asset, AssetConfig, AssetFallbackConfig, AssetRedirectKind, AssetRouter,
+};
 use ic_cdk::{
     api::{data_certificate, set_certified_data},
     *,
@@ -100,6 +102,11 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
+        },
+        AssetConfig::Redirect {
+            from: "/old-url".to_string(),
+            to: "/".to_string(),
+            kind: AssetRedirectKind::Permanent,
         },
     ];
 
