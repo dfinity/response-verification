@@ -1,9 +1,10 @@
 use super::{
     certification_tree_entry::HttpCertificationTreeEntry,
-    certification_tree_path::{CertificationTreePathSegment, PATH_PREFIX_BYTES},
+    certification_tree_path::CertificationTreePathSegment,
 };
 use crate::{
-    tree::{HttpCertificationPathType, WILDCARD_PATH_TERMINATOR_BYTES},
+    tree::HttpCertificationPathType,
+    utils::{more_specific_wildcards_for, PATH_PREFIX_BYTES},
     HttpCertificationError, HttpCertificationPath, HttpCertificationResult,
 };
 use ic_certification::{labeled, labeled_hash, merge_hash_trees, AsHashTree, HashTree, NestedTree};
@@ -83,28 +84,11 @@ impl HttpCertificationTree {
                 let witness = merge_hash_trees(witness, self.tree.witness(&responding_tree_path));
 
                 // Then we need to prove that there is not a more specific wildcard in the tree that
-                // matches the request URL. So we step through the path and generate a witness for each subpath,
-                // with and without trailing slashes.
-                (responding_tree_path.len()..(requested_tree_path.len()))
-                    .flat_map(|index| {
-                        // don't include the <$> at the end of the tree path
-                        let sub_path = requested_tree_path[0..index - 1].to_vec();
-
-                        let without_trailing_slash = [
-                            sub_path.clone(),
-                            vec![WILDCARD_PATH_TERMINATOR_BYTES.to_vec()],
-                        ]
-                        .concat();
-                        let with_trailing_slash = [
-                            sub_path,
-                            vec![b"".to_vec(), WILDCARD_PATH_TERMINATOR_BYTES.to_vec()],
-                        ]
-                        .concat();
-
-                        [without_trailing_slash, with_trailing_slash]
-                    })
+                // matches the request URL.
+                more_specific_wildcards_for(&requested_tree_path, &responding_tree_path)
+                    .iter()
                     .fold(witness, |acc, path| {
-                        merge_hash_trees(acc, self.tree.witness(&path))
+                        merge_hash_trees(acc, self.tree.witness(path))
                     })
             }
         };
@@ -195,6 +179,10 @@ mod tests {
             not_found_witness.lookup_subtree(["http_expr", "assets", "js", "<*>"]),
             SubtreeLookupResult::Found(_)
         ));
+        assert_eq!(
+            not_found_witness.lookup_subtree(["http_expr", "assets", "js", "0.js", "<*>"]),
+            SubtreeLookupResult::Absent
+        );
 
         let hello_world_witness = tree
             .witness(&hello_world_entry, "/assets/js/hello-world.js")
