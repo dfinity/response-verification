@@ -10,6 +10,7 @@
 
 ### Fix
 
+- **ic-certification**: remove empty subtrees after removing nodes on a path
 - **ic-http-certification**: fixed an issue where an asset that has a wildcard but not an exact path is not witnessed correctly
 - **ic-certificate-verification**: redundant dependency
 
