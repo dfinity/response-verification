@@ -1,16 +1,11 @@
+use crate::utils::{
+    EXACT_PATH_TERMINATOR, EXACT_PATH_TERMINATOR_BYTES, PATH_PREFIX, WILDCARD_PATH_TERMINATOR,
+    WILDCARD_PATH_TERMINATOR_BYTES,
+};
 use std::borrow::Cow;
 
 pub(super) type CertificationTreePathSegment = Vec<u8>;
 pub(super) type InnerTreePath = Vec<CertificationTreePathSegment>;
-
-pub(super) const PATH_PREFIX: &str = "http_expr";
-pub(super) const PATH_PREFIX_BYTES: &[u8] = PATH_PREFIX.as_bytes();
-
-pub(super) const EXACT_PATH_TERMINATOR: &str = "<$>";
-pub(super) const EXACT_PATH_TERMINATOR_BYTES: &[u8] = EXACT_PATH_TERMINATOR.as_bytes();
-
-pub(super) const WILDCARD_PATH_TERMINATOR: &str = "<*>";
-pub(super) const WILDCARD_PATH_TERMINATOR_BYTES: &[u8] = WILDCARD_PATH_TERMINATOR.as_bytes();
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum HttpCertificationPathType<'a> {

@@ -599,9 +599,10 @@ pub use hash::*;
 pub mod error;
 pub use error::*;
 pub mod http;
-pub use crate::http::*;
+pub use http::*;
 pub mod tree;
 pub use tree::*;
+pub mod utils;
 
 // https://github.com/la10736/rstest/tree/master/rstest_reuse#cavelets
 #[cfg(test)]

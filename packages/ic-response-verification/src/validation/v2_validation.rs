@@ -2,43 +2,25 @@ use crate::{ResponseVerificationError, ResponseVerificationResult};
 use ic_certification::hash_tree::HashTreeNode;
 use ic_certification::{hash_tree::Hash, HashTree, Label, SubtreeLookupResult};
 use ic_http_certification::cel::DefaultCelExpression;
+use ic_http_certification::utils::{
+    is_wildcard_path_valid_for_request_path, more_specific_wildcards_for,
+    EXACT_PATH_TERMINATOR_BYTES, PATH_PREFIX_BYTES,
+};
 use ic_http_certification::CelExpression;
 
-fn path_from_parts<T>(parts: &[T]) -> Vec<Label>
+fn path_from_parts<T>(parts: &[T]) -> Vec<Vec<u8>>
 where
     T: AsRef<[u8]>,
 {
-    parts
-        .iter()
-        .map(|p| p.as_ref().to_vec())
-        .map(Label::from)
-        .collect()
+    parts.iter().map(|p| p.as_ref().to_vec()).collect()
 }
 
-fn path_might_exist_in_tree(path: &[Label], tree: &HashTree) -> bool {
+fn path_might_exist_in_tree(path: &[Vec<u8>], tree: &HashTree) -> bool {
     !matches!(tree.lookup_subtree(path), SubtreeLookupResult::Absent)
 }
 
-fn path_exists_in_tree(path: &[Label], tree: &HashTree) -> bool {
+fn path_exists_in_tree(path: &[Vec<u8>], tree: &HashTree) -> bool {
     matches!(tree.lookup_subtree(path), SubtreeLookupResult::Found(_))
-}
-
-fn is_wildcard_path_valid_for_request_path(
-    wildcard_path: &[Label],
-    request_path: &[Label],
-) -> bool {
-    // request_path must be a superset of wildcard_path
-    if request_path.starts_with(wildcard_path) {
-        return true;
-    }
-
-    // if the wildcard path includes a trailing slash then remove it and try the same check again
-    // request paths will not include trailing slashes between path elements
-    if wildcard_path.ends_with(&["".into()]) {
-        return request_path.starts_with(&wildcard_path[..wildcard_path.len() - 1]);
-    }
-
-    false
 }
 
 fn expr_path_has_valid_suffix(expr_path: &[String]) -> bool {
@@ -95,9 +77,12 @@ pub fn validate_expr_path(
 
     // at this point there are no more valid exact paths,
     // so validation fails if the certified_path ends with an exact path suffix,
-    if original_path.ends_with(&[Label::from("<$>")]) {
+    if original_path.ends_with(&[EXACT_PATH_TERMINATOR_BYTES.to_vec()]) {
         return Err(ResponseVerificationError::ExactExpressionPathMismatch {
-            request_path: request_url_path.iter().map(|e| e.to_string()).collect(),
+            request_path: request_url_path
+                .iter()
+                .map(|e| String::from_utf8_lossy(e))
+                .collect(),
             provided_expr_path: expr_path.to_vec(),
         });
     }
@@ -106,7 +91,10 @@ pub fn validate_expr_path(
     if path_might_exist_in_tree(&request_url_path, tree) {
         return Err(
             ResponseVerificationError::ExactExpressionPathMightExistInTree {
-                potential_expr_path: request_url_path.iter().map(|e| e.to_string()).collect(),
+                potential_expr_path: request_url_path
+                    .iter()
+                    .map(|e| String::from_utf8_lossy(e).to_string())
+                    .collect(),
                 provided_expr_path: expr_path.to_vec(),
                 request_path: request_path.to_string(),
             },
@@ -114,58 +102,34 @@ pub fn validate_expr_path(
     }
     request_url_path.pop(); // pop "<$>"
 
-    // if the expr_path matches the full URL with a wildcard
-    // there can't be a more precise path in the tree
-    request_url_path.push("<*>".into());
-    if original_path.eq(&request_url_path) {
-        return if path_exists_in_tree(&original_path, tree) {
-            Ok(())
-        } else {
-            Err(
-                ResponseVerificationError::WildcardExpressionPathNotFoundInTree {
-                    provided_expr_path: expr_path.to_vec(),
-                    request_path: request_path.to_string(),
-                },
-            )
-        };
-    }
-
     let mut potential_path = original_path.clone();
-    request_url_path.pop(); // pop "<*>"
     potential_path.pop(); // pop "<*>"
 
     if !is_wildcard_path_valid_for_request_path(&potential_path, &request_url_path) {
         return Err(ResponseVerificationError::WildcardExpressionPathMismatch {
-            provided_expr_path: potential_path.iter().map(|e| e.to_string()).collect(),
+            provided_expr_path: potential_path
+                .iter()
+                .map(|e| String::from_utf8_lossy(e).to_string())
+                .collect(),
             request_path: request_path.to_string(),
         });
     }
 
     // recursively check for partial URL matches with wildcards that are more precise than the expr_path
-    while request_url_path.len() > potential_path.len()
-        || request_url_path.last() != potential_path.last()
-    {
-        // check wildcard
-        request_url_path.push("<*>".into());
-        if path_might_exist_in_tree(&request_url_path, tree) {
+    for wildcard_path in more_specific_wildcards_for(&request_url_path, &original_path).iter_mut() {
+        wildcard_path.insert(0, PATH_PREFIX_BYTES.to_vec());
+
+        if path_might_exist_in_tree(wildcard_path, tree) {
             return Err(
                 ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree {
                     provided_expr_path: expr_path.to_vec(),
-                    more_specific_expr_path: request_url_path
+                    more_specific_expr_path: wildcard_path
                         .iter()
-                        .map(|e| e.to_string())
+                        .map(|e| String::from_utf8_lossy(e).to_string())
                         .collect(),
                     request_path: request_path.to_string(),
                 },
             );
-        }
-        request_url_path.pop(); // pop "<*>"
-
-        if request_url_path.ends_with(&[Label::from("")]) {
-            request_url_path.pop(); // pop empty string
-        } else {
-            request_url_path.pop(); // pop the last segment of the path
-            request_url_path.push("".into()); // append empty string to check trailing slash
         }
     }
 
