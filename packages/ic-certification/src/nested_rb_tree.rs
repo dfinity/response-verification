@@ -1,9 +1,10 @@
 use crate::{empty, fork, labeled, leaf, pruned, AsHashTree, Hash, HashTree, HashTreeNode, RbTree};
+use std::fmt::Debug;
 
-pub trait NestedTreeKeyRequirements: Clone + AsRef<[u8]> + 'static {}
-pub trait NestedTreeValueRequirements: AsHashTree + 'static {}
-impl<T> NestedTreeKeyRequirements for T where T: Clone + AsRef<[u8]> + 'static {}
-impl<T> NestedTreeValueRequirements for T where T: AsHashTree + 'static {}
+pub trait NestedTreeKeyRequirements: Debug + Clone + AsRef<[u8]> + 'static {}
+pub trait NestedTreeValueRequirements: Debug + Clone + AsHashTree + 'static {}
+impl<T> NestedTreeKeyRequirements for T where T: Debug + Clone + AsRef<[u8]> + 'static {}
+impl<T> NestedTreeValueRequirements for T where T: Debug + Clone + AsHashTree + 'static {}
 
 #[derive(Debug, Clone)]
 pub enum NestedTree<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> {
@@ -107,6 +108,20 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
                 NestedTree::Leaf(_) => {}
                 NestedTree::Nested(tree) => {
                     tree.modify(key.as_ref(), |child| child.delete(&path[1..]));
+
+                    // after deleting the subtree located at `path[1..]`,
+                    // check if the subtree located at `path[0]` is empty,
+                    // if it is, remove it
+                    if let Some(root) = tree.get(key.as_ref()) {
+                        match root {
+                            NestedTree::Leaf(_) => {}
+                            NestedTree::Nested(nested_tree) => {
+                                if nested_tree.is_empty() {
+                                    tree.delete(key.as_ref());
+                                }
+                            }
+                        }
+                    }
                 }
             }
         } else {
@@ -178,33 +193,170 @@ mod tests {
         // insertion
         tree.insert(&["one", "two"], vec![2]);
         tree.insert(&["one", "three"], vec![3]);
+
         assert_eq!(tree.get(&["one", "two"]), Some(&vec![2]));
+        assert_eq!(tree.get(&["one", "three"]), Some(&vec![3]));
         assert_eq!(tree.get(&["one", "two", "three"]), None);
+        assert_eq!(tree.get(&["one", "three", "two"]), None);
         assert_eq!(tree.get(&["one"]), None);
+
         assert!(tree.contains_leaf(&["one", "two"]));
-        assert!(tree.contains_path(&["one"]));
+        assert!(tree.contains_leaf(&["one", "three"]));
         assert!(!tree.contains_leaf(&["one", "two", "three"]));
-        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(!tree.contains_leaf(&["one", "three", "two"]));
         assert!(!tree.contains_leaf(&["one"]));
+
+        assert!(tree.contains_path(&["one", "two"]));
+        assert!(tree.contains_path(&["one", "three"]));
+        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(!tree.contains_path(&["one", "three", "two"]));
+        assert!(tree.contains_path(&["one"]));
 
         // deleting non-existent key doesn't do anything
         tree.delete(&["one", "two", "three"]);
+
         assert_eq!(tree.get(&["one", "two"]), Some(&vec![2]));
+        assert_eq!(tree.get(&["one", "three"]), Some(&vec![3]));
+        assert_eq!(tree.get(&["one", "two", "three"]), None);
+        assert_eq!(tree.get(&["one", "three", "two"]), None);
+        assert_eq!(tree.get(&["one"]), None);
+
         assert!(tree.contains_leaf(&["one", "two"]));
+        assert!(tree.contains_leaf(&["one", "three"]));
+        assert!(!tree.contains_leaf(&["one", "two", "three"]));
+        assert!(!tree.contains_leaf(&["one", "three", "two"]));
+        assert!(!tree.contains_leaf(&["one"]));
+
+        assert!(tree.contains_path(&["one", "two"]));
+        assert!(tree.contains_path(&["one", "three"]));
+        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(!tree.contains_path(&["one", "three", "two"]));
+        assert!(tree.contains_path(&["one"]));
 
         // deleting existing key works
         tree.delete(&["one", "three"]);
+
         assert_eq!(tree.get(&["one", "two"]), Some(&vec![2]));
         assert_eq!(tree.get(&["one", "three"]), None);
+        assert_eq!(tree.get(&["one", "two", "three"]), None);
+        assert_eq!(tree.get(&["one", "three", "two"]), None);
+        assert_eq!(tree.get(&["one"]), None);
+
         assert!(tree.contains_leaf(&["one", "two"]));
         assert!(!tree.contains_leaf(&["one", "three"]));
+        assert!(!tree.contains_leaf(&["one", "two", "three"]));
+        assert!(!tree.contains_leaf(&["one", "three", "two"]));
+        assert!(!tree.contains_leaf(&["one"]));
+
+        assert!(tree.contains_path(&["one", "two"]));
+        assert!(!tree.contains_path(&["one", "three"]));
+        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(!tree.contains_path(&["one", "three", "two"]));
+        assert!(tree.contains_path(&["one"]));
 
         // deleting subtree works
         tree.delete(&["one"]);
+
         assert_eq!(tree.get(&["one", "two"]), None);
+        assert_eq!(tree.get(&["one", "three"]), None);
+        assert_eq!(tree.get(&["one", "two", "three"]), None);
+        assert_eq!(tree.get(&["one", "three", "two"]), None);
         assert_eq!(tree.get(&["one"]), None);
+
         assert!(!tree.contains_leaf(&["one", "two"]));
+        assert!(!tree.contains_leaf(&["one", "three"]));
+        assert!(!tree.contains_leaf(&["one", "two", "three"]));
+        assert!(!tree.contains_leaf(&["one", "three", "two"]));
         assert!(!tree.contains_leaf(&["one"]));
+
+        assert!(!tree.contains_path(&["one", "two"]));
+        assert!(!tree.contains_path(&["one", "three"]));
+        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(!tree.contains_path(&["one", "three", "two"]));
+        assert!(!tree.contains_path(&["one"]));
+    }
+
+    #[rstest]
+    fn delete_removes_empty_subpaths() {
+        let mut tree: NestedTree<&str, Vec<u8>> = NestedTree::default();
+
+        tree.insert(&["one", "two", "three", "four"], vec![4]);
+        tree.insert(&["one", "two", "three", "five"], vec![5]);
+        tree.insert(&["one", "two", "six"], vec![6]);
+        tree.insert(&["one", "seven"], vec![7]);
+
+        assert!(tree.contains_leaf(&["one", "two", "three", "four"]));
+        assert!(tree.contains_leaf(&["one", "two", "three", "five"]));
+        assert!(tree.contains_leaf(&["one", "two", "six"]));
+        assert!(tree.contains_leaf(&["one", "seven"]));
+
+        assert!(tree.contains_path(&["one", "two", "three", "four"]));
+        assert!(tree.contains_path(&["one", "two", "three", "five"]));
+        assert!(tree.contains_path(&["one", "two", "three"]));
+        assert!(tree.contains_path(&["one", "two", "six"]));
+        assert!(tree.contains_path(&["one", "two"]));
+        assert!(tree.contains_path(&["one", "seven"]));
+        assert!(tree.contains_path(&["one"]));
+
+        tree.delete(&["one", "two", "three", "four"]);
+
+        assert!(!tree.contains_leaf(&["one", "two", "three", "four"]));
+        assert!(tree.contains_leaf(&["one", "two", "three", "five"]));
+        assert!(tree.contains_leaf(&["one", "two", "six"]));
+        assert!(tree.contains_leaf(&["one", "seven"]));
+
+        assert!(!tree.contains_path(&["one", "two", "three", "four"]));
+        assert!(tree.contains_path(&["one", "two", "three", "five"]));
+        assert!(tree.contains_path(&["one", "two", "three"]));
+        assert!(tree.contains_path(&["one", "two", "six"]));
+        assert!(tree.contains_path(&["one", "two"]));
+        assert!(tree.contains_path(&["one", "seven"]));
+        assert!(tree.contains_path(&["one"]));
+
+        tree.delete(&["one", "two", "three", "five"]);
+
+        assert!(!tree.contains_leaf(&["one", "two", "three", "four"]));
+        assert!(!tree.contains_leaf(&["one", "two", "three", "five"]));
+        assert!(tree.contains_leaf(&["one", "two", "six"]));
+        assert!(tree.contains_leaf(&["one", "seven"]));
+
+        assert!(!tree.contains_path(&["one", "two", "three", "four"]));
+        assert!(!tree.contains_path(&["one", "two", "three", "five"]));
+        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(tree.contains_path(&["one", "two", "six"]));
+        assert!(tree.contains_path(&["one", "two"]));
+        assert!(tree.contains_path(&["one", "seven"]));
+        assert!(tree.contains_path(&["one"]));
+
+        tree.delete(&["one", "two", "six"]);
+
+        assert!(!tree.contains_leaf(&["one", "two", "three", "four"]));
+        assert!(!tree.contains_leaf(&["one", "two", "three", "five"]));
+        assert!(!tree.contains_leaf(&["one", "two", "six"]));
+        assert!(tree.contains_leaf(&["one", "seven"]));
+
+        assert!(!tree.contains_path(&["one", "two", "three", "four"]));
+        assert!(!tree.contains_path(&["one", "two", "three", "five"]));
+        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(!tree.contains_path(&["one", "two", "six"]));
+        assert!(!tree.contains_path(&["one", "two"]));
+        assert!(tree.contains_path(&["one", "seven"]));
+        assert!(tree.contains_path(&["one"]));
+
+        tree.delete(&["one", "seven"]);
+
+        assert!(!tree.contains_leaf(&["one", "two", "three", "four"]));
+        assert!(!tree.contains_leaf(&["one", "two", "three", "five"]));
+        assert!(!tree.contains_leaf(&["one", "two", "six"]));
+        assert!(!tree.contains_leaf(&["one", "seven"]));
+
+        assert!(!tree.contains_path(&["one", "two", "three", "four"]));
+        assert!(!tree.contains_path(&["one", "two", "three", "five"]));
+        assert!(!tree.contains_path(&["one", "two", "three"]));
+        assert!(!tree.contains_path(&["one", "two", "six"]));
+        assert!(!tree.contains_path(&["one", "two"]));
+        assert!(!tree.contains_path(&["one", "seven"]));
+        assert!(!tree.contains_path(&["one"]));
     }
 
     #[rstest]
