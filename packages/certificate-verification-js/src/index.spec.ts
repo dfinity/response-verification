@@ -2,10 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { HashTree, reconstruct, Cbor } from '@dfinity/agent';
 import { CertificateBuilder } from '@dfinity/certification-testing';
 import { Principal } from '@dfinity/principal';
-import { createHash, webcrypto } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { verifyCertification } from './index';
-
-globalThis.crypto = webcrypto as Crypto;
 
 describe('verifyCertification', async () => {
   const userId = '1234';

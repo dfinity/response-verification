@@ -2,7 +2,10 @@ use super::{
     create_cel_expr, create_default_cel_expr, create_default_full_cel_expr,
     create_default_response_only_cel_expr,
 };
-use std::borrow::Cow;
+use std::{
+    borrow::Cow,
+    fmt::{Display, Formatter},
+};
 
 /// A certification CEL expression defintion.
 /// Contains an enum variant for each CEL function supported for certification.
@@ -18,11 +21,9 @@ pub enum CelExpression<'a> {
     Default(DefaultCelExpression<'a>),
 }
 
-impl ToString for CelExpression<'_> {
-    /// Converts a [CelExpression] object into it's [String] representation.
-    /// Alias of [create_cel_expr](create_cel_expr()).
-    fn to_string(&self) -> String {
-        create_cel_expr(self)
+impl Display for CelExpression<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", create_cel_expr(self))
     }
 }
 
@@ -57,12 +58,9 @@ pub enum DefaultCelExpression<'a> {
     Skip,
 }
 
-impl ToString for DefaultCelExpression<'_> {
-    /// Converts a [DefaultCelExpression] object into it's [String] representation.
-    ///
-    /// Alias of [create_default_cel_expr](create_default_cel_expr()).
-    fn to_string(&self) -> String {
-        create_default_cel_expr(self)
+impl Display for DefaultCelExpression<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", create_default_cel_expr(self))
     }
 }
 
@@ -75,12 +73,9 @@ pub struct DefaultResponseOnlyCelExpression<'a> {
     pub response: DefaultResponseCertification<'a>,
 }
 
-impl ToString for DefaultResponseOnlyCelExpression<'_> {
-    /// Converts a [DefaultResponseOnlyCelExpression] object into it's [String] representation.
-    ///
-    /// Alias of [create_default_response_only_cel_expr](create_default_response_only_cel_expr()).
-    fn to_string(&self) -> String {
-        create_default_response_only_cel_expr(self)
+impl Display for DefaultResponseOnlyCelExpression<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", create_default_response_only_cel_expr(self))
     }
 }
 
@@ -97,11 +92,9 @@ pub struct DefaultFullCelExpression<'a> {
     pub response: DefaultResponseCertification<'a>,
 }
 
-impl ToString for DefaultFullCelExpression<'_> {
-    /// Converts a [DefaultFullCelExpression] object into it's [String] representation.
-    /// Alias of [create_default_full_cel_expr](create_default_full_cel_expr()).
-    fn to_string(&self) -> String {
-        create_default_full_cel_expr(self)
+impl Display for DefaultFullCelExpression<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", create_default_full_cel_expr(self))
     }
 }
 
