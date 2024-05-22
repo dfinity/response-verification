@@ -6,7 +6,7 @@ use super::{
 
 /// Converts a CEL expression from a [CelExpression] struct into it's [String] representation.
 ///
-/// [CelExpression::to_string](CelExpression::to_string()) is an alias of this function and can be used
+/// [CelExpression::to_string](ToString::to_string()) is an alias of this function and can be used
 /// for ergonomics.
 pub fn create_cel_expr(certification: &CelExpression) -> String {
     match certification {
@@ -16,7 +16,7 @@ pub fn create_cel_expr(certification: &CelExpression) -> String {
 
 /// Converts a CEL expression from a [DefaultCelExpression] struct into it's [String] representation.
 ///
-/// [DefaultCelExpression::to_string](DefaultCelExpression::to_string()) is an alias of this function and
+/// [DefaultCelExpression::to_string](ToString::to_string()) is an alias of this function and
 /// can be used for ergonomics.
 pub fn create_default_cel_expr(certification: &DefaultCelExpression) -> String {
     match certification {
@@ -40,7 +40,7 @@ pub fn create_default_skip_cel_expr() -> String {
 /// [HttpRequest](crate::HttpRequest) from certification, from a [DefaultResponseOnlyCelExpression] struct into
 /// it's [String] representation.
 ///
-/// [DefaultResponseOnlyCelExpression::to_string](DefaultResponseOnlyCelExpression::to_string()) is an
+/// [DefaultResponseOnlyCelExpression::to_string](ToString::to_string()) is an
 /// alias of this method and can be used for ergonomics.
 pub fn create_default_response_only_cel_expr(
     certification: &DefaultResponseOnlyCelExpression,
@@ -60,7 +60,7 @@ pub fn create_default_response_only_cel_expr(
 
 /// Converts a CEL expression that certifies both the [HttpRequest](crate::HttpRequest) and
 /// [HttpResponse](crate::HttpResponse), from a [DefaultFullCelExpression] struct into it's [String] representation.
-/// [DefaultFullCelExpression::to_string](DefaultFullCelExpression::to_string()) is an alias of this method and can
+/// [DefaultFullCelExpression::to_string](ToString::to_string()) is an alias of this method and can
 /// be used for ergonomics.
 pub fn create_default_full_cel_expr(certification: &DefaultFullCelExpression) -> String {
     let mut cel_expr = String::from("default_certification(ValidationArgs{");

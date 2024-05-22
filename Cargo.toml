@@ -47,6 +47,11 @@ repository = "https://github.com/dfinity/response-verification"
 homepage = "https://github.com/dfinity/response-verification#readme"
 license = "Apache-2.0"
 
+[profile.release]
+lto = true
+opt-level = 'z'
+codegen-units = 1
+
 [workspace.dependencies]
 nom = "7.1"
 leb128 = "0.2"
@@ -128,9 +133,3 @@ features = ["derive"]
 version = "4.2"
 default_features = false
 features = ["std", "allow_alt_compress"]
-
-
-[profile.release]
-lto = true
-opt-level = 'z'
-codegen-units = 1

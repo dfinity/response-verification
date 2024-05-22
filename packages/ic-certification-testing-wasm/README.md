@@ -16,9 +16,7 @@ import { HashTree, reconstruct, Cbor } from '@dfinity/agent';
 import { CertificateBuilder } from '@dfinity/certification-testing';
 import { verifyCertification } from '@dfinity/certificate-verification';
 import { Principal } from '@dfinity/principal';
-import { createHash, webcrypto } from 'node:crypto';
-
-globalThis.crypto = webcrypto as Crypto;
+import { createHash } from 'node:crypto';
 
 const userId = '1234';
 
