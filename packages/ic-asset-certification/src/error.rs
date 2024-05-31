@@ -2,7 +2,7 @@
 pub type AssetCertificationResult<T = ()> = Result<T, AssetCertificationError>;
 
 /// Asset certification error type.
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Clone)]
 pub enum AssetCertificationError {
     /// Thrown when a suitable asset cannot be found for a given request url.
     #[error(r#"No asset was found matching the current request url: {request_url}"#)]

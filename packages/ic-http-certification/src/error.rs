@@ -5,7 +5,7 @@
 pub type HttpCertificationResult<T = ()> = Result<T, HttpCertificationError>;
 
 /// HTTP certification error type.
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Clone)]
 pub enum HttpCertificationError {
     /// The URL was malformed and could not be parsed correctly.
     #[error(r#"Failed to parse url: "{0}""#)]

@@ -1,7 +1,5 @@
 //! Various error types for response verification failure scenarios
 
-use ic_cbor::CborError;
-use ic_certificate_verification::CertificateVerificationError;
 #[cfg(all(target_arch = "wasm32", feature = "js"))]
 use wasm_bindgen::prelude::*;
 
@@ -11,11 +9,11 @@ use crate::cel;
 pub type ResponseVerificationResult<T = ()> = Result<T, ResponseVerificationError>;
 
 /// The primary container for response verification errors
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Clone)]
 pub enum ResponseVerificationError {
     /// Error converting UTF-8 string
     #[error(r#"IO error: "{0}""#)]
-    IoError(#[from] std::io::Error),
+    IoError(String),
 
     /// An unsupported verification version was requested
     #[error(r#"The requested verification version {requested_version:?} is not supported, the current supported range is {min_supported_version:?}-{max_supported_version:?}"#)]
@@ -167,15 +165,23 @@ pub enum ResponseVerificationError {
 
     /// Failed to decode CBOR
     #[error("CBOR decoding failed")]
-    CborDecodingFailed(#[from] CborError),
+    CborDecodingFailed(#[from] ic_cbor::CborError),
 
     /// Failed to verify certificate
     #[error("Certificate verification failed")]
-    CertificateVerificationFailed(#[from] CertificateVerificationError),
+    CertificateVerificationFailed(
+        #[from] ic_certificate_verification::CertificateVerificationError,
+    ),
 
     /// HTTP Certification error
     #[error(r#"HTTP Certification error: "{0}""#)]
     HttpCertificationError(#[from] ic_http_certification::HttpCertificationError),
+}
+
+impl From<std::io::Error> for ResponseVerificationError {
+    fn from(error: std::io::Error) -> Self {
+        ResponseVerificationError::IoError(error.to_string())
+    }
 }
 
 /// JS Representation of the ResponseVerificationError code
@@ -350,6 +356,8 @@ mod tests {
     use super::*;
     use crate::cel::CelParserError;
     use base64::{engine::general_purpose, Engine as _};
+    use ic_cbor::CborError;
+    use ic_certificate_verification::CertificateVerificationError;
     use ic_http_certification::HttpCertificationError;
     use ic_response_verification_test_utils::hex_decode;
     use wasm_bindgen_test::wasm_bindgen_test;
@@ -375,7 +383,7 @@ mod tests {
         let inner_error = std::fs::File::open("foo.txt").expect_err("Expected error");
         let error_msg = inner_error.to_string();
 
-        let error = ResponseVerificationError::IoError(inner_error);
+        let error = ResponseVerificationError::IoError(inner_error.to_string());
 
         let result = ResponseVerificationJsError::from(error);
 
