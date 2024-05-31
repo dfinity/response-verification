@@ -1,10 +1,9 @@
 use candid::Principal;
-use ic_cbor::CborError;
 
 /// Convenience type that represents the Result of performing certificate verification
 pub type CertificateVerificationResult<T = ()> = Result<T, CertificateVerificationError>;
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Clone)]
 pub enum CertificateVerificationError {
     /// Unexpected public key length
     #[error(
@@ -86,7 +85,7 @@ pub enum CertificateVerificationError {
 
     /// Failed to decode CBOR
     #[error("CBOR decoding failed")]
-    CborDecodingFailed(#[from] CborError),
+    CborDecodingFailed(#[from] ic_cbor::CborError),
 
     /// The certificate contained more than one delegation.
     #[error("The certificate contained more than one delegation")]

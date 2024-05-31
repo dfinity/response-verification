@@ -5,7 +5,6 @@ use crate::{
 };
 use std::borrow::Cow;
 use std::cmp::Ordering::{self, Equal, Greater, Less};
-use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Color {
@@ -990,15 +989,17 @@ fn is_balanced<K, V>(root: &NodeRef<K, V>) -> bool {
     go(root, num_black)
 }
 
+#[cfg(test)]
 struct DebugView<'a, K, V>(&'a NodeRef<K, V>);
 
-impl<'a, K: AsRef<[u8]>, V> fmt::Debug for DebugView<'a, K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+#[cfg(test)]
+impl<'a, K: AsRef<[u8]>, V> std::fmt::Debug for DebugView<'a, K, V> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         fn go<K: AsRef<[u8]>, V>(
-            f: &mut fmt::Formatter<'_>,
+            f: &mut std::fmt::Formatter<'_>,
             node: &NodeRef<K, V>,
             offset: usize,
-        ) -> fmt::Result {
+        ) -> std::fmt::Result {
             match node {
                 None => writeln!(f, "{:width$}[B] <null>", "", width = offset),
                 Some(ref h) => {

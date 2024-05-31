@@ -1,7 +1,7 @@
 pub(crate) type CelParserResult<T = ()> = Result<T, CelParserError>;
 
 /// CEL expression parsing error.
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Clone)]
 pub enum CelParserError {
     /// The CEL parser encountered an unsupported CEL function.
     #[error(r#""{0}" is not a supported CEL function, only default_certification is currently supported"#)]

@@ -1,6 +1,6 @@
 pub type CborResult<T = ()> = Result<T, CborError>;
 
-#[derive(thiserror::Error, Debug)]
+#[derive(thiserror::Error, Debug, Clone)]
 pub enum CborError {
     /// The CBOR was malformed and could not be parsed correctly
     #[error("Invalid cbor: {0}")]
