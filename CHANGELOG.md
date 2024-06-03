@@ -2,6 +2,7 @@
 
 ### Feat
 
+- make error types clonable
 - **ic-asset-certification**: add support for asset redirection
 - **ic-asset-certification**: add alias support to asset router
 - **ic-asset-certification**: add support for multiple fallbacks per asset
