@@ -1,6 +1,6 @@
 use crate::{
-    Asset, AssetCertificationError, AssetCertificationResult, AssetConfig, AssetFallbackConfig,
-    AssetRedirectKind, AssetResponse, NormalizedAssetConfig,
+    Asset, AssetCertificationError, AssetCertificationResult, AssetConfig, AssetEncoding,
+    AssetFallbackConfig, AssetRedirectKind, AssetResponse, NormalizedAssetConfig,
 };
 use ic_certification::HashTree;
 use ic_http_certification::{
@@ -111,7 +111,9 @@ struct CertifiedAssetResponse<'a> {
 pub struct AssetRouter<'content> {
     tree: Rc<RefCell<HttpCertificationTree>>,
     responses: HashMap<String, CertifiedAssetResponse<'content>>,
+    encoded_responses: HashMap<(String, String), CertifiedAssetResponse<'content>>,
     fallback_responses: HashMap<String, CertifiedAssetResponse<'content>>,
+    encoded_fallback_responses: HashMap<(String, String), CertifiedAssetResponse<'content>>,
 }
 
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
@@ -122,7 +124,9 @@ impl<'content> AssetRouter<'content> {
         AssetRouter {
             tree: Default::default(),
             responses: HashMap::new(),
+            encoded_responses: HashMap::new(),
             fallback_responses: HashMap::new(),
+            encoded_fallback_responses: HashMap::new(),
         }
     }
 
@@ -133,7 +137,9 @@ impl<'content> AssetRouter<'content> {
         AssetRouter {
             tree,
             responses: HashMap::new(),
+            encoded_responses: HashMap::new(),
             fallback_responses: HashMap::new(),
+            encoded_fallback_responses: HashMap::new(),
         }
     }
 
@@ -157,6 +163,19 @@ impl<'content> AssetRouter<'content> {
         &self,
         request: &HttpRequest,
     ) -> AssetCertificationResult<(HttpResponse, HashTree, Vec<String>)> {
+        let preferred_encodings = self.get_preferred_encodings(request);
+
+        if let Some(CertifiedAssetResponse {
+            response,
+            tree_entry,
+        }) = self.get_encoded_asset(&preferred_encodings, &request.url)
+        {
+            let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+            let expr_path = tree_entry.path.to_expr_path();
+
+            return Ok((response.clone().into(), witness, expr_path));
+        }
+
         if let Some(CertifiedAssetResponse {
             response,
             tree_entry,
@@ -178,6 +197,17 @@ impl<'content> AssetRouter<'content> {
             if let Some(CertifiedAssetResponse {
                 response,
                 tree_entry,
+            }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
+            {
+                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+                let expr_path = tree_entry.path.to_expr_path();
+
+                return Ok((response.clone().into(), witness, expr_path));
+            }
+
+            if let Some(CertifiedAssetResponse {
+                response,
+                tree_entry,
             }) = self.fallback_responses.get(&scope)
             {
                 let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
@@ -187,6 +217,17 @@ impl<'content> AssetRouter<'content> {
             }
 
             scope.pop();
+
+            if let Some(CertifiedAssetResponse {
+                response,
+                tree_entry,
+            }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
+            {
+                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+                let expr_path = tree_entry.path.to_expr_path();
+
+                return Ok((response.clone().into(), witness, expr_path));
+            }
 
             if let Some(CertifiedAssetResponse {
                 response,
@@ -304,11 +345,10 @@ impl<'content> AssetRouter<'content> {
                 }
 
                 for aliased_by in aliased_by.iter() {
-                    self.insert_static_asset(
-                        Asset::new(aliased_by, asset.content.clone()),
-                        content_type.clone(),
-                        headers.clone(),
-                    )?;
+                    let mut aliased_asset = asset.clone();
+                    aliased_asset.url = Cow::Owned(aliased_by.clone());
+
+                    self.insert_static_asset(aliased_asset, content_type.clone(), headers.clone())?;
                 }
             }
             _ => {
@@ -326,6 +366,8 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
+        let encoding = asset.encoding.clone();
+
         let (response, certification) = Self::prepare_asset_response_and_certification(
             asset,
             additional_headers,
@@ -339,13 +381,18 @@ impl<'content> AssetRouter<'content> {
 
         self.tree.borrow_mut().insert(&tree_entry);
 
-        self.responses.insert(
-            asset_url,
-            CertifiedAssetResponse {
-                response,
-                tree_entry,
-            },
-        );
+        let certified_response = CertifiedAssetResponse {
+            response,
+            tree_entry,
+        };
+
+        if matches!(encoding, AssetEncoding::Identity) {
+            self.responses
+                .insert(asset_url.clone(), certified_response.clone());
+        } else {
+            self.encoded_responses
+                .insert((asset_url, encoding.to_string()), certified_response);
+        }
 
         Ok(())
     }
@@ -357,6 +404,8 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
     ) -> AssetCertificationResult<()> {
+        let encoding = asset.encoding.clone();
+
         let (response, certification) = Self::prepare_asset_response_and_certification(
             asset,
             additional_headers,
@@ -370,13 +419,20 @@ impl<'content> AssetRouter<'content> {
 
         self.tree.borrow_mut().insert(&tree_entry);
 
-        self.fallback_responses.insert(
-            fallback_for.scope,
-            CertifiedAssetResponse {
-                response,
-                tree_entry,
-            },
-        );
+        let certified_response = CertifiedAssetResponse {
+            response,
+            tree_entry,
+        };
+
+        if matches!(encoding, AssetEncoding::Identity) {
+            self.fallback_responses
+                .insert(fallback_for.scope.clone(), certified_response.clone());
+        } else {
+            self.encoded_fallback_responses.insert(
+                (fallback_for.scope, encoding.to_string()),
+                certified_response,
+            );
+        }
 
         Ok(())
     }
@@ -432,7 +488,11 @@ impl<'content> AssetRouter<'content> {
             headers.push(("content-type".to_string(), content_type));
         }
 
-        Self::prepare_response_and_certification(asset.url, 200, asset.content, headers)
+        if !matches!(&asset.encoding, &AssetEncoding::Identity) {
+            headers.push(("content-encoding".to_string(), asset.encoding.to_string()));
+        }
+
+        Self::prepare_response_and_certification(asset.url.to_string(), 200, asset.content, headers)
     }
 
     fn prepare_response_and_certification(
@@ -473,6 +533,97 @@ impl<'content> AssetRouter<'content> {
         let certification = HttpCertification::full(&cel_expr, &request, &http_response, None)?;
 
         Ok((response, certification))
+    }
+
+    fn get_encoded_asset(
+        &self,
+        preferred_encodings: &[&str],
+        url: &str,
+    ) -> Option<&CertifiedAssetResponse<'content>> {
+        for encoding in preferred_encodings {
+            if let Some(response) = self
+                .encoded_responses
+                .get(&(url.to_string(), encoding.to_string()))
+            {
+                return Some(response);
+            }
+        }
+
+        None
+    }
+
+    fn get_encoded_fallback_asset(
+        &self,
+        preferred_encodings: &[&str],
+        scope: &str,
+    ) -> Option<&CertifiedAssetResponse<'content>> {
+        for encoding in preferred_encodings {
+            if let Some(response) = self
+                .encoded_fallback_responses
+                .get(&(scope.to_string(), encoding.to_string()))
+            {
+                return Some(response);
+            }
+        }
+
+        None
+    }
+
+    fn get_preferred_encodings<'a>(&self, request: &'a HttpRequest) -> Vec<&'a str> {
+        for (name, value) in request.headers.iter() {
+            if name.to_lowercase() == "accept-encoding" {
+                return Self::prioritized_encodings(value)
+                    .iter()
+                    .map(|(encoding, _quality)| *encoding)
+                    .collect();
+            }
+        }
+
+        vec![]
+    }
+
+    fn prioritized_encodings(encodings: &str) -> Vec<(&str, f32)> {
+        let mut encodings = encodings
+            .split(',')
+            .filter_map(|encoding| {
+                encoding
+                    .split(';')
+                    .collect::<Vec<_>>()
+                    .first()
+                    .map(|s| s.trim())
+                    .map(|s| (s, Self::default_encoding_quality(s)))
+            })
+            .collect::<Vec<_>>();
+
+        // this `unwrap()` call is safe as long as the values returned by
+        // `default_encoding_quality` are comparable (not NaN)
+        encodings.sort_unstable_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+
+        encodings
+    }
+
+    fn default_encoding_quality(encoding: &str) -> f32 {
+        if encoding.eq_ignore_ascii_case("br") {
+            return 1.0;
+        }
+
+        if encoding.eq_ignore_ascii_case("zstd") {
+            return 0.9;
+        }
+
+        if encoding.eq_ignore_ascii_case("gzip") {
+            return 0.8;
+        }
+
+        if encoding.eq_ignore_ascii_case("deflate") {
+            return 0.7;
+        }
+
+        if encoding.eq_ignore_ascii_case("identity") {
+            return 0.5;
+        }
+
+        0.6
     }
 }
 
@@ -533,18 +684,197 @@ mod tests {
     }
 
     #[rstest]
+    #[case(index_html_zz_body(), "/", "deflate", "deflate")]
+    #[case(index_html_zz_body(), "/", "deflate, identity", "deflate")]
+    #[case(index_html_gz_body(), "/", "gzip", "gzip")]
+    #[case(index_html_gz_body(), "/", "gzip, identity", "gzip")]
+    #[case(index_html_gz_body(), "/", "gzip, deflate", "gzip")]
+    #[case(index_html_gz_body(), "/", "gzip, deflate, identity", "gzip")]
+    #[case(index_html_br_body(), "/", "br", "br")]
+    #[case(index_html_br_body(), "/", "br, gzip, deflate, identity", "br")]
+    #[case(index_html_br_body(), "/", "gzip, deflate, identity, br", "br")]
+    #[case(index_html_zz_body(), "/index.html", "deflate", "deflate")]
+    #[case(index_html_zz_body(), "/index.html", "deflate, identity", "deflate")]
+    #[case(index_html_gz_body(), "/index.html", "gzip", "gzip")]
+    #[case(index_html_gz_body(), "/index.html", "gzip, identity", "gzip")]
+    #[case(index_html_gz_body(), "/index.html", "gzip, deflate", "gzip")]
+    #[case(index_html_gz_body(), "/index.html", "gzip, deflate, identity", "gzip")]
+    #[case(index_html_br_body(), "/index.html", "br", "br")]
+    #[case(
+        index_html_br_body(),
+        "/index.html",
+        "br, gzip, deflate, identity",
+        "br"
+    )]
+    #[case(
+        index_html_br_body(),
+        "/index.html",
+        "gzip, deflate, identity, br",
+        "br"
+    )]
+    fn test_encoded_index_html(
+        #[case] expected_body: Vec<u8>,
+        #[case] req_url: &str,
+        #[case] accept_encoding: &str,
+        #[case] expected_encoding: &str,
+        encoded_asset_cel_expr: String,
+        asset_router: AssetRouter,
+    ) {
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            url: req_url.to_string(),
+            headers: vec![("accept-encoding".to_string(), accept_encoding.to_string())],
+            body: vec![],
+        };
+
+        let expected_response = HttpResponse {
+            status_code: 200,
+            body: expected_body.clone(),
+            headers: vec![
+                (
+                    "content-length".to_string(),
+                    expected_body.len().to_string(),
+                ),
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-encoding".to_string(),
+                    expected_encoding.to_string(),
+                ),
+                (
+                    IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+                    encoded_asset_cel_expr,
+                ),
+            ],
+            upgrade: None,
+        };
+
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
+        assert_eq!(
+            expr_path,
+            HttpCertificationPath::exact(req_url).to_expr_path()
+        );
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
+    }
+
+    #[rstest]
+    #[case(index_html_zz_body(), "/something", "deflate", "deflate")]
+    #[case(index_html_zz_body(), "/something", "deflate, identity", "deflate")]
+    #[case(index_html_gz_body(), "/something", "gzip", "gzip")]
+    #[case(index_html_gz_body(), "/something", "gzip, identity", "gzip")]
+    #[case(index_html_gz_body(), "/something", "gzip, deflate", "gzip")]
+    #[case(index_html_gz_body(), "/something", "gzip, deflate, identity", "gzip")]
+    #[case(index_html_br_body(), "/something", "br", "br")]
+    #[case(
+        index_html_br_body(),
+        "/something",
+        "br, gzip, deflate, identity",
+        "br"
+    )]
+    #[case(
+        index_html_br_body(),
+        "/something",
+        "gzip, deflate, identity, br",
+        "br"
+    )]
+    #[case(index_html_zz_body(), "/assets/css/app.css", "deflate", "deflate")]
+    #[case(
+        index_html_zz_body(),
+        "/assets/css/app.css",
+        "deflate, identity",
+        "deflate"
+    )]
+    #[case(index_html_gz_body(), "/assets/css/app.css", "gzip", "gzip")]
+    #[case(index_html_gz_body(), "/assets/css/app.css", "gzip, identity", "gzip")]
+    #[case(index_html_gz_body(), "/assets/css/app.css", "gzip, deflate", "gzip")]
+    #[case(
+        index_html_gz_body(),
+        "/assets/css/app.css",
+        "gzip, deflate, identity",
+        "gzip"
+    )]
+    #[case(index_html_br_body(), "/assets/css/app.css", "br", "br")]
+    #[case(
+        index_html_br_body(),
+        "/assets/css/app.css",
+        "br, gzip, deflate, identity",
+        "br"
+    )]
+    #[case(
+        index_html_br_body(),
+        "/assets/css/app.css",
+        "gzip, deflate, identity, br",
+        "br"
+    )]
+    fn test_encoded_index_html_fallback(
+        #[case] expected_body: Vec<u8>,
+        #[case] req_url: &str,
+        #[case] accept_encoding: &str,
+        #[case] expected_encoding: &str,
+        encoded_asset_cel_expr: String,
+        asset_router: AssetRouter,
+    ) {
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            url: req_url.to_string(),
+            headers: vec![("accept-encoding".to_string(), accept_encoding.to_string())],
+            body: vec![],
+        };
+
+        let expected_response = HttpResponse {
+            status_code: 200,
+            body: expected_body.clone(),
+            headers: vec![
+                (
+                    "content-length".to_string(),
+                    expected_body.len().to_string(),
+                ),
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-encoding".to_string(),
+                    expected_encoding.to_string(),
+                ),
+                (
+                    IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+                    encoded_asset_cel_expr,
+                ),
+            ],
+            upgrade: None,
+        };
+
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
+        let requested_expr_path = HttpCertificationPath::exact(req_url).to_expr_path();
+        assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert!(matches!(
+            witness.lookup_subtree(&requested_expr_path),
+            SubtreeLookupResult::Absent
+        ));
+        assert_eq!(response, expected_response);
+    }
+
+    #[rstest]
     fn test_index_html_root_fallback(
         index_html_body: Vec<u8>,
         asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/something".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-
         let expected_response = HttpResponse {
             status_code: 200,
             body: index_html_body.clone(),
@@ -563,12 +893,24 @@ mod tests {
             upgrade: None,
         };
 
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            url: "/something".to_string(),
+            headers: vec![],
+            body: vec![],
+        };
+        let requested_expr_path = HttpCertificationPath::exact("/something").to_expr_path();
+
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
+        ));
+        assert!(matches!(
+            witness.lookup_subtree(&requested_expr_path),
+            SubtreeLookupResult::Absent
         ));
         assert_eq!(response, expected_response);
     }
@@ -607,6 +949,7 @@ mod tests {
             HttpCertificationPath::exact("/assets/css/app.css").to_expr_path();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -716,6 +1059,73 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/javascript".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
+            ],
+            upgrade: None,
+        };
+
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+
+        assert_eq!(expr_path, vec!["http_expr", "js", "app-488df671.js", "<$>"]);
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
+    }
+
+    #[rstest]
+    #[case(app_js_zz_body(), "deflate", "deflate")]
+    #[case(app_js_zz_body(), "deflate, identity", "deflate")]
+    #[case(app_js_zz_body(), "identity, deflate", "deflate")]
+    #[case(app_js_gz_body(), "gzip", "gzip")]
+    #[case(app_js_gz_body(), "gzip, identity", "gzip")]
+    #[case(app_js_gz_body(), "identity, gzip", "gzip")]
+    #[case(app_js_gz_body(), "gzip, deflate", "gzip")]
+    #[case(app_js_gz_body(), "deflate, gzip", "gzip")]
+    #[case(app_js_gz_body(), "gzip, deflate, identity", "gzip")]
+    #[case(app_js_gz_body(), "gzip, identity, deflate", "gzip")]
+    #[case(app_js_gz_body(), "identity, gzip, deflate", "gzip")]
+    #[case(app_js_gz_body(), "identity, deflate, gzip", "gzip")]
+    #[case(app_js_gz_body(), "deflate, gzip, identity", "gzip")]
+    #[case(app_js_gz_body(), "deflate, identity, gzip", "gzip")]
+    #[case(app_js_br_body(), "br", "br")]
+    #[case(app_js_br_body(), "br, gzip, deflate, identity", "br")]
+    #[case(app_js_br_body(), "gzip, deflate, identity, br", "br")]
+    fn test_encoded_app_js(
+        #[case] expected_body: Vec<u8>,
+        #[case] accept_encoding: &str,
+        #[case] expected_encoding: &str,
+        encoded_asset_cel_expr: String,
+        asset_router: AssetRouter,
+    ) {
+        let request = HttpRequest {
+            method: "GET".to_string(),
+            url: "/js/app-488df671.js".to_string(),
+            headers: vec![("accept-encoding".to_string(), accept_encoding.to_string())],
+            body: vec![],
+        };
+
+        let expected_response = HttpResponse {
+            status_code: 200,
+            body: expected_body.clone(),
+            headers: vec![
+                (
+                    "content-length".to_string(),
+                    expected_body.len().to_string(),
+                ),
+                (
+                    "cache-control".to_string(),
+                    "public, max-age=31536000, immutable".to_string(),
+                ),
+                ("content-type".to_string(), "text/javascript".to_string()),
+                (
+                    "content-encoding".to_string(),
+                    expected_encoding.to_string(),
+                ),
+                (
+                    IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+                    encoded_asset_cel_expr,
+                ),
             ],
             upgrade: None,
         };
@@ -982,8 +1392,58 @@ mod tests {
     }
 
     #[fixture]
+    fn index_html_gz_body() -> Vec<u8> {
+        vec![
+            31, 139, 8, 0, 0, 0, 0, 0, 0, 3, 179, 201, 40, 201, 205, 177, 179, 73, 202, 79, 169,
+            180, 179, 201, 48, 180, 243, 72, 205, 201, 201, 87, 8, 207, 47, 202, 73, 81, 180, 209,
+            7, 10, 216, 232, 67, 228, 244, 193, 10, 1, 28, 178, 8, 152, 47, 0, 0, 0,
+        ]
+    }
+
+    #[fixture]
+    fn index_html_zz_body() -> Vec<u8> {
+        vec![
+            78, 9, 3, 9, 28, 9, 1, 3, 49, 4, 9, 4, 3, 9, 30, 4, 3, 48, 9, 9, 57, 8, 2, 49, 51, 4,
+            1, 7, 0, 8, 8, 43, 4, 4, 1, 0, 1, 7, 8, 0, 9,
+        ]
+    }
+
+    #[fixture]
+    fn index_html_br_body() -> Vec<u8> {
+        vec![
+            1, 2, 0, 8, 1, 9, 36, 2, 72, 65, 4, 25, 0, 5, 84, 0, 5, 18, 1, 64, 14, 5, 4, 1, 9, 0,
+            3, 4, 42, 2, 1, 59, 13, 14, 3, 19, 69, 18,
+        ]
+    }
+
+    #[fixture]
     fn app_js_body() -> Vec<u8> {
         b"console.log('Hello World!');".to_vec()
+    }
+
+    #[fixture]
+    fn app_js_gz_body() -> Vec<u8> {
+        vec![
+            31, 139, 8, 0, 0, 0, 0, 0, 0, 3, 75, 206, 207, 43, 206, 207, 73, 213, 203, 201, 79,
+            215, 80, 247, 72, 205, 201, 201, 87, 8, 207, 47, 202, 73, 81, 84, 215, 180, 6, 0, 186,
+            42, 111, 142, 28, 0, 0, 0,
+        ]
+    }
+
+    #[fixture]
+    fn app_js_zz_body() -> Vec<u8> {
+        vec![
+            120, 156, 75, 206, 207, 43, 206, 207, 73, 213, 203, 201, 79, 215, 80, 247, 72, 205,
+            201, 201, 87, 8, 207, 47, 202, 73, 81, 84, 215, 180, 6, 0, 148, 149, 9, 123,
+        ]
+    }
+
+    #[fixture]
+    fn app_js_br_body() -> Vec<u8> {
+        vec![
+            8, 0, 80, 63, 6, 6, 73, 6, 6, 65, 2, 6, 6, 67, 28, 27, 48, 65, 6, 6, 6, 20, 57, 6, 72,
+            6, 64, 21, 27, 29, 3, 3,
+        ]
     }
 
     #[fixture]
@@ -1007,16 +1467,73 @@ mod tests {
     }
 
     #[fixture]
-    fn asset_router(
-        index_html_body: Vec<u8>,
-        app_js_body: Vec<u8>,
-        app_css_body: Vec<u8>,
-        not_found_html_body: Vec<u8>,
-    ) -> AssetRouter<'static> {
+    fn encoded_asset_cel_expr() -> String {
+        DefaultFullCelExpressionBuilder::default()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec![
+                    "content-length",
+                    "cache-control",
+                    "content-type",
+                    "content-encoding",
+                ],
+            ))
+            .build()
+            .to_string()
+    }
+
+    #[fixture]
+    fn asset_router() -> AssetRouter<'static> {
+        let index_html_body = index_html_body();
+        let index_html_gz_body = index_html_gz_body();
+        let index_html_zz_body = index_html_zz_body();
+        let index_html_br_body = index_html_br_body();
+        let app_js_body = app_js_body();
+        let app_js_gz_body = app_js_gz_body();
+        let app_js_zz_body = app_js_zz_body();
+        let app_js_br_body = app_js_br_body();
+        let app_css_body = app_css_body();
+        let not_found_html_body = not_found_html_body();
+
         let mut asset_router = AssetRouter::default();
         let assets = vec![
             Asset::new("index.html", index_html_body),
+            Asset::with_encoding(
+                "index.html.gz",
+                index_html_gz_body,
+                "/index.html",
+                AssetEncoding::Gzip,
+            ),
+            Asset::with_encoding(
+                "index.html.zz",
+                index_html_zz_body,
+                "/index.html",
+                AssetEncoding::Deflate,
+            ),
+            Asset::with_encoding(
+                "index.html.br",
+                index_html_br_body,
+                "/index.html",
+                AssetEncoding::Brotli,
+            ),
             Asset::new("js/app-488df671.js", app_js_body),
+            Asset::with_encoding(
+                "js/app-488df671.js.gz",
+                app_js_gz_body,
+                "/js/app-488df671.js",
+                AssetEncoding::Gzip,
+            ),
+            Asset::with_encoding(
+                "js/app-488df671.js.zz",
+                app_js_zz_body,
+                "/js/app-488df671.js",
+                AssetEncoding::Deflate,
+            ),
+            Asset::with_encoding(
+                "js/app-488df671.js.br",
+                app_js_br_body,
+                "/js/app-488df671.js",
+                AssetEncoding::Brotli,
+            ),
             Asset::new("css/app-ba74b708.css", app_css_body),
             Asset::new("not-found.html", not_found_html_body),
         ];
@@ -1034,8 +1551,52 @@ mod tests {
                 }],
                 aliased_by: vec!["/".to_string()],
             },
+            AssetConfig::File {
+                path: "index.html.gz".to_string(),
+                content_type: Some("text/html".to_string()),
+                headers: vec![(
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                )],
+                fallback_for: vec![AssetFallbackConfig {
+                    scope: "/".to_string(),
+                }],
+                aliased_by: vec!["/".to_string()],
+            },
+            AssetConfig::File {
+                path: "index.html.zz".to_string(),
+                content_type: Some("text/html".to_string()),
+                headers: vec![(
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                )],
+                fallback_for: vec![AssetFallbackConfig {
+                    scope: "/".to_string(),
+                }],
+                aliased_by: vec!["/".to_string()],
+            },
+            AssetConfig::File {
+                path: "index.html.br".to_string(),
+                content_type: Some("text/html".to_string()),
+                headers: vec![(
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                )],
+                fallback_for: vec![AssetFallbackConfig {
+                    scope: "/".to_string(),
+                }],
+                aliased_by: vec!["/".to_string()],
+            },
             AssetConfig::Pattern {
                 pattern: "**/*.js".to_string(),
+                content_type: Some("text/javascript".to_string()),
+                headers: vec![(
+                    "cache-control".to_string(),
+                    "public, max-age=31536000, immutable".to_string(),
+                )],
+            },
+            AssetConfig::Pattern {
+                pattern: "**/*.js.{gz,zz,br}".to_string(),
                 content_type: Some("text/javascript".to_string()),
                 headers: vec![(
                     "cache-control".to_string(),
