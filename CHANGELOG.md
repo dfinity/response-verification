@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **ic-asset-certification**: add support for alt response encodings
 - make error types clonable
 - **ic-asset-certification**: add support for asset redirection
 - **ic-asset-certification**: add alias support to asset router
