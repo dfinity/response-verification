@@ -219,7 +219,7 @@ Standard Unix-style glob syntax is supported:
   - Using `**` anywhere else is illegal.
   - The glob `**` is allowed and means "match everything".
 - `{a,b}` matches `a` or `b` where `a` and `b` are arbitrary glob
-  patterns. (N.B. Nesting {...} is not currently allowed.)
+  patterns. (N.B. Nesting `{...}` is not currently allowed.)
 - `[ab]` matches `a` or `b` where `a` and `b` are characters.
 - `[!ab]` to match any character except for `a` and `b`.
 - Metacharacters such as `*` and `?` can be escaped with character
