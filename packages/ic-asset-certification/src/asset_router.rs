@@ -24,7 +24,7 @@ struct CertifiedAssetResponse<'a> {
 ///
 /// ```
 /// use ic_http_certification::HttpRequest;
-/// use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind};
+/// use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 ///
 /// let mut asset_router = AssetRouter::default();
 ///
@@ -50,6 +50,10 @@ struct CertifiedAssetResponse<'a> {
 ///             scope: "/".to_string(),
 ///         }],
 ///         aliased_by: vec!["/".to_string()],
+///         encodings: vec![
+///             (AssetEncoding::Brotli, "br".to_string()),
+///             (AssetEncoding::Gzip, "gz".to_string()),
+///         ],
 ///     },
 ///     AssetConfig::Pattern {
 ///         pattern: "**/*.js".to_string(),
@@ -58,6 +62,10 @@ struct CertifiedAssetResponse<'a> {
 ///             "cache-control".to_string(),
 ///             "public, max-age=31536000, immutable".to_string(),
 ///         )],
+///         encodings: vec![
+///             (AssetEncoding::Brotli, "br".to_string()),
+///             (AssetEncoding::Gzip, "gz".to_string()),
+///         ],
 ///     },
 ///     AssetConfig::Pattern {
 ///         pattern: "**/*.css".to_string(),
@@ -66,6 +74,10 @@ struct CertifiedAssetResponse<'a> {
 ///             "cache-control".to_string(),
 ///             "public, max-age=31536000, immutable".to_string(),
 ///         )],
+///         encodings: vec![
+///             (AssetEncoding::Brotli, "br".to_string()),
+///             (AssetEncoding::Gzip, "gz".to_string()),
+///         ],
 ///     },
 ///     AssetConfig::Redirect {
 ///         from: "/old-url".to_string(),
@@ -248,29 +260,6 @@ impl<'content> AssetRouter<'content> {
         })
     }
 
-    /// Certifies a single asset and inserts it into the router, to be served
-    /// later by the [serve_asset](AssetRouter::serve_asset) method.
-    ///
-    /// The asset is certified using the provided
-    /// [HttpCertificationTree](ic_http_certification::HttpCertificationTree).
-    ///
-    /// The asset certification is configured using the provided
-    /// [AssetConfig] enum.
-    ///
-    /// If no configuration is provided, the asset will be certified and served
-    /// as-is, without headers.
-    pub fn certify_asset<'path>(
-        &mut self,
-        asset: Asset<'content, 'path>,
-        asset_config: Option<AssetConfig>,
-    ) -> AssetCertificationResult {
-        let asset_config = asset_config
-            .map(TryInto::<NormalizedAssetConfig>::try_into)
-            .transpose()?;
-
-        self.certify_asset_impl(asset, asset_config.as_ref())
-    }
-
     /// Certifies multiple assets and inserts them into the router, to be served
     /// later by the [serve_asset](AssetRouter::serve_asset) method.
     ///
@@ -292,10 +281,33 @@ impl<'content> AssetRouter<'content> {
             .map(TryInto::try_into)
             .collect::<AssetCertificationResult<_>>()?;
 
-        for asset in assets {
-            let asset_config = asset_configs.iter().find(|e| e.matches_asset(&asset));
+        let asset_map = assets
+            .into_iter()
+            .map(|asset| (asset.path.clone(), asset))
+            .collect::<HashMap<_, _>>();
 
-            self.certify_asset_impl(asset, asset_config)?;
+        for asset in asset_map.values() {
+            let asset_config = asset_configs.iter().find(|e| e.matches_asset(asset));
+
+            for (encoding, postfix) in asset_config
+                .map(|e| match e {
+                    NormalizedAssetConfig::File { encodings, .. } => encodings.clone(),
+                    NormalizedAssetConfig::Pattern { encodings, .. } => encodings.clone(),
+                    _ => vec![],
+                })
+                .unwrap_or_default()
+            {
+                let encoded_asset_path = format!("{}.{}", asset.path, postfix);
+                let encoded_asset = asset_map.get(encoded_asset_path.as_str()).cloned();
+
+                if let Some(mut encoded_asset) = encoded_asset {
+                    encoded_asset.url.clone_from(&asset.url);
+
+                    self.certify_asset_impl(encoded_asset, asset_config, Some(&encoding))?;
+                }
+            }
+
+            self.certify_asset_impl(asset.clone(), asset_config, None)?;
         }
 
         for asset_config in asset_configs {
@@ -317,6 +329,7 @@ impl<'content> AssetRouter<'content> {
         &mut self,
         asset: Asset<'content, 'path>,
         asset_config: Option<&NormalizedAssetConfig>,
+        encoding: Option<&AssetEncoding>,
     ) -> AssetCertificationResult {
         match asset_config {
             Some(NormalizedAssetConfig::Pattern {
@@ -324,7 +337,7 @@ impl<'content> AssetRouter<'content> {
                 headers,
                 ..
             }) => {
-                self.insert_static_asset(asset, content_type.clone(), headers.clone())?;
+                self.insert_static_asset(asset, content_type.clone(), headers.clone(), encoding)?;
             }
             Some(NormalizedAssetConfig::File {
                 content_type,
@@ -333,7 +346,12 @@ impl<'content> AssetRouter<'content> {
                 aliased_by,
                 ..
             }) => {
-                self.insert_static_asset(asset.clone(), content_type.clone(), headers.clone())?;
+                self.insert_static_asset(
+                    asset.clone(),
+                    content_type.clone(),
+                    headers.clone(),
+                    encoding,
+                )?;
 
                 for fallback_for in fallback_for.iter() {
                     self.insert_fallback_asset(
@@ -341,6 +359,7 @@ impl<'content> AssetRouter<'content> {
                         content_type.clone(),
                         headers.clone(),
                         fallback_for.clone(),
+                        encoding,
                     )?;
                 }
 
@@ -348,11 +367,16 @@ impl<'content> AssetRouter<'content> {
                     let mut aliased_asset = asset.clone();
                     aliased_asset.url = Cow::Owned(aliased_by.clone());
 
-                    self.insert_static_asset(aliased_asset, content_type.clone(), headers.clone())?;
+                    self.insert_static_asset(
+                        aliased_asset,
+                        content_type.clone(),
+                        headers.clone(),
+                        encoding,
+                    )?;
                 }
             }
             _ => {
-                self.insert_static_asset(asset, None, vec![])?;
+                self.insert_static_asset(asset, None, vec![], encoding)?;
             }
         }
 
@@ -364,14 +388,15 @@ impl<'content> AssetRouter<'content> {
         asset: Asset<'content, 'path>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
+        encoding: Option<&AssetEncoding>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
-        let encoding = asset.encoding.clone();
 
         let (response, certification) = Self::prepare_asset_response_and_certification(
             asset,
             additional_headers,
             content_type,
+            encoding,
         )?;
 
         let tree_entry = HttpCertificationTreeEntry::new(
@@ -386,12 +411,15 @@ impl<'content> AssetRouter<'content> {
             tree_entry,
         };
 
-        if matches!(encoding, AssetEncoding::Identity) {
-            self.responses
-                .insert(asset_url.clone(), certified_response.clone());
-        } else {
-            self.encoded_responses
-                .insert((asset_url, encoding.to_string()), certified_response);
+        match encoding {
+            Some(encoding) => {
+                self.encoded_responses
+                    .insert((asset_url, encoding.to_string()), certified_response);
+            }
+            None => {
+                self.responses
+                    .insert(asset_url.clone(), certified_response.clone());
+            }
         }
 
         Ok(())
@@ -403,13 +431,13 @@ impl<'content> AssetRouter<'content> {
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
+        encoding: Option<&AssetEncoding>,
     ) -> AssetCertificationResult<()> {
-        let encoding = asset.encoding.clone();
-
         let (response, certification) = Self::prepare_asset_response_and_certification(
             asset,
             additional_headers,
             content_type,
+            encoding,
         )?;
 
         let tree_entry = HttpCertificationTreeEntry::new(
@@ -424,14 +452,14 @@ impl<'content> AssetRouter<'content> {
             tree_entry,
         };
 
-        if matches!(encoding, AssetEncoding::Identity) {
-            self.fallback_responses
-                .insert(fallback_for.scope.clone(), certified_response.clone());
-        } else {
+        if let Some(encoding) = encoding {
             self.encoded_fallback_responses.insert(
                 (fallback_for.scope, encoding.to_string()),
                 certified_response,
             );
+        } else {
+            self.fallback_responses
+                .insert(fallback_for.scope.clone(), certified_response.clone());
         }
 
         Ok(())
@@ -479,6 +507,7 @@ impl<'content> AssetRouter<'content> {
         asset: Asset<'content, 'path>,
         additional_headers: Vec<(String, String)>,
         content_type: Option<String>,
+        encoding: Option<&AssetEncoding>,
     ) -> AssetCertificationResult<(AssetResponse<'content>, HttpCertification)> {
         let mut headers = vec![];
 
@@ -488,8 +517,8 @@ impl<'content> AssetRouter<'content> {
             headers.push(("content-type".to_string(), content_type));
         }
 
-        if !matches!(&asset.encoding, &AssetEncoding::Identity) {
-            headers.push(("content-encoding".to_string(), asset.encoding.to_string()));
+        if let Some(encoding) = encoding {
+            headers.push(("content-encoding".to_string(), encoding.to_string()));
         }
 
         Self::prepare_response_and_certification(asset.url.to_string(), 200, asset.content, headers)
@@ -1341,10 +1370,11 @@ mod tests {
                 scope: "/".to_string(),
             }],
             aliased_by: vec!["/".to_string()],
+            encodings: vec![],
         };
 
         asset_router
-            .certify_asset(index_html_asset, Some(index_html_config))
+            .certify_assets(vec![index_html_asset], vec![index_html_config])
             .unwrap();
 
         let request = HttpRequest {
@@ -1497,43 +1527,13 @@ mod tests {
         let mut asset_router = AssetRouter::default();
         let assets = vec![
             Asset::new("index.html", index_html_body),
-            Asset::with_encoding(
-                "index.html.gz",
-                index_html_gz_body,
-                "/index.html",
-                AssetEncoding::Gzip,
-            ),
-            Asset::with_encoding(
-                "index.html.zz",
-                index_html_zz_body,
-                "/index.html",
-                AssetEncoding::Deflate,
-            ),
-            Asset::with_encoding(
-                "index.html.br",
-                index_html_br_body,
-                "/index.html",
-                AssetEncoding::Brotli,
-            ),
+            Asset::new("index.html.gz", index_html_gz_body),
+            Asset::new("index.html.zz", index_html_zz_body),
+            Asset::new("index.html.br", index_html_br_body),
             Asset::new("js/app-488df671.js", app_js_body),
-            Asset::with_encoding(
-                "js/app-488df671.js.gz",
-                app_js_gz_body,
-                "/js/app-488df671.js",
-                AssetEncoding::Gzip,
-            ),
-            Asset::with_encoding(
-                "js/app-488df671.js.zz",
-                app_js_zz_body,
-                "/js/app-488df671.js",
-                AssetEncoding::Deflate,
-            ),
-            Asset::with_encoding(
-                "js/app-488df671.js.br",
-                app_js_br_body,
-                "/js/app-488df671.js",
-                AssetEncoding::Brotli,
-            ),
+            Asset::new("js/app-488df671.js.gz", app_js_gz_body),
+            Asset::new("js/app-488df671.js.zz", app_js_zz_body),
+            Asset::new("js/app-488df671.js.br", app_js_br_body),
             Asset::new("css/app-ba74b708.css", app_css_body),
             Asset::new("not-found.html", not_found_html_body),
         ];
@@ -1550,42 +1550,11 @@ mod tests {
                     scope: "/".to_string(),
                 }],
                 aliased_by: vec!["/".to_string()],
-            },
-            AssetConfig::File {
-                path: "index.html.gz".to_string(),
-                content_type: Some("text/html".to_string()),
-                headers: vec![(
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                )],
-                fallback_for: vec![AssetFallbackConfig {
-                    scope: "/".to_string(),
-                }],
-                aliased_by: vec!["/".to_string()],
-            },
-            AssetConfig::File {
-                path: "index.html.zz".to_string(),
-                content_type: Some("text/html".to_string()),
-                headers: vec![(
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                )],
-                fallback_for: vec![AssetFallbackConfig {
-                    scope: "/".to_string(),
-                }],
-                aliased_by: vec!["/".to_string()],
-            },
-            AssetConfig::File {
-                path: "index.html.br".to_string(),
-                content_type: Some("text/html".to_string()),
-                headers: vec![(
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                )],
-                fallback_for: vec![AssetFallbackConfig {
-                    scope: "/".to_string(),
-                }],
-                aliased_by: vec!["/".to_string()],
+                encodings: vec![
+                    (AssetEncoding::Gzip, "gz".to_string()),
+                    (AssetEncoding::Deflate, "zz".to_string()),
+                    (AssetEncoding::Brotli, "br".to_string()),
+                ],
             },
             AssetConfig::Pattern {
                 pattern: "**/*.js".to_string(),
@@ -1594,14 +1563,11 @@ mod tests {
                     "cache-control".to_string(),
                     "public, max-age=31536000, immutable".to_string(),
                 )],
-            },
-            AssetConfig::Pattern {
-                pattern: "**/*.js.{gz,zz,br}".to_string(),
-                content_type: Some("text/javascript".to_string()),
-                headers: vec![(
-                    "cache-control".to_string(),
-                    "public, max-age=31536000, immutable".to_string(),
-                )],
+                encodings: vec![
+                    (AssetEncoding::Gzip, "gz".to_string()),
+                    (AssetEncoding::Deflate, "zz".to_string()),
+                    (AssetEncoding::Brotli, "br".to_string()),
+                ],
             },
             AssetConfig::Pattern {
                 pattern: "**/*.css".to_string(),
@@ -1610,6 +1576,11 @@ mod tests {
                     "cache-control".to_string(),
                     "public, max-age=31536000, immutable".to_string(),
                 )],
+                encodings: vec![
+                    (AssetEncoding::Gzip, "gz".to_string()),
+                    (AssetEncoding::Deflate, "zz".to_string()),
+                    (AssetEncoding::Brotli, "br".to_string()),
+                ],
             },
             AssetConfig::File {
                 path: "not-found.html".to_string(),
@@ -1633,6 +1604,12 @@ mod tests {
                     "/not-found".to_string(),
                     "/not-found/".to_string(),
                     "/not-found/index.html".to_string(),
+                ],
+                // [TODO] - add these files and tests for them
+                encodings: vec![
+                    (AssetEncoding::Gzip, "gz".to_string()),
+                    (AssetEncoding::Deflate, "zz".to_string()),
+                    (AssetEncoding::Brotli, "br".to_string()),
                 ],
             },
             AssetConfig::Redirect {

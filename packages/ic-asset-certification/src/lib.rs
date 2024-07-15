@@ -91,6 +91,27 @@ In both cases, the following options can be configured for each asset:
     asset.
   - It's important to include any headers that can affect browser behavior,
     particularly [security headers](https://owasp.org/www-project-secure-headers/index.html).
+- `encodings`
+    - A list of alternative encodings that can be used to serve the asset.
+    - Each entry is a tuple of the [encoding name](AssetEncoding) and the file
+      extension used in the file path.
+      For example, to include Brotli and Gzip encodings:
+      `vec![(AssetEncoding::Brotli, "br".to_string()), AssetEncoding::Gzip, "gz".to_string())]`.
+    - Each encoding referenced must be provided to the asset router as a
+      separate file with the same filename as the original file, but with an
+      additional file extension matching the configuration. For example, if the
+      current matched file is named `file.html`, then the asset router will
+      look for `file.html.br` and `file.html.gz`.
+    - If the file is found, the asset will be certified and served with the
+      provided encoding according to the `Accept-Encoding`.
+    - Encodings are prioritized in the following order:
+        - Brotli
+        - Zstd
+        - Gzip
+        - Deflate
+        - Identity
+    - The asset router will return the highest priority encoding that has been
+      certified and is supported by the client.
 
 ### Configuring individual files
 
@@ -136,7 +157,7 @@ on the `/index.html` path, in addition to serving as the fallback for the `/`
 scope and setting `/` as an alias for this asset.
 
 ```rust
-use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
+use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 
 let config = AssetConfig::File {
     path: "index.html".to_string(),
@@ -148,6 +169,10 @@ let config = AssetConfig::File {
         scope: "/".to_string(),
     }],
     aliased_by: vec!["/".to_string()],
+    encodings: vec![
+        (AssetEncoding::Brotli, "br".to_string()),
+        (AssetEncoding::Gzip, "gz".to_string()),
+    ],
 };
 ```
 
@@ -170,7 +195,7 @@ Multiple aliases are also configured for this asset, namely:
 Requests to any of those aliases will serve the `/404.html` asset.
 
 ```rust
-use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
+use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 
 let config = AssetConfig::File {
     path: "404.html".to_string(),
@@ -193,6 +218,10 @@ let config = AssetConfig::File {
         "/not-found".to_string(),
         "/not-found/".to_string(),
         "/not-found/index.html".to_string(),
+    ],
+    encodings: vec![
+        (AssetEncoding::Brotli, "br".to_string()),
+        (AssetEncoding::Gzip, "gz".to_string()),
     ],
 };
 ```
@@ -229,14 +258,18 @@ For example, the following pattern will match all `.js` files in the `js`
 directory:
 
 ```rust
-use ic_asset_certification::AssetConfig;
+use ic_asset_certification::{AssetConfig, AssetEncoding};
 
 let config = AssetConfig::Pattern {
-  pattern: "js/*.js".to_string(),
-  content_type: Some("application/javascript".to_string()),
-  headers: vec![
-      ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
-  ],
+    pattern: "js/*.js".to_string(),
+    content_type: Some("application/javascript".to_string()),
+    headers: vec![
+        ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
+    ],
+    encodings: vec![
+        (AssetEncoding::Brotli, "br".to_string()),
+        (AssetEncoding::Gzip, "gz".to_string()),
+    ],
 };
 ```
 
@@ -273,9 +306,9 @@ The following example configures a permanent redirect from `/old` to `/new`:
 use ic_asset_certification::{AssetConfig, AssetRedirectKind};
 
 let config = AssetConfig::Redirect {
-  from: "/old".to_string(),
-  to: "/new".to_string(),
-  kind: AssetRedirectKind::Permanent,
+    from: "/old".to_string(),
+    to: "/new".to_string(),
+    kind: AssetRedirectKind::Permanent,
 };
 ```
 
@@ -284,90 +317,99 @@ let config = AssetConfig::Redirect {
 The [AssetRouter] is responsible for certifying responses and routing requests to
 the appropriate response.
 
-Assets can be inserted one by one using the
-[certify_asset](AssetRouter::certify_asset) method:
+Assets can be inserted in bulk using the
+[certify_assets](AssetRouter::certify_assets) method:
 
 ```rust
-use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
-
-let mut asset_router = AssetRouter::default();
-
-let asset = Asset::new(
-  "index.html",
-  b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
-);
-
-let asset_config = AssetConfig::File {
-  path: "index.html".to_string(),
-  content_type: Some("text/html".to_string()),
-  headers: vec![
-      ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
-  ],
-  fallback_for: vec![AssetFallbackConfig {
-      scope: "/".to_string(),
-  }],
-  aliased_by: vec!["/".to_string()],
-};
-
-asset_router.certify_asset(asset, Some(asset_config)).unwrap();
-```
-
-Or in bulk using the [certify_assets](AssetRouter::certify_assets) method:
-
-```rust
-use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind};
+use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 
 let mut asset_router = AssetRouter::default();
 
 let assets = vec![
-  Asset::new(
-      "index.html",
-      b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
-  ),
-  Asset::new(
-      "app.js",
-      b"console.log('Hello World!');".as_slice(),
-  ),
-  Asset::new(
-    "css/app-ba74b708.css",
-    b"html,body{min-height:100vh;}".as_slice(),
-  ),
+    Asset::new(
+        "index.html",
+        b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
+    ),
+    Asset::new(
+        "index.html.gz",
+        &[0, 1, 2, 3, 4, 5]
+    ),
+    Asset::new(
+        "index.html.br",
+        &[6, 7, 8, 9, 10, 11]
+    ),
+    Asset::new(
+        "app.js",
+        b"console.log('Hello World!');".as_slice(),
+    ),
+    Asset::new(
+        "app.js.gz",
+        &[12, 13, 14, 15, 16, 17],
+    ),
+    Asset::new(
+        "app.js.br",
+        &[18, 19, 20, 21, 22, 23],
+    ),
+    Asset::new(
+        "css/app-ba74b708.css",
+        b"html,body{min-height:100vh;}".as_slice(),
+    ),
+    Asset::new(
+        "css/app-ba74b708.css.gz",
+        &[24, 25, 26, 27, 28, 29],
+    ),
+    Asset::new(
+        "css/app-ba74b708.css.br",
+        &[30, 31, 32, 33, 34, 35],
+    ),
 ];
 
 let asset_configs = vec![
-  AssetConfig::File {
-      path: "index.html".to_string(),
-      content_type: Some("text/html".to_string()),
-      headers: vec![(
-          "cache-control".to_string(),
-          "public, no-cache, no-store".to_string(),
-      )],
-      fallback_for: vec![AssetFallbackConfig {
-          scope: "/".to_string(),
-      }],
-      aliased_by: vec!["/".to_string()],
-  },
-  AssetConfig::Pattern {
-      pattern: "**/*.js".to_string(),
-      content_type: Some("text/javascript".to_string()),
-      headers: vec![(
-          "cache-control".to_string(),
-          "public, max-age=31536000, immutable".to_string(),
-      )],
-  },
-  AssetConfig::Pattern {
-      pattern: "**/*.css".to_string(),
-      content_type: Some("text/css".to_string()),
-      headers: vec![(
-          "cache-control".to_string(),
-          "public, max-age=31536000, immutable".to_string(),
-      )],
-  },
-  AssetConfig::Redirect {
-    from: "/old".to_string(),
-    to: "/new".to_string(),
-    kind: AssetRedirectKind::Permanent,
-  },
+    AssetConfig::File {
+        path: "index.html".to_string(),
+        content_type: Some("text/html".to_string()),
+        headers: vec![(
+            "cache-control".to_string(),
+            "public, no-cache, no-store".to_string(),
+        )],
+        fallback_for: vec![AssetFallbackConfig {
+            scope: "/".to_string(),
+        }],
+        aliased_by: vec!["/".to_string()],
+        encodings: vec![
+            (AssetEncoding::Brotli, "br".to_string()),
+            (AssetEncoding::Gzip, "gz".to_string()),
+        ],
+    },
+    AssetConfig::Pattern {
+        pattern: "**/*.js".to_string(),
+        content_type: Some("text/javascript".to_string()),
+        headers: vec![(
+            "cache-control".to_string(),
+            "public, max-age=31536000, immutable".to_string(),
+        )],
+        encodings: vec![
+            (AssetEncoding::Brotli, "br".to_string()),
+            (AssetEncoding::Gzip, "gz".to_string()),
+        ],
+    },
+    AssetConfig::Pattern {
+        pattern: "**/*.css".to_string(),
+        content_type: Some("text/css".to_string()),
+        headers: vec![(
+            "cache-control".to_string(),
+            "public, max-age=31536000, immutable".to_string(),
+        )],
+        encodings: vec![
+            (AssetEncoding::Brotli, "br".to_string()),
+            (AssetEncoding::Gzip, "gz".to_string()),
+        ],
+    },
+    AssetConfig::Redirect {
+        from: "/old".to_string(),
+        to: "/new".to_string(),
+        kind: AssetRedirectKind::Permanent,
+    },
 ];
 
 asset_router.certify_assets(assets, asset_configs).unwrap();
@@ -410,30 +452,31 @@ use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRoute
 let mut asset_router = AssetRouter::default();
 
 let asset = Asset::new(
-  "index.html",
-  b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
+    "index.html",
+    b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
 );
 
 let asset_config = AssetConfig::File {
     path: "index.html".to_string(),
     content_type: Some("text/html".to_string()),
     headers: vec![
-      ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
+        ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
     ],
     fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
     }],
     aliased_by: vec!["/".to_string()],
+    encodings: vec![],
 };
 
 let http_request = HttpRequest {
-  method: "GET".to_string(),
+    method: "GET".to_string(),
     url: "/".to_string(),
     headers: vec![],
     body: vec![],
-  };
+};
 
-asset_router.certify_asset(asset, Some(asset_config)).unwrap();
+asset_router.certify_assets(vec![asset], vec![asset_config]).unwrap();
 
 let (mut response, witness, expr_path) = asset_router.serve_asset(&http_request).unwrap();
 ```
