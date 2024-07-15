@@ -1,5 +1,6 @@
 use crate::{Asset, AssetCertificationError};
 use globset::{Glob, GlobMatcher};
+use std::fmt::{Display, Formatter};
 
 /// Certification configuration for [assets](Asset). This configuration
 /// is passed alongside the [assets](Asset) to the
@@ -21,16 +22,20 @@ use globset::{Glob, GlobMatcher};
 /// set to `text/javascript` and a `cache-control` header is added.
 ///
 /// ```
-/// use ic_asset_certification::AssetConfig;
+/// use ic_asset_certification::{AssetConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
 ///     path: "app.js".to_string(),
 ///     content_type: Some("text/javascript".to_string()),
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
-///    ],
-///    fallback_for: vec![],
-///    aliased_by: vec![],
+///     ],
+///     fallback_for: vec![],
+///     aliased_by: vec![],
+///     encodings: vec![
+///         (AssetEncoding::Brotli, "br".to_string()),
+///         (AssetEncoding::Gzip, "gz".to_string()),
+///     ],
 /// };
 /// ```
 ///
@@ -43,7 +48,7 @@ use globset::{Glob, GlobMatcher};
 /// The content type is set to `text/html` and a `cache-control` header is added.
 ///
 /// ```
-/// use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
+/// use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
 ///     path: "index.html".to_string(),
@@ -55,6 +60,10 @@ use globset::{Glob, GlobMatcher};
 ///         scope: "/".to_string(),
 ///     }],
 ///     aliased_by: vec!["/".to_string()],
+///     encodings: vec![
+///         (AssetEncoding::Brotli, "br".to_string()),
+///         (AssetEncoding::Gzip, "gz".to_string()),
+///     ],
 /// };
 /// ```
 ///
@@ -79,7 +88,7 @@ use globset::{Glob, GlobMatcher};
 ///     - `/not-found/index.html`
 ///
 /// ```
-/// use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
+/// use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
 ///     path: "404.html".to_string(),
@@ -103,6 +112,10 @@ use globset::{Glob, GlobMatcher};
 ///         "/not-found/".to_string(),
 ///         "/not-found/index.html".to_string(),
 ///    ],
+///     encodings: vec![
+///         (AssetEncoding::Brotli, "br".to_string()),
+///         (AssetEncoding::Gzip, "gz".to_string()),
+///     ],
 /// };
 /// ```
 ///
@@ -113,13 +126,17 @@ use globset::{Glob, GlobMatcher};
 /// set to `text/css` and a `cache-control` header is added.
 ///
 /// ```
-/// use ic_asset_certification::AssetConfig;
+/// use ic_asset_certification::{AssetConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::Pattern {
 ///     pattern: "**/*.css".to_string(),
 ///     content_type: Some("text/css".to_string()),
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
+///     ],
+///     encodings: vec![
+///         (AssetEncoding::Brotli, "br".to_string()),
+///         (AssetEncoding::Gzip, "gz".to_string()),
 ///     ],
 /// };
 /// ```
@@ -217,6 +234,37 @@ pub enum AssetConfig {
         /// the alias `/`, a request for `/` will be served the
         /// asset at `index.html`.
         aliased_by: Vec<String>,
+
+        /// A list of encodings to serve the asset with. Each listing includes
+        /// the encoding of an asset, and the file extension for the encoded
+        /// asset. The router will search for an asset with the provided file
+        /// extension and certify all matching encoded assets, if found.
+        ///
+        /// A list of alternative encodings that can be used to serve the asset.
+        ///
+        /// Each entry is a tuple of the [encoding name](AssetEncoding) and the
+        /// file extension used in the file path. For example, to include Brotli
+        /// and Gzip encodings:
+        /// `vec![(AssetEncoding::Brotli, "br".to_string()), (AssetEncoding::Gzip, "gz".to_string())]`
+        ///
+        /// Each encoding referenced must be provided to the asset router as a
+        /// separate file with the same filename as the original file, but with
+        /// an additional file extension matching the configuration. For
+        /// example, if the current matched file is named `file.html`, then the
+        /// asset router will look for `file.html.br` and `file.html.gz`.
+        ///
+        /// If the file is found, the asset will be certified and served with
+        /// the provided encoding according to the `Accept-Encoding`. Encodings
+        /// are prioritized in the following order:
+        ///     - Brotli
+        ///     - Zstd
+        ///     - Gzip
+        ///     - Deflate
+        ///     - Identity
+        ///
+        /// The asset router will return the highest priority encoding that has
+        /// been certified and is supported by the client.
+        encodings: Vec<(AssetEncoding, String)>,
     },
 
     /// Matches files using a glob pattern.
@@ -265,6 +313,37 @@ pub enum AssetConfig {
         /// header added will be included in certification and served by the
         /// [AssetRouter](crate::AssetRouter) for matching [Assets](Asset).
         headers: Vec<(String, String)>,
+
+        /// A list of encodings to serve the asset with. Each listing includes
+        /// the encoding of an asset, and the file extension for the encoded
+        /// asset. The router will search for an asset with the provided file
+        /// extension and certify all matching encoded assets, if found.
+        ///
+        /// A list of alternative encodings that can be used to serve the asset.
+        ///
+        /// Each entry is a tuple of the [encoding name](AssetEncoding) and the
+        /// file extension used in the file path. For example, to include Brotli
+        /// and Gzip encodings:
+        /// `vec![(AssetEncoding::Brotli, "br".to_string()), (AssetEncoding::Gzip, "gz".to_string())]`
+        ///
+        /// Each encoding referenced must be provided to the asset router as a
+        /// separate file with the same filename as the original file, but with
+        /// an additional file extension matching the configuration. For
+        /// example, if the current matched file is named `file.html`, then the
+        /// asset router will look for `file.html.br` and `file.html.gz`.
+        ///
+        /// If the file is found, the asset will be certified and served with
+        /// the provided encoding according to the `Accept-Encoding`. Encodings
+        /// are prioritized in the following order:
+        ///     - Brotli
+        ///     - Zstd
+        ///     - Gzip
+        ///     - Deflate
+        ///     - Identity
+        ///
+        /// The asset router will return the highest priority encoding that has
+        /// been certified and is supported by the client.
+        encodings: Vec<(AssetEncoding, String)>,
     },
 
     /// Redirects the request to another URL. This config type is not matched
@@ -324,6 +403,39 @@ pub enum AssetRedirectKind {
     Temporary,
 }
 
+/// The encoding of an asset.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AssetEncoding {
+    /// The asset is encoded with the Brotli algorithm.
+    Brotli,
+
+    /// The asset is encoded with the Zstd algorithm.
+    Zstd,
+
+    /// The asset is encoded with the Gzip algorithm.
+    Gzip,
+
+    /// The asset is encoded with the Deflate algorithm.
+    Deflate,
+
+    /// The asset is not encoded.
+    Identity,
+}
+
+impl Display for AssetEncoding {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            AssetEncoding::Brotli => "br".to_string(),
+            AssetEncoding::Zstd => "zstd".to_string(),
+            AssetEncoding::Gzip => "gzip".to_string(),
+            AssetEncoding::Deflate => "deflate".to_string(),
+            AssetEncoding::Identity => "identity".to_string(),
+        };
+
+        write!(f, "{}", str)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub(crate) enum NormalizedAssetConfig {
     File {
@@ -332,11 +444,13 @@ pub(crate) enum NormalizedAssetConfig {
         headers: Vec<(String, String)>,
         fallback_for: Vec<AssetFallbackConfig>,
         aliased_by: Vec<String>,
+        encodings: Vec<(AssetEncoding, String)>,
     },
     Pattern {
         pattern: GlobMatcher,
         content_type: Option<String>,
         headers: Vec<(String, String)>,
+        encodings: Vec<(AssetEncoding, String)>,
     },
     Redirect {
         from: String,
@@ -356,21 +470,25 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
                 headers,
                 fallback_for,
                 aliased_by,
+                encodings,
             } => Ok(NormalizedAssetConfig::File {
                 path,
                 content_type,
                 headers,
                 fallback_for,
                 aliased_by,
+                encodings,
             }),
             AssetConfig::Pattern {
                 pattern,
                 content_type,
                 headers,
+                encodings,
             } => Ok(NormalizedAssetConfig::Pattern {
                 pattern: Glob::new(&pattern)?.compile_matcher(),
                 content_type,
                 headers,
+                encodings,
             }),
             AssetConfig::Redirect { from, to, kind } => {
                 Ok(NormalizedAssetConfig::Redirect { from, to, kind })
@@ -412,6 +530,7 @@ mod tests {
             headers: vec![],
             fallback_for: vec![],
             aliased_by: vec![],
+            encodings: vec![],
         }
         .try_into()
         .unwrap();
@@ -509,6 +628,7 @@ mod tests {
             pattern: config_pattern.to_string(),
             content_type: None,
             headers: vec![],
+            encodings: vec![],
         }
         .try_into()
         .unwrap();
@@ -532,5 +652,14 @@ mod tests {
         .unwrap();
 
         assert!(!config.matches_asset(&asset));
+    }
+
+    #[rstest]
+    fn asset_encoding_to_string() {
+        assert_eq!(AssetEncoding::Brotli.to_string(), "br");
+        assert_eq!(AssetEncoding::Zstd.to_string(), "zstd");
+        assert_eq!(AssetEncoding::Gzip.to_string(), "gzip");
+        assert_eq!(AssetEncoding::Deflate.to_string(), "deflate");
+        assert_eq!(AssetEncoding::Identity.to_string(), "identity");
     }
 }
