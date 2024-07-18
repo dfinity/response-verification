@@ -80,15 +80,17 @@ mod tests {
             ),
         );
 
+        let mut expected_headers = expected_response
+            .headers
+            .iter()
+            .map(|(key, value)| (key.to_lowercase(), String::from(value)))
+            .collect::<Vec<_>>()
+            .clone();
+        expected_headers.push(("IC-Certificate".to_string(), certificate_header.clone()));
+
         let expected_certified_response = VerifiedResponse {
             body: expected_response.body.clone(),
-            headers: expected_response
-                .headers
-                .iter()
-                .map(|(key, value)| (key.to_lowercase(), String::from(value)))
-                .filter(|(key, _)| key != "ic-certificateexpression")
-                .collect::<Vec<_>>()
-                .clone(),
+            headers: expected_headers,
             status_code: Some(expected_response.status_code),
         };
 
@@ -408,15 +410,17 @@ mod tests {
             ),
         );
 
+        let mut expected_headers = expected_response
+            .headers
+            .iter()
+            .map(|(key, value)| (key.to_lowercase(), String::from(value)))
+            .collect::<Vec<_>>()
+            .clone();
+        expected_headers.push(("IC-Certificate".to_string(), certificate_header.clone()));
+
         let expected_certified_response = VerifiedResponse {
             body: expected_response.body.clone(),
-            headers: expected_response
-                .headers
-                .iter()
-                .map(|(key, value)| (key.to_lowercase(), String::from(value)))
-                .filter(|(key, _)| key != "ic-certificateexpression")
-                .collect::<Vec<_>>()
-                .clone(),
+            headers: expected_headers,
             status_code: Some(expected_response.status_code),
         };
 
