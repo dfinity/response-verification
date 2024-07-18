@@ -2,8 +2,12 @@ use super::Hash;
 use crate::{cel::DefaultResponseCertificationType, DefaultResponseCertification, HttpResponse};
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
-const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
-const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-CertificateExpression";
+/// The name of the IC-Certificate header.
+pub const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
+
+/// The name of the IC-CertificateExpression header.
+pub const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-CertificateExpression";
+
 const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
 /// Representation of response headers filtered by [filter_response_headers].
@@ -13,8 +17,6 @@ pub struct ResponseHeaders {
     pub headers: Vec<(String, String)>,
     /// IC-Certificate header
     pub certificate: Option<String>,
-    /// IC-CertificateExpression header
-    pub certificate_expression: Option<String>,
 }
 
 /// Filters the headers of an [HttpResponse] according to a CEL expression defined by
@@ -43,7 +45,6 @@ pub fn filter_response_headers(
     let mut response_headers = ResponseHeaders {
         headers: vec![],
         certificate: None,
-        certificate_expression: None,
     };
 
     response_headers.headers = response
@@ -62,8 +63,10 @@ pub fn filter_response_headers(
                 .to_string()
                 .eq_ignore_ascii_case(CERTIFICATE_EXPRESSION_HEADER_NAME);
             if is_certificate_expression_header {
-                response_headers.certificate_expression = Some(header_value.into());
-                return None;
+                return Some((
+                    header_name.to_string().to_ascii_lowercase(),
+                    String::from(header_value),
+                ));
             }
 
             if headers_filter(header_name) {
@@ -94,13 +97,6 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
             )
         })
         .collect();
-
-    if let Some(certificate_expression) = &response_headers.certificate_expression {
-        headers_to_verify.push((
-            CERTIFICATE_EXPRESSION_HEADER_NAME.to_ascii_lowercase(),
-            Value::String(certificate_expression.clone()),
-        ));
-    }
 
     headers_to_verify.push((
         RESPONSE_STATUS_PSEUDO_HEADER_NAME.into(),
@@ -177,7 +173,13 @@ mod tests {
 
         assert_eq!(
             response_headers.headers,
-            vec![("accept-encoding".into(), "gzip".into()),]
+            vec![
+                (
+                    "ic-certificateexpression".into(),
+                    remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
+                ),
+                ("accept-encoding".into(), "gzip".into()),
+            ]
         );
     }
 
@@ -194,6 +196,10 @@ mod tests {
         assert_eq!(
             response_headers.headers,
             vec![
+                (
+                    "ic-certificateexpression".into(),
+                    remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
+                ),
                 ("accept-encoding".into(), "gzip".into()),
                 ("cache-control".into(), "no-cache".into()),
                 ("cache-control".into(), "no-store".into()),
