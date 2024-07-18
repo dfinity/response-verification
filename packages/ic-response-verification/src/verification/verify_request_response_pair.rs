@@ -46,11 +46,11 @@ pub fn verify_request_response_pair(
         .get("content-encoding")
         .map(|encoding| encoding.as_str());
 
-    let Some(certificate_header) = headers.get("ic-certificate") else {
+    let Some(certificate_header_str) = headers.get("ic-certificate") else {
         return Err(ResponseVerificationError::MissingCertification);
     };
 
-    let certificate_header = CertificateHeader::from(certificate_header)?;
+    let certificate_header = CertificateHeader::from(certificate_header_str)?;
 
     let Some(tree) = certificate_header
         .tree
@@ -100,6 +100,14 @@ pub fn verify_request_response_pair(
                     return Err(ResponseVerificationError::MissingCertificateExpressionPath);
                 };
 
+                let certificate_headers: Vec<(String, String)> = vec![
+                    (
+                        "ic-certificateexpression".into(),
+                        certificate_expression_header.to_string(),
+                    ),
+                    ("IC-Certificate".into(), certificate_header_str.to_string()),
+                ];
+
                 let cel_ast = parse_cel_expression(certificate_expression_header)?;
                 let certification = map_cel_ast(&cel_ast)?;
                 let expr_hash = hash(certificate_expression_header.as_bytes());
@@ -112,6 +120,7 @@ pub fn verify_request_response_pair(
                     max_cert_time_offset_ns,
                     tree,
                     certificate,
+                    certificate_headers,
                     expr_path,
                     expr_hash,
                     certification,
@@ -196,6 +205,7 @@ struct V2VerificationOpts<'a> {
     max_cert_time_offset_ns: u128,
     tree: HashTree,
     certificate: Certificate,
+    certificate_headers: Vec<(String, String)>,
     expr_path: Vec<String>,
     expr_hash: Hash,
     certification: CelExpression<'a>,
@@ -211,6 +221,7 @@ fn v2_verification(
         max_cert_time_offset_ns,
         tree,
         certificate,
+        certificate_headers,
         expr_path,
         expr_hash,
         certification,
@@ -272,14 +283,19 @@ fn v2_verification(
     );
 
     match are_hashes_valid {
-        true => Ok(VerificationInfo {
-            response: Some(VerifiedResponse {
-                status_code: Some(response.status_code),
-                headers: response_headers.headers,
-                body: response.body,
-            }),
-            verification_version: 2,
-        }),
+        true => {
+            let mut all_headers = response_headers.headers.clone();
+            all_headers.extend(certificate_headers);
+
+            Ok(VerificationInfo {
+                response: Some(VerifiedResponse {
+                    status_code: Some(response.status_code),
+                    headers: all_headers,
+                    body: response.body,
+                }),
+                verification_version: 2,
+            })
+        }
         false => Err(ResponseVerificationError::InvalidResponseHashes),
     }
 }
