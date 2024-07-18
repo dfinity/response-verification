@@ -130,8 +130,8 @@ mod tests {
             status_code: Some(200),
             body: body.as_bytes().to_vec(),
             headers: vec![
-                ("cache-control".into(), "max-age=604800".into()),
                 ("ic-certificateexpression".into(), cel_expr.to_string()),
+                ("cache-control".into(), "max-age=604800".into()),
                 ("IC-Certificate".into(), certificate_header),
             ],
         };
@@ -208,8 +208,8 @@ mod tests {
             status_code: Some(200),
             body: body.as_bytes().to_vec(),
             headers: vec![
-                ("cache-control".into(), "max-age=604800".into()),
                 ("ic-certificateexpression".into(), cel_expr.to_string()),
+                ("cache-control".into(), "max-age=604800".into()),
                 ("IC-Certificate".into(), certificate_header),
             ],
         };
@@ -283,9 +283,9 @@ mod tests {
             status_code: Some(200),
             body: body.as_bytes().to_vec(),
             headers: vec![
+                ("ic-certificateexpression".into(), cel_expr.to_string()),
                 ("cache-control".into(), "max-age=604800".into()),
                 ("server".into(), "Apache/2.4.1 (Unix)".into()),
-                ("ic-certificateexpression".into(), cel_expr.to_string()),
                 ("IC-Certificate".into(), certificate_header),
             ],
         };
