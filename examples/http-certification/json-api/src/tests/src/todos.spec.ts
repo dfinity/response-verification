@@ -22,7 +22,6 @@ import {
   Ok,
   extractErrResponse,
   extractOkResponse,
-  filterCertificateHeaders,
   jsonDecode,
   mapFromCanisterResponse,
 } from './response';
@@ -87,9 +86,7 @@ describe('Todos', () => {
     );
 
     expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
-    expect(verificationResult.response).toEqual(
-      filterCertificateHeaders(response),
-    );
+    expect(verificationResult.response).toEqual(response);
     expect(verificationResultBody).toEqual(responseBody);
   });
 
@@ -161,9 +158,7 @@ describe('Todos', () => {
     );
 
     expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
-    expect(verificationResult.response).toEqual(
-      filterCertificateHeaders(afterCreateResponse),
-    );
+    expect(verificationResult.response).toEqual(afterCreateResponse);
     expect(verificationResultBody).toEqual(afterCreateResponseBody);
 
     const updateRequest: Request = {
@@ -229,9 +224,7 @@ describe('Todos', () => {
     expect(afterUpdateVerificationResult.verificationVersion).toEqual(
       CERTIFICATE_VERSION,
     );
-    expect(afterUpdateVerificationResult.response).toEqual(
-      filterCertificateHeaders(afterUpdateResponse),
-    );
+    expect(afterUpdateVerificationResult.response).toEqual(afterUpdateResponse);
     expect(afterUpdateVerificationResultBody).toEqual(afterUpdateResponseBody);
 
     const deleteRequest: Request = {
@@ -295,9 +288,7 @@ describe('Todos', () => {
     expect(afterDeleteVerificationResult.verificationVersion).toEqual(
       CERTIFICATE_VERSION,
     );
-    expect(afterDeleteVerificationResult.response).toEqual(
-      filterCertificateHeaders(afterDeleteResponse),
-    );
+    expect(afterDeleteVerificationResult.response).toEqual(afterDeleteResponse);
     expect(afterDeleteVerificationResultBody).toEqual(afterDeleteResponseBody);
   });
 
@@ -336,9 +327,7 @@ describe('Todos', () => {
       expect(verificationResult.verificationVersion).toEqual(
         CERTIFICATE_VERSION,
       );
-      expect(verificationResult.response).toEqual(
-        filterCertificateHeaders(response),
-      );
+      expect(verificationResult.response).toEqual(response);
       expect(verificationResultBody).toEqual(responseBody);
     });
   });
@@ -375,9 +364,7 @@ describe('Todos', () => {
     );
 
     expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
-    expect(verificationResult.response).toEqual(
-      filterCertificateHeaders(response),
-    );
+    expect(verificationResult.response).toEqual(response);
     expect(verificationResultBody).toEqual(responseBody);
   });
 });
