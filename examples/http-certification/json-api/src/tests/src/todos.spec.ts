@@ -3,6 +3,8 @@ import { Principal } from '@dfinity/principal';
 import {
   verifyRequestResponsePair,
   Request,
+  VerifiedResponse,
+  Response,
 } from '@dfinity/response-verification';
 import {
   _SERVICE,
@@ -86,7 +88,7 @@ describe('Todos', () => {
     );
 
     expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
-    expect(verificationResult.response).toEqual(response);
+    expectResponseEqual(verificationResult.response, response);
     expect(verificationResultBody).toEqual(responseBody);
   });
 
@@ -158,7 +160,7 @@ describe('Todos', () => {
     );
 
     expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
-    expect(verificationResult.response).toEqual(afterCreateResponse);
+    expectResponseEqual(verificationResult.response, afterCreateResponse);
     expect(verificationResultBody).toEqual(afterCreateResponseBody);
 
     const updateRequest: Request = {
@@ -224,7 +226,10 @@ describe('Todos', () => {
     expect(afterUpdateVerificationResult.verificationVersion).toEqual(
       CERTIFICATE_VERSION,
     );
-    expect(afterUpdateVerificationResult.response).toEqual(afterUpdateResponse);
+    expectResponseEqual(
+      afterUpdateVerificationResult.response,
+      afterUpdateResponse,
+    );
     expect(afterUpdateVerificationResultBody).toEqual(afterUpdateResponseBody);
 
     const deleteRequest: Request = {
@@ -288,7 +293,10 @@ describe('Todos', () => {
     expect(afterDeleteVerificationResult.verificationVersion).toEqual(
       CERTIFICATE_VERSION,
     );
-    expect(afterDeleteVerificationResult.response).toEqual(afterDeleteResponse);
+    expectResponseEqual(
+      afterDeleteVerificationResult.response,
+      afterDeleteResponse,
+    );
     expect(afterDeleteVerificationResultBody).toEqual(afterDeleteResponseBody);
   });
 
@@ -327,7 +335,7 @@ describe('Todos', () => {
       expect(verificationResult.verificationVersion).toEqual(
         CERTIFICATE_VERSION,
       );
-      expect(verificationResult.response).toEqual(response);
+      expectResponseEqual(verificationResult.response, response);
       expect(verificationResultBody).toEqual(responseBody);
     });
   });
@@ -364,7 +372,26 @@ describe('Todos', () => {
     );
 
     expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
-    expect(verificationResult.response).toEqual(response);
+    expectResponseEqual(verificationResult.response, response);
     expect(verificationResultBody).toEqual(responseBody);
   });
 });
+
+function expectResponseEqual(
+  actual: VerifiedResponse | undefined,
+  expected: Response,
+): void {
+  expect(actual).toBeDefined();
+  expect(actual?.statusCode).toBe(expected.statusCode);
+  expect(actual?.body).toEqual(expected.body);
+  expect(actual?.headers.length).toEqual(expected.headers.length);
+
+  actual?.headers.forEach(([actualKey, actualValue]) => {
+    const expectedHeader = expected.headers.find(
+      ([expectedKey]) => expectedKey.toLowerCase() === actualKey.toLowerCase(),
+    );
+
+    expect(expectedHeader).toBeDefined();
+    expect(actualValue).toEqual(expectedHeader?.[1]);
+  });
+}
