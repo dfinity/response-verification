@@ -13,17 +13,6 @@ export function jsonDecode<T>(body?: Uint8Array): T {
   return JSON.parse(new TextDecoder().decode(body));
 }
 
-export function filterCertificateHeaders(response: Response): Response {
-  return {
-    ...response,
-    headers: response.headers.filter(
-      ([key]) =>
-        key.toLowerCase() !== 'ic-certificateexpression' &&
-        key.toLowerCase() !== 'ic-certificate',
-    ),
-  };
-}
-
 export interface ApiOkResponse<T> {
   ok: {
     data: T;
