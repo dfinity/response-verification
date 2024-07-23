@@ -12,10 +12,16 @@
 
 ### Fix
 
+- return certificate headers in v0 responses
 - **ic-http-certification**: ensure all possible wildcards are witnessed
 - **ic-certification**: remove empty subtrees after removing nodes on a path
 - **ic-http-certification**: fixed an issue where an asset that has a wildcard but not an exact path is not witnessed correctly
 - **ic-certificate-verification**: redundant dependency
+
+### Refactor
+
+- address comments
+- remove unnecessary filtering of ic-certificateexpression header
 
 ## 2.5.0 (2024-03-19)
 
