@@ -16,10 +16,10 @@ use ic_http_certification::{
         DefaultResponseOnlyCelExpression,
     },
     filter_response_headers, request_hash, response_headers_hash, HttpRequest, HttpResponse,
-    CERTIFICATE_HEADER_NAME,
+    CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME,
 };
 use ic_representation_independent_hash::hash;
-use std::collections::HashMap;
+use std::{ascii::AsciiExt, collections::HashMap};
 
 /// The minimum verification version supported by this package.
 pub const MIN_VERIFICATION_VERSION: u8 = 1;
@@ -47,7 +47,7 @@ pub fn verify_request_response_pair(
         .get("content-encoding")
         .map(|encoding| encoding.as_str());
 
-    let Some(certificate_header_str) = headers.get("ic-certificate") else {
+    let Some(certificate_header_str) = headers.get(&CERTIFICATE_HEADER_NAME.to_lowercase()) else {
         return Err(ResponseVerificationError::MissingCertification);
     };
 
@@ -91,7 +91,7 @@ pub fn verify_request_response_pair(
             encoding,
             ic_public_key,
         }),
-        2 => match headers.get("ic-certificateexpression") {
+        2 => match headers.get(&CERTIFICATE_EXPRESSION_HEADER_NAME.to_lowercase()) {
             Some(certificate_expression_header) => {
                 let Some(expr_path) = certificate_header
                     .expr_path
@@ -274,12 +274,12 @@ fn v2_verification(
 
     match are_hashes_valid {
         true => {
-            let certificate_headers: Vec<(String, String)> = vec![(
-                CERTIFICATE_HEADER_NAME.to_string(),
-                response_headers.certificate.unwrap(),
-            )];
             let mut all_headers = response_headers.headers.clone();
-            all_headers.extend(certificate_headers);
+            // add the certificate header back to the response
+            let Some(certificate_header_str) = response_headers.certificate else {
+                return Err(ResponseVerificationError::MissingCertification);
+            };
+            all_headers.push((CERTIFICATE_HEADER_NAME.to_string(), certificate_header_str));
 
             Ok(VerificationInfo {
                 response: Some(VerifiedResponse {
