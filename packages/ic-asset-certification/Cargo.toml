@@ -3,7 +3,7 @@ name = "ic-asset-certification"
 description = "Certification for static assets served over HTTP on the Internet Computer"
 readme = "README.md"
 documentation = "https://docs.rs/ic-asset-certification"
-categories = ["api-bindings", "data-structures", "no-std"]
+categories = ["api-bindings", "data-structures", "algorithms", "cryptography::cryptocurrencies"]
 keywords = ["internet-computer", "agent", "utility", "icp", "dfinity"]
 include = ["src", "Cargo.toml", "LICENSE", "README.md"]
 

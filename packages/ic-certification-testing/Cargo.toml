@@ -3,7 +3,7 @@ name = "ic-certification-testing"
 description = "Utilities for testing applications that work with Internet Computer certification"
 readme = "README.md"
 documentation = "https://docs.rs/ic-certification-testing"
-categories = ["api-bindings", "authentication", "cryptography"]
+categories = ["api-bindings", "algorithms", "cryptography::cryptocurrencies"]
 keywords = ["internet-computer", "icp", "dfinity", "certification", "testing"]
 include = ["src", "Cargo.toml", "README.md"]
 
