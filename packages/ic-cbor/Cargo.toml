@@ -3,7 +3,7 @@ name = "ic-cbor"
 description = "CBOR decoding for Internet Computer clients"
 readme = "README.md"
 documentation = "https://docs.rs/ic-cbor"
-categories = ["api-bindings, "algorithms", "cryptography::cryptocurrencies"]
+categories = ["api-bindings", "algorithms", "cryptography::cryptocurrencies"]
 keywords = ["internet-computer", "icp", "dfinity", "cbor"]
 include = ["src", "Cargo.toml", "README.md"]
 
