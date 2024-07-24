@@ -3,7 +3,7 @@ name = "ic-response-verification"
 description = "Client side response verification for the Internet Computer"
 readme = "README.md"
 documentation = "https://docs.rs/ic-response-verification"
-categories = ["api-bindings", "authentication", "cryptography", "wasm"]
+categories = ["api-bindings", "algorithms", "cryptography::cryptocurrencies", "wasm"]
 keywords = ["internet-computer", "icp", "dfinity", "response", "verification"]
 include = ["src", "Cargo.toml", "README.md"]
 

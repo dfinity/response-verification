@@ -3,7 +3,7 @@ name = "ic-representation-independent-hash"
 description = "A library for computing representation-independent hashes as described in the Internet Computer interface specification."
 readme = "README.md"
 documentation = "https://docs.rs/ic-representation-independent-hash"
-categories = ["cryptography", "hash"]
+categories = ["api-bindings", "algorithms", "cryptography::cryptocurrencies"]
 keywords = ["icp", "dfinity", "representation", "independent", "hash"]
 include = ["src", "Cargo.toml", "README.md"]
 

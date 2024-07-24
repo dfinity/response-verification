@@ -3,7 +3,7 @@ name = "ic-certificate-verification"
 description = "Certificate verification for the Internet Computer"
 readme = "README.md"
 documentation = "https://docs.rs/ic-certificate-verification"
-categories = ["api-bindings", "authentication", "cryptography"]
+categories = ["api-bindings", "algorithms", "cryptography::cryptocurrencies"]
 keywords = [
     "internet-computer",
     "icp",
