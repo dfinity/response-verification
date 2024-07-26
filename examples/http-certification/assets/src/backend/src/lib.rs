@@ -47,29 +47,7 @@ fn collect_assets<'content, 'path>(
     assets: &mut Vec<Asset<'content, 'path>>,
 ) {
     for file in dir.files() {
-        let file_path = file.path().to_string_lossy().to_string();
-
-        if file_path.ends_with(".br") {
-            let url = format!("/{}", file_path.trim_end_matches(".br"));
-
-            assets.push(Asset::with_encoding(
-                file_path,
-                file.contents(),
-                url,
-                AssetEncoding::Brotli,
-            ));
-        } else if file_path.ends_with(".gz") {
-            let url = format!("/{}", file_path.trim_end_matches(".gz"));
-
-            assets.push(Asset::with_encoding(
-                file_path,
-                file.contents(),
-                url,
-                AssetEncoding::Gzip,
-            ));
-        } else {
-            assets.push(Asset::new(file_path, file.contents()));
-        }
+        assets.push(Asset::new(file.path().to_string_lossy(), file.contents()));
     }
 
     for dir in dir.dirs() {
@@ -80,6 +58,11 @@ fn collect_assets<'content, 'path>(
 // Certification
 fn certify_all_assets() {
     // 1. Define the asset certification configurations.
+    let encodings = vec![
+        (AssetEncoding::Brotli, "br".to_string()),
+        (AssetEncoding::Gzip, "gzip".to_string()),
+    ];
+
     let asset_configs = vec![
         AssetConfig::File {
             path: "index.html".to_string(),
@@ -92,30 +75,7 @@ fn certify_all_assets() {
                 scope: "/".to_string(),
             }],
             aliased_by: vec!["/".to_string()],
-        },
-        AssetConfig::File {
-            path: "index.html.gzip".to_string(),
-            content_type: Some("text/html".to_string()),
-            headers: get_asset_headers(vec![(
-                "cache-control".to_string(),
-                "public, no-cache, no-store".to_string(),
-            )]),
-            fallback_for: vec![AssetFallbackConfig {
-                scope: "/".to_string(),
-            }],
-            aliased_by: vec!["/".to_string()],
-        },
-        AssetConfig::File {
-            path: "index.html.br".to_string(),
-            content_type: Some("text/html".to_string()),
-            headers: get_asset_headers(vec![(
-                "cache-control".to_string(),
-                "public, no-cache, no-store".to_string(),
-            )]),
-            fallback_for: vec![AssetFallbackConfig {
-                scope: "/".to_string(),
-            }],
-            aliased_by: vec!["/".to_string()],
+            encodings: encodings.clone(),
         },
         AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),
@@ -124,14 +84,7 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
-        },
-        AssetConfig::Pattern {
-            pattern: "**/*.js.{br,gzip}".to_string(),
-            content_type: Some("text/javascript".to_string()),
-            headers: get_asset_headers(vec![(
-                "cache-control".to_string(),
-                IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
-            )]),
+            encodings: encodings.clone(),
         },
         AssetConfig::Pattern {
             pattern: "**/*.css".to_string(),
@@ -140,14 +93,7 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
-        },
-        AssetConfig::Pattern {
-            pattern: "**/*.css.{br,gzip}".to_string(),
-            content_type: Some("text/css".to_string()),
-            headers: get_asset_headers(vec![(
-                "cache-control".to_string(),
-                IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
-            )]),
+            encodings,
         },
         AssetConfig::Pattern {
             pattern: "**/*.ico".to_string(),
@@ -156,6 +102,7 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
+            encodings: vec![],
         },
         AssetConfig::Pattern {
             pattern: "**/*.svg".to_string(),
@@ -164,6 +111,7 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
+            encodings: vec![],
         },
         AssetConfig::Redirect {
             from: "/old-url".to_string(),
