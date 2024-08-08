@@ -43,11 +43,11 @@ fn post_upgrade() {
 }
 
 #[query]
-fn http_request(req: HttpRequest) -> HttpResponse {
+fn http_request(req: HttpRequest) -> HttpResponse<'static> {
     let req_path = req.get_path().expect("Failed to get req path");
 
     QUERY_ROUTER.with_borrow(|query_router| {
-        let method_router = query_router.get(&req.method.to_uppercase()).unwrap();
+        let method_router = query_router.get(&req.method().to_uppercase()).unwrap();
         let handler_match = method_router.at(&req_path).unwrap();
         let handler = handler_match.value;
 
@@ -56,11 +56,11 @@ fn http_request(req: HttpRequest) -> HttpResponse {
 }
 
 #[update]
-fn http_request_update(req: HttpRequest) -> HttpResponse {
+fn http_request_update(req: HttpRequest) -> HttpResponse<'static> {
     let req_path = req.get_path().expect("Failed to get req path");
 
     UPDATE_ROUTER.with_borrow(|update_router| {
-        let method_router = update_router.get(&req.method.to_uppercase()).unwrap();
+        let method_router = update_router.get(&req.method().to_uppercase()).unwrap();
         let handler_match = method_router.at(&req_path).unwrap();
         let handler = handler_match.value;
 
@@ -71,8 +71,8 @@ fn http_request_update(req: HttpRequest) -> HttpResponse {
 // Storage
 
 #[derive(Debug, Clone)]
-struct CertifiedHttpResponse {
-    response: HttpResponse,
+struct CertifiedHttpResponse<'a> {
+    response: HttpResponse<'a>,
     certification: HttpCertification,
 }
 
@@ -85,8 +85,8 @@ thread_local! {
     static HTTP_TREE: RefCell<HttpCertificationTree> = RefCell::new(HttpCertificationTree::default());
 
     // responses
-    static FALLBACK_RESPONSES: RefCell<HashMap<String, CertifiedHttpResponse>> = RefCell::new(HashMap::new());
-    static RESPONSES: RefCell<HashMap<(String, String), CertifiedHttpResponse>> = RefCell::new(HashMap::new());
+    static FALLBACK_RESPONSES: RefCell<HashMap<String, CertifiedHttpResponse<'static>>> = RefCell::new(HashMap::new());
+    static RESPONSES: RefCell<HashMap<(String, String), CertifiedHttpResponse<'static>>> = RefCell::new(HashMap::new());
 
     // cel expressions
     static RESPONSE_ONLY_CEL_EXPRS: RefCell<HashMap<String, (DefaultResponseOnlyCelExpression<'static>, String)>> = RefCell::new(HashMap::new());
@@ -166,12 +166,7 @@ fn prepare_cel_exprs() {
 }
 
 fn certify_list_todos_response() {
-    let request = HttpRequest {
-        url: TODOS_PATH.to_string(),
-        method: "GET".to_string(),
-        headers: vec![],
-        body: vec![],
-    };
+    let request = HttpRequest::get(TODOS_PATH).build();
 
     let body = TODO_ITEMS.with_borrow(|items| {
         ListTodosResponse::ok(
@@ -182,26 +177,24 @@ fn certify_list_todos_response() {
         )
         .encode()
     });
-    let response = create_response(200, body);
+    let mut response = create_response(200, body);
 
-    certify_response(request, response, &TODOS_TREE_PATH);
+    certify_response(request, &mut response, &TODOS_TREE_PATH);
 }
 
 fn certify_not_allowed_todo_responses() {
     ["HEAD", "PUT", "PATCH", "OPTIONS", "TRACE", "CONNECT"]
-        .iter()
+        .into_iter()
         .for_each(|method| {
-            let request = HttpRequest {
-                url: TODOS_PATH.to_string(),
-                method: method.to_string(),
-                headers: vec![],
-                body: vec![],
-            };
+            let request = HttpRequest::builder()
+                .with_method(method)
+                .with_url(TODOS_PATH)
+                .build();
 
             let body = ErrorResponse::not_allowed().encode();
-            let response = create_response(405, body);
+            let mut response = create_response(405, body);
 
-            certify_response(request, response, &TODOS_TREE_PATH);
+            certify_response(request, &mut response, &TODOS_TREE_PATH);
         });
 }
 
@@ -216,7 +209,7 @@ fn certify_not_found_response() {
         let (cel_expr_def, cel_expr_str) = cel_exprs.get(NOT_FOUND_PATH).unwrap();
 
         // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
-        response.headers.push((
+        response.add_header((
             IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
             cel_expr_str.to_string(),
         ));
@@ -247,14 +240,14 @@ fn certify_not_found_response() {
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 fn certify_response(
     request: HttpRequest,
-    mut response: HttpResponse,
+    response: &mut HttpResponse<'static>,
     tree_path: &HttpCertificationPath,
 ) {
     let request_path = request.get_path().unwrap();
 
     // retrieve and remove any existing response for the request method and path
     let existing_response = RESPONSES.with_borrow_mut(|responses| {
-        responses.remove(&(request.method.clone(), request_path.clone()))
+        responses.remove(&(request.method().to_string(), request_path.clone()))
     });
 
     // if there is an existing response, remove its certification from the certification tree
@@ -272,7 +265,7 @@ fn certify_response(
         let (cel_expr_def, cel_expr_str) = cel_exprs.get(&request_path).unwrap();
 
         // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
-        response.headers.push((
+        response.add_header((
             IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
             cel_expr_str.to_string(),
         ));
@@ -284,7 +277,7 @@ fn certify_response(
     RESPONSES.with_borrow_mut(|responses| {
         // store the response for later retrieval
         responses.insert(
-            (request.method, request_path),
+            (request.method().to_string(), request_path),
             CertifiedHttpResponse {
                 response: response.clone(),
                 certification: certification.clone(),
@@ -345,14 +338,14 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
     });
 }
 
-fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse {
+fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
     let request_path = request.get_path().expect("Failed to get req path");
 
     // first check if there is a certified response for the request method and path
     let (tree_path, certified_response) = RESPONSES
         .with_borrow(|responses| {
             responses
-                .get(&(request.method.clone(), request_path.clone()))
+                .get(&(request.method().to_string(), request_path.clone()))
                 .map(|response| {
                     (
                         HttpCertificationPath::exact(&request_path),
@@ -383,8 +376,8 @@ fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse {
     response
 }
 
-fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse {
-    let req_body: CreateTodoItemRequest = json_decode(&req.body);
+fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
+    let req_body: CreateTodoItemRequest = json_decode(req.body());
 
     let id = NEXT_TODO_ID.with_borrow_mut(|f| {
         let id = *f;
@@ -410,8 +403,8 @@ fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse
     create_response(201, body)
 }
 
-fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse {
-    let req_body: UpdateTodoItemRequest = json_decode(&req.body);
+fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse<'static> {
+    let req_body: UpdateTodoItemRequest = json_decode(req.body());
     let id: u32 = params.get("id").unwrap().parse().unwrap();
 
     TODO_ITEMS.with_borrow_mut(|items| {
@@ -432,7 +425,7 @@ fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse 
     create_response(200, body)
 }
 
-fn delete_todo_item_handler(_req: &HttpRequest, params: &Params) -> HttpResponse {
+fn delete_todo_item_handler(_req: &HttpRequest, params: &Params) -> HttpResponse<'static> {
     let id: u32 = params.get("id").unwrap().parse().unwrap();
 
     TODO_ITEMS.with_borrow_mut(|items| {
@@ -445,16 +438,14 @@ fn delete_todo_item_handler(_req: &HttpRequest, params: &Params) -> HttpResponse
     create_response(204, body)
 }
 
-fn upgrade_to_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> HttpResponse {
-    HttpResponse {
-        status_code: 200,
-        headers: vec![],
-        body: vec![],
-        upgrade: Some(true),
-    }
+fn upgrade_to_update_call_handler(
+    _http_request: &HttpRequest,
+    _params: &Params,
+) -> HttpResponse<'static> {
+    HttpResponse::builder().with_upgrade(true).build()
 }
 
-fn no_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> HttpResponse {
+fn no_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
     create_response(400, vec![])
 }
 
@@ -478,7 +469,7 @@ fn add_certificate_header(
     let expr_path = cbor_encode(&expr_path);
 
     // create the header value and insert it into the response
-    response.headers.push((
+    response.add_header((
         IC_CERTIFICATE_HEADER.to_string(),
         format!(
             "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
@@ -509,10 +500,10 @@ where
     serde_json::from_slice(value).expect("Failed to deserialize value")
 }
 
-fn create_response(status_code: u16, body: Vec<u8>) -> HttpResponse {
-    HttpResponse {
-        status_code,
-        headers: vec![
+fn create_response(status_code: u16, body: Vec<u8>) -> HttpResponse<'static> {
+    HttpResponse::builder()
+        .with_status_code(status_code)
+        .with_headers(vec![
             ("content-type".to_string(), "application/json".to_string()),
             (
                 "strict-transport-security".to_string(),
@@ -525,8 +516,7 @@ fn create_response(status_code: u16, body: Vec<u8>) -> HttpResponse {
                 "no-store, max-age=0".to_string(),
             ),
             ("pragma".to_string(), "no-cache".to_string()),
-        ],
-        body,
-        upgrade: None,
-    }
+        ])
+        .with_body(body)
+        .build()
 }

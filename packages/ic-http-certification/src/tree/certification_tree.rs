@@ -117,31 +117,25 @@ mod tests {
             ))
             .build();
 
-        let not_found_request = HttpRequest {
-            url: "/assets/js/not-found.js".to_string(),
-            method: "GET".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let not_found_response = HttpResponse {
-            status_code: 400,
-            body: br#"404 Not Found"#.to_vec(),
-            headers: vec![("IC-CertificateExpression".into(), cel_expr.to_string())],
-            upgrade: None,
-        };
+        let not_found_request = HttpRequest::get("/assets/js/not-found.js").build();
+        let not_found_response = HttpResponse::builder()
+            .with_status_code(404)
+            .with_body(br#"404 Not Found"#)
+            .with_headers(vec![(
+                "IC-CertificateExpression".into(),
+                cel_expr.to_string(),
+            )])
+            .build();
 
-        let hello_world_request = HttpRequest {
-            url: "/assets/js/hello-world.js".to_string(),
-            method: "GET".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let hello_world_response = HttpResponse {
-            status_code: 200,
-            body: br#"console.log("Hello, World!")"#.to_vec(),
-            headers: vec![("IC-CertificateExpression".into(), cel_expr.to_string())],
-            upgrade: None,
-        };
+        let hello_world_request = HttpRequest::get("/assets/js/hello-world.js").build();
+        let hello_world_response = HttpResponse::builder()
+            .with_status_code(404)
+            .with_body(br#"console.log("Hello, World!")"#)
+            .with_headers(vec![(
+                "IC-CertificateExpression".into(),
+                cel_expr.to_string(),
+            )])
+            .build();
 
         let not_found_entry = HttpCertificationTreeEntry::new(
             HttpCertificationPath::wildcard("/assets/js"),
@@ -151,7 +145,7 @@ mod tests {
         tree.insert(&not_found_entry);
 
         let hello_world_entry = HttpCertificationTreeEntry::new(
-            HttpCertificationPath::exact(&hello_world_request.url),
+            HttpCertificationPath::exact(hello_world_request.url()),
             HttpCertification::full(&cel_expr, &hello_world_request, &hello_world_response, None)
                 .unwrap(),
         );
@@ -229,52 +223,46 @@ mod tests {
         // (3) "assets" -- "js" -- "hello-world.js" -- ${cel_expr_hash} -- ${post_request_hash} -- ${response_hash}
         // (4) "assets" -- "js" -- "hello-world.js" -- ${cel_expr_hash} -- ${post_request_hash} -- ${alt_response_hash}
 
-        let get_request = HttpRequest {
-            url: req_url.to_string(),
-            method: "GET".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let post_request = HttpRequest {
-            url: req_url.to_string(),
-            method: "POST".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let get_request = HttpRequest::get(req_url).build();
+        let post_request = HttpRequest::post(req_url).build();
 
-        let response = HttpResponse {
-            status_code: 200,
-            body: br#"console.log("Hello, World!")"#.to_vec(),
-            headers: vec![("IC-CertificateExpression".into(), cel_expr.to_string())],
-            upgrade: None,
-        };
-        let alt_response = HttpResponse {
-            status_code: 200,
-            body: br#"console.log("Hello, ALT World!")"#.to_vec(),
-            headers: vec![("IC-CertificateExpression".into(), cel_expr.to_string())],
-            upgrade: None,
-        };
+        let response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(br#"console.log("Hello, World!")"#)
+            .with_headers(vec![(
+                "IC-CertificateExpression".into(),
+                cel_expr.to_string(),
+            )])
+            .build();
+        let alt_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(br#"console.log("Hello, ALT World!")"#)
+            .with_headers(vec![(
+                "IC-CertificateExpression".into(),
+                cel_expr.to_string(),
+            )])
+            .build();
 
         let get_entry = HttpCertificationTreeEntry::new(
-            HttpCertificationPath::exact(&get_request.url),
+            HttpCertificationPath::exact(get_request.url()),
             HttpCertification::full(&cel_expr, &get_request, &response, None).unwrap(),
         );
         http_tree.insert(&get_entry);
 
         let post_entry = HttpCertificationTreeEntry::new(
-            HttpCertificationPath::exact(&post_request.url),
+            HttpCertificationPath::exact(post_request.url()),
             HttpCertification::full(&cel_expr, &post_request, &response, None).unwrap(),
         );
         http_tree.insert(&post_entry);
 
         let alt_get_entry = HttpCertificationTreeEntry::new(
-            HttpCertificationPath::exact(&get_request.url),
+            HttpCertificationPath::exact(get_request.url()),
             HttpCertification::full(&cel_expr, &get_request, &alt_response, None).unwrap(),
         );
         http_tree.insert(&alt_get_entry);
 
         let alt_post_entry = HttpCertificationTreeEntry::new(
-            HttpCertificationPath::exact(&post_request.url),
+            HttpCertificationPath::exact(post_request.url()),
             HttpCertification::full(&cel_expr, &post_request, &alt_response, None).unwrap(),
         );
         http_tree.insert(&alt_post_entry);
@@ -487,18 +475,15 @@ mod tests {
             ))
             .build();
 
-        let not_found_request = HttpRequest {
-            url: "/assets/js/not-found.js".to_string(),
-            method: "GET".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let not_found_response = HttpResponse {
-            status_code: 400,
-            body: br#"404 Not Found"#.to_vec(),
-            headers: vec![("IC-CertificateExpression".into(), cel_expr.to_string())],
-            upgrade: None,
-        };
+        let not_found_request = HttpRequest::get("/assets/js/not-found.js").build();
+        let not_found_response = HttpResponse::builder()
+            .with_status_code(404)
+            .with_body(br#"404 Not Found"#)
+            .with_headers(vec![(
+                "IC-CertificateExpression".into(),
+                cel_expr.to_string(),
+            )])
+            .build();
 
         let not_found_entry = HttpCertificationTreeEntry::new(
             HttpCertificationPath::wildcard("/assets/js"),
@@ -525,20 +510,17 @@ mod tests {
             ))
             .build();
 
-        let index_html_request = HttpRequest {
-            url: "/".to_string(),
-            method: "GET".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let index_html_request = HttpRequest::get("/").build();
 
         let index_html_body = b"<html><body><h1>Hello World!</h1></body></html>".to_vec();
-        let index_html_response = HttpResponse {
-            status_code: 400,
-            body: index_html_body,
-            headers: vec![("IC-CertificateExpression".into(), cel_expr.to_string())],
-            upgrade: None,
-        };
+        let index_html_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(index_html_body)
+            .with_headers(vec![(
+                "IC-CertificateExpression".into(),
+                cel_expr.to_string(),
+            )])
+            .build();
 
         let certification =
             HttpCertification::full(&cel_expr, &index_html_request, &index_html_response, None)

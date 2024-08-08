@@ -116,7 +116,7 @@ impl HttpCertification {
     fn validate_response(response: &HttpResponse, cel_expr: &str) -> HttpCertificationResult {
         let mut found_header = false;
 
-        for (header_name, header_value) in &response.headers {
+        for (header_name, header_value) in response.headers() {
             if header_name.to_lowercase() == "ic-certificateexpression" {
                 match header_value == cel_expr {
                     true => {
@@ -193,12 +193,13 @@ mod tests {
             .build();
         let expected_cel_expr_hash = hash(cel_expr.to_string().as_bytes());
 
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![("IC-CertificateExpression".to_string(), cel_expr.to_string())],
-            upgrade: None,
-        };
+        let response = &HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![(
+                "IC-CertificateExpression".to_string(),
+                cel_expr.to_string(),
+            )])
+            .build();
         let expected_response_hash = response_hash(response, &cel_expr.response, None);
 
         let result = HttpCertification::response_only(&cel_expr, response, None).unwrap();
@@ -229,12 +230,7 @@ mod tests {
             ))
             .build();
 
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![],
-            upgrade: None,
-        };
+        let response = &HttpResponse::builder().with_status_code(200).build();
 
         let result = HttpCertification::response_only(&cel_expr, response, None).unwrap_err();
 
@@ -253,15 +249,13 @@ mod tests {
             .build();
         let wrong_cel_expr = DefaultCelBuilder::full_certification().build();
 
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![(
+        let response = &HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![(
                 "IC-CertificateExpression".to_string(),
                 wrong_cel_expr.to_string(),
-            )],
-            upgrade: None,
-        };
+            )])
+            .build();
 
         let result = HttpCertification::response_only(&cel_expr, response, None).unwrap_err();
 
@@ -280,16 +274,13 @@ mod tests {
                 vec!["ETag", "Cache-Control"],
             ))
             .build();
-
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![
+        let response = &HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![
                 ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
                 ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let result = HttpCertification::response_only(&cel_expr, response, None).unwrap_err();
 
@@ -310,20 +301,16 @@ mod tests {
             .build();
         let expected_cel_expr_hash = hash(cel_expr.to_string().as_bytes());
 
-        let request = &HttpRequest {
-            body: vec![],
-            headers: vec![],
-            method: "GET".to_string(),
-            url: "/index.html".to_string(),
-        };
+        let request = &HttpRequest::get("/index.html").build();
         let expected_request_hash = request_hash(request, &cel_expr.request).unwrap();
 
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![("IC-CertificateExpression".to_string(), cel_expr.to_string())],
-            upgrade: None,
-        };
+        let response = &HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![(
+                "IC-CertificateExpression".to_string(),
+                cel_expr.to_string(),
+            )])
+            .build();
         let expected_response_hash = response_hash(response, &cel_expr.response, None);
 
         let result = HttpCertification::full(&cel_expr, request, response, None).unwrap();
@@ -358,19 +345,9 @@ mod tests {
             ))
             .build();
 
-        let request = &HttpRequest {
-            body: vec![],
-            headers: vec![],
-            method: "GET".to_string(),
-            url: "/index.html".to_string(),
-        };
+        let request = &HttpRequest::get("/index.html").build();
 
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![],
-            upgrade: None,
-        };
+        let response = &HttpResponse::builder().with_status_code(200).build();
 
         let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();
 
@@ -391,22 +368,15 @@ mod tests {
             .build();
         let wrong_cel_expr = DefaultCelBuilder::response_only_certification().build();
 
-        let request = &HttpRequest {
-            body: vec![],
-            headers: vec![],
-            method: "GET".to_string(),
-            url: "/index.html".to_string(),
-        };
+        let request = &HttpRequest::get("/index.html").build();
 
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![(
+        let response = &HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![(
                 "IC-CertificateExpression".to_string(),
                 wrong_cel_expr.to_string(),
-            )],
-            upgrade: None,
-        };
+            )])
+            .build();
 
         let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();
 
@@ -428,23 +398,15 @@ mod tests {
             ))
             .build();
 
-        let request = &HttpRequest {
-            body: vec![],
-            headers: vec![],
-            method: "GET".to_string(),
-            url: "/index.html".to_string(),
-        };
+        let request = &HttpRequest::get("/index.html").build();
 
-        let response = &HttpResponse {
-            status_code: 200,
-            body: vec![],
-            headers: vec![
+        let response = &HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![
                 ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
                 ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
-            ],
-            upgrade: None,
-        };
-
+            ])
+            .build();
         let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();
 
         assert!(matches!(

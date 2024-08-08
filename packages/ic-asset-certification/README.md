@@ -427,12 +427,7 @@ let asset_config = AssetConfig::File {
     aliased_by: vec!["/".to_string()],
 };
 
-let http_request = HttpRequest {
-    method: "GET".to_string(),
-    url: "/".to_string(),
-    headers: vec![],
-    body: vec![],
-};
+let http_request = HttpRequest::get("/").build();
 
 asset_router.certify_asset(asset, Some(asset_config)).unwrap();
 
