@@ -11,7 +11,7 @@ interface Request {
 }
 "#;
 
-pub fn request_from_js(req: JsValue) -> HttpRequest {
+pub fn request_from_js(req: JsValue) -> HttpRequest<'static> {
     use js_sys::{Array, JsString, Object, Uint8Array};
 
     let method_str = JsString::from("method");
@@ -58,12 +58,12 @@ pub fn request_from_js(req: JsValue) -> HttpRequest {
         }
     }
 
-    HttpRequest {
-        method,
-        url,
-        headers,
-        body,
-    }
+    HttpRequest::builder()
+        .with_method(method)
+        .with_url(url)
+        .with_headers(headers)
+        .with_body(body)
+        .build()
 }
 
 #[cfg(test)]
@@ -90,15 +90,13 @@ mod tests {
 
         assert_eq!(
             r,
-            HttpRequest {
-                method: "GET".into(),
-                url: "http://url.com".into(),
-                headers: vec![
+            HttpRequest::get("http://url.com")
+                .with_headers(vec![
                     ("header1".into(), "header1val".into()),
                     ("header2".into(), "header2val".into()),
-                ],
-                body: vec![0, 1, 2, 3, 4, 5, 6],
-            }
+                ])
+                .with_body(vec![0, 1, 2, 3, 4, 5, 6])
+                .build()
         );
     }
 }

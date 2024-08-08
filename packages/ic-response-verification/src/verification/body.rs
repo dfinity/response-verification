@@ -4,12 +4,12 @@ use std::io::Read;
 
 const MAX_CHUNK_SIZE_TO_DECOMPRESS: usize = 1_024;
 
-pub fn decode_body(body: &Vec<u8>, encoding: Option<&str>) -> ResponseVerificationResult<Vec<u8>> {
-    return match encoding {
-        Some("gzip") => body_from_decoder(GzDecoder::new(body.as_slice())),
-        Some("deflate") => body_from_decoder(DeflateDecoder::new(body.as_slice())),
+pub fn decode_body(body: &[u8], encoding: Option<&str>) -> ResponseVerificationResult<Vec<u8>> {
+    match encoding {
+        Some("gzip") => body_from_decoder(GzDecoder::new(body)),
+        Some("deflate") => body_from_decoder(DeflateDecoder::new(body)),
         _ => Ok(body.to_owned()),
-    };
+    }
 }
 
 fn body_from_decoder<D: Read>(mut decoder: D) -> ResponseVerificationResult<Vec<u8>> {
@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn decode_simple_body() {
-        let result = decode_body(&BODY.into(), None).unwrap();
+        let result = decode_body(BODY, None).unwrap();
 
         assert_eq!(result.as_slice(), BODY);
     }

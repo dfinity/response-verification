@@ -479,12 +479,7 @@ let asset_config = AssetConfig::File {
     encodings: vec![],
 };
 
-let http_request = HttpRequest {
-    method: "GET".to_string(),
-    url: "/".to_string(),
-    headers: vec![],
-    body: vec![],
-};
+let http_request = HttpRequest::get("/").build();
 
 asset_router.certify_assets(vec![asset], vec![asset_config]).unwrap();
 

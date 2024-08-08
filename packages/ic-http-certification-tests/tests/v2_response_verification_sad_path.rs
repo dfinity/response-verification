@@ -26,33 +26,26 @@ mod tests {
         let current_time = get_current_timestamp();
         let certification_path = HttpCertificationPath::exact("/");
 
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
-            ],
-            body: vec![],
-        };
-        let wrong_request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+            ])
+            .build();
+        let wrong_request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Cache-Control".into(), "public".into()),
                 ("Cache-Control".into(), "immutable".into()),
-            ],
-            body: vec![],
-        };
-        let mut response = HttpResponse {
-            status_code: 200,
-            body: body.as_bytes().to_vec(),
-            headers: vec![
+            ])
+            .build();
+        let mut response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(body.as_bytes())
+            .with_headers(vec![
                 ("IC-CertificateExpression".into(), cel_expr.to_string()),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
@@ -64,9 +57,7 @@ mod tests {
             canister_id,
         } = create_v2_fixture(req_path, &certification_tree_entry, &current_time);
 
-        response
-            .headers
-            .push(("IC-Certificate".into(), certificate_header));
+        response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             wrong_request,
@@ -93,34 +84,29 @@ mod tests {
         let current_time = get_current_timestamp();
         let certification_path = HttpCertificationPath::exact("/");
 
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
-            ],
-            body: vec![],
-        };
-        let response = HttpResponse {
-            status_code: 200,
-            body: body.as_bytes().to_vec(),
-            headers: vec![
+            ])
+            .build();
+        let response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(body.as_bytes())
+            .with_headers(vec![
                 ("IC-CertificateExpression".into(), cel_expr.to_string()),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ],
-            upgrade: None,
-        };
-        let mut wrong_response = HttpResponse {
-            status_code: 200,
-            body: body.as_bytes().to_vec(),
-            headers: vec![
+            ])
+            .build();
+        let mut wrong_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(body.as_bytes())
+            .with_headers(vec![
                 ("IC-CertificateExpression".into(), cel_expr.to_string()),
                 ("Cache-Control".into(), "public".into()),
                 ("Cache-Control".into(), "immutable".into()),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
@@ -132,9 +118,7 @@ mod tests {
             canister_id,
         } = create_v2_fixture(req_path, &certification_tree_entry, &current_time);
 
-        wrong_response
-            .headers
-            .push(("IC-Certificate".into(), certificate_header));
+        wrong_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -162,24 +146,20 @@ mod tests {
         let current_time = get_current_timestamp();
         let certification_path = HttpCertificationPath::exact("");
 
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
-            ],
-            body: vec![],
-        };
-        let mut response = HttpResponse {
-            status_code: 200,
-            body: body.as_bytes().to_vec(),
-            headers: vec![
+            ])
+            .build();
+        let mut response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(body.as_bytes())
+            .with_headers(vec![
                 ("IC-CertificateExpression".into(), cel_expr.to_string()),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
@@ -197,11 +177,9 @@ mod tests {
         let certificate_header =
             create_v2_header(&certification_tree_entry, &certificate_cbor, &tree_cbor);
 
-        response
-            .headers
-            .push(("IC-Certificate".into(), certificate_header));
+        response.add_header(("IC-Certificate".to_string(), certificate_header));
         let _ = std::mem::replace(
-            &mut response.headers[0],
+            &mut response.headers_mut()[0],
             (
                 "IC-CertificateExpression".into(),
                 wrong_cel_expr.to_string(),
@@ -260,25 +238,18 @@ mod tests {
         let path = "/";
         let body = "Hello World!";
 
-        let request = HttpRequest {
-            url: path.into(),
-            method: "GET".into(),
-            headers: vec![],
-            body: vec![],
-        };
-        let mut response = HttpResponse {
-            status_code: 200,
-            body: body.as_bytes().to_vec(),
-            headers: vec![
-                ("IC-CertificateExpression".into(), cel_expr.clone()),
-                ("Cache-Control".into(), "max-age=604800".into()),
-            ],
-            upgrade: None,
-        };
+        let request = HttpRequest::get(path).build();
 
-        response
-            .headers
-            .push(("IC-Certificate".into(), certificate_header));
+        let mut response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(body.as_bytes())
+            .with_headers(vec![
+                ("IC-CertificateExpression".into(), cel_expr.to_string()),
+                ("Cache-Control".into(), "max-age=604800".into()),
+            ])
+            .build();
+
+        response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,

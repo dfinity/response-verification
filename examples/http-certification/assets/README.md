@@ -76,7 +76,7 @@ fn post_upgrade() {
 
 ## Canister endpoints
 
-There is only one canister endpoint in this example to serve assets, `http_request` query endpoint. The `serve_assets` function will be covered in a later section.
+There is only one canister endpoint in this example to serve assets, `http_request` query endpoint. The `serve_asset` function will be covered in a later section.
 
 ```rust
 #[query]
@@ -248,7 +248,7 @@ fn certify_all_assets() {
 The `serve_asset` function is responsible for serving assets. It uses the `serve_asset` function from the `AssetRouter` to serve the assets. This function returns the `HttpResponse`, a witness (`HashTree`), and an expression path. The witness and expression path is used to generate the `IC-Certificate` header, which is added to the response before returning it.
 
 ```rust
-fn serve_asset(req: &HttpRequest) -> HttpResponse {
+fn serve_asset(req: &HttpRequest) -> HttpResponse<'static> {
     ASSET_ROUTER.with_borrow(|asset_router| {
         if let Ok((mut response, witness, expr_path)) = asset_router.serve_asset(req) {
             add_certificate_header(&mut response, &witness, &expr_path);
@@ -270,7 +270,7 @@ fn add_certificate_header(response: &mut HttpResponse, witness: &HashTree, expr_
     let witness = cbor_encode(witness);
     let expr_path = cbor_encode(&expr_path);
 
-    response.headers.push((
+    response.add_header((
         IC_CERTIFICATE_HEADER.to_string(),
         format!(
             "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
