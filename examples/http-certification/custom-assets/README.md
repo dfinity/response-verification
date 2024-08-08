@@ -130,14 +130,13 @@ struct HttpAssetResponse<'a> {
     pub body: Cow<'a, [u8]>,
 }
 
-impl Into<HttpResponse> for HttpAssetResponse<'_> {
-    fn into(self) -> HttpResponse {
-        HttpResponse {
-            status_code: self.status_code,
-            headers: self.headers,
-            body: self.body.to_vec(),
-            upgrade: None,
-        }
+impl<'a> Into<HttpResponse<'a>> for HttpAssetResponse<'a> {
+    fn into(self) -> HttpResponse<'a> {
+        HttpResponse::builder()
+            .with_status_code(self.status_code)
+            .with_headers(self.headers)
+            .with_body(self.body)
+            .build()
     }
 }
 
@@ -431,7 +430,7 @@ With all assets certified, they can be served over HTTP. The steps to follow whe
 - Add the certificate header. This is the same process as with the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http).
 
 ```rust
-fn asset_handler(req: &HttpRequest) -> HttpResponse {
+fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
     let req_path = req.get_path().expect("Failed to get req path");
 
     RESPONSES.with_borrow(|responses| {
@@ -454,7 +453,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse {
             };
 
             // extract the content encoding header
-            let content_encoding = req.headers.iter().find_map(|(name, value)| {
+            let content_encoding = req.headers().iter().find_map(|(name, value)| {
                 if name.to_lowercase() == "accept-encoding" {
                     Some(value)
                 } else {

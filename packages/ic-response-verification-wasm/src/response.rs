@@ -10,7 +10,7 @@ interface Response {
 }
 "#;
 
-pub fn response_from_js(resp: JsValue) -> HttpResponse {
+pub fn response_from_js(resp: JsValue) -> HttpResponse<'static> {
     use js_sys::{Array, JsString, Number, Object, Uint8Array};
 
     let status_code_str = JsString::from("statusCode");
@@ -47,12 +47,11 @@ pub fn response_from_js(resp: JsValue) -> HttpResponse {
         }
     }
 
-    HttpResponse {
-        status_code,
-        headers,
-        body,
-        upgrade: None,
-    }
+    HttpResponse::builder()
+        .with_status_code(status_code)
+        .with_headers(headers)
+        .with_body(body)
+        .build()
 }
 
 #[cfg(test)]
@@ -78,15 +77,14 @@ mod tests {
 
         assert_eq!(
             r,
-            HttpResponse {
-                status_code: 200,
-                body: vec![0, 1, 2, 3, 4, 5, 6],
-                headers: vec![
+            HttpResponse::builder()
+                .with_status_code(200)
+                .with_body(vec![0, 1, 2, 3, 4, 5, 6])
+                .with_headers(vec![
                     ("header1".into(), "header1val".into()),
-                    ("header2".into(), "header2val".into()),
-                ],
-                upgrade: None,
-            }
+                    ("header2".into(), "header2val".into())
+                ])
+                .build()
         );
     }
 }

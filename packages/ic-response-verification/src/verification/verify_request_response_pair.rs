@@ -38,7 +38,7 @@ pub fn verify_request_response_pair(
     min_requested_verification_version: u8,
 ) -> ResponseVerificationResult<VerificationInfo> {
     let headers: HashMap<_, _> = response
-        .headers
+        .headers()
         .iter()
         .map(|(k, v)| (k.to_lowercase(), v.clone()))
         .collect();
@@ -130,8 +130,8 @@ pub fn verify_request_response_pair(
 }
 
 struct V1VerificationOpts<'a> {
-    request: HttpRequest,
-    response: HttpResponse,
+    request: HttpRequest<'a>,
+    response: HttpResponse<'a>,
     canister_id: &'a [u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
@@ -162,7 +162,7 @@ fn v1_verification(
     )?;
 
     let request_path = request.get_path()?;
-    let decoded_body = decode_body(&response.body, encoding)?;
+    let decoded_body = decode_body(response.body(), encoding)?;
     let decoded_body_sha = hash(decoded_body.as_slice());
 
     if !validate_tree(canister_id, &certificate, &tree) {
@@ -171,7 +171,7 @@ fn v1_verification(
 
     let mut valid_body = validate_body(&tree, &request_path, &decoded_body_sha);
     if encoding.is_some() && !valid_body {
-        let body_sha = hash(response.body.as_slice());
+        let body_sha = hash(response.body());
         valid_body = validate_body(&tree, &request_path, &body_sha);
     }
 
@@ -183,15 +183,15 @@ fn v1_verification(
         response: Some(VerifiedResponse {
             status_code: None,
             headers: Vec::new(),
-            body: response.body,
+            body: response.body().to_vec(),
         }),
         verification_version: 1,
     })
 }
 
 struct V2VerificationOpts<'a> {
-    request: HttpRequest,
-    response: HttpResponse,
+    request: HttpRequest<'a>,
+    response: HttpResponse<'a>,
     canister_id: &'a [u8],
     current_time_ns: u128,
     max_cert_time_offset_ns: u128,
@@ -257,10 +257,10 @@ fn v2_verification(
         .map(|request_certification| request_hash(&request, request_certification))
         .transpose()?;
 
-    let body_hash = hash(&response.body);
+    let body_hash = hash(response.body());
     let response_headers = filter_response_headers(&response, response_certification);
     let response_headers_hash =
-        response_headers_hash(&response.status_code.into(), &response_headers);
+        response_headers_hash(&response.status_code().into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
     let are_hashes_valid = validate_hashes(
@@ -283,9 +283,9 @@ fn v2_verification(
 
             Ok(VerificationInfo {
                 response: Some(VerifiedResponse {
-                    status_code: Some(response.status_code),
+                    status_code: Some(response.status_code()),
                     headers: all_headers,
-                    body: response.body,
+                    body: response.body().to_vec(),
                 }),
                 verification_version: 2,
             })

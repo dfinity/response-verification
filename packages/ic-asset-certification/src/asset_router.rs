@@ -20,7 +20,7 @@ struct CertifiedAssetResponse<'a> {
 ///
 /// [Asset] certification is configured using the [AssetConfig] enum.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// use ic_http_certification::HttpRequest;
@@ -95,12 +95,7 @@ struct CertifiedAssetResponse<'a> {
 ///     .certify_assets(assets, asset_configs)
 ///     .unwrap();
 ///
-/// let index_html_request = HttpRequest {
-///     method: "GET".to_string(),
-///     url: "/".to_string(),
-///     headers: vec![],
-///     body: vec![],
-/// };
+/// let index_html_request = HttpRequest::get("/").build();
 ///
 /// let (index_html_response, index_html_tree, index_html_expr_path) = asset_router
 ///     .serve_asset(&index_html_request)
@@ -174,15 +169,15 @@ impl<'content> AssetRouter<'content> {
     pub fn serve_asset(
         &self,
         request: &HttpRequest,
-    ) -> AssetCertificationResult<(HttpResponse, HashTree, Vec<String>)> {
+    ) -> AssetCertificationResult<(HttpResponse<'content>, HashTree, Vec<String>)> {
         let preferred_encodings = self.get_preferred_encodings(request);
 
         if let Some(CertifiedAssetResponse {
             response,
             tree_entry,
-        }) = self.get_encoded_asset(&preferred_encodings, &request.url)
+        }) = self.get_encoded_asset(&preferred_encodings, request.url())
         {
-            let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+            let witness = self.tree.borrow().witness(tree_entry, request.url())?;
             let expr_path = tree_entry.path.to_expr_path();
 
             return Ok((response.clone().into(), witness, expr_path));
@@ -191,15 +186,15 @@ impl<'content> AssetRouter<'content> {
         if let Some(CertifiedAssetResponse {
             response,
             tree_entry,
-        }) = self.responses.get(&request.url)
+        }) = self.responses.get(request.url())
         {
-            let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+            let witness = self.tree.borrow().witness(tree_entry, request.url())?;
             let expr_path = tree_entry.path.to_expr_path();
 
             return Ok((response.clone().into(), witness, expr_path));
         }
 
-        let mut url_scopes = request.url.split('/').collect::<Vec<_>>();
+        let mut url_scopes = request.url().split('/').collect::<Vec<_>>();
         url_scopes.pop();
 
         while !url_scopes.is_empty() {
@@ -211,7 +206,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -222,7 +217,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.fallback_responses.get(&scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -235,7 +230,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -246,7 +241,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.fallback_responses.get(&scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, &request.url)?;
+                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -256,7 +251,7 @@ impl<'content> AssetRouter<'content> {
         }
 
         Err(AssetCertificationError::NoAssetMatchingRequestUrl {
-            request_url: request.url.clone(),
+            request_url: request.url().to_string(),
         })
     }
 
@@ -542,12 +537,7 @@ impl<'content> AssetRouter<'content> {
         let cel_expr_str = cel_expr.to_string();
         headers.push((IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr_str));
 
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url,
-            headers: vec![],
-            body: vec![],
-        };
+        let request = HttpRequest::get(url).build();
 
         let response = AssetResponse::new(status_code, body, headers);
 
@@ -593,7 +583,7 @@ impl<'content> AssetRouter<'content> {
     }
 
     fn get_preferred_encodings<'a>(&self, request: &'a HttpRequest) -> Vec<&'a str> {
-        for (name, value) in request.headers.iter() {
+        for (name, value) in request.headers().iter() {
             if name.to_lowercase() == "accept-encoding" {
                 return Self::prioritized_encodings(value)
                     .iter()
@@ -671,17 +661,12 @@ mod tests {
         asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let request = HttpRequest::get("/").build();
 
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: index_html_body.clone(),
-            headers: vec![
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&index_html_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     index_html_body.len().to_string(),
@@ -692,9 +677,8 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/html".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -743,17 +727,16 @@ mod tests {
         encoded_asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: req_url.to_string(),
-            headers: vec![("accept-encoding".to_string(), accept_encoding.to_string())],
-            body: vec![],
-        };
-
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: expected_body.clone(),
-            headers: vec![
+        let request = HttpRequest::get(req_url)
+            .with_headers(vec![(
+                "accept-encoding".to_string(),
+                accept_encoding.to_string(),
+            )])
+            .build();
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&expected_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     expected_body.len().to_string(),
@@ -771,10 +754,8 @@ mod tests {
                     IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
                     encoded_asset_cel_expr,
                 ),
-            ],
-            upgrade: None,
-        };
-
+            ])
+            .build();
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
         assert_eq!(
@@ -845,17 +826,16 @@ mod tests {
         encoded_asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: req_url.to_string(),
-            headers: vec![("accept-encoding".to_string(), accept_encoding.to_string())],
-            body: vec![],
-        };
-
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: expected_body.clone(),
-            headers: vec![
+        let request = HttpRequest::get(req_url)
+            .with_headers(vec![(
+                "accept-encoding".to_string(),
+                accept_encoding.to_string(),
+            )])
+            .build();
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&expected_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     expected_body.len().to_string(),
@@ -873,9 +853,8 @@ mod tests {
                     IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
                     encoded_asset_cel_expr,
                 ),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -898,10 +877,10 @@ mod tests {
         asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: index_html_body.clone(),
-            headers: vec![
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&index_html_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     index_html_body.len().to_string(),
@@ -912,16 +891,10 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/html".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/something".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let request = HttpRequest::get("/something").build();
         let requested_expr_path = HttpCertificationPath::exact("/something").to_expr_path();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
@@ -944,10 +917,10 @@ mod tests {
         asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: index_html_body.clone(),
-            headers: vec![
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&index_html_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     index_html_body.len().to_string(),
@@ -958,16 +931,10 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/html".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/assets/css/app.css".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let request = HttpRequest::get("/assets/css/app.css").build();
         let requested_expr_path =
             HttpCertificationPath::exact("/assets/css/app.css").to_expr_path();
 
@@ -987,17 +954,11 @@ mod tests {
 
     #[rstest]
     fn text_app_css(app_css_body: Vec<u8>, asset_cel_expr: String, asset_router: AssetRouter) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/css/app-ba74b708.css".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: app_css_body.clone(),
-            headers: vec![
+        let request = HttpRequest::get("/css/app-ba74b708.css").build();
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&app_css_body)
+            .with_headers(vec![
                 ("content-length".to_string(), app_css_body.len().to_string()),
                 (
                     "cache-control".to_string(),
@@ -1005,9 +966,8 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/css".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -1028,16 +988,11 @@ mod tests {
         asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/css/core-8d4jhgy2.js".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: not_found_html_body.to_vec(),
-            headers: vec![
+        let request = HttpRequest::get("/css/core-8d4jhgy2.js").build();
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&not_found_html_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     not_found_html_body.len().to_string(),
@@ -1048,9 +1003,8 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/html".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -1064,17 +1018,11 @@ mod tests {
 
     #[rstest]
     fn test_app_js(app_js_body: Vec<u8>, asset_cel_expr: String, asset_router: AssetRouter) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/js/app-488df671.js".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: app_js_body.clone(),
-            headers: vec![
+        let request = HttpRequest::get("/js/app-488df671.js").build();
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&app_js_body)
+            .with_headers(vec![
                 ("content-length".to_string(), app_js_body.len().to_string()),
                 (
                     "cache-control".to_string(),
@@ -1082,9 +1030,8 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/javascript".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -1121,17 +1068,17 @@ mod tests {
         encoded_asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/js/app-488df671.js".to_string(),
-            headers: vec![("accept-encoding".to_string(), accept_encoding.to_string())],
-            body: vec![],
-        };
+        let request = HttpRequest::get("/js/app-488df671.js")
+            .with_headers(vec![(
+                "accept-encoding".to_string(),
+                accept_encoding.to_string(),
+            )])
+            .build();
 
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: expected_body.clone(),
-            headers: vec![
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&expected_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     expected_body.len().to_string(),
@@ -1149,9 +1096,8 @@ mod tests {
                     IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
                     encoded_asset_cel_expr,
                 ),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -1169,16 +1115,11 @@ mod tests {
         asset_cel_expr: String,
         asset_router: AssetRouter,
     ) {
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/js/core-7dk12y45.js".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: not_found_html_body.to_vec(),
-            headers: vec![
+        let request = HttpRequest::get("/js/core-7dk12y45.js").build();
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&not_found_html_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     not_found_html_body.len().to_string(),
@@ -1189,9 +1130,8 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/html".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -1210,48 +1150,18 @@ mod tests {
         asset_router: AssetRouter,
     ) {
         let requests = vec![
-            HttpRequest {
-                method: "GET".to_string(),
-                url: "/404".to_string(),
-                headers: vec![],
-                body: vec![],
-            },
-            HttpRequest {
-                method: "GET".to_string(),
-                url: "/404/".to_string(),
-                headers: vec![],
-                body: vec![],
-            },
-            HttpRequest {
-                method: "GET".to_string(),
-                url: "/404.html".to_string(),
-                headers: vec![],
-                body: vec![],
-            },
-            HttpRequest {
-                method: "GET".to_string(),
-                url: "/not-found".to_string(),
-                headers: vec![],
-                body: vec![],
-            },
-            HttpRequest {
-                method: "GET".to_string(),
-                url: "/not-found/".to_string(),
-                headers: vec![],
-                body: vec![],
-            },
-            HttpRequest {
-                method: "GET".to_string(),
-                url: "/not-found/index.html".to_string(),
-                headers: vec![],
-                body: vec![],
-            },
+            HttpRequest::get("/404").build(),
+            HttpRequest::get("/404/").build(),
+            HttpRequest::get("/404.html").build(),
+            HttpRequest::get("/not-found").build(),
+            HttpRequest::get("/not-found/").build(),
+            HttpRequest::get("/not-found/index.html").build(),
         ];
 
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: not_found_html_body.to_vec(),
-            headers: vec![
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&not_found_html_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     not_found_html_body.len().to_string(),
@@ -1262,16 +1172,15 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/html".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         for request in requests {
             let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
             assert_eq!(
                 expr_path,
-                HttpCertificationPath::exact(request.url).to_expr_path()
+                HttpCertificationPath::exact(request.url()).to_expr_path()
             );
             assert!(matches!(
                 witness.lookup_subtree(&expr_path),
@@ -1290,42 +1199,28 @@ mod tests {
             .build()
             .to_string();
 
-        let css_request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/css/app.css".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
-        let old_url_request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/old-url".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let css_request = HttpRequest::get("/css/app.css").build();
+        let old_url_request = HttpRequest::get("/old-url").build();
 
-        let expected_css_response = HttpResponse {
-            status_code: 307,
-            body: vec![],
-            headers: vec![
+        let expected_css_response = HttpResponse::builder()
+            .with_status_code(307)
+            .with_headers(vec![
                 ("content-length".to_string(), "0".to_string()),
                 ("location".to_string(), "/css/app-ba74b708.css".to_string()),
                 (
                     IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
                     cel_expr.clone(),
                 ),
-            ],
-            upgrade: None,
-        };
-        let expected_old_url_response = HttpResponse {
-            status_code: 301,
-            body: vec![],
-            headers: vec![
+            ])
+            .build();
+        let expected_old_url_response = HttpResponse::builder()
+            .with_status_code(301)
+            .with_headers(vec![
                 ("content-length".to_string(), "0".to_string()),
                 ("location".to_string(), "/".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (css_response, css_witness, css_expr_path) =
             asset_router.serve_asset(&css_request).unwrap();
@@ -1371,17 +1266,12 @@ mod tests {
             .certify_assets(vec![index_html_asset], vec![index_html_config])
             .unwrap();
 
-        let request = HttpRequest {
-            method: "GET".to_string(),
-            url: "/".to_string(),
-            headers: vec![],
-            body: vec![],
-        };
+        let request = HttpRequest::get("/").build();
 
-        let expected_response = HttpResponse {
-            status_code: 200,
-            body: index_html_body.clone(),
-            headers: vec![
+        let expected_response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(&index_html_body)
+            .with_headers(vec![
                 (
                     "content-length".to_string(),
                     index_html_body.len().to_string(),
@@ -1392,9 +1282,8 @@ mod tests {
                 ),
                 ("content-type".to_string(), "text/html".to_string()),
                 (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), asset_cel_expr),
-            ],
-            upgrade: None,
-        };
+            ])
+            .build();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 

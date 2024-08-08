@@ -48,7 +48,7 @@ pub fn filter_response_headers(
     };
 
     response_headers.headers = response
-        .headers
+        .headers()
         .iter()
         .filter_map(|(header_name, header_value)| {
             let is_certificate_header = header_name
@@ -117,11 +117,11 @@ pub fn response_hash(
     response_certification: &DefaultResponseCertification,
     response_body_hash: Option<Hash>,
 ) -> Hash {
-    let response_body_hash = response_body_hash.unwrap_or_else(|| hash(&response.body));
+    let response_body_hash = response_body_hash.unwrap_or_else(|| hash(response.body()));
 
     let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
-        response_headers_hash(&response.status_code.into(), &filtered_headers),
+        response_headers_hash(&response.status_code().into(), &filtered_headers),
         response_body_hash,
     ]
     .concat();
@@ -229,18 +229,17 @@ mod tests {
         let response_certification =
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse {
-            status_code: 200,
-            headers: vec![
+        let response_without_excluded_headers = HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![
                 (
                     "IC-CertificateExpression".into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
-            ],
-            body: HELLO_WORLD_BODY.into(),
-            upgrade: None,
-        };
+            ])
+            .with_body(HELLO_WORLD_BODY)
+            .build();
 
         let result = response_hash(&response, &response_certification, None);
         let result_without_excluded_headers = response_hash(
@@ -276,9 +275,9 @@ mod tests {
                 "Content-Security-Policy",
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse {
-            status_code: 200,
-            headers: vec![
+        let response_without_excluded_headers = HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![
                 (
                     "IC-CertificateExpression".into(),
                     remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
@@ -286,10 +285,9 @@ mod tests {
                 ("Accept-Encoding".into(), "gzip".into()),
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
-            ],
-            body: HELLO_WORLD_BODY.into(),
-            upgrade: None,
-        };
+            ])
+            .with_body(HELLO_WORLD_BODY)
+            .build();
 
         let result = response_hash(&response, &response_certification, None);
         let result_without_excluded_headers = response_hash(
@@ -314,7 +312,7 @@ mod tests {
                 .unwrap();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
+        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -324,26 +322,25 @@ mod tests {
         let response_certification =
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse {
-            status_code: 200,
-            headers: vec![
+        let response_without_excluded_headers = HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
                 (
                     "IC-CertificateExpression".into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
-            ],
-            body: HELLO_WORLD_BODY.into(),
-            upgrade: None,
-        };
+            ])
+            .with_body(HELLO_WORLD_BODY)
+            .build();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
+        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
         let filtered_headers_without_excluded_headers =
             filter_response_headers(&response_without_excluded_headers, &response_certification);
         let result_without_excluded_headers = response_headers_hash(
-            &response_without_excluded_headers.status_code.into(),
+            &response_without_excluded_headers.status_code().into(),
             &filtered_headers_without_excluded_headers,
         );
 
@@ -363,7 +360,7 @@ mod tests {
                 .unwrap();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
+        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -375,9 +372,9 @@ mod tests {
                 "Content-Security-Policy",
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse {
-            status_code: 200,
-            headers: vec![
+        let response_without_excluded_headers = HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
                 (
                     "IC-CertificateExpression".into(),
@@ -386,18 +383,17 @@ mod tests {
                 ("Accept-Encoding".into(), "gzip".into()),
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
-            ],
-            body: HELLO_WORLD_BODY.into(),
-            upgrade: None,
-        };
+            ])
+            .with_body(HELLO_WORLD_BODY)
+            .build();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code.into(), &filtered_headers);
+        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
 
         let response_headers_without_excluded_headers =
             filter_response_headers(&response_without_excluded_headers, &response_certification);
         let result_without_excluded_headers = response_headers_hash(
-            &response_without_excluded_headers.status_code.into(),
+            &response_without_excluded_headers.status_code().into(),
             &response_headers_without_excluded_headers,
         );
 
@@ -427,9 +423,9 @@ mod tests {
     }
 
     fn create_response(cel_expression: &str) -> HttpResponse {
-        HttpResponse {
-            status_code: 200,
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(200)
+            .with_headers(vec![
                 ("IC-Certificate".into(), CERTIFICATE.into()),
                 (
                     "IC-CertificateExpression".into(),
@@ -442,10 +438,9 @@ mod tests {
                     "Content-Security-Policy".into(),
                     "default-src 'self'".into(),
                 ),
-            ],
-            body: HELLO_WORLD_BODY.into(),
-            upgrade: None,
-        }
+            ])
+            .with_body(HELLO_WORLD_BODY)
+            .build()
     }
 
     /// Remove white space from CEL expressions to ease the calculation
