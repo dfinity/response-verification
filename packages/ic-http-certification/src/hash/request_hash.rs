@@ -9,11 +9,11 @@ pub fn request_hash<'a>(
     request: &'a HttpRequest,
     request_certification: &'a DefaultRequestCertification,
 ) -> HttpCertificationResult<Hash> {
-    let mut filtered_headers = get_filtered_headers(&request.headers, request_certification);
+    let mut filtered_headers = get_filtered_headers(request.headers(), request_certification);
 
     filtered_headers.push((
         ":ic-cert-method".into(),
-        Value::String(request.method.to_string()),
+        Value::String(request.method().to_string()),
     ));
 
     let filtered_query = request
@@ -25,7 +25,7 @@ pub fn request_hash<'a>(
 
     let concatenated_hashes = [
         representation_independent_hash(&filtered_headers),
-        hash(&request.body),
+        hash(request.body()),
     ]
     .concat();
 
@@ -148,15 +148,13 @@ mod tests {
     }
 
     fn create_request(uri: &str) -> HttpRequest {
-        HttpRequest {
-            url: uri.into(),
-            method: "POST".into(),
-            headers: vec![
+        HttpRequest::post(uri)
+            .with_headers(vec![
                 ("Accept-Language".into(), "en".into()),
                 ("Accept-Language".into(), "en-US".into()),
                 ("Host".into(), "https://ic0.app".into()),
-            ],
-            body: vec![0, 1, 2, 3, 4, 5, 6],
-        }
+            ])
+            .with_body(vec![0, 1, 2, 3, 4, 5, 6])
+            .build()
     }
 }

@@ -201,27 +201,23 @@ let cel_expr = DefaultCelBuilder::full_certification()
     ]))
     .build();
 
-let request = HttpRequest {
-    method: "GET".to_string(),
-    url: "/index.html?foo=a&bar=b&baz=c".to_string(),
-    headers: vec![
+let request = HttpRequest::get("/index.html?foo=a&bar=b&baz=c")
+    .with_headers(vec![
         ("Accept".to_string(), "application/json".to_string()),
         ("Accept-Encoding".to_string(), "gzip".to_string()),
         ("If-None-Match".to_string(), "987654321".to_string()),
-    ],
-    body: vec![],
-};
+    ])
+    .build();
 
-let response = HttpResponse {
-    status_code: 200,
-    headers: vec![
+let response = HttpResponse::builder()
+    .with_status_code(200)
+    .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
         ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
-    ],
-    body: vec![1, 2, 3, 4, 5, 6],
-    upgrade: None,
-};
+    ])
+    .with_body(vec![1, 2, 3, 4, 5, 6])
+    .build();
 
 let certification = HttpCertification::full(&cel_expr, &request, &response, None);
 ```
@@ -242,16 +238,15 @@ let cel_expr = DefaultCelBuilder::response_only_certification()
     ]))
     .build();
 
-let response = HttpResponse {
-    status_code: 200,
-    headers: vec![
+let response = HttpResponse::builder()
+    .with_status_code(200)
+    .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
         ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
-    ],
-    body: vec![1, 2, 3, 4, 5, 6],
-    upgrade: None,
-};
+    ])
+    .with_body(vec![1, 2, 3, 4, 5, 6])
+    .build();
 
 let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
 ```
@@ -312,27 +307,23 @@ let cel_expr = DefaultCelBuilder::full_certification()
     ]))
     .build();
 
-let request = HttpRequest {
-    method: "GET".to_string(),
-    url: "/index.html?foo=a&bar=b&baz=c".to_string(),
-    headers: vec![
+let request = HttpRequest::get("/index.html?foo=a&bar=b&baz=c")
+    .with_headers(vec![
         ("Accept".to_string(), "application/json".to_string()),
         ("Accept-Encoding".to_string(), "gzip".to_string()),
         ("If-None-Match".to_string(), "987654321".to_string()),
-    ],
-    body: vec![],
-};
+    ])
+    .build();
 
-let response = HttpResponse {
-    status_code: 200,
-    headers: vec![
+let response = HttpResponse::builder()
+    .with_status_code(200)
+    .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
         ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
-    ],
-    body: vec![1, 2, 3, 4, 5, 6],
-    upgrade: None,
-};
+    ])
+    .with_body(vec![1, 2, 3, 4, 5, 6])
+    .build();
 
 let request_url = "/example.json";
 let path = HttpCertificationPath::exact(request_url);

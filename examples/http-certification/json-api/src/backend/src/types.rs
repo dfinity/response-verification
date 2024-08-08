@@ -60,4 +60,4 @@ pub type ListTodosResponse<'a> = ApiResponse<'a, Vec<TodoItem>>;
 
 pub type ErrorResponse<'a> = ApiResponse<'a, ()>;
 
-pub type RouteHandler = for<'a> fn(&'a HttpRequest, &'a Params) -> HttpResponse;
+pub type RouteHandler = for<'a> fn(&'a HttpRequest, &'a Params) -> HttpResponse<'static>;

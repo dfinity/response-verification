@@ -144,7 +144,7 @@ async fn v2_load_asset(
             response: _,
         } if verification_version == 2
     ));
-    assert_eq!(asset, response.body);
+    assert_eq!(asset, response.body().to_vec());
 
     Ok(())
 }
@@ -155,7 +155,7 @@ async fn perform_test(
     path: &str,
     certificate_version: Option<&u16>,
     agent: &Agent,
-) -> Result<(VerificationInfo, HttpResponse)> {
+) -> Result<(VerificationInfo, HttpResponse<'static>)> {
     let canister_id = Principal::from_text(canister_id)?;
     let canister_interface = HttpRequestCanister::create(agent, canister_id);
 
@@ -164,22 +164,18 @@ async fn perform_test(
         .call()
         .await?;
 
-    let request = HttpRequest {
-        method: "GET".into(),
-        headers: vec![],
-        url: path.into(),
-        body: vec![],
-    };
-    let response = HttpResponse {
-        headers: response
-            .headers
-            .iter()
-            .map(|HeaderField(key, value)| (key.to_string(), value.to_string()))
-            .collect(),
-        body: response.body,
-        status_code: response.status_code,
-        upgrade: None,
-    };
+    let request = HttpRequest::get(path).build();
+    let response = HttpResponse::builder()
+        .with_status_code(response.status_code)
+        .with_body(response.body)
+        .with_headers(
+            response
+                .headers
+                .iter()
+                .map(|HeaderField(key, value)| (key.to_string(), value.to_string()))
+                .collect::<Vec<_>>(),
+        )
+        .build();
     let current_time_ns = get_current_time();
     let max_cert_time_offset_ns = 300_000_000_000; // 5 mins
 

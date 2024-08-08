@@ -25,14 +25,13 @@ impl<'a> AssetResponse<'a> {
     }
 }
 
-impl From<AssetResponse<'_>> for HttpResponse {
-    fn from(response: AssetResponse<'_>) -> Self {
-        HttpResponse {
-            status_code: response.status_code,
-            headers: response.headers,
-            body: response.body.to_vec(),
-            upgrade: None,
-        }
+impl<'a> From<AssetResponse<'a>> for HttpResponse<'a> {
+    fn from(response: AssetResponse<'a>) -> Self {
+        HttpResponse::builder()
+            .with_status_code(response.status_code)
+            .with_headers(response.headers)
+            .with_body(response.body)
+            .build()
     }
 }
 
@@ -79,11 +78,11 @@ mod tests {
         let response: AssetResponse<'_> = AssetResponse::new(status_code, body, headers.clone());
         let http_response: HttpResponse = response.into();
 
-        assert_eq!(http_response.status_code, status_code);
-        assert_eq!(http_response.body, body.to_vec());
-        assert_eq!(http_response.headers.len(), 1);
+        assert_eq!(http_response.status_code(), status_code);
+        assert_eq!(http_response.body(), body);
+        assert_eq!(http_response.headers().len(), 1);
         assert_eq!(
-            http_response.headers[0],
+            http_response.headers()[0],
             (headers[0].0.to_string(), headers[0].1.to_string())
         );
     }

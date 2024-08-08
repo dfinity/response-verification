@@ -53,15 +53,12 @@ mod tests {
         #[case] mut expected_response: HttpResponse,
         #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
-            ],
-            body: vec![],
-        };
+            ])
+            .build();
 
         let current_time = get_current_timestamp();
 
@@ -81,7 +78,7 @@ mod tests {
         );
 
         let mut expected_headers = expected_response
-            .headers
+            .headers()
             .iter()
             .map(|(key, value)| (key.to_lowercase(), String::from(value)))
             .collect::<Vec<_>>()
@@ -89,14 +86,12 @@ mod tests {
         expected_headers.push(("IC-Certificate".to_string(), certificate_header.clone()));
 
         let expected_certified_response = VerifiedResponse {
-            body: expected_response.body.clone(),
+            body: expected_response.body().to_vec(),
             headers: expected_headers,
-            status_code: Some(expected_response.status_code),
+            status_code: Some(expected_response.status_code()),
         };
 
-        expected_response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -131,15 +126,12 @@ mod tests {
         #[case] mut expected_response: HttpResponse,
         #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
-            ],
-            body: vec![],
-        };
+            ])
+            .build();
 
         let current_time = get_current_timestamp();
 
@@ -158,9 +150,7 @@ mod tests {
             ),
         );
 
-        expected_response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -191,15 +181,12 @@ mod tests {
         #[case] mut expected_response: HttpResponse,
         #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
-            ],
-            body: vec![],
-        };
+            ])
+            .build();
 
         let current_time = get_current_timestamp();
 
@@ -218,9 +205,7 @@ mod tests {
             ),
         );
 
-        expected_response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -263,15 +248,12 @@ mod tests {
         #[case] mut expected_response: HttpResponse,
         #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
-            ],
-            body: vec![],
-        };
+            ])
+            .build();
 
         let current_time = get_current_timestamp();
 
@@ -290,9 +272,7 @@ mod tests {
             ),
         );
 
-        expected_response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -323,15 +303,12 @@ mod tests {
         #[case] mut expected_response: HttpResponse,
         #[case] certification_tree_entry: HttpCertificationTreeEntry<'static>,
     ) {
-        let request = HttpRequest {
-            url: req_path.into(),
-            method: "GET".into(),
-            headers: vec![
+        let request = HttpRequest::get(req_path)
+            .with_headers(vec![
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
-            ],
-            body: vec![],
-        };
+            ])
+            .build();
 
         let current_time = get_current_timestamp();
 
@@ -350,9 +327,7 @@ mod tests {
             ),
         );
 
-        expected_response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -411,7 +386,7 @@ mod tests {
         );
 
         let mut expected_headers = expected_response
-            .headers
+            .headers()
             .iter()
             .map(|(key, value)| (key.to_lowercase(), String::from(value)))
             .collect::<Vec<_>>()
@@ -419,14 +394,12 @@ mod tests {
         expected_headers.push(("IC-Certificate".to_string(), certificate_header.clone()));
 
         let expected_certified_response = VerifiedResponse {
-            body: expected_response.body.clone(),
+            body: expected_response.body().to_vec(),
             headers: expected_headers,
-            status_code: Some(expected_response.status_code),
+            status_code: Some(expected_response.status_code()),
         };
 
-        expected_response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -474,9 +447,7 @@ mod tests {
             ),
         );
 
-        expected_response
-            .headers
-            .push(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -514,19 +485,18 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn index_html_response() -> HttpResponse {
+    pub fn index_html_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse {
-            status_code: 200,
-            body: gzip_encode(&html_body()),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(gzip_encode(&html_body()))
+            .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -538,20 +508,19 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn index_js_response() -> HttpResponse {
+    pub fn index_js_response() -> HttpResponse<'static> {
         let cel = asset_cel();
         let body = br#"window.onload=function(){console.log("Hello World")};"#;
 
-        HttpResponse {
-            status_code: 200,
-            body: gzip_encode(body),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(gzip_encode(body))
+            .with_headers(vec![
                 ("Content-Type".into(), "text/javascript".into()),
                 ("Content-Encoding".into(), "gzip".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -563,20 +532,19 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn not_found_response() -> HttpResponse {
+    pub fn not_found_response() -> HttpResponse<'static> {
         let cel = asset_cel();
         let body = br#"Not Found"#;
 
-        HttpResponse {
-            status_code: 404,
-            body: body.to_vec(),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(404)
+            .with_body(body.to_vec())
+            .with_headers(vec![
                 ("Content-Type".into(), "text/plain".into()),
                 ("Content-Encoding".into(), "identity".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -588,19 +556,18 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn redirect_response() -> HttpResponse {
+    pub fn redirect_response() -> HttpResponse<'static> {
         let cel = redirect_cel();
         let body = br#"Moved Permanently"#;
 
-        HttpResponse {
-            status_code: 301,
-            body: body.to_vec(),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(301)
+            .with_body(body)
+            .with_headers(vec![
                 ("Location".into(), "/new-path".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -612,19 +579,18 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn content_encoding_identity_response() -> HttpResponse {
+    pub fn content_encoding_identity_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse {
-            status_code: 200,
-            body: html_body(),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(html_body())
+            .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "identity".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -641,19 +607,18 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn content_encoding_gzip_response() -> HttpResponse {
+    pub fn content_encoding_gzip_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse {
-            status_code: 200,
-            body: gzip_encode(&html_body()),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(gzip_encode(&html_body()))
+            .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -666,19 +631,18 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn content_encoding_deflate_response() -> HttpResponse {
+    pub fn content_encoding_deflate_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse {
-            status_code: 200,
-            body: deflate_encode(&html_body()),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(deflate_encode(&html_body()))
+            .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -695,36 +659,32 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_match_request() -> HttpRequest {
+    pub fn etag_caching_match_request() -> HttpRequest<'static> {
         let etag = hex::encode(hash(html_body().as_slice()));
 
-        HttpRequest {
-            url: "/app".into(),
-            method: "GET".into(),
-            headers: vec![
+        HttpRequest::get("/app")
+            .with_headers(vec![
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
                 ("If-None-Match".into(), etag),
-            ],
-            body: vec![],
-        }
+            ])
+            .build()
     }
 
     #[fixture]
-    pub fn etag_caching_match_response() -> HttpResponse {
+    pub fn etag_caching_match_response() -> HttpResponse<'static> {
         let cel = etag_caching_match_cel();
         let body = br#"Not Modified"#;
 
-        HttpResponse {
-            status_code: 304,
-            body: body.to_vec(),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(304)
+            .with_body(body)
+            .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
@@ -744,38 +704,34 @@ mod fixtures {
     }
 
     #[fixture]
-    pub fn etag_caching_mismatch_request() -> HttpRequest {
-        HttpRequest {
-            url: "/app".into(),
-            method: "GET".into(),
-            headers: vec![
+    pub fn etag_caching_mismatch_request() -> HttpRequest<'static> {
+        HttpRequest::get("/app")
+            .with_headers(vec![
                 ("Accept".into(), "text/html".into()),
                 ("Accept-Encoding".into(), "gzip, deflate, br".into()),
                 (
                     "If-None-Match".into(),
                     "5fd924625f6ab16a19cc9807c7c506ae1813490e4ba675f843d5a10e0baacdb8".into(),
                 ),
-            ],
-            body: vec![],
-        }
+            ])
+            .build()
     }
 
     #[fixture]
-    pub fn etag_caching_mismatch_response() -> HttpResponse {
+    pub fn etag_caching_mismatch_response() -> HttpResponse<'static> {
         let cel = etag_caching_mismatch_cel();
         let etag = hex::encode(hash(html_body().as_slice()));
 
-        HttpResponse {
-            status_code: 200,
-            body: deflate_encode(&html_body()),
-            headers: vec![
+        HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(deflate_encode(&html_body()))
+            .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
                 ("ETag".into(), etag),
                 ("IC-CertificateExpression".into(), cel.to_string()),
-            ],
-            upgrade: None,
-        }
+            ])
+            .build()
     }
 
     #[fixture]
