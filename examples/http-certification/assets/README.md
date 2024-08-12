@@ -29,7 +29,7 @@ export default defineConfig({
     viteCompressionPlugin({
       algorithm: 'gzip',
       // this extension will be referenced later in the canister code
-      ext: '.gzip',
+      ext: '.gz',
       // ensure to not delete the original files
       deleteOriginFile: false,
       threshold: 0,
@@ -165,6 +165,11 @@ const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable
 
 fn certify_all_assets() {
     // 1. Define the asset certification configurations.
+    let encodings = vec![
+        AssetEncoding::Brotli.default(),
+        AssetEncoding::Gzip.default(),
+    ];
+
     let asset_configs = vec![
         AssetConfig::File {
             path: "index.html".to_string(),
@@ -177,6 +182,7 @@ fn certify_all_assets() {
                 scope: "/".to_string(),
             }],
             aliased_by: vec!["/".to_string()],
+            encodings: encodings.clone(),
         },
         AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),
@@ -185,6 +191,7 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
+            encodings: encodings.clone(),
         },
         AssetConfig::Pattern {
             pattern: "**/*.css".to_string(),
@@ -193,6 +200,7 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
+            encodings,
         },
         AssetConfig::Pattern {
             pattern: "**/*.ico".to_string(),
@@ -201,6 +209,7 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
+            encodings: vec![],
         },
         AssetConfig::Pattern {
             pattern: "**/*.svg".to_string(),
@@ -209,6 +218,12 @@ fn certify_all_assets() {
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
+            encodings: vec![],
+        },
+        AssetConfig::Redirect {
+            from: "/old-url".to_string(),
+            to: "/".to_string(),
+            kind: AssetRedirectKind::Permanent,
         },
     ];
 

@@ -94,9 +94,18 @@ In both cases, the following options can be configured for each asset:
 - `encodings`
     - A list of alternative encodings that can be used to serve the asset.
     - Each entry is a tuple of the [encoding name](AssetEncoding) and the file
-      extension used in the file path.
-      For example, to include Brotli and Gzip encodings:
-      `vec![(AssetEncoding::Brotli, "br".to_string()), AssetEncoding::Gzip, "gz".to_string())]`.
+      extension used in the file path, that can be conveniently created with
+      the `default` factory method. For example, to include Brotli and Gzip encodings:
+      `vec![AssetEncoding::Brotli.default(), AssetEncoding::Gzip.default()]`.
+    - The default file extensions for each encoding are:
+        - Brotli: `br`
+        - Gzip: `gz`
+        - Deflate: `zz`
+        - Zstd: `zst`
+    - Alternatively, a custom file extension can be provided for each encoding
+      by using the `custom` factory method. For example, to include a custom
+      file extension for Brotli and Gzip encodings:
+      `vec![AssetEncoding::Brotli.custom("brotli"), AssetEncoding::Gzip.custom("gzip")]`.
     - Each encoding referenced must be provided to the asset router as a
       separate file with the same filename as the original file, but with an
       additional file extension matching the configuration. For example, if the
@@ -170,8 +179,8 @@ let config = AssetConfig::File {
     }],
     aliased_by: vec!["/".to_string()],
     encodings: vec![
-        (AssetEncoding::Brotli, "br".to_string()),
-        (AssetEncoding::Gzip, "gz".to_string()),
+        AssetEncoding::Brotli.default(),
+        AssetEncoding::Gzip.default(),
     ],
 };
 ```
@@ -220,8 +229,8 @@ let config = AssetConfig::File {
         "/not-found/index.html".to_string(),
     ],
     encodings: vec![
-        (AssetEncoding::Brotli, "br".to_string()),
-        (AssetEncoding::Gzip, "gz".to_string()),
+        AssetEncoding::Brotli.default(),
+        AssetEncoding::Gzip.default(),
     ],
 };
 ```
@@ -267,8 +276,8 @@ let config = AssetConfig::Pattern {
         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
     ],
     encodings: vec![
-        (AssetEncoding::Brotli, "br".to_string()),
-        (AssetEncoding::Gzip, "gz".to_string()),
+        AssetEncoding::Brotli.default(),
+        AssetEncoding::Gzip.default(),
     ],
 };
 ```
@@ -317,7 +326,7 @@ let config = AssetConfig::Redirect {
 The [AssetRouter] is responsible for certifying responses and routing requests to
 the appropriate response.
 
-Assets can be inserted in bulk using the
+Assets can be inserted using the
 [certify_assets](AssetRouter::certify_assets) method:
 
 ```rust
@@ -377,8 +386,8 @@ let asset_configs = vec![
         }],
         aliased_by: vec!["/".to_string()],
         encodings: vec![
-            (AssetEncoding::Brotli, "br".to_string()),
-            (AssetEncoding::Gzip, "gz".to_string()),
+            AssetEncoding::Brotli.default(),
+            AssetEncoding::Gzip.default(),
         ],
     },
     AssetConfig::Pattern {
@@ -389,8 +398,8 @@ let asset_configs = vec![
             "public, max-age=31536000, immutable".to_string(),
         )],
         encodings: vec![
-            (AssetEncoding::Brotli, "br".to_string()),
-            (AssetEncoding::Gzip, "gz".to_string()),
+            AssetEncoding::Brotli.default(),
+            AssetEncoding::Gzip.default(),
         ],
     },
     AssetConfig::Pattern {
@@ -401,8 +410,8 @@ let asset_configs = vec![
             "public, max-age=31536000, immutable".to_string(),
         )],
         encodings: vec![
-            (AssetEncoding::Brotli, "br".to_string()),
-            (AssetEncoding::Gzip, "gz".to_string()),
+            AssetEncoding::Brotli.default(),
+            AssetEncoding::Gzip.default(),
         ],
     },
     AssetConfig::Redirect {
