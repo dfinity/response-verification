@@ -12,7 +12,7 @@ export default defineConfig({
     viteCompressionPlugin({
       algorithm: 'gzip',
       // this extension will be referenced later in the canister code
-      ext: '.gzip',
+      ext: '.gz',
       // ensure to not delete the original files
       deleteOriginFile: false,
       threshold: 0,

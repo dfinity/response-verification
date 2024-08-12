@@ -59,8 +59,8 @@ fn collect_assets<'content, 'path>(
 fn certify_all_assets() {
     // 1. Define the asset certification configurations.
     let encodings = vec![
-        (AssetEncoding::Brotli, "br".to_string()),
-        (AssetEncoding::Gzip, "gzip".to_string()),
+        AssetEncoding::Brotli.default(),
+        AssetEncoding::Gzip.default(),
     ];
 
     let asset_configs = vec![
