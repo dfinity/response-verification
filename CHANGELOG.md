@@ -1,3 +1,14 @@
+## Unreleased
+
+### Feat
+
+- **ic-asset-certification**: more ergonomic config for alternative asset encodings
+
+### Refactor
+
+- rename asset encoding default and custom config methods
+- add default mapping for asset encodings
+
 ## 2.6.0 (2024-07-24)
 
 ### Feat
