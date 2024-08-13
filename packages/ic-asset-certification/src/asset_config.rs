@@ -33,8 +33,8 @@ use std::fmt::{Display, Formatter};
 ///     fallback_for: vec![],
 ///     aliased_by: vec![],
 ///     encodings: vec![
-///         AssetEncoding::Brotli.default(),
-///         AssetEncoding::Gzip.default(),
+///         AssetEncoding::Brotli.default_config(),
+///         AssetEncoding::Gzip.default_config(),
 ///     ],
 /// };
 /// ```
@@ -61,8 +61,8 @@ use std::fmt::{Display, Formatter};
 ///     }],
 ///     aliased_by: vec!["/".to_string()],
 ///     encodings: vec![
-///         AssetEncoding::Brotli.default(),
-///         AssetEncoding::Gzip.default(),
+///         AssetEncoding::Brotli.default_config(),
+///         AssetEncoding::Gzip.default_config(),
 ///     ],
 /// };
 /// ```
@@ -113,8 +113,8 @@ use std::fmt::{Display, Formatter};
 ///         "/not-found/index.html".to_string(),
 ///    ],
 ///     encodings: vec![
-///         AssetEncoding::Brotli.default(),
-///         AssetEncoding::Gzip.default(),
+///         AssetEncoding::Brotli.default_config(),
+///         AssetEncoding::Gzip.default_config(),
 ///     ],
 /// };
 /// ```
@@ -135,8 +135,8 @@ use std::fmt::{Display, Formatter};
 ///         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
 ///     ],
 ///     encodings: vec![
-///         AssetEncoding::Brotli.default(),
-///         AssetEncoding::Gzip.default(),
+///         AssetEncoding::Brotli.default_config(),
+///         AssetEncoding::Gzip.default_config(),
 ///     ],
 /// };
 /// ```
@@ -245,7 +245,7 @@ pub enum AssetConfig {
         /// Each entry is a tuple of the [encoding name](AssetEncoding) and the
         /// file extension used in the file path. For example, to include Brotli
         /// and Gzip encodings:
-        /// `vec![AssetEncoding::Brotli.default(), AssetEncoding::Gzip.default()]`
+        /// `vec![AssetEncoding::Brotli.default_config(), AssetEncoding::Gzip.default_config()]`
         ///
         /// Each encoding referenced must be provided to the asset router as a
         /// separate file with the same filename as the original file, but with
@@ -324,7 +324,7 @@ pub enum AssetConfig {
         /// Each entry is a tuple of the [encoding name](AssetEncoding) and the
         /// file extension used in the file path. For example, to include Brotli
         /// and Gzip encodings:
-        /// `vec![AssetEncoding::Brotli.default(), AssetEncoding::Gzip.default()]`
+        /// `vec![AssetEncoding::Brotli.default_config(), AssetEncoding::Gzip.default_config()]`
         ///
         /// Each encoding referenced must be provided to the asset router as a
         /// separate file with the same filename as the original file, but with
@@ -435,23 +435,23 @@ impl AssetEncoding {
     /// ```
     /// use ic_asset_certification::AssetEncoding;
     ///
-    /// let (encoding, extension) = AssetEncoding::Brotli.default();
+    /// let (encoding, extension) = AssetEncoding::Brotli.default_config();
     /// assert_eq!(encoding, AssetEncoding::Brotli);
     /// assert_eq!(extension, "br");
     ///
-    /// let (encoding, extension) = AssetEncoding::Zstd.default();
+    /// let (encoding, extension) = AssetEncoding::Zstd.default_config();
     /// assert_eq!(encoding, AssetEncoding::Zstd);
     /// assert_eq!(extension, "zst");
     ///
-    /// let (encoding, extension) = AssetEncoding::Gzip.default();
+    /// let (encoding, extension) = AssetEncoding::Gzip.default_config();
     /// assert_eq!(encoding, AssetEncoding::Gzip);
     /// assert_eq!(extension, "gz");
     ///
-    /// let (encoding, extension) = AssetEncoding::Deflate.default();
+    /// let (encoding, extension) = AssetEncoding::Deflate.default_config();
     /// assert_eq!(encoding, AssetEncoding::Deflate);
     /// assert_eq!(extension, "zz");
     /// ```
-    pub fn default(self) -> (AssetEncoding, String) {
+    pub fn default_config(self) -> (AssetEncoding, String) {
         let file_extension = match self {
             AssetEncoding::Brotli => "br".to_string(),
             AssetEncoding::Zstd => "zst".to_string(),
@@ -463,7 +463,7 @@ impl AssetEncoding {
     }
 
     /// Returns an encoding with a custom file extension. This is useful
-    /// when the default file extension assigned by [default](AssetEncoding::default)
+    /// when the default file extension assigned by [default_config](AssetEncoding::default_config)
     /// is not desired.
     ///
     /// # Examples
@@ -471,12 +471,12 @@ impl AssetEncoding {
     /// ```
     /// use ic_asset_certification::AssetEncoding;
     ///
-    /// let (encoding, extension) = AssetEncoding::Brotli.custom("brotli".to_string());
+    /// let (encoding, extension) = AssetEncoding::Brotli.custom_config("brotli".to_string());
     ///
     /// assert_eq!(encoding, AssetEncoding::Brotli);
     /// assert_eq!(extension, "brotli");
     /// ```
-    pub fn custom(self, extension: String) -> (AssetEncoding, String) {
+    pub fn custom_config(self, extension: String) -> (AssetEncoding, String) {
         (self, extension)
     }
 }
