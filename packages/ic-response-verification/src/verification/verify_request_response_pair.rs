@@ -19,7 +19,7 @@ use ic_http_certification::{
     CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME,
 };
 use ic_representation_independent_hash::hash;
-use std::{ascii::AsciiExt, collections::HashMap};
+use std::collections::HashMap;
 
 /// The minimum verification version supported by this package.
 pub const MIN_VERIFICATION_VERSION: u8 = 1;

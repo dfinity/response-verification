@@ -95,17 +95,17 @@ In both cases, the following options can be configured for each asset:
     - A list of alternative encodings that can be used to serve the asset.
     - Each entry is a tuple of the [encoding name](AssetEncoding) and the file
       extension used in the file path, that can be conveniently created with
-      the `default` factory method. For example, to include Brotli and Gzip encodings:
-      `vec![AssetEncoding::Brotli.default(), AssetEncoding::Gzip.default()]`.
+      the `default_config` factory method. For example, to include Brotli and Gzip encodings:
+      `vec![AssetEncoding::Brotli.default_config(), AssetEncoding::Gzip.default_config()]`.
     - The default file extensions for each encoding are:
         - Brotli: `br`
         - Gzip: `gz`
         - Deflate: `zz`
         - Zstd: `zst`
     - Alternatively, a custom file extension can be provided for each encoding
-      by using the `custom` factory method. For example, to include a custom
+      by using the `custom_config` factory method. For example, to include a custom
       file extension for Brotli and Gzip encodings:
-      `vec![AssetEncoding::Brotli.custom("brotli"), AssetEncoding::Gzip.custom("gzip")]`.
+      `vec![AssetEncoding::Brotli.custom_config("brotli"), AssetEncoding::Gzip.custom_config("gzip")]`.
     - Each encoding referenced must be provided to the asset router as a
       separate file with the same filename as the original file, but with an
       additional file extension matching the configuration. For example, if the
@@ -179,8 +179,8 @@ let config = AssetConfig::File {
     }],
     aliased_by: vec!["/".to_string()],
     encodings: vec![
-        AssetEncoding::Brotli.default(),
-        AssetEncoding::Gzip.default(),
+        AssetEncoding::Brotli.default_config(),
+        AssetEncoding::Gzip.default_config(),
     ],
 };
 ```
@@ -229,8 +229,8 @@ let config = AssetConfig::File {
         "/not-found/index.html".to_string(),
     ],
     encodings: vec![
-        AssetEncoding::Brotli.default(),
-        AssetEncoding::Gzip.default(),
+        AssetEncoding::Brotli.default_config(),
+        AssetEncoding::Gzip.default_config(),
     ],
 };
 ```
@@ -276,8 +276,8 @@ let config = AssetConfig::Pattern {
         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
     ],
     encodings: vec![
-        AssetEncoding::Brotli.default(),
-        AssetEncoding::Gzip.default(),
+        AssetEncoding::Brotli.default_config(),
+        AssetEncoding::Gzip.default_config(),
     ],
 };
 ```
@@ -386,8 +386,8 @@ let asset_configs = vec![
         }],
         aliased_by: vec!["/".to_string()],
         encodings: vec![
-            AssetEncoding::Brotli.default(),
-            AssetEncoding::Gzip.default(),
+            AssetEncoding::Brotli.default_config(),
+            AssetEncoding::Gzip.default_config(),
         ],
     },
     AssetConfig::Pattern {
@@ -398,8 +398,8 @@ let asset_configs = vec![
             "public, max-age=31536000, immutable".to_string(),
         )],
         encodings: vec![
-            AssetEncoding::Brotli.default(),
-            AssetEncoding::Gzip.default(),
+            AssetEncoding::Brotli.default_config(),
+            AssetEncoding::Gzip.default_config(),
         ],
     },
     AssetConfig::Pattern {
@@ -410,8 +410,8 @@ let asset_configs = vec![
             "public, max-age=31536000, immutable".to_string(),
         )],
         encodings: vec![
-            AssetEncoding::Brotli.default(),
-            AssetEncoding::Gzip.default(),
+            AssetEncoding::Brotli.default_config(),
+            AssetEncoding::Gzip.default_config(),
         ],
     },
     AssetConfig::Redirect {

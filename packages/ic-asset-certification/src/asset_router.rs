@@ -51,8 +51,8 @@ struct CertifiedAssetResponse<'a> {
 ///         }],
 ///         aliased_by: vec!["/".to_string()],
 ///         encodings: vec![
-///             AssetEncoding::Brotli.default(),
-///             AssetEncoding::Gzip.default(),
+///             AssetEncoding::Brotli.default_config(),
+///             AssetEncoding::Gzip.default_config(),
 ///         ],
 ///     },
 ///     AssetConfig::Pattern {
@@ -63,8 +63,8 @@ struct CertifiedAssetResponse<'a> {
 ///             "public, max-age=31536000, immutable".to_string(),
 ///         )],
 ///         encodings: vec![
-///             AssetEncoding::Brotli.default(),
-///             AssetEncoding::Gzip.default(),
+///             AssetEncoding::Brotli.default_config(),
+///             AssetEncoding::Gzip.default_config(),
 ///         ],
 ///     },
 ///     AssetConfig::Pattern {
@@ -75,8 +75,8 @@ struct CertifiedAssetResponse<'a> {
 ///             "public, max-age=31536000, immutable".to_string(),
 ///         )],
 ///         encodings: vec![
-///             AssetEncoding::Brotli.default(),
-///             AssetEncoding::Gzip.default(),
+///             AssetEncoding::Brotli.default_config(),
+///             AssetEncoding::Gzip.default_config(),
 ///         ],
 ///     },
 ///     AssetConfig::Redirect {
@@ -1551,9 +1551,9 @@ mod tests {
                 }],
                 aliased_by: vec!["/".to_string()],
                 encodings: vec![
-                    AssetEncoding::Gzip.default(),
-                    AssetEncoding::Deflate.default(),
-                    AssetEncoding::Brotli.default(),
+                    AssetEncoding::Gzip.default_config(),
+                    AssetEncoding::Deflate.default_config(),
+                    AssetEncoding::Brotli.default_config(),
                 ],
             },
             AssetConfig::Pattern {
@@ -1564,9 +1564,9 @@ mod tests {
                     "public, max-age=31536000, immutable".to_string(),
                 )],
                 encodings: vec![
-                    AssetEncoding::Gzip.default(),
-                    AssetEncoding::Deflate.default(),
-                    AssetEncoding::Brotli.default(),
+                    AssetEncoding::Gzip.default_config(),
+                    AssetEncoding::Deflate.default_config(),
+                    AssetEncoding::Brotli.default_config(),
                 ],
             },
             AssetConfig::Pattern {
@@ -1577,9 +1577,9 @@ mod tests {
                     "public, max-age=31536000, immutable".to_string(),
                 )],
                 encodings: vec![
-                    AssetEncoding::Gzip.default(),
-                    AssetEncoding::Deflate.default(),
-                    AssetEncoding::Brotli.default(),
+                    AssetEncoding::Gzip.default_config(),
+                    AssetEncoding::Deflate.default_config(),
+                    AssetEncoding::Brotli.default_config(),
                 ],
             },
             AssetConfig::File {
@@ -1607,9 +1607,9 @@ mod tests {
                 ],
                 // [TODO] - add these files and tests for them
                 encodings: vec![
-                    AssetEncoding::Gzip.default(),
-                    AssetEncoding::Deflate.default(),
-                    AssetEncoding::Brotli.default(),
+                    AssetEncoding::Gzip.default_config(),
+                    AssetEncoding::Deflate.default_config(),
+                    AssetEncoding::Brotli.default_config(),
                 ],
             },
             AssetConfig::Redirect {
