@@ -534,15 +534,9 @@ impl<'content> AssetRouter<'content> {
 
         headers.extend(additional_headers);
 
-        let header_keys = headers.clone();
-        let header_keys = header_keys
-            .iter()
-            .map(|(k, _v)| k.as_str())
-            .collect::<Vec<_>>();
-
         let cel_expr = DefaultCelBuilder::full_certification()
-            .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                header_keys,
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
             ))
             .build();
         let cel_expr_str = cel_expr.to_string();
@@ -1290,8 +1284,8 @@ mod tests {
     #[rstest]
     fn test_redirects(asset_router: AssetRouter) {
         let cel_expr = DefaultFullCelExpressionBuilder::default()
-            .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                vec!["content-length", "location"],
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
             ))
             .build()
             .to_string();
@@ -1489,8 +1483,8 @@ mod tests {
     #[fixture]
     fn asset_cel_expr() -> String {
         DefaultFullCelExpressionBuilder::default()
-            .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                vec!["content-length", "cache-control", "content-type"],
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
             ))
             .build()
             .to_string()
@@ -1499,13 +1493,8 @@ mod tests {
     #[fixture]
     fn encoded_asset_cel_expr() -> String {
         DefaultFullCelExpressionBuilder::default()
-            .with_response_certification(DefaultResponseCertification::certified_response_headers(
-                vec![
-                    "content-length",
-                    "cache-control",
-                    "content-type",
-                    "content-encoding",
-                ],
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
             ))
             .build()
             .to_string()
