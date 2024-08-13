@@ -159,13 +159,14 @@ impl<'content> AssetRouter<'content> {
         request: &HttpRequest,
     ) -> AssetCertificationResult<(HttpResponse<'content>, HashTree, Vec<String>)> {
         let preferred_encodings = self.get_preferred_encodings(request);
+        let req_path = request.get_path()?;
 
         if let Some(CertifiedAssetResponse {
             response,
             tree_entry,
-        }) = self.get_encoded_asset(&preferred_encodings, request.url())
+        }) = self.get_encoded_asset(&preferred_encodings, &req_path)
         {
-            let witness = self.tree.borrow().witness(tree_entry, request.url())?;
+            let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
             let expr_path = tree_entry.path.to_expr_path();
 
             return Ok((response.clone().into(), witness, expr_path));
@@ -174,15 +175,15 @@ impl<'content> AssetRouter<'content> {
         if let Some(CertifiedAssetResponse {
             response,
             tree_entry,
-        }) = self.responses.get(request.url())
+        }) = self.responses.get(&req_path)
         {
-            let witness = self.tree.borrow().witness(tree_entry, request.url())?;
+            let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
             let expr_path = tree_entry.path.to_expr_path();
 
             return Ok((response.clone().into(), witness, expr_path));
         }
 
-        let mut url_scopes = request.url().split('/').collect::<Vec<_>>();
+        let mut url_scopes = req_path.split('/').collect::<Vec<_>>();
         url_scopes.pop();
 
         while !url_scopes.is_empty() {
@@ -194,7 +195,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
+                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -205,7 +206,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.fallback_responses.get(&scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
+                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -218,7 +219,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
+                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -229,7 +230,7 @@ impl<'content> AssetRouter<'content> {
                 tree_entry,
             }) = self.fallback_responses.get(&scope)
             {
-                let witness = self.tree.borrow().witness(tree_entry, request.url())?;
+                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
                 return Ok((response.clone().into(), witness, expr_path));
@@ -239,7 +240,7 @@ impl<'content> AssetRouter<'content> {
         }
 
         Err(AssetCertificationError::NoAssetMatchingRequestUrl {
-            request_url: request.url().to_string(),
+            request_url: req_path.to_string(),
         })
     }
 
@@ -633,12 +634,15 @@ mod tests {
     use std::vec;
 
     #[rstest]
+    #[case("/")]
+    #[case("https://internetcomputer.org/")]
     fn test_index_html(
         index_html_body: Vec<u8>,
         asset_cel_expr: String,
         asset_router: AssetRouter,
+        #[case] req_url: &str,
     ) {
-        let request = HttpRequest::get("/").build();
+        let request = HttpRequest::get(req_url).build();
 
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
@@ -849,10 +853,14 @@ mod tests {
     }
 
     #[rstest]
+    #[case("/something", "/something")]
+    #[case("https://internetcomputer.org/something", "/something")]
     fn test_index_html_root_fallback(
         index_html_body: Vec<u8>,
         asset_cel_expr: String,
         asset_router: AssetRouter,
+        #[case] req_url: &str,
+        #[case] req_path: &str,
     ) {
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
@@ -871,8 +879,8 @@ mod tests {
             ])
             .build();
 
-        let request = HttpRequest::get("/something").build();
-        let requested_expr_path = HttpCertificationPath::exact("/something").to_expr_path();
+        let request = HttpRequest::get(req_url).build();
+        let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -889,10 +897,17 @@ mod tests {
     }
 
     #[rstest]
+    #[case("/assets/css/app.css", "/assets/css/app.css")]
+    #[case(
+        "https://internetcomputer.org/assets/css/app.css",
+        "/assets/css/app.css"
+    )]
     fn test_index_html_nested_fallback(
         index_html_body: Vec<u8>,
         asset_cel_expr: String,
         asset_router: AssetRouter,
+        #[case] req_url: &str,
+        #[case] req_path: &str,
     ) {
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
@@ -911,9 +926,8 @@ mod tests {
             ])
             .build();
 
-        let request = HttpRequest::get("/assets/css/app.css").build();
-        let requested_expr_path =
-            HttpCertificationPath::exact("/assets/css/app.css").to_expr_path();
+        let request = HttpRequest::get(req_url).build();
+        let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
 
         let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
@@ -930,8 +944,15 @@ mod tests {
     }
 
     #[rstest]
-    fn text_app_css(app_css_body: Vec<u8>, asset_cel_expr: String, asset_router: AssetRouter) {
-        let request = HttpRequest::get("/css/app-ba74b708.css").build();
+    #[case("/css/app-ba74b708.css")]
+    #[case("https://internetcomputer.org/css/app-ba74b708.css")]
+    fn text_app_css(
+        app_css_body: Vec<u8>,
+        asset_cel_expr: String,
+        asset_router: AssetRouter,
+        #[case] req_url: &str,
+    ) {
+        let request = HttpRequest::get(req_url).build();
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(&app_css_body)
@@ -960,12 +981,15 @@ mod tests {
     }
 
     #[rstest]
+    #[case("/css/core-8d4jhgy2.js")]
+    #[case("https://internetcomputer.org/css/core-8d4jhgy2.js")]
     fn test_not_found_css(
         not_found_html_body: Vec<u8>,
         asset_cel_expr: String,
         asset_router: AssetRouter,
+        #[case] req_url: &str,
     ) {
-        let request = HttpRequest::get("/css/core-8d4jhgy2.js").build();
+        let request = HttpRequest::get(req_url).build();
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(&not_found_html_body)
@@ -994,8 +1018,15 @@ mod tests {
     }
 
     #[rstest]
-    fn test_app_js(app_js_body: Vec<u8>, asset_cel_expr: String, asset_router: AssetRouter) {
-        let request = HttpRequest::get("/js/app-488df671.js").build();
+    #[case("/js/app-488df671.js")]
+    #[case("https://internetcomputer.org/js/app-488df671.js")]
+    fn test_app_js(
+        app_js_body: Vec<u8>,
+        asset_cel_expr: String,
+        asset_router: AssetRouter,
+        #[case] req_url: &str,
+    ) {
+        let request = HttpRequest::get(req_url).build();
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(&app_js_body)
@@ -1087,12 +1118,15 @@ mod tests {
     }
 
     #[rstest]
+    #[case("/js/core-7dk12y45.js")]
+    #[case("https://internetcomputer.org/js/core-7dk12y45.js")]
     fn test_not_found_js(
         not_found_html_body: Vec<u8>,
         asset_cel_expr: String,
         asset_router: AssetRouter,
+        #[case] req_url: &str,
     ) {
-        let request = HttpRequest::get("/js/core-7dk12y45.js").build();
+        let request = HttpRequest::get(req_url).build();
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(&not_found_html_body)
@@ -1121,19 +1155,25 @@ mod tests {
     }
 
     #[rstest]
+    #[case("/404")]
+    #[case("https://internetcomputer.org/404")]
+    #[case("/404/")]
+    #[case("https://internetcomputer.org/404/")]
+    #[case("/404.html")]
+    #[case("https://internetcomputer.org/404.html")]
+    #[case("/not-found")]
+    #[case("https://internetcomputer.org/not-found")]
+    #[case("/not-found/")]
+    #[case("https://internetcomputer.org/not-found/")]
+    #[case("/not-found/index.html")]
+    #[case("https://internetcomputer.org/not-found/index.html")]
     fn test_not_found_alias(
         not_found_html_body: Vec<u8>,
         asset_cel_expr: String,
         asset_router: AssetRouter,
+        #[case] req_url: &str,
     ) {
-        let requests = vec![
-            HttpRequest::get("/404").build(),
-            HttpRequest::get("/404/").build(),
-            HttpRequest::get("/404.html").build(),
-            HttpRequest::get("/not-found").build(),
-            HttpRequest::get("/not-found/").build(),
-            HttpRequest::get("/not-found/index.html").build(),
-        ];
+        let request = HttpRequest::get(req_url).build();
 
         let expected_response = HttpResponse::builder()
             .with_status_code(200)
@@ -1152,19 +1192,17 @@ mod tests {
             ])
             .build();
 
-        for request in requests {
-            let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
 
-            assert_eq!(
-                expr_path,
-                HttpCertificationPath::exact(request.url()).to_expr_path()
-            );
-            assert!(matches!(
-                witness.lookup_subtree(&expr_path),
-                SubtreeLookupResult::Found(_)
-            ));
-            assert_eq!(response, expected_response);
-        }
+        assert_eq!(
+            expr_path,
+            HttpCertificationPath::exact(request.get_path().unwrap()).to_expr_path()
+        );
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
     }
 
     #[rstest]
