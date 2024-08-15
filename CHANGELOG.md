@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **ic-asset-certification**: use response header exclusions instead of inclusions for better security
 - **ic-asset-certification**: more ergonomic config for alternative asset encodings
 
 ### Refactor
