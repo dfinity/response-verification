@@ -274,7 +274,7 @@ fn v2_verification(
 
     match are_hashes_valid {
         true => {
-            let mut all_headers = response_headers.headers.clone();
+            let mut all_headers = response_headers.headers;
             // add the certificate header back to the response
             let Some(certificate_header_str) = response_headers.certificate else {
                 return Err(ResponseVerificationError::MissingCertification);

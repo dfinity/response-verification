@@ -533,3 +533,40 @@ impl<'a> From<HttpResponse<'a>> for HttpUpdateResponse<'a> {
         }
     }
 }
+
+/// Asserts that two [HTTP responses](HttpResponse) are equal by comparing
+/// the status code, *sorted* headers, body, and upgrade flag of the two responses.
+///
+/// # Examples
+///
+/// ```
+/// use ic_http_certification::{HttpResponse, assert_response_eq};
+///
+/// let a = HttpResponse::builder()
+///     .with_status_code(200)
+///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
+///     .with_body(b"Hello, World!")
+///     .with_upgrade(false)
+///     .build();
+///
+/// let b = HttpResponse::builder()
+///     .with_status_code(200)
+///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
+///     .with_body(b"Hello, World!")
+///     .with_upgrade(false)
+///     .build();
+///
+/// assert_response_eq(a, b);
+/// ```
+pub fn assert_response_eq(a: HttpResponse, b: HttpResponse) {
+    let mut a_headers = a.headers().to_vec();
+    a_headers.sort();
+
+    let mut b_headers = b.headers().to_vec();
+    b_headers.sort();
+
+    assert_eq!(a.status_code(), b.status_code());
+    assert_eq!(a.body(), b.body());
+    assert_eq!(a.upgrade(), b.upgrade());
+    assert_eq!(a_headers, b_headers);
+}
