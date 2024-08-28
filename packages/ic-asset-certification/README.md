@@ -16,6 +16,8 @@ This is implemented in the following steps:
 3. [Inserting assets into the asset router](#inserting-assets-into-the-asset-router)
 4. [Serving assets](#serving-assets)
 
+For canisters that need it, it's also possible to [delete assets](#deleting-assets).
+
 ## Preparing assets
 
 This library is unopinionated about where assets come from, so that is not
@@ -524,4 +526,243 @@ fn cbor_encode(value: &impl Serialize) -> Vec<u8> {
 }
 
 add_certificate_header(&mut response, &witness, &expr_path);
+```
+
+## Deleting assets
+
+Deleting assets is similar to (certifying them)[#inserting-assets-into-the-asset-router].
+
+Depending on the configuration provided to the [certify_assets](AssetRouter::certify_assets) function,
+multiple responses may be generated for the same asset. To ensure that all generated responses are deleted,
+the [delete_assets](AssetRouter::delete_assets) function accepts the same configuration.
+
+Using the same base example used to demonstrate certifying assets:
+
+```rust
+use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+
+let mut asset_router = AssetRouter::default();
+
+let assets = vec![
+    Asset::new(
+        "index.html",
+        b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
+    ),
+    Asset::new(
+        "index.html.gz",
+        &[0, 1, 2, 3, 4, 5]
+    ),
+    Asset::new(
+        "index.html.br",
+        &[6, 7, 8, 9, 10, 11]
+    ),
+    Asset::new(
+        "app.js",
+        b"console.log('Hello World!');".as_slice(),
+    ),
+    Asset::new(
+        "app.js.gz",
+        &[12, 13, 14, 15, 16, 17],
+    ),
+    Asset::new(
+        "app.js.br",
+        &[18, 19, 20, 21, 22, 23],
+    ),
+    Asset::new(
+        "css/app-ba74b708.css",
+        b"html,body{min-height:100vh;}".as_slice(),
+    ),
+    Asset::new(
+        "css/app-ba74b708.css.gz",
+        &[24, 25, 26, 27, 28, 29],
+    ),
+    Asset::new(
+        "css/app-ba74b708.css.br",
+        &[30, 31, 32, 33, 34, 35],
+    ),
+];
+
+let asset_configs = vec![
+    AssetConfig::File {
+        path: "index.html".to_string(),
+        content_type: Some("text/html".to_string()),
+        headers: vec![(
+            "cache-control".to_string(),
+            "public, no-cache, no-store".to_string(),
+        )],
+        fallback_for: vec![AssetFallbackConfig {
+            scope: "/".to_string(),
+        }],
+        aliased_by: vec!["/".to_string()],
+        encodings: vec![
+            AssetEncoding::Brotli.default_config(),
+            AssetEncoding::Gzip.default_config(),
+        ],
+    },
+    AssetConfig::Pattern {
+        pattern: "**/*.js".to_string(),
+        content_type: Some("text/javascript".to_string()),
+        headers: vec![(
+            "cache-control".to_string(),
+            "public, max-age=31536000, immutable".to_string(),
+        )],
+        encodings: vec![
+            AssetEncoding::Brotli.default_config(),
+            AssetEncoding::Gzip.default_config(),
+        ],
+    },
+    AssetConfig::Pattern {
+        pattern: "**/*.css".to_string(),
+        content_type: Some("text/css".to_string()),
+        headers: vec![(
+            "cache-control".to_string(),
+            "public, max-age=31536000, immutable".to_string(),
+        )],
+        encodings: vec![
+            AssetEncoding::Brotli.default_config(),
+            AssetEncoding::Gzip.default_config(),
+        ],
+    },
+    AssetConfig::Redirect {
+        from: "/old".to_string(),
+        to: "/new".to_string(),
+        kind: AssetRedirectKind::Permanent,
+    },
+];
+
+asset_router.certify_assets(assets, asset_configs).unwrap();
+```
+
+To delete the `index.html` asset, along with the fallback configuration for the `/` scope, the alias `/` and the alternative encodings:
+
+```rust
+# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+
+# let mut asset_router = AssetRouter::default();
+
+asset_router
+    .delete_assets(
+        vec![
+            Asset::new(
+                "index.html",
+                b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
+            ),
+            Asset::new("index.html.gz", &[0, 1, 2, 3, 4, 5]),
+            Asset::new("index.html.br", &[6, 7, 8, 9, 10, 11]),
+        ],
+        vec![AssetConfig::File {
+            path: "index.html".to_string(),
+            content_type: Some("text/html".to_string()),
+            headers: vec![(
+                "cache-control".to_string(),
+                "public, no-cache, no-store".to_string(),
+            )],
+            fallback_for: vec![AssetFallbackConfig {
+                scope: "/".to_string(),
+            }],
+            aliased_by: vec!["/".to_string()],
+            encodings: vec![
+                AssetEncoding::Brotli.default_config(),
+                AssetEncoding::Gzip.default_config(),
+            ],
+        }],
+    )
+    .unwrap();
+```
+
+To delete the `app.js`asset, along with the alternative encodings:
+
+```rust
+# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+
+# let mut asset_router = AssetRouter::default();
+
+asset_router
+    .delete_assets(
+        vec![
+            Asset::new("app.js", b"console.log('Hello World!');".as_slice()),
+            Asset::new("app.js.gz", &[12, 13, 14, 15, 16, 17]),
+            Asset::new("app.js.br", &[18, 19, 20, 21, 22, 23]),
+        ],
+        vec![AssetConfig::Pattern {
+            pattern: "**/*.js".to_string(),
+            content_type: Some("text/javascript".to_string()),
+            headers: vec![(
+                "cache-control".to_string(),
+                "public, max-age=31536000, immutable".to_string(),
+            )],
+            encodings: vec![
+                AssetEncoding::Brotli.default_config(),
+                AssetEncoding::Gzip.default_config(),
+            ],
+        }],
+    )
+    .unwrap();
+```
+
+To delete the `css/app-ba74b708.css` asset, along with the alternative encodings:
+
+```rust
+# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+
+# let mut asset_router = AssetRouter::default();
+
+asset_router.delete_assets(
+    vec![
+        Asset::new(
+            "css/app-ba74b708.css",
+            b"html,body{min-height:100vh;}".as_slice(),
+        ),
+        Asset::new(
+            "css/app-ba74b708.css.gz",
+            &[24, 25, 26, 27, 28, 29],
+        ),
+        Asset::new(
+            "css/app-ba74b708.css.br",
+            &[30, 31, 32, 33, 34, 35],
+        ),
+    ],
+    vec![
+        AssetConfig::Pattern {
+            pattern: "**/*.css".to_string(),
+            content_type: Some("text/css".to_string()),
+            headers: vec![(
+                "cache-control".to_string(),
+                "public, max-age=31536000, immutable".to_string(),
+            )],
+            encodings: vec![
+                AssetEncoding::Brotli.default_config(),
+                AssetEncoding::Gzip.default_config(),
+            ],
+        },
+    ]
+).unwrap();
+```
+
+And finally, to delete the `/old` redirect:
+
+```rust
+# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+
+# let mut asset_router = AssetRouter::default();
+
+asset_router
+    .delete_assets(
+        vec![],
+        vec![AssetConfig::Redirect {
+            from: "/old".to_string(),
+            to: "/new".to_string(),
+            kind: AssetRedirectKind::Permanent,
+        }],
+    )
+    .unwrap();
+```
+
+After deleting any assets, make sure to set the canister's
+certified data again:
+
+```ignore
+use ic_cdk::api::set_certified_data;
+
+set_certified_data(&asset_router.root_hash());
 ```
