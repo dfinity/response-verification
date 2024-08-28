@@ -12,7 +12,7 @@ use ic_http_certification::{
 use include_dir::{include_dir, Dir};
 use lazy_static::lazy_static;
 use serde::Serialize;
-use std::{borrow::Cow, cell::RefCell, collections::HashMap};
+use std::{cell::RefCell, collections::HashMap};
 
 // Public methods
 
@@ -33,26 +33,8 @@ fn http_request(req: HttpRequest) -> HttpResponse {
 }
 
 // Storage
-
-#[derive(Debug, Clone)]
-struct HttpAssetResponse<'a> {
-    pub status_code: u16,
-    pub headers: Vec<HeaderField>,
-    pub body: Cow<'a, [u8]>,
-}
-
-impl<'a> Into<HttpResponse<'a>> for HttpAssetResponse<'a> {
-    fn into(self) -> HttpResponse<'a> {
-        HttpResponse::builder()
-            .with_status_code(self.status_code)
-            .with_headers(self.headers)
-            .with_body(self.body)
-            .build()
-    }
-}
-
 struct CertifiedHttpResponse<'a> {
-    response: HttpAssetResponse<'a>,
+    response: HttpResponse<'a>,
     certification: HttpCertification,
 }
 
@@ -151,9 +133,9 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
         let body = identity_file.contents();
         certify_asset(
             body,
-            asset_file_path.to_string(),
+            asset_file_path,
             &asset_tree_path,
-            asset_req_path.to_string(),
+            asset_req_path.clone(),
             additional_headers,
         );
     }
@@ -212,19 +194,7 @@ fn certify_asset_with_encoding(
 
             // certify the response
             let certification =
-                HttpCertification::response_only(cel_expr_def, &response.clone().into(), None)
-                    .unwrap();
-
-            ENCODED_RESPONSES.with_borrow_mut(|responses| {
-                // store the response for later retrieval
-                responses.insert(
-                    (asset_req_path, encoding.to_string()),
-                    CertifiedHttpResponse {
-                        response,
-                        certification: certification.clone(),
-                    },
-                );
-            });
+                HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
 
             HTTP_TREE.with_borrow_mut(|http_tree| {
                 // add the certification to the certification tree
@@ -235,6 +205,17 @@ fn certify_asset_with_encoding(
 
                 // set the canister's certified data
                 set_certified_data(&http_tree.root_hash());
+            });
+
+            ENCODED_RESPONSES.with_borrow_mut(|responses| {
+                // store the response for later retrieval
+                responses.insert(
+                    (asset_req_path, encoding.to_string()),
+                    CertifiedHttpResponse {
+                        response,
+                        certification,
+                    },
+                );
             });
         });
     };
@@ -256,18 +237,7 @@ fn certify_asset_response(
 
         // certify the response
         let certification =
-            HttpCertification::response_only(cel_expr_def, &response.clone().into(), None).unwrap();
-
-        RESPONSES.with_borrow_mut(|responses| {
-            // store the response for later retrieval
-            responses.insert(
-                asset_req_path,
-                CertifiedHttpResponse {
-                    response,
-                    certification: certification.clone(),
-                },
-            );
-        });
+            HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
 
         HTTP_TREE.with_borrow_mut(|http_tree| {
             // add the certification to the certification tree
@@ -278,6 +248,17 @@ fn certify_asset_response(
 
             // set the canister's certified data
             set_certified_data(&http_tree.root_hash());
+        });
+
+        RESPONSES.with_borrow_mut(|responses| {
+            // store the response for later retrieval
+            responses.insert(
+                asset_req_path,
+                CertifiedHttpResponse {
+                    response,
+                    certification,
+                },
+            );
         });
     });
 }
@@ -342,7 +323,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
                 // otherwise serve the identity version
                 .unwrap_or(identity_response);
 
-            let mut response: HttpResponse = response.clone().into();
+            let mut response = response.clone();
 
             add_certificate_header(
                 &mut response,
@@ -386,7 +367,7 @@ fn create_asset_response(
     additional_headers: Vec<HeaderField>,
     body: &[u8],
     cel_expr: String,
-) -> HttpAssetResponse {
+) -> HttpResponse {
     // set up the default headers and include additional headers provided by the caller
     let mut headers = vec![
         ("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
@@ -402,11 +383,11 @@ fn create_asset_response(
     ];
     headers.extend(additional_headers);
 
-    HttpAssetResponse {
-        status_code: 200,
-        headers,
-        body: Cow::Borrowed(body),
-    }
+    HttpResponse::builder()
+        .with_status_code(200)
+        .with_headers(headers)
+        .with_body(body)
+        .build()
 }
 
 // Encoding

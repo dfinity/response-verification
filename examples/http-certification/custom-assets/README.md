@@ -118,30 +118,11 @@ static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist"
 
 With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example, however, a slightly different structure is used.
 
-Instead of storing the `HttpResponse` directly, a custom type `HttpAssetResponse` is used instead. The only difference between `HttpAssetResponse` and the original `HttpResponse` is that it holds a **reference** to a `u8` slice instead of a `Vec<u8>`. If the original `HttpResponse` was used here, it would essentially duplicate the original asset content that is statically embedded in the canister's Wasm by cloning it and storing it in the `RESPONSE`s `HashMap`. [`Cow`](https://doc.rust-lang.org/std/borrow/enum.Cow.html) is also used here for flexibility, in case there is any scenario where there is no static reference to data, such as a dynamic asset that is built at runtime. There is no such scenario in this example, however.
-
 Encoded assets are stored in a separate `HashMap` to make routing easier. This will be more apparent later in this guide.
 
 ```rust
-#[derive(Debug, Clone)]
-struct HttpAssetResponse<'a> {
-    pub status_code: u16,
-    pub headers: Vec<HeaderField>,
-    pub body: Cow<'a, [u8]>,
-}
-
-impl<'a> Into<HttpResponse<'a>> for HttpAssetResponse<'a> {
-    fn into(self) -> HttpResponse<'a> {
-        HttpResponse::builder()
-            .with_status_code(self.status_code)
-            .with_headers(self.headers)
-            .with_body(self.body)
-            .build()
-    }
-}
-
 struct CertifiedHttpResponse<'a> {
-    response: HttpAssetResponse<'a>,
+    response: HttpResponse<'a>,
     certification: HttpCertification,
 }
 
@@ -164,7 +145,7 @@ fn create_asset_response(
     additional_headers: Vec<HeaderField>,
     body: &[u8],
     cel_expr: String,
-) -> HttpAssetResponse {
+) -> HttpResponse {
     // set up the default headers and include additional headers provided by the caller
     let mut headers = vec![
         ("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
@@ -180,17 +161,15 @@ fn create_asset_response(
     ];
     headers.extend(additional_headers);
 
-    HttpAssetResponse {
-        status_code: 200,
-        headers,
-        body: Cow::Borrowed(body),
-    }
+    HttpResponse::builder()
+        .with_status_code(200)
+        .with_headers(headers)
+        .with_body(body)
+        .build()
 }
 ```
 
 The next function to look at is a reusable function that can certify any asset.
-
-Note that when the certification is created, the `HttpAssetResponse` is converted into an `HttpResponse`, which will temporarily clone the entire asset body, but this will then be dropped once it goes out of scope.
 
 ```rust
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
@@ -209,18 +188,7 @@ fn certify_asset_response(
 
         // certify the response
         let certification =
-            HttpCertification::response_only(cel_expr_def, &response.clone().into(), None).unwrap();
-
-        RESPONSES.with_borrow_mut(|responses| {
-            // store the response for later retrieval
-            responses.insert(
-                asset_req_path,
-                CertifiedHttpResponse {
-                    response,
-                    certification: certification.clone(),
-                },
-            );
-        });
+            HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
 
         HTTP_TREE.with_borrow_mut(|http_tree| {
             // add the certification to the certification tree
@@ -231,6 +199,17 @@ fn certify_asset_response(
 
             // set the canister's certified data
             set_certified_data(&http_tree.root_hash());
+        });
+
+        RESPONSES.with_borrow_mut(|responses| {
+            // store the response for later retrieval
+            responses.insert(
+                asset_req_path,
+                CertifiedHttpResponse {
+                    response,
+                    certification,
+                },
+            );
         });
     });
 }
@@ -267,19 +246,7 @@ fn certify_asset_with_encoding(
 
             // certify the response
             let certification =
-                HttpCertification::response_only(cel_expr_def, &response.clone().into(), None)
-                    .unwrap();
-
-            ENCODED_RESPONSES.with_borrow_mut(|responses| {
-                // store the response for later retrieval
-                responses.insert(
-                    (asset_req_path, encoding.to_string()),
-                    CertifiedHttpResponse {
-                        response,
-                        certification: certification.clone(),
-                    },
-                );
-            });
+                HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
 
             HTTP_TREE.with_borrow_mut(|http_tree| {
                 // add the certification to the certification tree
@@ -290,6 +257,17 @@ fn certify_asset_with_encoding(
 
                 // set the canister's certified data
                 set_certified_data(&http_tree.root_hash());
+            });
+
+            ENCODED_RESPONSES.with_borrow_mut(|responses| {
+                // store the response for later retrieval
+                responses.insert(
+                    (asset_req_path, encoding.to_string()),
+                    CertifiedHttpResponse {
+                        response,
+                        certification,
+                    },
+                );
             });
         });
     };
@@ -360,9 +338,9 @@ fn certify_asset_glob(glob: &str, content_type: &str) {
         let body = identity_file.contents();
         certify_asset(
             body,
-            asset_file_path.to_string(),
+            asset_file_path,
             &asset_tree_path,
-            asset_req_path.to_string(),
+            asset_req_path.clone(),
             additional_headers,
         );
     }
@@ -489,7 +467,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
                 // otherwise serve the identity version
                 .unwrap_or(identity_response);
 
-            let mut response: HttpResponse = response.clone().into();
+            let mut response = response.clone();
 
             add_certificate_header(
                 &mut response,
