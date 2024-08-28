@@ -2,6 +2,9 @@
 
 ### Feat
 
+- **ic-asset-certification**: use owned string internally, remove less common HTTP method helpers and add helper docs
+- **ic-asset-certification**: improve handling of URLs with full domain
+- improve http request and response types
 - **ic-asset-certification**: use response header exclusions instead of inclusions for better security
 - **ic-asset-certification**: more ergonomic config for alternative asset encodings
 
