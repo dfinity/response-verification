@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/setup-pnpm
+      - uses: nathanosdev/actions/actions/setup-pnpm@main
 
       - uses: ./.github/actions/setup-dfx
 

@@ -20,7 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - uses: ./.github/actions/setup-pnpm
+      - uses: nathanosdev/actions/actions/setup-pnpm@main
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
