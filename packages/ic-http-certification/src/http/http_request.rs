@@ -25,13 +25,35 @@ use std::borrow::Cow;
 /// assert_eq!(request.body(), &[1, 2, 3]);
 /// assert_eq!(request.certificate_version(), Some(2));
 /// ```
+///
+/// ## Helpers
+///
+/// There are also a number of convenience methods for quickly creating an [HttpRequest] with
+/// commonly used HTTP methods:
+///
+/// - [GET](HttpRequest::get)
+/// - [POST](HttpRequest::post)
+/// - [PUT](HttpRequest::put)
+/// - [PATCH](HttpRequest::patch)
+/// - [DELETE](HttpRequest::delete)
+///
+/// # Examples
+///
+/// ```
+/// use ic_http_certification::HttpRequest;
+///
+/// let request = HttpRequest::get("/").build();
+///
+/// assert_eq!(request.method(), "GET");
+/// assert_eq!(request.url(), "/");
+/// ```
 #[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
 pub struct HttpRequest<'a> {
     /// HTTP request method.
-    method: Cow<'a, str>,
+    method: String,
 
     /// HTTP request URL.
-    url: Cow<'a, str>,
+    url: String,
 
     /// HTTP request headers.
     headers: Vec<HeaderField>,
@@ -60,7 +82,7 @@ impl<'a> HttpRequest<'a> {
     ///
     /// assert_eq!(request.method(), "GET");
     /// ```
-    pub fn get(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
+    pub fn get(url: impl Into<String>) -> HttpRequestBuilder<'a> {
         HttpRequestBuilder::new().with_method("GET").with_url(url)
     }
 
@@ -79,7 +101,7 @@ impl<'a> HttpRequest<'a> {
     ///
     /// assert_eq!(request.method(), "POST");
     /// ```
-    pub fn post(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
+    pub fn post(url: impl Into<String>) -> HttpRequestBuilder<'a> {
         HttpRequestBuilder::new().with_method("POST").with_url(url)
     }
 
@@ -98,7 +120,7 @@ impl<'a> HttpRequest<'a> {
     ///
     /// assert_eq!(request.method(), "PUT");
     /// ```
-    pub fn put(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
+    pub fn put(url: impl Into<String>) -> HttpRequestBuilder<'a> {
         HttpRequestBuilder::new().with_method("PUT").with_url(url)
     }
 
@@ -117,7 +139,7 @@ impl<'a> HttpRequest<'a> {
     ///
     /// assert_eq!(request.method(), "PATCH");
     /// ```
-    pub fn patch(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
+    pub fn patch(url: impl Into<String>) -> HttpRequestBuilder<'a> {
         HttpRequestBuilder::new().with_method("PATCH").with_url(url)
     }
 
@@ -136,71 +158,10 @@ impl<'a> HttpRequest<'a> {
     ///
     /// assert_eq!(request.method(), "DELETE");
     /// ```
-    pub fn delete(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
+    pub fn delete(url: impl Into<String>) -> HttpRequestBuilder<'a> {
         HttpRequestBuilder::new()
             .with_method("DELETE")
             .with_url(url)
-    }
-
-    /// Creates a new [HttpRequestBuilder] initialized with a OPTIONS method and
-    /// the given URL.
-    ///
-    /// This method returns an instance of [HttpRequestBuilder] which can be used to
-    /// create an [HttpRequest].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use ic_http_certification::HttpRequest;
-    ///
-    /// let request = HttpRequest::options("/").build();
-    ///
-    /// assert_eq!(request.method(), "OPTIONS");
-    /// ```
-    pub fn options(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
-        HttpRequestBuilder::new()
-            .with_method("OPTIONS")
-            .with_url(url)
-    }
-
-    /// Creates a new [HttpRequestBuilder] initialized with a CONNECT method and
-    /// the given URL.
-    ///
-    /// This method returns an instance of [HttpRequestBuilder] which can be
-    /// used to create an [HttpRequest].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use ic_http_certification::HttpRequest;
-    ///
-    /// let request = HttpRequest::connect("/").build();
-    ///
-    /// assert_eq!(request.method(), "CONNECT");
-    /// ```
-    pub fn connect(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
-        HttpRequestBuilder::new()
-            .with_method("CONNECT")
-            .with_url(url)
-    }
-
-    /// Creates a new [HttpRequestBuilder] initialized with a TRACE method and
-    /// the given URL.
-    ///
-    /// This method returns an instance of [HttpRequestBuilder] which can be
-    /// used to create an [HttpRequest].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use ic_http_certification::HttpRequest;
-    ///
-    /// let request = HttpRequest::trace("/").build();
-    ///
-    /// assert_eq!(request.method(), "TRACE");
-    /// ```
-    pub fn trace(url: impl Into<Cow<'a, str>>) -> HttpRequestBuilder<'a> {
-        HttpRequestBuilder::new().with_method("TRACE").with_url(url)
     }
 
     /// Creates and returns an instance of [HttpRequestBuilder], a builder-style object
@@ -383,8 +344,8 @@ impl<'a> HttpRequest<'a> {
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct HttpRequestBuilder<'a> {
-    method: Option<Cow<'a, str>>,
-    url: Option<Cow<'a, str>>,
+    method: Option<String>,
+    url: Option<String>,
     headers: Vec<HeaderField>,
     body: Cow<'a, [u8]>,
     certificate_version: Option<u16>,
@@ -435,7 +396,7 @@ impl<'a> HttpRequestBuilder<'a> {
     /// assert_eq!(request.method(), "GET");
     /// ```
     #[inline]
-    pub fn with_method(mut self, method: impl Into<Cow<'a, str>>) -> Self {
+    pub fn with_method(mut self, method: impl Into<String>) -> Self {
         self.method = Some(method.into());
 
         self
@@ -458,7 +419,7 @@ impl<'a> HttpRequestBuilder<'a> {
     /// assert_eq!(request.url(), "/");
     /// ```
     #[inline]
-    pub fn with_url(mut self, url: impl Into<Cow<'a, str>>) -> Self {
+    pub fn with_url(mut self, url: impl Into<String>) -> Self {
         self.url = Some(url.into());
 
         self
@@ -562,8 +523,8 @@ impl<'a> HttpRequestBuilder<'a> {
     #[inline]
     pub fn build(self) -> HttpRequest<'a> {
         HttpRequest {
-            method: self.method.unwrap_or(Cow::Borrowed("GET")),
-            url: self.url.unwrap_or(Cow::Borrowed("/")),
+            method: self.method.unwrap_or("GET".to_string()),
+            url: self.url.unwrap_or("/".to_string()),
             headers: self.headers,
             body: self.body,
             certificate_version: self.certificate_version,
@@ -596,8 +557,8 @@ impl<'a> HttpRequestBuilder<'a> {
     #[inline]
     pub fn build_update(self) -> HttpUpdateRequest<'a> {
         HttpUpdateRequest {
-            method: self.method.unwrap_or(Cow::Borrowed("GET")),
-            url: self.url.unwrap_or(Cow::Borrowed("/")),
+            method: self.method.unwrap_or("GET".to_string()),
+            url: self.url.unwrap_or("/".to_string()),
             headers: self.headers,
             body: self.body,
         }
@@ -632,10 +593,10 @@ impl<'a> HttpRequestBuilder<'a> {
 #[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
 pub struct HttpUpdateRequest<'a> {
     /// HTTP request method.
-    method: Cow<'a, str>,
+    method: String,
 
     /// HTTP request URL.
-    url: Cow<'a, str>,
+    url: String,
 
     /// HTTP request headers.
     headers: Vec<HeaderField>,
