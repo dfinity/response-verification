@@ -1,0 +1,3 @@
+Bonjour tout le monde!
+
+(This file is used to test assets with special characters)
