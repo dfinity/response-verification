@@ -8,7 +8,8 @@ mod tests {
     use ic_certificate_verification::CertificateVerificationError;
     use ic_http_certification::{
         CelExpression, DefaultFullCelExpression, HttpCertification, HttpCertificationPath,
-        HttpCertificationTreeEntry, HttpRequest, HttpResponse,
+        HttpCertificationTreeEntry, HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
+        CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::{verify_request_response_pair, ResponseVerificationError};
     use ic_response_verification_test_utils::{
@@ -42,7 +43,10 @@ mod tests {
             .with_status_code(200)
             .with_body(body.as_bytes())
             .with_headers(vec![
-                ("IC-CertificateExpression".into(), cel_expr.to_string()),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                    cel_expr.to_string(),
+                ),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ])
             .build();
@@ -57,7 +61,7 @@ mod tests {
             canister_id,
         } = create_v2_fixture(req_path, &certification_tree_entry, &current_time);
 
-        response.add_header(("IC-Certificate".to_string(), certificate_header));
+        response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             wrong_request,
@@ -94,7 +98,10 @@ mod tests {
             .with_status_code(200)
             .with_body(body.as_bytes())
             .with_headers(vec![
-                ("IC-CertificateExpression".into(), cel_expr.to_string()),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                    cel_expr.to_string(),
+                ),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ])
             .build();
@@ -102,7 +109,10 @@ mod tests {
             .with_status_code(200)
             .with_body(body.as_bytes())
             .with_headers(vec![
-                ("IC-CertificateExpression".into(), cel_expr.to_string()),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                    cel_expr.to_string(),
+                ),
                 ("Cache-Control".into(), "public".into()),
                 ("Cache-Control".into(), "immutable".into()),
             ])
@@ -118,7 +128,7 @@ mod tests {
             canister_id,
         } = create_v2_fixture(req_path, &certification_tree_entry, &current_time);
 
-        wrong_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        wrong_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -156,7 +166,10 @@ mod tests {
             .with_status_code(200)
             .with_body(body.as_bytes())
             .with_headers(vec![
-                ("IC-CertificateExpression".into(), cel_expr.to_string()),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                    cel_expr.to_string(),
+                ),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ])
             .build();
@@ -177,11 +190,11 @@ mod tests {
         let certificate_header =
             create_v2_header(&certification_tree_entry, &certificate_cbor, &tree_cbor);
 
-        response.add_header(("IC-Certificate".to_string(), certificate_header));
+        response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
         let _ = std::mem::replace(
             &mut response.headers_mut()[0],
             (
-                "IC-CertificateExpression".into(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                 wrong_cel_expr.to_string(),
             ),
         );
@@ -244,12 +257,15 @@ mod tests {
             .with_status_code(200)
             .with_body(body.as_bytes())
             .with_headers(vec![
-                ("IC-CertificateExpression".into(), cel_expr.to_string()),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                    cel_expr.to_string(),
+                ),
                 ("Cache-Control".into(), "max-age=604800".into()),
             ])
             .build();
 
-        response.add_header(("IC-Certificate".to_string(), certificate_header));
+        response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,

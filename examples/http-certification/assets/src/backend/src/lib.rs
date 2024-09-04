@@ -1,5 +1,3 @@
-use base64::engine::general_purpose::STANDARD as BASE64;
-use base64::Engine;
 use ic_asset_certification::{
     Asset, AssetConfig, AssetEncoding, AssetFallbackConfig, AssetRedirectKind, AssetRouter,
 };
@@ -7,10 +5,10 @@ use ic_cdk::{
     api::{data_certificate, set_certified_data},
     *,
 };
-use ic_certification::HashTree;
-use ic_http_certification::{HeaderField, HttpCertificationTree, HttpRequest, HttpResponse};
+use ic_http_certification::{
+    utils::add_certificate_header, HeaderField, HttpCertificationTree, HttpRequest, HttpResponse,
+};
 use include_dir::{include_dir, Dir};
-use serde::Serialize;
 use std::{cell::RefCell, rc::Rc};
 
 // Public methods
@@ -139,7 +137,12 @@ fn certify_all_assets() {
 fn serve_asset(req: &HttpRequest) -> HttpResponse<'static> {
     ASSET_ROUTER.with_borrow(|asset_router| {
         if let Ok((mut response, witness, expr_path)) = asset_router.serve_asset(req) {
-            add_certificate_header(&mut response, &witness, &expr_path);
+            add_certificate_header(
+                data_certificate().expect("No data certificate available"),
+                &mut response,
+                &witness,
+                &expr_path,
+            );
 
             response
         } else {
@@ -163,33 +166,4 @@ fn get_asset_headers(additional_headers: Vec<HeaderField>) -> Vec<HeaderField> {
     headers.extend(additional_headers);
 
     headers
-}
-
-const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
-fn add_certificate_header(response: &mut HttpResponse, witness: &HashTree, expr_path: &[String]) {
-    let certified_data = data_certificate().expect("No data certificate available");
-    let witness = cbor_encode(witness);
-    let expr_path = cbor_encode(&expr_path);
-
-    response.add_header((
-        IC_CERTIFICATE_HEADER.to_string(),
-        format!(
-            "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
-            BASE64.encode(certified_data),
-            BASE64.encode(witness),
-            BASE64.encode(expr_path)
-        ),
-    ));
-}
-
-// Encoding
-fn cbor_encode(value: &impl Serialize) -> Vec<u8> {
-    let mut serializer = serde_cbor::Serializer::new(Vec::new());
-    serializer
-        .self_describe()
-        .expect("Failed to self describe CBOR");
-    value
-        .serialize(&mut serializer)
-        .expect("Failed to serialize value");
-    serializer.into_inner()
 }

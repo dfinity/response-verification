@@ -175,7 +175,7 @@ mod tests {
             response_headers.headers,
             vec![
                 (
-                    "ic-certificateexpression".into(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_lowercase(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("accept-encoding".into(), "gzip".into()),
@@ -197,7 +197,7 @@ mod tests {
             response_headers.headers,
             vec![
                 (
-                    "ic-certificateexpression".into(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_lowercase(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("accept-encoding".into(), "gzip".into()),
@@ -233,7 +233,7 @@ mod tests {
             .with_status_code(200)
             .with_headers(vec![
                 (
-                    "IC-CertificateExpression".into(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -279,7 +279,7 @@ mod tests {
             .with_status_code(200)
             .with_headers(vec![
                 (
-                    "IC-CertificateExpression".into(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -325,9 +325,9 @@ mod tests {
         let response_without_excluded_headers = HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![
-                ("IC-Certificate".into(), CERTIFICATE.into()),
+                (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
-                    "IC-CertificateExpression".into(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -375,9 +375,9 @@ mod tests {
         let response_without_excluded_headers = HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![
-                ("IC-Certificate".into(), CERTIFICATE.into()),
+                (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
-                    "IC-CertificateExpression".into(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
@@ -426,9 +426,9 @@ mod tests {
         HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![
-                ("IC-Certificate".into(), CERTIFICATE.into()),
+                (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
-                    "IC-CertificateExpression".into(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(cel_expression),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),

@@ -190,7 +190,7 @@ To perform a full certification, a CEL expression created from [DefaultCelBuilde
 For example:
 
 ```rust
-use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
+use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, CERTIFICATE_EXPRESSION_HEADER_NAME};
 
 let cel_expr = DefaultCelBuilder::full_certification()
     .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
@@ -214,7 +214,7 @@ let response = HttpResponse::builder()
     .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
-        ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
     ])
     .with_body(vec![1, 2, 3, 4, 5, 6])
     .build();
@@ -229,7 +229,7 @@ To perform a response-only certification, a CEL expression created from [Default
 For example:
 
 ```rust
-use ic_http_certification::{HttpCertification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification};
+use ic_http_certification::{HttpCertification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, CERTIFICATE_EXPRESSION_HEADER_NAME};
 
 let cel_expr = DefaultCelBuilder::response_only_certification()
     .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
@@ -243,7 +243,7 @@ let response = HttpResponse::builder()
     .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
-        ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
     ])
     .with_body(vec![1, 2, 3, 4, 5, 6])
     .build();
@@ -296,7 +296,7 @@ The [HttpCertificationTree] can be easily initialized with the [Default] trait a
 For example:
 
 ```rust
-use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath};
+use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath, CERTIFICATE_EXPRESSION_HEADER_NAME};
 
 let cel_expr = DefaultCelBuilder::full_certification()
     .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
@@ -320,7 +320,7 @@ let response = HttpResponse::builder()
     .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
-        ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
     ])
     .with_body(vec![1, 2, 3, 4, 5, 6])
     .build();

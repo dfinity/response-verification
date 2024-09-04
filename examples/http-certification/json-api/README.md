@@ -198,8 +198,6 @@ Responses are certified with several steps, which are encapsulated into a reusab
 For more information on creating certifications, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#creating-certifications).
 
 ```rust
-const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
-
 fn certify_response(
     request: HttpRequest,
     response: &mut HttpResponse<'static>,
@@ -228,7 +226,7 @@ fn certify_response(
 
         // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
         response.add_header((
-            IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+            CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
             cel_expr_str.to_string(),
         ));
 
@@ -313,7 +311,7 @@ fn certify_not_found_response() {
 
         // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
         response.add_header((
-            IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+            CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
             cel_expr_str.to_string(),
         ));
 
@@ -344,39 +342,6 @@ fn certify_not_found_response() {
 ## Serving responses
 
 When serving a certified response, an additional header must be added to the response that will act as proof of certification for the [HTTP gateway](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into a separate function:
-
-```rust
-const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
-fn add_certificate_header(
-    response: &mut HttpResponse,
-    entry: &HttpCertificationTreeEntry,
-    request_url: &str,
-    expr_path: &[String],
-) {
-    // get the current certified data of the canister, note that this will not be available in update calls
-    let certified_data = data_certificate().expect("No data certificate available");
-
-    // generate a witness for the certification entry and current request URL
-    let witness = HTTP_TREE.with_borrow(|http_tree| {
-        let witness = http_tree.witness(entry, request_url).unwrap();
-        cbor_encode(&witness)
-    });
-
-    // encode the path in the tree that holds the certification
-    let expr_path = cbor_encode(&expr_path);
-
-    // create the header value and insert it into the response
-    response.add_header((
-        IC_CERTIFICATE_HEADER.to_string(),
-        format!(
-            "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
-            BASE64.encode(certified_data),
-            BASE64.encode(witness),
-            BASE64.encode(expr_path)
-        ),
-    ));
-}
-```
 
 With this reusable function, serving certified responses is relatively straightforward:
 
@@ -414,12 +379,19 @@ fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'stati
 
     let mut response = certified_response.response;
 
-    add_certificate_header(
-        &mut response,
-        &HttpCertificationTreeEntry::new(&tree_path, certified_response.certification),
-        &request_path,
-        &tree_path.to_expr_path(),
-    );
+    HTTP_TREE.with_borrow(|http_tree| {
+        add_certificate_header(
+            data_certificate().expect("No data certificate available"),
+            &mut response,
+            &http_tree
+                .witness(
+                    &HttpCertificationTreeEntry::new(&tree_path, certified_response.certification),
+                    &request_path,
+                )
+                .unwrap(),
+            &tree_path.to_expr_path(),
+        );
+    });
 
     response
 }

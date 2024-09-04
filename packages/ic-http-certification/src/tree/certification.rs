@@ -1,7 +1,7 @@
 use crate::{
     request_hash, response_hash, DefaultCelBuilder, DefaultFullCelExpression,
     DefaultResponseOnlyCelExpression, HttpCertificationError, HttpCertificationResult, HttpRequest,
-    HttpResponse,
+    HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use ic_certification::Hash;
 use ic_representation_independent_hash::hash;
@@ -117,7 +117,7 @@ impl HttpCertification {
         let mut found_header = false;
 
         for (header_name, header_value) in response.headers() {
-            if header_name.to_lowercase() == "ic-certificateexpression" {
+            if header_name.to_lowercase() == CERTIFICATE_EXPRESSION_HEADER_NAME.to_lowercase() {
                 match header_value == cel_expr {
                     true => {
                         if found_header {
@@ -196,7 +196,7 @@ mod tests {
         let response = &HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![(
-                "IC-CertificateExpression".to_string(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -252,7 +252,7 @@ mod tests {
         let response = &HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![(
-                "IC-CertificateExpression".to_string(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 wrong_cel_expr.to_string(),
             )])
             .build();
@@ -277,8 +277,14 @@ mod tests {
         let response = &HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![
-                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
-                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                    cel_expr.to_string(),
+                ),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                    cel_expr.to_string(),
+                ),
             ])
             .build();
 
@@ -307,7 +313,7 @@ mod tests {
         let response = &HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![(
-                "IC-CertificateExpression".to_string(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -373,7 +379,7 @@ mod tests {
         let response = &HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![(
-                "IC-CertificateExpression".to_string(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 wrong_cel_expr.to_string(),
             )])
             .build();
@@ -403,8 +409,14 @@ mod tests {
         let response = &HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![
-                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
-                ("IC-CertificateExpression".to_string(), cel_expr.to_string()),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                    cel_expr.to_string(),
+                ),
+                (
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                    cel_expr.to_string(),
+                ),
             ])
             .build();
         let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();

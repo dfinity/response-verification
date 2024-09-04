@@ -1,7 +1,7 @@
 mod tests {
     use ic_certificate_verification::CertificateVerificationError;
     use ic_certification_testing::{CertificateBuilder, CertificateData};
-    use ic_http_certification::{HttpRequest, HttpResponse};
+    use ic_http_certification::{HttpRequest, HttpResponse, CERTIFICATE_HEADER_NAME};
     use ic_response_verification::types::{VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification::ResponseVerificationError;
@@ -44,7 +44,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
         let expected_response = VerifiedResponse {
             status_code: None,
@@ -102,7 +102,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
         let expected_response = VerifiedResponse {
             status_code: None,
@@ -159,7 +159,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
         let expected_response = VerifiedResponse {
             status_code: None,
@@ -216,7 +216,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(b"Hello IC!")
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(
@@ -265,7 +265,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(
@@ -318,7 +318,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(
@@ -373,7 +373,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(
@@ -426,7 +426,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(
@@ -476,7 +476,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(
@@ -524,7 +524,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(
@@ -572,7 +572,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body.as_bytes())
-            .with_headers(vec![("IC-Certificate".into(), certificate_header)])
+            .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
 
         let result = verify_request_response_pair(

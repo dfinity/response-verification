@@ -1,17 +1,16 @@
-use base64::engine::general_purpose::STANDARD as BASE64;
-use base64::Engine;
 use ic_cdk::{
     api::{data_certificate, set_certified_data},
     *,
 };
 use ic_http_certification::{
-    DefaultCelBuilder, DefaultFullCelExpression, DefaultResponseCertification,
-    DefaultResponseOnlyCelExpression, HttpCertification, HttpCertificationPath,
-    HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
+    utils::add_certificate_header, DefaultCelBuilder, DefaultFullCelExpression,
+    DefaultResponseCertification, DefaultResponseOnlyCelExpression, HttpCertification,
+    HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
+    HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use lazy_static::lazy_static;
 use matchit::{Params, Router};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::{cell::RefCell, collections::HashMap};
 
 mod types;
@@ -210,7 +209,7 @@ fn certify_not_found_response() {
 
         // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
         response.add_header((
-            IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+            CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
             cel_expr_str.to_string(),
         ));
 
@@ -237,7 +236,6 @@ fn certify_not_found_response() {
     });
 }
 
-const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 fn certify_response(
     request: HttpRequest,
     response: &mut HttpResponse<'static>,
@@ -266,7 +264,7 @@ fn certify_response(
 
         // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
         response.add_header((
-            IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+            CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
             cel_expr_str.to_string(),
         ));
 
@@ -366,12 +364,19 @@ fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'stati
 
     let mut response = certified_response.response;
 
-    add_certificate_header(
-        &mut response,
-        &HttpCertificationTreeEntry::new(&tree_path, certified_response.certification),
-        &request_path,
-        &tree_path.to_expr_path(),
-    );
+    HTTP_TREE.with_borrow(|http_tree| {
+        add_certificate_header(
+            data_certificate().expect("No data certificate available"),
+            &mut response,
+            &http_tree
+                .witness(
+                    &HttpCertificationTreeEntry::new(&tree_path, certified_response.certification),
+                    &request_path,
+                )
+                .unwrap(),
+            &tree_path.to_expr_path(),
+        );
+    });
 
     response
 }
@@ -449,49 +454,7 @@ fn no_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> Http
     create_response(400, vec![])
 }
 
-const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
-fn add_certificate_header(
-    response: &mut HttpResponse,
-    entry: &HttpCertificationTreeEntry,
-    request_url: &str,
-    expr_path: &[String],
-) {
-    // get the current certified data of the canister, note that this will not be available in update calls
-    let certified_data = data_certificate().expect("No data certificate available");
-
-    // generate a witness for the certification entry and current request URL
-    let witness = HTTP_TREE.with_borrow(|http_tree| {
-        let witness = http_tree.witness(entry, request_url).unwrap();
-        cbor_encode(&witness)
-    });
-
-    // encode the path in the tree that holds the certification
-    let expr_path = cbor_encode(&expr_path);
-
-    // create the header value and insert it into the response
-    response.add_header((
-        IC_CERTIFICATE_HEADER.to_string(),
-        format!(
-            "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
-            BASE64.encode(certified_data),
-            BASE64.encode(witness),
-            BASE64.encode(expr_path)
-        ),
-    ));
-}
-
 // Encoding
-
-fn cbor_encode(value: &impl Serialize) -> Vec<u8> {
-    let mut serializer = serde_cbor::Serializer::new(Vec::new());
-    serializer
-        .self_describe()
-        .expect("Failed to self describe CBOR");
-    value
-        .serialize(&mut serializer)
-        .expect("Failed to serialize value");
-    serializer.into_inner()
-}
 
 fn json_decode<T>(value: &[u8]) -> T
 where
