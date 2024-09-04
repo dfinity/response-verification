@@ -1,5 +1,6 @@
 use crate::agent::create_agent;
 use anyhow::{anyhow, Result};
+use core::panic;
 use ic_agent::export::Principal;
 use ic_agent::Agent;
 use ic_http_certification::{HttpRequest, HttpResponse};
@@ -9,6 +10,7 @@ use ic_utils::interfaces::http_request::HeaderField;
 use ic_utils::interfaces::HttpRequestCanister;
 use std::env;
 use std::fs;
+use std::println;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 mod agent;
@@ -23,12 +25,20 @@ fn get_current_time() -> u128 {
 }
 
 fn read_file(file_path: &str) -> Result<Vec<u8>> {
-    let file = fs::read(format!(
+    let path = format!(
         "packages/ic-response-verification-tests/dfx-project/{}",
         file_path
-    ))?;
-
-    Ok(file)
+    );
+    match fs::read(path.clone()) {
+        Ok(file) => {
+            println!("Read file: {}", path);
+            Ok(file)
+        }
+        Err(e) => {
+            println!("Error reading file: {} from {}", e, path);
+            Err(e.into())
+        }
+    }
 }
 
 #[tokio::main]
@@ -117,6 +127,16 @@ async fn v2_test(canister_id: &str, agent: &Agent) -> Result<()> {
         ["GET", "/world/", "dist/frontend/index.html"], // load hello/index.html when requesting /hello/ with trailing slash
         ["GET", "/world/not-found", "dist/frontend/index.html"], // fallback to index.html on not found path that has an existing asset on a sub path
         ["GET", "/hello/not-found", "dist/frontend/index.html"], // fallback to index.html on not found path that has an existing asset on a sub path
+        [
+            "GET",
+            "/capture-d%E2%80%99%C3%A9cran-2023-10-26-%C3%A0.txt",
+            "canisters/frontend/assets/capture-d’écran-2023-10-26-à.txt",
+        ], // Load an asset with special characters encoded
+        [
+            "GET",
+            "/another%20sample%20asset.txt",
+            "canisters/frontend/assets/another sample asset.txt",
+        ], // Load an asset with spaces
     ];
 
     for [http_method, http_path, file_path] in test_cases.into_iter() {
