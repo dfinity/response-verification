@@ -653,7 +653,7 @@ asset_router
     .unwrap();
 ```
 
-To delete the `app.js`asset, along with the alternative encodings:
+To delete the `app.js` asset, along with the alternative encodings:
 
 ```rust
 # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
