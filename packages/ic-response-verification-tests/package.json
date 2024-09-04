@@ -2,11 +2,9 @@
   "name": "ic-response-verification-tests",
   "version": "2.6.0",
   "dependencies": {
-    "@dfinity/response-verification": "workspace:*",
-    "isomorphic-fetch": "^3.0.0"
+    "@dfinity/response-verification": "workspace:*"
   },
   "devDependencies": {
-    "@types/isomorphic-fetch": "^0.0.37",
     "@types/node": "^18.0.0",
     "ts-node": "^10.9.1"
   }
