@@ -35,4 +35,4 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: e2e tests
-        run: ./scripts/e2e.sh
+        run: ./scripts/e2e.sh --use-latest-dfx
