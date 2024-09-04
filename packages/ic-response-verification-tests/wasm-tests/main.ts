@@ -6,7 +6,6 @@ import {
   verifyRequestResponsePair,
 } from '@dfinity/response-verification';
 
-import fetch from 'isomorphic-fetch';
 import { idlFactory } from './http-interface/canister_http_interface';
 import {
   HttpRequest,
@@ -21,7 +20,7 @@ async function createAgentAndActor(
   gatewayUrl: string,
   canisterId: Principal,
 ): Promise<[HttpAgent, ActorSubclass<_SERVICE>]> {
-  const agent = new HttpAgent({ host: gatewayUrl, fetch });
+  const agent = new HttpAgent({ host: gatewayUrl });
   await agent.fetchRootKey();
 
   const actor = Actor.createActor<_SERVICE>(idlFactory, {
