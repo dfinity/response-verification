@@ -14,17 +14,16 @@ repository.workspace = true
 license.workspace = true
 homepage.workspace = true
 
-[features]
-serde = ["ic-certification/serde", "ic-certification/serde_bytes"]
-
 [dependencies]
 candid.workspace = true
 serde.workspace = true
 http.workspace = true
 urlencoding.workspace = true
 ic-representation-independent-hash.workspace = true
-ic-certification.workspace = true
+ic-certification = { workspace = true, features = ["serde"] }
 thiserror.workspace = true
+base64.workspace = true
+serde_cbor.workspace = true
 
 [dev-dependencies]
 rstest.workspace = true

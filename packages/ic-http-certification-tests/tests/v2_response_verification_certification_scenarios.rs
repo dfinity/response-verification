@@ -15,7 +15,7 @@ mod tests {
     };
     use ic_http_certification::{
         HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
-        HttpResponse,
+        HttpResponse, CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::{
         types::{VerificationInfo, VerifiedResponse},
@@ -83,7 +83,10 @@ mod tests {
             .map(|(key, value)| (key.to_lowercase(), String::from(value)))
             .collect::<Vec<_>>()
             .clone();
-        expected_headers.push(("IC-Certificate".to_string(), certificate_header.clone()));
+        expected_headers.push((
+            CERTIFICATE_HEADER_NAME.to_string(),
+            certificate_header.clone(),
+        ));
 
         let expected_certified_response = VerifiedResponse {
             body: expected_response.body().to_vec(),
@@ -91,7 +94,7 @@ mod tests {
             status_code: Some(expected_response.status_code()),
         };
 
-        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -150,7 +153,7 @@ mod tests {
             ),
         );
 
-        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -205,7 +208,7 @@ mod tests {
             ),
         );
 
-        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -272,7 +275,7 @@ mod tests {
             ),
         );
 
-        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -327,7 +330,7 @@ mod tests {
             ),
         );
 
-        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -391,7 +394,10 @@ mod tests {
             .map(|(key, value)| (key.to_lowercase(), String::from(value)))
             .collect::<Vec<_>>()
             .clone();
-        expected_headers.push(("IC-Certificate".to_string(), certificate_header.clone()));
+        expected_headers.push((
+            CERTIFICATE_HEADER_NAME.to_string(),
+            certificate_header.clone(),
+        ));
 
         let expected_certified_response = VerifiedResponse {
             body: expected_response.body().to_vec(),
@@ -399,7 +405,7 @@ mod tests {
             status_code: Some(expected_response.status_code()),
         };
 
-        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -447,7 +453,7 @@ mod tests {
             ),
         );
 
-        expected_response.add_header(("IC-Certificate".to_string(), certificate_header));
+        expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
         let result = verify_request_response_pair(
             request,
@@ -472,6 +478,7 @@ mod fixtures {
         DefaultCelBuilder, DefaultFullCelExpression, DefaultResponseCertification,
         DefaultResponseOnlyCelExpression, HttpCertification, HttpCertificationPath,
         HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
+        CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_response_verification_test_utils::{deflate_encode, gzip_encode, hash};
     use rstest::*;
@@ -494,7 +501,7 @@ mod fixtures {
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -518,7 +525,7 @@ mod fixtures {
             .with_headers(vec![
                 ("Content-Type".into(), "text/javascript".into()),
                 ("Content-Encoding".into(), "gzip".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -542,7 +549,7 @@ mod fixtures {
             .with_headers(vec![
                 ("Content-Type".into(), "text/plain".into()),
                 ("Content-Encoding".into(), "identity".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -565,7 +572,7 @@ mod fixtures {
             .with_body(body)
             .with_headers(vec![
                 ("Location".into(), "/new-path".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -588,7 +595,7 @@ mod fixtures {
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "identity".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -616,7 +623,7 @@ mod fixtures {
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -640,7 +647,7 @@ mod fixtures {
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -682,7 +689,7 @@ mod fixtures {
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }
@@ -729,7 +736,7 @@ mod fixtures {
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
                 ("ETag".into(), etag),
-                ("IC-CertificateExpression".into(), cel.to_string()),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
             ])
             .build()
     }

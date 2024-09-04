@@ -6,7 +6,7 @@ use ic_certification::HashTree;
 use ic_http_certification::{
     DefaultCelBuilder, DefaultResponseCertification, Hash, HttpCertification,
     HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
-    HttpResponse,
+    HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use std::{borrow::Cow, cell::RefCell, collections::HashMap, rc::Rc};
 
@@ -136,8 +136,6 @@ fn request_key(path: &str, encoding: Option<String>) -> RequestKey {
         encoding,
     }
 }
-
-const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 
 fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
     maybe_encoding.map(|enc| enc.to_string())
@@ -725,7 +723,7 @@ impl<'content> AssetRouter<'content> {
             ))
             .build();
         let cel_expr_str = cel_expr.to_string();
-        headers.push((IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr_str));
+        headers.push((CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr_str));
 
         let request = HttpRequest::get(url).build();
 
@@ -1945,7 +1943,7 @@ mod tests {
                 ("content-length".to_string(), "0".to_string()),
                 ("location".to_string(), "/css/app-ba74b708.css".to_string()),
                 (
-                    IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                     cel_expr.clone(),
                 ),
             ])
@@ -1955,7 +1953,7 @@ mod tests {
             .with_headers(vec![
                 ("content-length".to_string(), "0".to_string()),
                 ("location".to_string(), "/".to_string()),
-                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
             ])
             .build();
 
@@ -2454,7 +2452,7 @@ mod tests {
             .into_iter()
             .chain(vec![
                 ("content-length".to_string(), body.len().to_string()),
-                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
             ])
             .collect();
 

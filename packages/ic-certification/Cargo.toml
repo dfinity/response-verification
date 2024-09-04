@@ -32,4 +32,5 @@ serde_cbor.workspace = true
 rstest.workspace = true
 
 [features]
-default = ['serde', 'serde_bytes']
+serde = ['dep:serde', 'dep:serde_bytes']
+default = ['serde']

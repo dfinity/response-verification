@@ -54,7 +54,7 @@ mod tests {
     use super::*;
     use crate::{
         request_hash, response_hash, DefaultCelBuilder, DefaultResponseCertification, HttpRequest,
-        HttpResponse,
+        HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_representation_independent_hash::hash;
     use rstest::*;
@@ -111,7 +111,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![(
-                "IC-CertificateExpression".to_string(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -154,7 +154,7 @@ mod tests {
         let response = HttpResponse::builder()
             .with_status_code(200)
             .with_headers(vec![(
-                "IC-CertificateExpression".to_string(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),
             )])
             .build();
