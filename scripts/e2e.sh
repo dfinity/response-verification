@@ -1,8 +1,31 @@
+#!/bin/bash
+
+
+# Set the dfx command, this might be overwritten
+DFX=dfx
+
+# By default, we use the local DFX
+USE_LATEST_DFX=0
+
+# in case we decide to use the latest dfx
 SDK_GIT_BRANCH="master"
+SDK_REPO_DIR="$(pwd)/tmp/sdk"
+
+# Function to display usage
+print_usage() {
+  echo "Run the end to end tests"
+  echo
+  echo "Usage: $0 [options]"
+  echo
+  echo "Options:"
+  echo "  -h                Show this help message and exit"
+  echo "  --use-latest-dfx  Clone, build and use the latest dfx"
+  echo
+}
+
 
 # Download the SDK repo so we can build and test against the latest changes
 download_sdk_repo() {
-  SDK_REPO_DIR="$(pwd)/tmp/sdk"
 
   if [ -d "$SDK_REPO_DIR" ]; then
     echo "SDK repo already cloned, updating..."
@@ -24,16 +47,22 @@ download_sdk_repo() {
   fi
 }
 
+# check if the $DFX command exists
+check_dfx_command() {
+  if ! command -v $DFX &> /dev/null
+  then
+      echo "$DFX command was not found in your path"
+      exit 3
+  fi
+}
+
 build_dfx() {
   echo "Building DFX..."
 
-  if [ -z "$SDK_REPO_DIR" ]; then
-    echo "SDK_REPO_DIR must be defined!"
-    clean_exit
-  fi
-
   pushd "$SDK_REPO_DIR" || clean_exit
   cargo build -p dfx
+
+  # override dfx path
   DFX="$(pwd)/target/debug/dfx"
   popd || clean_exit
 
@@ -43,12 +72,9 @@ build_dfx() {
 dfx_start() {
   echo "Starting DFX..."
 
-  if [ -z "$DFX" ]; then
-    echo "DFX must be defined!"
-    clean_exit
-  fi
+  check_dfx_command
 
-  "$DFX" start --clean --background --log file --logfile "$SDK_REPO_DIR/replica.log" -vv
+  "$DFX" start --clean --background -qq --log file --logfile "./replica.log" -vv
 
   DFX_REPLICA_PORT=$("$DFX" info replica-port)
   DFX_REPLICA_ADDRESS="http://localhost:$DFX_REPLICA_PORT"
@@ -59,10 +85,7 @@ dfx_start() {
 dfx_stop() {
   echo "Stopping DFX..."
 
-  if [ -z "$DFX" ]; then
-    echo "DFX must be defined!"
-    clean_exit
-  fi
+  check_dfx_command
 
   "$DFX" stop
 }
@@ -70,10 +93,7 @@ dfx_stop() {
 deploy_dfx_project() {
   echo "Deploying DFX project..."
 
-  if [ -z "$DFX" ]; then
-    echo "DFX must be defined!"
-    clean_exit
-  fi
+  check_dfx_command
 
   DFX_PROJECT_DIR="$(pwd)/packages/ic-response-verification-tests/dfx-project"
 
@@ -117,10 +137,36 @@ run_e2e_tests() {
   popd || clean_exit
 }
 
+# Parse the script arguments
+for arg in "$@"; do
+  case $arg in
+    --use-latest-dfx)
+      USE_LATEST_DFX=1
+      shift
+      ;;
+    -h)
+      print_usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $arg"
+      exit 1
+      ;;
+  esac
+done
+
+
 pnpm i --frozen-lockfile
-download_sdk_repo
-build_dfx
+
+if [ $USE_LATEST_DFX -eq 1 ]; then
+  # build latest dfx
+  download_sdk_repo
+  build_dfx
+fi
+
 dfx_start
 deploy_dfx_project
 run_e2e_tests
 dfx_stop
+
+echo "TESTS PASSED!"
