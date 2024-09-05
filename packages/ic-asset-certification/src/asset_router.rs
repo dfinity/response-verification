@@ -852,9 +852,7 @@ mod tests {
     use super::*;
     use crate::AssetFallbackConfig;
     use ic_certification::hash_tree::SubtreeLookupResult;
-    use ic_http_certification::{
-        assert_response_eq, cel::DefaultFullCelExpressionBuilder, HeaderField,
-    };
+    use ic_http_certification::{cel::DefaultFullCelExpressionBuilder, HeaderField};
     use rstest::*;
     use std::vec;
 
@@ -883,7 +881,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -968,7 +966,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1081,7 +1079,7 @@ mod tests {
             witness.lookup_subtree(&requested_expr_path),
             SubtreeLookupResult::Absent
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1138,7 +1136,7 @@ mod tests {
             witness.lookup_subtree(&requested_expr_path),
             SubtreeLookupResult::Absent
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1198,7 +1196,7 @@ mod tests {
             witness.lookup_subtree(&requested_expr_path),
             SubtreeLookupResult::Absent
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1248,7 +1246,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1274,7 +1272,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1305,7 +1303,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1352,7 +1350,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1383,7 +1381,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1430,7 +1428,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1461,7 +1459,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1492,7 +1490,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1673,7 +1671,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1708,7 +1706,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1743,7 +1741,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1790,7 +1788,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1822,7 +1820,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1883,7 +1881,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1915,7 +1913,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
 
         asset_router
             .delete_assets(
@@ -1980,14 +1978,14 @@ mod tests {
             css_witness.lookup_subtree(&css_expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(css_response, expected_css_response);
+        assert_eq!(css_response, expected_css_response);
 
         assert_eq!(old_url_expr_path, vec!["http_expr", "old-url", "<$>"]);
         assert!(matches!(
             old_url_witness.lookup_subtree(&old_url_expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(old_url_response, expected_old_url_response);
+        assert_eq!(old_url_response, expected_old_url_response);
 
         asset_router
             .delete_assets(
@@ -2028,14 +2026,14 @@ mod tests {
             css_witness.lookup_subtree(&css_expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(css_response, expected_css_response);
+        assert_eq!(css_response, expected_css_response);
 
         assert_eq!(old_url_expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             old_url_witness.lookup_subtree(&old_url_expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(old_url_response, expected_old_url_response);
+        assert_eq!(old_url_response, expected_old_url_response);
 
         asset_router
             .delete_assets(
@@ -2081,14 +2079,14 @@ mod tests {
             css_witness.lookup_subtree(&css_expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(css_response, expected_css_response);
+        assert_eq!(css_response, expected_css_response);
 
         assert_eq!(old_url_expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             old_url_witness.lookup_subtree(&old_url_expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(old_url_response, expected_old_url_response);
+        assert_eq!(old_url_response, expected_old_url_response);
 
         asset_router
             .delete_assets(
@@ -2164,7 +2162,7 @@ mod tests {
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
         ));
-        assert_response_eq(response, expected_response);
+        assert_eq!(response, expected_response);
         assert_eq!(
             asset_router.root_hash(),
             http_certification_tree.borrow().root_hash()
@@ -2176,6 +2174,9 @@ mod tests {
         b"<html><body><h1>Hello World!</h1></body></html>".to_vec()
     }
 
+    // Gzip compressed version of `index_html_body`,
+    // compressed using https://www.zickty.com/texttogzip/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn index_html_gz_body() -> Vec<u8> {
         vec![
@@ -2185,6 +2186,9 @@ mod tests {
         ]
     }
 
+    // Deflate compressed version of `index_html_body`,
+    // compressed using https://www.zickty.com/texttogzip/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn index_html_zz_body() -> Vec<u8> {
         vec![
@@ -2193,6 +2197,9 @@ mod tests {
         ]
     }
 
+    // Deflate compressed version of `index_html_body`,
+    // compressed using https://facia.dev/tools/compress-decompress/brotli-compress/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn index_html_br_body() -> Vec<u8> {
         vec![
@@ -2206,6 +2213,9 @@ mod tests {
         b"console.log('Hello World!');".to_vec()
     }
 
+    // Gzip compressed version of `app_js_body`,
+    // compressed using https://www.zickty.com/texttogzip/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn app_js_gz_body() -> Vec<u8> {
         vec![
@@ -2215,6 +2225,9 @@ mod tests {
         ]
     }
 
+    // Deflate compressed version of `app_js_body`,
+    // compressed using https://www.zickty.com/texttogzip/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn app_js_zz_body() -> Vec<u8> {
         vec![
@@ -2223,6 +2236,9 @@ mod tests {
         ]
     }
 
+    // Brotli compressed version of `app_js_body`,
+    // compressed using https://facia.dev/tools/compress-decompress/brotli-compress/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn app_js_br_body() -> Vec<u8> {
         vec![
@@ -2241,6 +2257,9 @@ mod tests {
         b"<html><body><h1>404 Not Found!</h1></body></html>".to_vec()
     }
 
+    // Gzip compressed version of `not_found_html_body`,
+    // compressed using https://www.zickty.com/texttogzip/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn not_found_html_gz_body() -> Vec<u8> {
         vec![
@@ -2251,6 +2270,9 @@ mod tests {
         ]
     }
 
+    // Deflate compressed version of `not_found_html_body`,
+    // compressed using https://www.zickty.com/texttogzip/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn not_found_html_zz_body() -> Vec<u8> {
         vec![
@@ -2260,6 +2282,9 @@ mod tests {
         ]
     }
 
+    // Brotli compressed version of `not_found_html_body`,
+    // compressed using https://facia.dev/tools/compress-decompress/brotli-compress/,
+    // and then converted to bytes using https://conv.darkbyte.ru/.
     #[fixture]
     fn not_found_html_br_body() -> Vec<u8> {
         vec![
