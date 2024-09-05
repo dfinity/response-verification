@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **ic-asset-certification**: allow deleting assets
 - **ic-asset-certification**: use owned string internally, remove less common HTTP method helpers and add helper docs
 - **ic-asset-certification**: improve handling of URLs with full domain
 - improve http request and response types
