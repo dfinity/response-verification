@@ -12,7 +12,11 @@
       "build": [
         "pnpm -F http-certification-custom-assets-frontend build",
         "cargo build --target wasm32-unknown-unknown --release -p http_certification_custom_assets_backend --locked"
-      ]
+      ],
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "src/declarations"
+      }
     }
   }
 }

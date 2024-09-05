@@ -10,3 +10,5 @@ packages:
   - 'examples/http-certification/assets/src/frontend'
   - 'examples/http-certification/custom-assets/src/frontend'
   - 'examples/http-certification/json-api/src/tests'
+  - 'examples/http-certification/custom-assets/src/tests'
+  - 'examples/http-certification/skip-certification/src/tests'

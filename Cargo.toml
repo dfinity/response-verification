@@ -7,6 +7,7 @@ members = [
     "examples/http-certification/json-api/src/backend",
     "examples/http-certification/assets/src/backend",
     "examples/http-certification/custom-assets/src/backend",
+    "examples/http-certification/skip-certification/src/backend",
     "packages/ic-asset-certification",
     "packages/ic-cbor",
     "packages/ic-certification",

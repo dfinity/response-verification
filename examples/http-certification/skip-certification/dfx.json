@@ -1,0 +1,16 @@
+{
+  "dfx": "0.18.0",
+  "version": 1,
+  "output_env_file": ".env",
+  "canisters": {
+    "backend": {
+      "candid": "src/backend/backend.did",
+      "package": "http_certification_skip_certification_backend",
+      "type": "rust",
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "src/declarations"
+      }
+    }
+  }
+}
