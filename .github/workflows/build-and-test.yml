@@ -68,6 +68,20 @@ jobs:
           dfx generate backend
           dfx build backend --check
 
+      - name: DFX prepare HTTP Certification Custom Assets
+        working-directory: examples/http-certification/custom-assets
+        run: |
+          dfx canister create backend
+          dfx generate backend
+          dfx build backend --check
+
+      - name: DFX prepare HTTP Certification Skip Certification
+        working-directory: examples/http-certification/skip-certification
+        run: |
+          dfx canister create backend
+          dfx generate backend
+          dfx build backend --check
+
       - name: Build NPM packages
         run: pnpm build
 

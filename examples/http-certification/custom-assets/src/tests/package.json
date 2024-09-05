@@ -1,0 +1,10 @@
+{
+  "name": "http-certification-custom-assets-tests",
+  "private": true,
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@dfinity/response-verification": "workspace:*"
+  }
+}
