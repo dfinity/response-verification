@@ -535,6 +535,17 @@
 //! multiple responses may be generated for the same asset. To ensure that all generated responses are deleted,
 //! the [delete_assets](AssetRouter::delete_assets) function accepts the same configuration.
 //!
+//! If a configuration different to the one used to certify assets in the first place is provided,
+//! one of two things can happen.
+//!
+//! If the configuration inclues a file that was not certified in the first place, it will be silently ignored.
+//! For example, if the configuration provided to `certify_assets` includes the Brotli and Gzip encodings, but the
+//! configuration provided to `delete_assets` includes Brotli, Gzip and Deflate, the Brotli and Gzip encoded files will be deleted, while the Deflate file is ignored, since it doesn't exist.
+//!
+//! If the configuration excludes a file that was certified, it will not be deleted. For example, if the configuration,
+//! provided to `certify_assets` includes the Brotli and Gzip encodings, but the configuration provided to `delete_assets`
+//! only includes Brotli, then the Gzip file will not be deleted.
+//!
 //! Using the same base example used to demonstrate certifying assets:
 //!
 //! ```rust

@@ -22,7 +22,7 @@ use std::borrow::Cow;
 /// assert_eq!(response.body(), b"Hello, World!");
 /// assert_eq!(response.upgrade(), Some(false));
 /// ```
-#[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, CandidType, Deserialize)]
 pub struct HttpResponse<'a> {
     /// HTTP response status code.
     status_code: u16,
@@ -393,6 +393,21 @@ impl<'a> From<HttpResponse<'a>> for HttpResponseBuilder<'a> {
     }
 }
 
+impl PartialEq for HttpResponse<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        let mut a_headers = self.headers().to_vec();
+        a_headers.sort();
+
+        let mut b_headers = other.headers().to_vec();
+        b_headers.sort();
+
+        self.status_code == other.status_code
+            && a_headers == b_headers
+            && self.body == other.body
+            && self.upgrade == other.upgrade
+    }
+}
+
 /// A Candid-encodable representation of an HTTP update response. This struct is used
 /// by the `http_update_request` method of the HTTP Gateway Protocol.
 ///
@@ -532,41 +547,4 @@ impl<'a> From<HttpResponse<'a>> for HttpUpdateResponse<'a> {
             body: response.body,
         }
     }
-}
-
-/// Asserts that two [HTTP responses](HttpResponse) are equal by comparing
-/// the status code, *sorted* headers, body, and upgrade flag of the two responses.
-///
-/// # Examples
-///
-/// ```
-/// use ic_http_certification::{HttpResponse, assert_response_eq};
-///
-/// let a = HttpResponse::builder()
-///     .with_status_code(200)
-///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
-///     .with_body(b"Hello, World!")
-///     .with_upgrade(false)
-///     .build();
-///
-/// let b = HttpResponse::builder()
-///     .with_status_code(200)
-///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
-///     .with_body(b"Hello, World!")
-///     .with_upgrade(false)
-///     .build();
-///
-/// assert_response_eq(a, b);
-/// ```
-pub fn assert_response_eq(a: HttpResponse, b: HttpResponse) {
-    let mut a_headers = a.headers().to_vec();
-    a_headers.sort();
-
-    let mut b_headers = b.headers().to_vec();
-    b_headers.sort();
-
-    assert_eq!(a.status_code(), b.status_code());
-    assert_eq!(a.body(), b.body());
-    assert_eq!(a.upgrade(), b.upgrade());
-    assert_eq!(a_headers, b_headers);
 }
