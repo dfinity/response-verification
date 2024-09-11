@@ -131,5 +131,5 @@ features = ["derive"]
 
 [workspace.dependencies.miracl_core_bls12381]
 version = "4.2"
-default_features = false
+default-features = false
 features = ["std", "allow_alt_compress"]
