@@ -140,7 +140,7 @@ fn request_key(path: &str, encoding: Option<String>) -> RequestKey {
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 
 fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
-    maybe_encoding.map_or(None, |enc| Some(enc.to_string()))
+    maybe_encoding.map(|enc| enc.to_string())
 }
 
 impl<'content> AssetRouter<'content> {
@@ -510,7 +510,7 @@ impl<'content> AssetRouter<'content> {
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
         let response =
-            Self::prepare_static_asset(asset, content_type, additional_headers, encoding.clone())?;
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding)?;
 
         self.tree.borrow_mut().insert(&response.tree_entry);
         self.responses
@@ -527,7 +527,7 @@ impl<'content> AssetRouter<'content> {
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
         let response =
-            Self::prepare_static_asset(asset, content_type, additional_headers, encoding.clone())?;
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding)?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
         self.responses
