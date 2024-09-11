@@ -117,13 +117,31 @@ struct CertifiedAssetResponse<'a> {
 #[derive(Debug)]
 pub struct AssetRouter<'content> {
     tree: Rc<RefCell<HttpCertificationTree>>,
-    responses: HashMap<String, CertifiedAssetResponse<'content>>,
-    encoded_responses: HashMap<(String, String), CertifiedAssetResponse<'content>>,
-    fallback_responses: HashMap<String, CertifiedAssetResponse<'content>>,
-    encoded_fallback_responses: HashMap<(String, String), CertifiedAssetResponse<'content>>,
+    responses: HashMap<RequestKey, CertifiedAssetResponse<'content>>,
+    fallback_responses: HashMap<RequestKey, CertifiedAssetResponse<'content>>,
+}
+
+/// A key created from request data, to retrieve the corresponding response.
+#[derive(Debug, Eq, Hash, PartialEq)]
+pub struct RequestKey {
+    /// Path of the requested asset.
+    pub path: String,
+    /// The encoding of the assset.
+    pub encoding: Option<String>,
+}
+
+fn request_key(path: &str, encoding: Option<String>) -> RequestKey {
+    RequestKey {
+        path: path.to_string(),
+        encoding,
+    }
 }
 
 const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
+
+fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
+    maybe_encoding.map_or(None, |enc| Some(enc.to_string()))
+}
 
 impl<'content> AssetRouter<'content> {
     /// Creates a new [AssetRouter].
@@ -131,9 +149,7 @@ impl<'content> AssetRouter<'content> {
         AssetRouter {
             tree: Default::default(),
             responses: HashMap::new(),
-            encoded_responses: HashMap::new(),
             fallback_responses: HashMap::new(),
-            encoded_fallback_responses: HashMap::new(),
         }
     }
 
@@ -144,9 +160,7 @@ impl<'content> AssetRouter<'content> {
         AssetRouter {
             tree,
             responses: HashMap::new(),
-            encoded_responses: HashMap::new(),
             fallback_responses: HashMap::new(),
-            encoded_fallback_responses: HashMap::new(),
         }
     }
 
@@ -187,7 +201,7 @@ impl<'content> AssetRouter<'content> {
         if let Some(CertifiedAssetResponse {
             response,
             tree_entry,
-        }) = self.responses.get(&req_path)
+        }) = self.responses.get(&request_key(&req_path, None))
         {
             let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
             let expr_path = tree_entry.path.to_expr_path();
@@ -216,7 +230,7 @@ impl<'content> AssetRouter<'content> {
             if let Some(CertifiedAssetResponse {
                 response,
                 tree_entry,
-            }) = self.fallback_responses.get(&scope)
+            }) = self.fallback_responses.get(&request_key(&scope, None))
             {
                 let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
@@ -240,7 +254,7 @@ impl<'content> AssetRouter<'content> {
             if let Some(CertifiedAssetResponse {
                 response,
                 tree_entry,
-            }) = self.fallback_responses.get(&scope)
+            }) = self.fallback_responses.get(&request_key(&scope, None))
             {
                 let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
@@ -296,7 +310,7 @@ impl<'content> AssetRouter<'content> {
                 if let Some(mut encoded_asset) = encoded_asset {
                     encoded_asset.url.clone_from(&asset.url);
 
-                    self.certify_asset_impl(encoded_asset, asset_config, Some(&encoding))?;
+                    self.certify_asset_impl(encoded_asset, asset_config, Some(encoding))?;
                 }
             }
 
@@ -349,7 +363,7 @@ impl<'content> AssetRouter<'content> {
                 if let Some(mut encoded_asset) = encoded_asset {
                     encoded_asset.url.clone_from(&asset.url);
 
-                    self.delete_asset_impl(encoded_asset, asset_config, Some(&encoding))?;
+                    self.delete_asset_impl(encoded_asset, asset_config, Some(encoding))?;
                 }
             }
 
@@ -375,7 +389,7 @@ impl<'content> AssetRouter<'content> {
         &mut self,
         asset: Asset<'content, 'path>,
         asset_config: Option<&NormalizedAssetConfig>,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult {
         match asset_config {
             Some(NormalizedAssetConfig::Pattern {
@@ -433,7 +447,7 @@ impl<'content> AssetRouter<'content> {
         &mut self,
         asset: Asset<'content, 'path>,
         asset_config: Option<&NormalizedAssetConfig>,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult {
         match asset_config {
             Some(NormalizedAssetConfig::Pattern {
@@ -492,23 +506,15 @@ impl<'content> AssetRouter<'content> {
         asset: Asset<'content, 'path>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
         let response =
-            Self::prepare_static_asset(asset, content_type, additional_headers, encoding)?;
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding.clone())?;
 
         self.tree.borrow_mut().insert(&response.tree_entry);
-        match encoding {
-            Some(encoding) => {
-                self.encoded_responses
-                    .insert((asset_url, encoding.to_string()), response);
-            }
-            None => {
-                self.responses.insert(asset_url.clone(), response);
-            }
-        }
-
+        self.responses
+            .insert(request_key(&asset_url, encoding_str(encoding)), response);
         Ok(())
     }
 
@@ -517,22 +523,15 @@ impl<'content> AssetRouter<'content> {
         asset: Asset<'content, 'path>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
         let response =
-            Self::prepare_static_asset(asset, content_type, additional_headers, encoding)?;
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding.clone())?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
-        match encoding {
-            Some(encoding) => {
-                self.encoded_responses
-                    .remove(&(asset_url, encoding.to_string()));
-            }
-            None => {
-                self.responses.remove(&asset_url);
-            }
-        }
+        self.responses
+            .remove(&request_key(&asset_url, encoding_str(encoding)));
 
         Ok(())
     }
@@ -541,7 +540,7 @@ impl<'content> AssetRouter<'content> {
         asset: Asset<'content, 'path>,
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<CertifiedAssetResponse<'content>> {
         let asset_url = asset.url.to_string();
 
@@ -567,7 +566,7 @@ impl<'content> AssetRouter<'content> {
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<()> {
         let response = Self::prepare_fallback_asset(
             asset,
@@ -578,14 +577,10 @@ impl<'content> AssetRouter<'content> {
         )?;
 
         self.tree.borrow_mut().insert(&response.tree_entry);
-
-        if let Some(encoding) = encoding {
-            self.encoded_fallback_responses
-                .insert((fallback_for.scope, encoding.to_string()), response);
-        } else {
-            self.fallback_responses.insert(fallback_for.scope, response);
-        }
-
+        self.fallback_responses.insert(
+            request_key(&fallback_for.scope, encoding_str(encoding)),
+            response,
+        );
         Ok(())
     }
 
@@ -595,7 +590,7 @@ impl<'content> AssetRouter<'content> {
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<()> {
         let response = Self::prepare_fallback_asset(
             asset,
@@ -606,14 +601,8 @@ impl<'content> AssetRouter<'content> {
         )?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
-
-        if let Some(encoding) = encoding {
-            self.encoded_fallback_responses
-                .remove(&(fallback_for.scope, encoding.to_string()));
-        } else {
-            self.fallback_responses.remove(&fallback_for.scope);
-        }
-
+        self.fallback_responses
+            .remove(&request_key(&fallback_for.scope, encoding_str(encoding)));
         Ok(())
     }
 
@@ -622,7 +611,7 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         content_type: Option<String>,
         fallback_for: AssetFallbackConfig,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<CertifiedAssetResponse<'content>> {
         let (response, certification) = Self::prepare_asset_response_and_certification(
             asset,
@@ -652,7 +641,7 @@ impl<'content> AssetRouter<'content> {
 
         self.tree.borrow_mut().insert(&response.tree_entry);
 
-        self.responses.insert(from, response);
+        self.responses.insert(request_key(&from, None), response);
 
         Ok(())
     }
@@ -666,7 +655,7 @@ impl<'content> AssetRouter<'content> {
         let response = Self::prepare_redirect(from.clone(), to, kind)?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
-        self.responses.remove(&from);
+        self.responses.remove(&request_key(&from, None));
 
         Ok(())
     }
@@ -703,7 +692,7 @@ impl<'content> AssetRouter<'content> {
         asset: Asset<'content, 'path>,
         additional_headers: Vec<(String, String)>,
         content_type: Option<String>,
-        encoding: Option<&AssetEncoding>,
+        encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<(AssetResponse<'content>, HttpCertification)> {
         let mut headers = vec![];
 
@@ -756,8 +745,8 @@ impl<'content> AssetRouter<'content> {
     ) -> Option<&CertifiedAssetResponse<'content>> {
         for encoding in preferred_encodings {
             if let Some(response) = self
-                .encoded_responses
-                .get(&(url.to_string(), encoding.to_string()))
+                .responses
+                .get(&request_key(url, Some(encoding.to_string())))
             {
                 return Some(response);
             }
@@ -773,8 +762,8 @@ impl<'content> AssetRouter<'content> {
     ) -> Option<&CertifiedAssetResponse<'content>> {
         for encoding in preferred_encodings {
             if let Some(response) = self
-                .encoded_fallback_responses
-                .get(&(scope.to_string(), encoding.to_string()))
+                .fallback_responses
+                .get(&request_key(scope, Some(encoding.to_string())))
             {
                 return Some(response);
             }
