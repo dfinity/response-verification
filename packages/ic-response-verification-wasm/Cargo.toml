@@ -11,9 +11,6 @@ repository.workspace = true
 license.workspace = true
 homepage.workspace = true
 
-[features]
-debug = ["ic-response-verification/debug"]
-
 [lib]
 crate-type = ["cdylib", "rlib"]
 

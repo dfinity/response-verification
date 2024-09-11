@@ -1,6 +1,5 @@
 use crate::agent::create_agent;
 use anyhow::{anyhow, Result};
-use core::panic;
 use ic_agent::export::Principal;
 use ic_agent::Agent;
 use ic_http_certification::{HttpRequest, HttpResponse};

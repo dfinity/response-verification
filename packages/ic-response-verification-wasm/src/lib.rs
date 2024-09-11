@@ -51,7 +51,7 @@ pub fn verify_request_response_pair(
     max_cert_time_offset_ns: u64,
     ic_public_key: &[u8],
     min_requested_verification_version: u8,
-) -> Result<JsVerificationInfo, ResponseVerificationJsError> {
+) -> Result<JsVerificationInfo, ic_response_verification::ResponseVerificationJsError> {
     let request = request_from_js(JsValue::from(request));
     let response = response_from_js(JsValue::from(response));
 

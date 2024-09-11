@@ -15,7 +15,6 @@ license.workspace = true
 homepage.workspace = true
 
 [features]
-debug = ["log/max_level_trace", "log/release_max_level_trace"]
 js = ["dep:wasm-bindgen", "dep:js-sys"]
 
 [lib]
@@ -37,7 +36,7 @@ ic-certificate-verification.workspace = true
 flate2.workspace = true
 leb128.workspace = true
 candid.workspace = true
-log = { workspace = true, features = ["max_level_off", "release_max_level_off"] }
+log.workspace = true
 hex.workspace = true
 urlencoding.workspace = true
 
