@@ -404,7 +404,7 @@ pub enum AssetRedirectKind {
 }
 
 /// The encoding of an asset.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AssetEncoding {
     /// The asset is encoded with the Brotli algorithm.
     Brotli,
