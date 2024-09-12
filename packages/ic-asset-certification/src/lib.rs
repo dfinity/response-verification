@@ -781,11 +781,8 @@
 
 mod asset;
 mod asset_config;
-mod asset_response;
 mod asset_router;
 mod error;
-
-use asset_response::*;
 
 pub use asset::*;
 pub use asset_config::*;

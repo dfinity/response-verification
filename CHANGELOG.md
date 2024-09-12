@@ -2,6 +2,7 @@
 
 ### Feat
 
+- **ic-response-verification**: remove unused debug feature
 - **ic-asset-certification**: allow deleting assets
 - **ic-asset-certification**: use owned string internally, remove less common HTTP method helpers and add helper docs
 - **ic-asset-certification**: improve handling of URLs with full domain
@@ -11,6 +12,8 @@
 
 ### Refactor
 
+- remove tmp files
+- remove unnecessary asset response type
 - rename asset encoding default and custom config methods
 - add default mapping for asset encodings
 

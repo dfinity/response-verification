@@ -162,19 +162,9 @@ fn cel_value<'a, E: ParseError<&'a str> + ContextError<&'a str>>(
 }
 
 pub(crate) fn parse_cel_expression(i: &str) -> CelParserResult<CelValue> {
-    #[cfg(feature = "debug")]
-    let result = cel_value::<nom::error::VerboseError<&str>>(i);
-
-    #[cfg(not(feature = "debug"))]
     let result = cel_value::<nom::error::Error<&str>>(i);
 
     match result {
-        #[cfg(feature = "debug")]
-        Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-            let stacktrace = nom::error::convert_error(i, e);
-
-            Err(CelParserError::CelSyntaxException(stacktrace))
-        }
         Err(e) => Err(CelParserError::CelSyntaxException(e.to_string())),
         Ok((_remaining, result)) => Ok(result),
     }

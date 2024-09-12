@@ -1,6 +1,6 @@
 use crate::{
     Asset, AssetCertificationError, AssetCertificationResult, AssetConfig, AssetEncoding,
-    AssetFallbackConfig, AssetRedirectKind, AssetResponse, NormalizedAssetConfig,
+    AssetFallbackConfig, AssetRedirectKind, NormalizedAssetConfig,
 };
 use ic_certification::HashTree;
 use ic_http_certification::{
@@ -12,7 +12,7 @@ use std::{borrow::Cow, cell::RefCell, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
 struct CertifiedAssetResponse<'a> {
-    response: AssetResponse<'a>,
+    response: HttpResponse<'a>,
     tree_entry: HttpCertificationTreeEntry<'a>,
 }
 
@@ -195,7 +195,7 @@ impl<'content> AssetRouter<'content> {
             let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
             let expr_path = tree_entry.path.to_expr_path();
 
-            return Ok((response.clone().into(), witness, expr_path));
+            return Ok((response.clone(), witness, expr_path));
         }
 
         if let Some(CertifiedAssetResponse {
@@ -206,7 +206,7 @@ impl<'content> AssetRouter<'content> {
             let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
             let expr_path = tree_entry.path.to_expr_path();
 
-            return Ok((response.clone().into(), witness, expr_path));
+            return Ok((response.clone(), witness, expr_path));
         }
 
         let mut url_scopes = req_path.split('/').collect::<Vec<_>>();
@@ -224,7 +224,7 @@ impl<'content> AssetRouter<'content> {
                 let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
-                return Ok((response.clone().into(), witness, expr_path));
+                return Ok((response.clone(), witness, expr_path));
             }
 
             if let Some(CertifiedAssetResponse {
@@ -235,7 +235,7 @@ impl<'content> AssetRouter<'content> {
                 let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
-                return Ok((response.clone().into(), witness, expr_path));
+                return Ok((response.clone(), witness, expr_path));
             }
 
             scope.pop();
@@ -248,7 +248,7 @@ impl<'content> AssetRouter<'content> {
                 let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
-                return Ok((response.clone().into(), witness, expr_path));
+                return Ok((response.clone(), witness, expr_path));
             }
 
             if let Some(CertifiedAssetResponse {
@@ -259,7 +259,7 @@ impl<'content> AssetRouter<'content> {
                 let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
                 let expr_path = tree_entry.path.to_expr_path();
 
-                return Ok((response.clone().into(), witness, expr_path));
+                return Ok((response.clone(), witness, expr_path));
             }
 
             url_scopes.pop();
@@ -693,7 +693,7 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         content_type: Option<String>,
         encoding: Option<AssetEncoding>,
-    ) -> AssetCertificationResult<(AssetResponse<'content>, HttpCertification)> {
+    ) -> AssetCertificationResult<(HttpResponse<'content>, HttpCertification)> {
         let mut headers = vec![];
 
         headers.extend(additional_headers);
@@ -714,7 +714,7 @@ impl<'content> AssetRouter<'content> {
         status_code: u16,
         body: Cow<'content, [u8]>,
         additional_headers: Vec<(String, String)>,
-    ) -> AssetCertificationResult<(AssetResponse<'content>, HttpCertification)> {
+    ) -> AssetCertificationResult<(HttpResponse<'content>, HttpCertification)> {
         let mut headers = vec![("content-length".to_string(), body.len().to_string())];
 
         headers.extend(additional_headers);
@@ -729,11 +729,13 @@ impl<'content> AssetRouter<'content> {
 
         let request = HttpRequest::get(url).build();
 
-        let response = AssetResponse::new(status_code, body, headers);
+        let response = HttpResponse::builder()
+            .with_status_code(status_code)
+            .with_body(body)
+            .with_headers(headers)
+            .build();
 
-        let http_response: HttpResponse = response.clone().into();
-
-        let certification = HttpCertification::full(&cel_expr, &request, &http_response, None)?;
+        let certification = HttpCertification::full(&cel_expr, &request, &response, None)?;
 
         Ok((response, certification))
     }

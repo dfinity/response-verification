@@ -13,8 +13,8 @@ build_release_packages() {
 }
 
 build_debug_packages() {
-  wasm-pack build --target web --out-name web --out-dir $OUT_DIR/debug/dist/web --dev $PKG_ROOT -- --features "debug" || early_exit
-  wasm-pack build --target nodejs --out-name nodejs --out-dir $OUT_DIR/debug/dist/nodejs --dev $PKG_ROOT -- --features "debug" || early_exit
+  wasm-pack build --target web --out-name web --out-dir $OUT_DIR/debug/dist/web --dev $PKG_ROOT -- || early_exit
+  wasm-pack build --target nodejs --out-name nodejs --out-dir $OUT_DIR/debug/dist/nodejs --dev $PKG_ROOT -- || early_exit
 }
 
 delete_generated_files() {
