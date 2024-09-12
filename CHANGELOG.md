@@ -10,8 +10,13 @@
 - **ic-asset-certification**: use response header exclusions instead of inclusions for better security
 - **ic-asset-certification**: more ergonomic config for alternative asset encodings
 
+### Fix
+
+- clippy
+
 ### Refactor
 
+- AssetRouter response handling, for extensibility
 - remove tmp files
 - remove unnecessary asset response type
 - rename asset encoding default and custom config methods
