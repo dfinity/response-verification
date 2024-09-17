@@ -1217,6 +1217,7 @@ dependencies = [
  "globset",
  "ic-certification 2.6.0",
  "ic-http-certification",
+ "ic-response-verification",
  "rstest",
  "thiserror",
 ]

@@ -324,7 +324,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
 
             HTTP_TREE.with_borrow(|http_tree| {
                 add_v2_certificate_header(
-                    data_certificate().expect("No data certificate available"),
+                    &data_certificate().expect("No data certificate available"),
                     &mut response,
                     &http_tree
                         .witness(

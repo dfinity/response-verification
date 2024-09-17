@@ -381,7 +381,7 @@ fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'stati
 
     HTTP_TREE.with_borrow(|http_tree| {
         add_v2_certificate_header(
-            data_certificate().expect("No data certificate available"),
+            &data_certificate().expect("No data certificate available"),
             &mut response,
             &http_tree
                 .witness(

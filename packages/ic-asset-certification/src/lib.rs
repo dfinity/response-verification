@@ -485,16 +485,9 @@
 //!
 //! asset_router.certify_assets(vec![asset], vec![asset_config]).unwrap();
 //!
-//! let (mut response, witness, expr_path) = asset_router.serve_asset(&http_request).unwrap();
-//!
 //! // this should normally be retrieved using `ic_cdk::api::data_certificate()`.
 //! let data_certificate = vec![1, 2, 3];
-//! add_v2_certificate_header(
-//!     data_certificate,
-//!     &mut response,
-//!     &witness,
-//!     &expr_path,
-//! );
+//! let response = asset_router.serve_asset(&data_certificate, &http_request).unwrap();
 //!```
 //!
 //! ## Deleting assets
