@@ -7,7 +7,6 @@ use crate::{
         validate_body, validate_expr_hash, validate_expr_path, validate_hashes, validate_tree,
     },
 };
-use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
 use ic_certificate_verification::VerifyCertificate;
 use ic_certification::{hash_tree::Hash, Certificate, HashTree};
 use ic_http_certification::{
@@ -43,61 +42,39 @@ pub fn verify_request_response_pair(
         .map(|(k, v)| (k.to_lowercase(), v.clone()))
         .collect();
 
-    let encoding = headers
-        .get("content-encoding")
-        .map(|encoding| encoding.as_str());
-
     let Some(certificate_header_str) = headers.get(&CERTIFICATE_HEADER_NAME.to_lowercase()) else {
         return Err(ResponseVerificationError::MissingCertification);
     };
 
     let certificate_header = CertificateHeader::from(certificate_header_str)?;
 
-    let Some(tree) = certificate_header
-        .tree
-        .map(|tree| HashTree::from_cbor(&tree))
-        .transpose()?
-    else {
-        return Err(ResponseVerificationError::MissingTree);
-    };
-
-    let Some(certificate) = certificate_header
-        .certificate
-        .map(|certificate| Certificate::from_cbor(&certificate))
-        .transpose()?
-    else {
-        return Err(ResponseVerificationError::MissingCertificate);
-    };
-
-    let version = certificate_header
-        .version
-        .unwrap_or(MIN_VERIFICATION_VERSION);
-
-    match version {
+    match certificate_header.version {
         version if version < min_requested_verification_version => Err(
             ResponseVerificationError::RequestedVerificationVersionMismatch {
                 requested_version: version,
                 min_requested_verification_version,
             },
         ),
-        1 => v1_verification(V1VerificationOpts {
-            request,
-            response,
-            canister_id,
-            current_time_ns,
-            max_cert_time_offset_ns,
-            tree,
-            certificate,
-            encoding,
-            ic_public_key,
-        }),
+        1 => {
+            let encoding = headers
+                .get("content-encoding")
+                .map(|encoding| encoding.as_str());
+
+            v1_verification(V1VerificationOpts {
+                request,
+                response,
+                canister_id,
+                current_time_ns,
+                max_cert_time_offset_ns,
+                tree: certificate_header.tree,
+                certificate: certificate_header.certificate,
+                encoding,
+                ic_public_key,
+            })
+        }
         2 => match headers.get(&CERTIFICATE_EXPRESSION_HEADER_NAME.to_lowercase()) {
             Some(certificate_expression_header) => {
-                let Some(expr_path) = certificate_header
-                    .expr_path
-                    .map(|expr_path| parse_cbor_string_array(&expr_path))
-                    .transpose()?
-                else {
+                let Some(expr_path) = certificate_header.expr_path else {
                     return Err(ResponseVerificationError::MissingCertificateExpressionPath);
                 };
 
@@ -111,8 +88,8 @@ pub fn verify_request_response_pair(
                     canister_id,
                     current_time_ns,
                     max_cert_time_offset_ns,
-                    tree,
-                    certificate,
+                    tree: certificate_header.tree,
+                    certificate: certificate_header.certificate,
                     expr_path,
                     expr_hash,
                     certification,
@@ -124,7 +101,7 @@ pub fn verify_request_response_pair(
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
             min_supported_version: MIN_VERIFICATION_VERSION,
             max_supported_version: MAX_VERIFICATION_VERSION,
-            requested_version: version,
+            requested_version: certificate_header.version,
         }),
     }
 }

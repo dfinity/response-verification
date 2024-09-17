@@ -52,7 +52,7 @@ use serde::Serialize;
 ///
 /// let witness = http_certification_tree.witness(&entry, request_url).unwrap();
 /// add_v2_certificate_header(
-///     data_certificate,
+///     &data_certificate,
 ///     &mut response,
 ///     &witness,
 ///     &expr_path
@@ -70,7 +70,7 @@ use serde::Serialize;
 /// );
 /// ```
 pub fn add_v2_certificate_header(
-    data_certificate: Vec<u8>,
+    data_certificate: &[u8],
     response: &mut HttpResponse,
     witness: &HashTree,
     expr_path: &[String],
