@@ -245,13 +245,13 @@ fn certify_all_assets() {
 
 ## Serving assets
 
-The `serve_asset` function is responsible for serving assets. It uses the `serve_asset` function from the `AssetRouter` to serve the assets. This function returns the `HttpResponse`, a witness (`HashTree`), and an expression path. The witness and expression path is used to generate the `IC-Certificate` header, which is added to the response before returning it. To add the `IC-Certificate` header to the response, the `add_certificate_header` function from the `ic-http-certification` crate is used. This function takes the data certificate, response, witness, and expression path as arguments. The witness, expression path, and the canister's certified data are encoded using CBOR and then added to the response headers.
+The `serve_asset` function is responsible for serving assets. It uses the `serve_asset` function from the `AssetRouter` to serve the assets. This function returns the `HttpResponse`, a witness (`HashTree`), and an expression path. The witness and expression path is used to generate the `IC-Certificate` header, which is added to the response before returning it. To add the `IC-Certificate` header to the response, the `add_v2_certificate_header` function from the `ic-http-certification` crate is used. This function takes the data certificate, response, witness, and expression path as arguments. The witness, expression path, and the canister's certified data are encoded using CBOR and then added to the response headers.
 
 ```rust
 fn serve_asset(req: &HttpRequest) -> HttpResponse<'static> {
     ASSET_ROUTER.with_borrow(|asset_router| {
         if let Ok((mut response, witness, expr_path)) = asset_router.serve_asset(req) {
-            add_certificate_header(
+            add_v2_certificate_header(
                 data_certificate().expect("No data certificate available"),
                 &mut response,
                 &witness,

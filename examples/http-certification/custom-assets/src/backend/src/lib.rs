@@ -3,7 +3,7 @@ use ic_cdk::{
     *,
 };
 use ic_http_certification::{
-    utils::add_certificate_header, DefaultCelBuilder, DefaultResponseCertification,
+    utils::add_v2_certificate_header, DefaultCelBuilder, DefaultResponseCertification,
     DefaultResponseOnlyCelExpression, HeaderField, HttpCertification, HttpCertificationPath,
     HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
     CERTIFICATE_EXPRESSION_HEADER_NAME,
@@ -323,7 +323,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
             let mut response = response.clone();
 
             HTTP_TREE.with_borrow(|http_tree| {
-                add_certificate_header(
+                add_v2_certificate_header(
                     data_certificate().expect("No data certificate available"),
                     &mut response,
                     &http_tree

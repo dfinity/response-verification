@@ -469,7 +469,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
             let mut response = response.clone();
 
             HTTP_TREE.with_borrow(|http_tree| {
-                add_certificate_header(
+                add_v2_certificate_header(
                     data_certificate().expect("No data certificate available"),
                     &mut response,
                     &http_tree
