@@ -166,10 +166,13 @@ impl<'content> AssetRouter<'content> {
     /// Returns the corresponding
     /// [HttpResponse](ic_http_certification::HttpResponse) for the provided
     /// [HttpRequest](ic_http_certification::HttpRequest) if it is found
-    /// in the router, along with the
-    /// [certification witness](ic_certification::HashTree) and the
-    /// corresponding
-    /// [expression path](ic_http_certification::HttpCertificationPath).
+    /// in the router.
+    ///
+    /// # Arguments
+    ///
+    /// * `data_certificate` - A byte slice representing the data certificate used for asset certification.
+    ///     This should be retrieved using `ic_cdk::api::data_certificate()`.
+    /// * `request` - A reference to an [HttpRequest](ic_http_certification::HttpRequest) object representing the incoming HTTP request.
     ///
     /// If an exact match is not found, then a fallback will
     /// be searched for. See the
@@ -827,92 +830,9 @@ mod tests {
         cel::DefaultFullCelExpressionBuilder, HeaderField, CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::CertificateHeader;
+    use ic_response_verification_test_utils::base64_decode;
     use rstest::*;
     use std::vec;
-
-    // A certificate taken from a real response on mainnet. It doesn't matter what it contains,
-    // as long as it's a valid certificate. If we ever decide to run response verification in these
-    // tests then the content of the certificate will matter.
-    const DATA_CERTIFICATE: &[u8] = &[
-        217, 217, 247, 163, 100, 116, 114, 101, 101, 131, 1, 131, 1, 131, 1, 130, 4, 88, 32, 166,
-        90, 250, 56, 226, 36, 34, 136, 99, 168, 158, 187, 115, 207, 229, 92, 249, 192, 181, 230,
-        200, 248, 117, 108, 57, 136, 205, 120, 57, 118, 94, 139, 131, 2, 72, 99, 97, 110, 105, 115,
-        116, 101, 114, 131, 1, 131, 1, 130, 4, 88, 32, 207, 224, 208, 204, 149, 166, 93, 213, 182,
-        213, 40, 241, 177, 90, 32, 205, 228, 172, 209, 75, 121, 96, 208, 149, 172, 231, 226, 245,
-        102, 110, 205, 118, 131, 1, 131, 1, 131, 1, 131, 1, 131, 1, 130, 4, 88, 32, 171, 140, 98,
-        44, 22, 254, 209, 174, 130, 191, 41, 63, 239, 87, 135, 83, 255, 202, 58, 115, 164, 60, 184,
-        81, 247, 3, 126, 246, 152, 185, 123, 35, 131, 1, 130, 4, 88, 32, 130, 11, 199, 3, 179, 80,
-        239, 9, 121, 76, 181, 26, 228, 36, 214, 132, 103, 4, 167, 59, 154, 80, 41, 183, 151, 44,
-        174, 204, 222, 174, 244, 3, 131, 1, 131, 1, 130, 4, 88, 32, 101, 49, 187, 93, 160, 172,
-        160, 45, 81, 80, 86, 138, 202, 185, 194, 85, 129, 82, 199, 180, 187, 28, 55, 148, 188, 4,
-        28, 164, 141, 249, 144, 251, 131, 1, 131, 1, 130, 4, 88, 32, 235, 205, 45, 180, 95, 64,
-        211, 109, 209, 127, 17, 135, 80, 174, 220, 120, 55, 113, 199, 33, 219, 232, 38, 224, 226,
-        168, 226, 156, 186, 234, 251, 169, 131, 1, 130, 4, 88, 32, 148, 69, 202, 172, 116, 204, 83,
-        202, 6, 37, 67, 4, 190, 42, 199, 151, 90, 159, 80, 90, 176, 130, 181, 190, 56, 234, 156,
-        138, 178, 61, 229, 58, 131, 2, 74, 0, 0, 0, 0, 1, 128, 9, 148, 1, 1, 131, 1, 131, 1, 131,
-        2, 78, 99, 101, 114, 116, 105, 102, 105, 101, 100, 95, 100, 97, 116, 97, 130, 3, 88, 32,
-        147, 244, 252, 166, 122, 153, 1, 7, 146, 153, 162, 131, 27, 197, 63, 25, 36, 129, 89, 4,
-        196, 101, 248, 168, 175, 208, 54, 90, 143, 197, 101, 52, 130, 4, 88, 32, 130, 222, 175, 15,
-        80, 207, 118, 12, 77, 179, 232, 10, 32, 38, 228, 222, 116, 92, 64, 142, 83, 146, 158, 108,
-        201, 118, 39, 51, 209, 133, 38, 96, 130, 4, 88, 32, 63, 134, 70, 120, 151, 221, 201, 1,
-        232, 152, 104, 158, 169, 108, 122, 123, 100, 21, 73, 88, 38, 114, 217, 70, 14, 129, 194,
-        77, 196, 235, 93, 99, 130, 4, 88, 32, 32, 176, 254, 233, 77, 75, 246, 63, 175, 195, 77,
-        151, 99, 162, 100, 7, 94, 241, 183, 73, 58, 18, 201, 127, 153, 197, 131, 74, 39, 212, 60,
-        108, 130, 4, 88, 32, 153, 69, 231, 95, 136, 188, 218, 195, 121, 0, 154, 178, 82, 226, 42,
-        226, 47, 68, 173, 158, 59, 173, 82, 186, 223, 185, 19, 10, 179, 147, 237, 228, 130, 4, 88,
-        32, 54, 169, 151, 142, 175, 73, 33, 239, 194, 108, 6, 86, 223, 10, 95, 27, 93, 168, 124,
-        90, 213, 241, 174, 254, 180, 190, 82, 47, 75, 80, 231, 41, 130, 4, 88, 32, 20, 142, 70,
-        103, 246, 216, 190, 58, 244, 7, 50, 98, 192, 252, 7, 215, 34, 59, 70, 103, 122, 141, 169,
-        181, 202, 63, 53, 113, 127, 4, 168, 37, 130, 4, 88, 32, 28, 122, 107, 32, 249, 61, 155,
-        124, 235, 222, 241, 90, 72, 32, 54, 36, 152, 135, 73, 178, 203, 124, 124, 221, 249, 173,
-        17, 179, 221, 0, 203, 183, 130, 4, 88, 32, 255, 148, 208, 21, 106, 157, 134, 1, 162, 80,
-        94, 149, 203, 202, 133, 166, 130, 160, 132, 35, 32, 117, 123, 152, 173, 206, 169, 155, 185,
-        210, 118, 148, 130, 4, 88, 32, 205, 96, 244, 255, 227, 31, 250, 57, 17, 83, 129, 117, 93,
-        232, 36, 230, 250, 79, 44, 235, 131, 33, 249, 167, 121, 47, 118, 55, 77, 192, 118, 156,
-        130, 4, 88, 32, 180, 210, 141, 152, 238, 248, 39, 184, 192, 177, 185, 11, 128, 46, 67, 65,
-        49, 47, 33, 233, 88, 81, 210, 13, 136, 59, 66, 59, 5, 15, 44, 229, 131, 1, 130, 4, 88, 32,
-        188, 6, 103, 25, 253, 196, 108, 110, 122, 203, 192, 66, 31, 147, 125, 116, 189, 107, 65,
-        98, 13, 98, 100, 8, 125, 184, 186, 62, 175, 17, 45, 65, 131, 2, 68, 116, 105, 109, 101,
-        130, 3, 73, 217, 255, 186, 244, 222, 160, 163, 250, 23, 105, 115, 105, 103, 110, 97, 116,
-        117, 114, 101, 88, 48, 148, 226, 213, 138, 159, 185, 20, 195, 16, 98, 93, 229, 162, 133,
-        218, 64, 18, 199, 209, 55, 198, 23, 190, 92, 252, 253, 78, 255, 55, 52, 222, 111, 219, 119,
-        152, 135, 84, 151, 40, 254, 97, 196, 21, 18, 239, 103, 196, 23, 106, 100, 101, 108, 101,
-        103, 97, 116, 105, 111, 110, 162, 105, 115, 117, 98, 110, 101, 116, 95, 105, 100, 88, 29,
-        16, 182, 71, 51, 74, 84, 6, 152, 119, 150, 178, 248, 182, 177, 76, 211, 47, 8, 118, 211,
-        253, 79, 200, 69, 33, 5, 131, 37, 2, 107, 99, 101, 114, 116, 105, 102, 105, 99, 97, 116,
-        101, 89, 2, 125, 217, 217, 247, 162, 100, 116, 114, 101, 101, 131, 1, 130, 4, 88, 32, 71,
-        190, 147, 32, 219, 2, 138, 111, 54, 82, 148, 41, 175, 116, 143, 187, 234, 254, 105, 198,
-        179, 122, 126, 212, 213, 17, 211, 118, 89, 141, 171, 130, 131, 1, 131, 1, 130, 4, 88, 32,
-        210, 145, 104, 103, 194, 212, 79, 20, 55, 223, 168, 130, 193, 74, 237, 28, 78, 106, 80,
-        130, 54, 61, 107, 146, 4, 21, 246, 60, 200, 165, 49, 124, 131, 2, 70, 115, 117, 98, 110,
-        101, 116, 131, 1, 131, 1, 131, 1, 131, 1, 131, 1, 130, 4, 88, 32, 209, 211, 143, 252, 174,
-        252, 73, 182, 65, 126, 246, 245, 243, 155, 75, 174, 70, 40, 15, 85, 244, 245, 216, 190,
-        104, 27, 212, 128, 8, 62, 136, 151, 131, 1, 131, 2, 88, 29, 16, 182, 71, 51, 74, 84, 6,
-        152, 119, 150, 178, 248, 182, 177, 76, 211, 47, 8, 118, 211, 253, 79, 200, 69, 33, 5, 131,
-        37, 2, 131, 1, 131, 2, 79, 99, 97, 110, 105, 115, 116, 101, 114, 95, 114, 97, 110, 103,
-        101, 115, 130, 3, 88, 27, 217, 217, 247, 129, 130, 74, 0, 0, 0, 0, 1, 128, 0, 0, 1, 1, 74,
-        0, 0, 0, 0, 1, 143, 255, 255, 1, 1, 131, 2, 74, 112, 117, 98, 108, 105, 99, 95, 107, 101,
-        121, 130, 3, 88, 133, 48, 129, 130, 48, 29, 6, 13, 43, 6, 1, 4, 1, 130, 220, 124, 5, 3, 1,
-        2, 1, 6, 12, 43, 6, 1, 4, 1, 130, 220, 124, 5, 3, 2, 1, 3, 97, 0, 169, 34, 111, 34, 245,
-        49, 71, 95, 96, 76, 186, 92, 152, 167, 213, 189, 207, 31, 179, 182, 118, 203, 28, 119, 177,
-        181, 125, 230, 244, 114, 16, 2, 204, 22, 78, 87, 232, 151, 176, 189, 128, 146, 53, 222,
-        229, 202, 106, 155, 8, 250, 17, 157, 239, 161, 35, 115, 209, 165, 222, 178, 71, 176, 92,
-        235, 69, 19, 134, 156, 140, 10, 124, 166, 160, 199, 199, 145, 51, 81, 234, 251, 234, 42,
-        140, 35, 10, 218, 150, 55, 238, 247, 131, 133, 82, 17, 129, 100, 130, 4, 88, 32, 198, 90,
-        124, 73, 196, 198, 233, 126, 178, 202, 75, 84, 136, 121, 106, 43, 158, 8, 81, 48, 112, 236,
-        40, 186, 0, 224, 123, 122, 147, 248, 234, 163, 130, 4, 88, 32, 188, 143, 60, 144, 165, 131,
-        137, 253, 250, 161, 192, 73, 129, 218, 218, 49, 198, 239, 225, 159, 176, 125, 125, 192,
-        204, 185, 45, 127, 75, 246, 216, 3, 130, 4, 88, 32, 136, 254, 160, 219, 105, 243, 143, 156,
-        243, 251, 168, 143, 138, 4, 15, 60, 173, 201, 174, 119, 114, 250, 26, 64, 106, 110, 164,
-        100, 250, 133, 139, 158, 130, 4, 88, 32, 105, 97, 239, 19, 124, 42, 238, 11, 4, 103, 8, 46,
-        246, 211, 193, 44, 3, 233, 48, 19, 182, 2, 164, 203, 98, 20, 39, 14, 72, 72, 99, 241, 130,
-        4, 88, 32, 155, 48, 107, 32, 116, 253, 239, 15, 237, 84, 7, 236, 196, 156, 109, 246, 182,
-        88, 172, 31, 179, 253, 182, 95, 218, 2, 34, 21, 64, 130, 132, 51, 131, 2, 68, 116, 105,
-        109, 101, 130, 3, 73, 196, 160, 222, 154, 139, 137, 158, 250, 23, 105, 115, 105, 103, 110,
-        97, 116, 117, 114, 101, 88, 48, 177, 43, 146, 6, 55, 7, 28, 117, 126, 23, 179, 145, 207,
-        114, 208, 219, 220, 8, 223, 29, 93, 144, 61, 39, 3, 157, 228, 9, 237, 81, 69, 57, 83, 117,
-        251, 142, 211, 136, 144, 152, 176, 80, 207, 85, 41, 10, 93, 91,
-    ];
 
     #[rstest]
     #[case("/")]
@@ -933,11 +853,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -957,7 +877,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1024,11 +944,11 @@ mod tests {
             ],
         );
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1056,7 +976,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1144,11 +1064,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1178,7 +1098,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1211,11 +1131,11 @@ mod tests {
         let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1244,7 +1164,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1280,11 +1200,11 @@ mod tests {
         let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1313,7 +1233,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1340,11 +1260,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1379,11 +1299,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1420,11 +1340,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1449,7 +1369,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1476,11 +1396,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1517,11 +1437,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1546,7 +1466,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1573,11 +1493,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1614,11 +1534,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1655,11 +1575,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1684,7 +1604,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1845,11 +1765,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1890,11 +1810,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1935,11 +1855,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -1964,7 +1884,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1991,11 +1911,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -2033,11 +1953,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -2062,7 +1982,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -2099,11 +2019,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -2144,11 +2064,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -2173,7 +2093,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(DATA_CERTIFICATE, &request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -2215,21 +2135,21 @@ mod tests {
             .build();
 
         let css_response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &css_request)
+            .serve_asset(&data_certificate(), &css_request)
             .unwrap();
         let (css_witness, css_expr_path) = extract_witness_expr_path(&css_response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_css_response,
             &css_witness,
             &css_expr_path,
         );
         let old_url_response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &old_url_request)
+            .serve_asset(&data_certificate(), &old_url_request)
             .unwrap();
         let (old_url_witness, old_url_expr_path) = extract_witness_expr_path(&old_url_response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_old_url_response,
             &old_url_witness,
             &old_url_expr_path,
@@ -2279,21 +2199,21 @@ mod tests {
         );
 
         let css_response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &css_request)
+            .serve_asset(&data_certificate(), &css_request)
             .unwrap();
         let (css_witness, css_expr_path) = extract_witness_expr_path(&css_response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_css_response,
             &css_witness,
             &css_expr_path,
         );
         let old_url_response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &old_url_request)
+            .serve_asset(&data_certificate(), &old_url_request)
             .unwrap();
         let (old_url_witness, old_url_expr_path) = extract_witness_expr_path(&old_url_response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_old_url_response,
             &old_url_witness,
             &old_url_expr_path,
@@ -2348,21 +2268,21 @@ mod tests {
         );
 
         let css_response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &css_request)
+            .serve_asset(&data_certificate(), &css_request)
             .unwrap();
         let (css_witness, css_expr_path) = extract_witness_expr_path(&css_response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_css_response,
             &css_witness,
             &css_expr_path,
         );
         let old_url_response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &old_url_request)
+            .serve_asset(&data_certificate(), &old_url_request)
             .unwrap();
         let (old_url_witness, old_url_expr_path) = extract_witness_expr_path(&old_url_response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_old_url_response,
             &old_url_witness,
             &old_url_expr_path,
@@ -2394,8 +2314,8 @@ mod tests {
             )
             .unwrap();
 
-        let css_result = asset_router.serve_asset(DATA_CERTIFICATE, &css_request);
-        let old_url_result = asset_router.serve_asset(DATA_CERTIFICATE, &old_url_request);
+        let css_result = asset_router.serve_asset(&data_certificate(), &css_request);
+        let old_url_result = asset_router.serve_asset(&data_certificate(), &old_url_request);
 
         assert!(matches!(
             css_result,
@@ -2450,11 +2370,11 @@ mod tests {
         );
 
         let response = asset_router
-            .serve_asset(DATA_CERTIFICATE, &request)
+            .serve_asset(&data_certificate(), &request)
             .unwrap();
         let (witness, expr_path) = extract_witness_expr_path(&response);
         add_v2_certificate_header(
-            DATA_CERTIFICATE,
+            &data_certificate(),
             &mut expected_response,
             &witness,
             &expr_path,
@@ -2755,6 +2675,14 @@ mod tests {
         asset_router.certify_assets(assets, asset_configs).unwrap();
 
         asset_router
+    }
+
+    // A certificate taken from a real response on mainnet. It doesn't matter what it contains,
+    // as long as it's a valid certificate. If we ever decide to run response verification in these
+    // tests then the content of the certificate will matter.
+    #[fixture]
+    fn data_certificate() -> Vec<u8> {
+        base64_decode("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")
     }
 
     fn build_response<'a>(

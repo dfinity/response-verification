@@ -23,3 +23,4 @@ globset = "0.4"
 [dev-dependencies]
 rstest.workspace = true
 ic-response-verification.workspace = true
+ic-response-verification-test-utils.workspace = true
