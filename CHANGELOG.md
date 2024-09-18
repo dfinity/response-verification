@@ -1,7 +1,12 @@
 ## Unreleased
 
+### BREAKING CHANGE
+
+- removed serde feature from ic-http-certification, condensed serde_bytes into serde feature of ic-certification.
+
 ### Feat
 
+- **ic-http-certification**: add add_certificate_header util function
 - **ic-response-verification**: remove unused debug feature
 - **ic-asset-certification**: allow deleting assets
 - **ic-asset-certification**: use owned string internally, remove less common HTTP method helpers and add helper docs
