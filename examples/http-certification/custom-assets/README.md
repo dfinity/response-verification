@@ -144,7 +144,7 @@ The first step is defining a reusable function to create a response with all of 
 ```rust
 fn get_asset_headers(
     additional_headers: Vec<HeaderField>,
-    body: &[u8],
+    content_length: usize,
     cel_expr: String,
 ) -> Vec<(String, String)> {
     // set up the default headers and include additional headers provided by the caller
@@ -157,7 +157,7 @@ fn get_asset_headers(
         ("permissions-policy".to_string(), "accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()".to_string()),
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
         ("cross-origin-opener-policy".to_string(), "same-origin".to_string()),
-        ("content-length".to_string(), body.len().to_string()),
+        ("content-length".to_string(), content_length.to_string()),
         (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
     ];
     headers.extend(additional_headers);
@@ -170,7 +170,7 @@ fn create_asset_response(
     body: &[u8],
     cel_expr: String,
 ) -> HttpResponse {
-    let headers = get_asset_headers(additional_headers, body, cel_expr);
+    let headers = get_asset_headers(additional_headers, body.len(), cel_expr);
 
     HttpResponse::builder()
         .with_status_code(200)
@@ -386,19 +386,19 @@ fn certify_index_asset() {
 }
 ```
 
-It's also possible to skip certification for certain routes. This can be relatively easily as follows:
+It's also possible to skip certification for certain routes. This can be useful for scenarios where it's difficult to predict what the response will look like for a certain route and the content is not very security sensitive. This can be done as follows:
 
 ```rust
-const DYNAMIC_REQ_PATH: &str = "/dynamic";
+const UNCERTIFIED_REQ_PATH: &str = "/uncertified";
 
-fn certify_dynamic_asset() {
-    let dynamic_req_tree_path = HttpCertificationPath::exact(DYNAMIC_REQ_PATH);
-    let dynamic_req_certification = HttpCertification::skip();
+fn add_certification_skips() {
+    let uncertified_req_tree_path = HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH);
+    let uncertified_req_certification = HttpCertification::skip();
 
     HTTP_TREE.with_borrow_mut(|http_tree| {
         http_tree.insert(&HttpCertificationTreeEntry::new(
-            dynamic_req_tree_path,
-            &dynamic_req_certification,
+            uncertified_req_tree_path,
+            &uncertified_req_certification,
         ));
     });
 }
@@ -418,7 +418,7 @@ With all of the above functions, it is now possible to certify all of the fronte
 
 ```rust
 fn certify_all_assets() {
-    certify_dynamic_asset();
+    add_certification_skips();
 
     certify_index_asset();
     certify_asset_glob("assets/**/*.css", "text/css");
@@ -434,8 +434,8 @@ fn certify_all_assets() {
 
 With all assets certified, they can be served over HTTP. The steps to follow when serving assets are:
 
-- Check if the request path matches the dynamic path.
-  - If the requested path exactly matches the dynamic path, serve the dynamic response.
+- Check if the request path matches the uncertified path.
+  - If the requested path exactly matches the uncertified path, serve the uncertified response.
 - Check if the requested path matches a file (e.g., `/assets/app.js`).
   - If the request path exactly matches an existing file, serve that file.
   - Otherwise, serve the `index.html` file.
@@ -452,13 +452,13 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
     RESPONSES.with_borrow(|responses| {
         ENCODED_RESPONSES.with_borrow(|encoded_responses| {
             let (asset_req_path, asset_tree_path, identity_response) =
-            // if the request path matches the dynamic response's path, serve that
-            if req_path == DYNAMIC_REQ_PATH {
+            // if the request path matches the uncertified response's path, serve that
+            if req_path == UNCERTIFIED_REQ_PATH {
                 (
-                    DYNAMIC_REQ_PATH.to_string(),
-                    HttpCertificationPath::exact(DYNAMIC_REQ_PATH),
+                    UNCERTIFIED_REQ_PATH.to_string(),
+                    HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH),
                     CertifiedHttpResponse {
-                        response: create_dynamic_response(),
+                        response: create_uncertified_response(),
                         certification: HttpCertification::skip(),
                     },
                 )
@@ -538,10 +538,10 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
 }
 ```
 
-Creating the dynamic response is done as follows:
+Creating the uncertified response is done as follows:
 
 ```rust
-fn create_dynamic_response() -> HttpResponse<'static> {
+fn create_uncertified_response() -> HttpResponse<'static> {
     let body = format!(
         r#"
             <html>
@@ -564,7 +564,7 @@ fn create_dynamic_response() -> HttpResponse<'static> {
 
     let headers = get_asset_headers(
         additional_headers,
-        &body,
+        body.len(),
         DefaultCelBuilder::skip_certification().to_string(),
     );
 

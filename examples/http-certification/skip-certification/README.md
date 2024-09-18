@@ -18,11 +18,14 @@ This is a relatively simple guide so there's no prerequisites as such, but it's 
 
 # Skipping certification
 
-Skipping certification for all responses is a relatively simple task that can be completed in 2 very simple steps.
+Skipping certification for all responses is a relatively simple task that can be completed in 2 steps.
 
 First, set the canister's certified data in the canister's `init` lifecycle hook:
 
 ```rust
+use ic_cdk::*;
+use ic_http_certification::utils::skip_certification_certified_data;
+
 #[init]
 fn init() {
     set_certified_data(&skip_certification_certified_data());
@@ -34,6 +37,9 @@ This will make sure that the correct certified data is set so that it can be sig
 Next, when responding to HTTP requests, add the certificate header that will instruct the HTTP Gateway to skip verification:
 
 ```rust
+use ic_cdk::{api::data_certificate, *};
+use ic_http_certification::utils::add_skip_certification_header;
+
 #[query]
 fn http_request() -> HttpResponse<'static> {
     let mut response = create_response();

@@ -41,7 +41,7 @@ describe('HTTP', () => {
 
   it('should successfully skip verification', async () => {
     const request: Request = {
-      url: '/dynamic',
+      url: '/uncertified',
       method: 'GET',
       headers: [],
       body: new Uint8Array(),
