@@ -1218,6 +1218,7 @@ dependencies = [
  "ic-certification 2.6.0",
  "ic-http-certification",
  "ic-response-verification",
+ "ic-response-verification-test-utils",
  "rstest",
  "thiserror",
 ]
