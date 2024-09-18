@@ -380,7 +380,7 @@ fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'stati
     let mut response = certified_response.response;
 
     HTTP_TREE.with_borrow(|http_tree| {
-        add_certificate_header(
+        add_v2_certificate_header(
             data_certificate().expect("No data certificate available"),
             &mut response,
             &http_tree

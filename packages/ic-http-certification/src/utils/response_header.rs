@@ -3,25 +3,31 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use ic_certification::HashTree;
 use serde::Serialize;
 
-/// Adds the `IC-Certificate` header to a given [`HttpResponse`]. This header is used by the HTTP Gateway
-/// to verify the authenticity of query call responses.
+/// Adds the [`IC-Certificate` header](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec/#the-certificate-header)
+/// to a given [`HttpResponse`]. This header is used by the HTTP Gateway to verify the authenticity of query call responses made to the
+/// `http_request` method of the target canister.
 ///
 /// # Arguments
 ///
 /// * `data_certificate` - A certificate used by the HTTP Gateway to verify a response.
-///     Retrieved using `ic_cdk::api::data_certificate`.
+///     Retrieved using `ic_cdk::api::data_certificate`. This value is not validated by this function
+///     and is expected to be a valid certificate. The function will not fail if the certificate is invalid,
+///     but verification of the certificate by the HTTP Gateway will fail.
 /// * `response` - The [`HttpResponse`] to add the certificate header to.
 ///     Created using [`HttpResponse::builder()`](crate::HttpResponse::builder).
 /// * `witness` - A pruned merkle tree revealing the relevant certification for the current response.
 ///     Created using [`HttpCertificationTree::witness()`](crate::HttpCertificationTree::witness).
+///     The witness is not validated to be correct for the given response, and the function will not fail
+///     if the witness is invalid. The HTTP Gateway will fail to verify the response if the witness is invalid.
 /// * `expr_path` - An expression path for the current response informing the HTTP Gateway where the
 ///     relevant certification is present in the merkle tree. Created using
-///     [`HttpCertificationPath::to_expr_path()`](crate::HttpCertificationPath::to_expr_path).
+///     [`HttpCertificationPath::to_expr_path()`](crate::HttpCertificationPath::to_expr_path). The expression path
+///     is not validated to be correct for the given response, and the function will not fail if the expression path is invalid.
 ///
 /// # Example
 ///
 /// ```
-/// use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath, CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME, utils::add_certificate_header};
+/// use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath, CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME, utils::add_v2_certificate_header};
 ///
 /// let cel_expr = DefaultCelBuilder::full_certification().build();
 ///
@@ -45,7 +51,7 @@ use serde::Serialize;
 /// let data_certificate = vec![1, 2, 3];
 ///
 /// let witness = http_certification_tree.witness(&entry, request_url).unwrap();
-/// add_certificate_header(
+/// add_v2_certificate_header(
 ///     data_certificate,
 ///     &mut response,
 ///     &witness,
@@ -63,7 +69,7 @@ use serde::Serialize;
 ///     ]
 /// );
 /// ```
-pub fn add_certificate_header(
+pub fn add_v2_certificate_header(
     data_certificate: Vec<u8>,
     response: &mut HttpResponse,
     witness: &HashTree,

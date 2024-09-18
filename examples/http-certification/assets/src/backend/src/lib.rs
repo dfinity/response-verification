@@ -6,7 +6,7 @@ use ic_cdk::{
     *,
 };
 use ic_http_certification::{
-    utils::add_certificate_header, HeaderField, HttpCertificationTree, HttpRequest, HttpResponse,
+    utils::add_v2_certificate_header, HeaderField, HttpCertificationTree, HttpRequest, HttpResponse,
 };
 use include_dir::{include_dir, Dir};
 use std::{cell::RefCell, rc::Rc};
@@ -137,7 +137,7 @@ fn certify_all_assets() {
 fn serve_asset(req: &HttpRequest) -> HttpResponse<'static> {
     ASSET_ROUTER.with_borrow(|asset_router| {
         if let Ok((mut response, witness, expr_path)) = asset_router.serve_asset(req) {
-            add_certificate_header(
+            add_v2_certificate_header(
                 data_certificate().expect("No data certificate available"),
                 &mut response,
                 &witness,

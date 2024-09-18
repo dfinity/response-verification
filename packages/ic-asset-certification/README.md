@@ -460,7 +460,7 @@ This method will return a response, a witness and an expression path, which can 
 alongside the canister's data certificate to add the required certificate header to the response.
 
 ```rust
-use ic_http_certification::{HttpRequest, utils::add_certificate_header};
+use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header};
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 
 let mut asset_router = AssetRouter::default();
@@ -492,7 +492,7 @@ let (mut response, witness, expr_path) = asset_router.serve_asset(&http_request)
 // this should normally be retrieved using `ic_cdk::api::data_certificate()`.
 let data_certificate = vec![1, 2, 3];
 
-add_certificate_header(
+add_v2_certificate_header(
     data_certificate,
     &mut response,
     &witness,
