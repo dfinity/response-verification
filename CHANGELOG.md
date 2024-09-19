@@ -6,6 +6,7 @@
 
 ### Feat
 
+- **ic-asset-certification**: integrate add_certificate_header into the library so consumers do not need to call it manually
 - **ic-http-certification**: add add_certificate_header util function
 - **ic-response-verification**: remove unused debug feature
 - **ic-asset-certification**: allow deleting assets
