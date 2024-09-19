@@ -1,5 +1,5 @@
 {
-  "name": "http-certification-assets-frontend",
+  "name": "response-verification-tests-frontend",
   "scripts": {
     "start": "vite",
     "build": "vite build"

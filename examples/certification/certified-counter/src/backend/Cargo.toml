@@ -1,5 +1,5 @@
 [package]
-name = "certified_counter_backend"
+name = "certification_certified_counter_backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,8 +10,7 @@ crate-type = ["cdylib"]
 anyhow.workspace = true
 candid.workspace = true
 ic-cdk.workspace = true
-ic-cdk-macros.workspace = true
-ic-certification.workspace = true
+ic-certification = { workspace = true, features = ["serde"] }
 serde.workspace = true
 serde_cbor.workspace = true
 sha2.workspace = true

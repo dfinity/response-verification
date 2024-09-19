@@ -1,9 +1,25 @@
-.idea
-.cargo
-.env
-target
-dist
-node_modules
+# Various IDEs and Editors
+.vscode/
+.idea/
+**/*~
+
+# Mac OSX temporary files
 .DS_Store
-/tmp
-pkg
+**/.DS_Store
+
+# DFX
+.dfx/
+.env
+
+# Rust
+.cargo/
+target/
+
+# NPM
+node_modules/
+
+# Other build files
+declarations/
+dist/
+tmp/
+pkg/

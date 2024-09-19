@@ -373,13 +373,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "certified_counter_backend"
+name = "certification_certified_counter_backend"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "candid",
  "ic-cdk",
- "ic-cdk-macros",
  "ic-certification 2.6.0",
  "serde",
  "serde_cbor",
@@ -2525,18 +2524,6 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "rust"
-version = "0.1.0"
-dependencies = [
- "candid",
- "hex",
- "ic-http-certification",
- "ic-response-verification",
- "serde",
- "serde_bytes",
 ]
 
 [[package]]

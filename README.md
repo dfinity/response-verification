@@ -193,9 +193,7 @@ The `ic-response-verification` and `@dfinity/response-verification` packages enc
 
 - [`ic-response-verificaiton` source code](./packages/ic-response-verification/README.md)
 - [`@dfinity/response-verification` source code](./packages/ic-response-verification-wasm/README.md)
-- [Example project that verifies responses in NodeJS](./examples/response-verification/nodejs/README.md)
-- [Example project that verifies responses in Rust](./examples/response-verification/rust/README.md)
-- [Example project that verifies responses in the browser](./examples/response-verification/web/README.md)
+- [Usage example in the `ic-http-gateway` library](https://github.com/dfinity/http-gateway/tree/main/packages/ic-http-gateway)
 
 ## Miscellaneous Projects
 

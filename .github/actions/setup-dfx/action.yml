@@ -4,32 +4,8 @@ description: Setup DFX
 runs:
   using: 'composite'
   steps:
-    - name: Cache DFX
-      uses: actions/cache@v3
-      with:
-        path: /usr/local/bin/dfx
-        key: dfx-cache-${{ env.dfx_version }}
-
     - name: Install dfx
       uses: dfinity/setup-dfx@main
-      with:
-        dfx-version: '0.18.0'
-
-    - name: Configure DFX
-      shell: bash
-      run: |
-        mkdir -p $HOME/.config/dfx
-        cat <<EOF >$HOME/.config/dfx/networks.json
-        {
-          "local": {
-            "bind": "127.0.0.1:8080",
-            "type": "ephemeral",
-            "replica": {
-              "subnet_type": "system"
-            }
-          }
-        }
-        EOF
 
     - name: Run DFX
       shell: bash

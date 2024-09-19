@@ -5,7 +5,7 @@ import {
   Request,
 } from '@dfinity/response-verification';
 
-import { _SERVICE } from '../../declarations/backend.did';
+import { _SERVICE } from '../../declarations/http_certification_custom_assets_backend.did';
 import { setupBackendCanister } from './wasm';
 import { CERTIFICATE_VERSION, mapToCanisterRequest } from './request';
 import { mapFromCanisterResponse } from './response';

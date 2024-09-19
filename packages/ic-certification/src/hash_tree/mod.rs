@@ -34,6 +34,7 @@ impl<Storage: AsRef<[u8]>> Label<Storage> {
     }
 
     /// The length of the output of [`Self::write_hex`]
+    #[cfg(feature = "serde")]
     fn hex_len(&self) -> usize {
         self.as_bytes().len() * 2
     }

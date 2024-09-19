@@ -1,5 +1,8 @@
 import { Response } from '@dfinity/response-verification';
-import { ErrResponse, HttpResponse } from '../../declarations/backend.did';
+import {
+  ErrResponse,
+  HttpResponse,
+} from '../../declarations/http_certification_json_api_backend.did';
 
 export function mapFromCanisterResponse(response: HttpResponse): Response {
   return {

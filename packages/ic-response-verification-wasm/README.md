@@ -47,12 +47,3 @@ try {
   }
 }
 ```
-
-## Examples
-
-See the following for working examples:
-
-- [Web](https://github.com/dfinity/response-verification/tree/main/examples/response-verification/web)
-- [NodeJS](https://github.com/dfinity/response-verification/tree/main/examples/response-verification/nodejs)
-
-Note that when bundling for a service worker with Webpack. The `target` property must be set to `webworker`.

@@ -1,7 +1,31 @@
 import { verifyCertification } from '@dfinity/certificate-verification';
-import { HttpAgent, compare, lookup_path } from '@dfinity/agent';
+import { Actor, HttpAgent, compare, lookup_path } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
-import { backend, canisterId } from '../../declarations/backend';
+import {
+  idlFactory,
+  _SERVICE,
+} from '../../declarations/certification_certified_counter_backend.did';
+
+const canisterId =
+  process.env.CANISTER_ID_CERTIFICATION_CERTIFIED_COUNTER_BACKEND ?? '';
+const dfxNetwork = process.env.DFX_NETWORK ?? '';
+
+const agent = new HttpAgent();
+
+if (dfxNetwork !== 'ic') {
+  agent.fetchRootKey().catch(err => {
+    console.warn(
+      'Unable to fetch root key. Check to ensure that your local replica is running',
+    );
+    console.error(err);
+  });
+}
+
+// Creates an actor with using the candid interface and the HttpAgent
+const backend = Actor.createActor<_SERVICE>(idlFactory, {
+  agent,
+  canisterId,
+});
 
 const buttonElement = document.querySelector<HTMLButtonElement>('#counter-inc');
 if (!buttonElement) {
