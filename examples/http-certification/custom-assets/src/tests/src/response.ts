@@ -1,5 +1,5 @@
 import { Response } from '@dfinity/response-verification';
-import { HttpResponse } from '../../declarations/backend.did';
+import { HttpResponse } from '../../declarations/http_certification_custom_assets_backend.did';
 
 export function mapFromCanisterResponse(response: HttpResponse): Response {
   return {

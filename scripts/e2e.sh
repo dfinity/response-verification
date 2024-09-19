@@ -95,16 +95,12 @@ deploy_dfx_project() {
 
   check_dfx_command
 
-  DFX_PROJECT_DIR="$(pwd)/packages/ic-response-verification-tests/dfx-project"
-
-  pushd "$DFX_PROJECT_DIR" || clean_exit
-  "$DFX" deploy
+  "$DFX" deploy response_verification_tests_frontend
 
   echo "getting canister id..."
-  "$DFX" canister id frontend
-  DFX_CANISTER_ID=$("$DFX" canister id frontend)
+  "$DFX" canister id response_verification_tests_frontend
+  DFX_CANISTER_ID=$("$DFX" canister id response_verification_tests_frontend)
   echo "$DFX_CANISTER_ID"
-  popd || clean_exit
 }
 
 clean_exit() {
@@ -131,10 +127,8 @@ run_e2e_tests() {
 
   DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_CANISTER_ID" || clean_exit
 
-  pnpm run --filter @dfinity/response-verification build || clean_exit
-  pushd ./packages/ic-response-verification-tests || clean_exit
-  DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS npx ts-node ./wasm-tests/main.ts -- "$DFX_CANISTER_ID" || clean_exit
-  popd || clean_exit
+  pnpm run -F @dfinity/response-verification build || clean_exit
+  DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS pnpm run -F response-verification-tests e2e-test -- "$DFX_CANISTER_ID" || clean_exit
 }
 
 # Parse the script arguments

@@ -1,0 +1,104 @@
+{
+  "dfx": "0.23.0",
+  "output_env_file": ".env",
+  "version": 1,
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    }
+  },
+  "canisters": {
+    "certification_certified_counter_backend": {
+      "type": "rust",
+      "candid": "examples/certification/certified-counter/src/backend/backend.did",
+      "package": "certification_certified_counter_backend",
+      "declarations": {
+        "bindings": ["js", "ts"],
+        "output": "examples/certification/certified-counter/src/declarations"
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
+    "certification_certified_counter_frontend": {
+      "type": "assets",
+      "dependencies": ["certification_certified_counter_backend"],
+      "source": ["examples/certification/certified-counter/src/frontend/dist"],
+      "build": "pnpm -F certification-certified-counter-frontend build",
+      "declarations": {
+        "bindings": []
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
+    "http_certification_assets_backend": {
+      "type": "custom",
+      "candid": "examples/http-certification/assets/src/backend/backend.did",
+      "wasm": "target/wasm32-unknown-unknown/release/http_certification_assets_backend.wasm",
+      "build": [
+        "pnpm -F http-certification-assets-frontend build",
+        "cargo build --target wasm32-unknown-unknown --release -p http_certification_assets_backend --locked"
+      ],
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "examples/http-certification/assets/src/declarations"
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
+    "http_certification_custom_assets_backend": {
+      "type": "custom",
+      "candid": "examples/http-certification/custom-assets/src/backend/backend.did",
+      "wasm": "target/wasm32-unknown-unknown/release/http_certification_custom_assets_backend.wasm",
+      "build": [
+        "pnpm -F http-certification-custom-assets-frontend build",
+        "cargo build --target wasm32-unknown-unknown --release -p http_certification_custom_assets_backend --locked"
+      ],
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "examples/http-certification/custom-assets/src/declarations"
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
+    "http_certification_json_api_backend": {
+      "type": "rust",
+      "package": "http_certification_json_api_backend",
+      "candid": "examples/http-certification/json-api/src/backend/backend.did",
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "examples/http-certification/json-api/src/declarations"
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
+    "http_certification_skip_certification_backend": {
+      "type": "rust",
+      "package": "http_certification_skip_certification_backend",
+      "candid": "examples/http-certification/skip-certification/src/backend/backend.did",
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "examples/http-certification/skip-certification/src/declarations"
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
+    "response_verification_tests_frontend": {
+      "type": "assets",
+      "source": ["packages/ic-response-verification-tests/src/frontend/dist"],
+      "build": "pnpm -F response-verification-tests-frontend build",
+      "declarations": {
+        "bindings": []
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    }
+  }
+}

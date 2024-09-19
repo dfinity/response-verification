@@ -13,7 +13,7 @@ import {
   CreateTodoItemResponse,
   UpdateTodoItemRequest,
   UpdateTodoItemResponse,
-} from '../../declarations/backend.did';
+} from '../../declarations/http_certification_json_api_backend.did';
 import { setupBackendCanister } from './wasm';
 import {
   CERTIFICATE_VERSION,
