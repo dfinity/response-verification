@@ -109,18 +109,6 @@ async function performTest(
 
   let httpResponse = await actor.http_request(httpRequest);
 
-  let request: Request = {
-    headers: httpRequest.headers,
-    method: httpRequest.method,
-    url: httpRequest.url,
-    body: httpRequest.body,
-  };
-  let response: Response = {
-    body: httpResponse.body,
-    headers: httpResponse.headers,
-    statusCode: httpResponse.status_code,
-  };
-
   const currentTimeNs = BigInt.asUintN(64, BigInt(Date.now() * 1_000_000)); // from ms to nanoseconds
   const maxCertTimeOffsetNs = BigInt.asUintN(64, BigInt(300_000_000_000));
 
@@ -129,8 +117,8 @@ async function performTest(
   }
 
   return verifyRequestResponsePair(
-    request,
-    response,
+    httpRequest,
+    httpResponse,
     canisterId.toUint8Array(),
     currentTimeNs,
     maxCertTimeOffsetNs,

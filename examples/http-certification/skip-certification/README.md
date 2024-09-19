@@ -16,7 +16,7 @@ This is a relatively simple guide so there's no prerequisites as such, but it's 
 - [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
 - [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) guide.
 
-# Skipping certification
+## Skipping certification
 
 Skipping certification for all responses is a relatively simple task that can be completed in 2 steps.
 
@@ -52,7 +52,7 @@ fn http_request() -> HttpResponse<'static> {
 
 The call to `data_certificate` returns a certificate that proves the canister's certified data was signed by consensus. This will be included in the header along with all additional information required by the HTTP Gateway to safely skip verification of this response.
 
-# Testing out the canister
+## Testing out the canister
 
 Start DFX:
 

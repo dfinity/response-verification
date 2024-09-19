@@ -4,16 +4,16 @@ use wasm_bindgen::{prelude::*, JsCast};
 #[wasm_bindgen(typescript_custom_section)]
 const RESPONSE: &'static str = r#"
 interface Response {
-    statusCode: number;
+    status_code: number;
     headers: [string, string][];
-    body: Uint8Array;
+    body: Uint8Array | number[];
 }
 "#;
 
 pub fn response_from_js(resp: JsValue) -> HttpResponse<'static> {
     use js_sys::{Array, JsString, Number, Object, Uint8Array};
 
-    let status_code_str = JsString::from("statusCode");
+    let status_code_str = JsString::from("status_code");
     let headers_str = JsString::from("headers");
     let body_str = JsString::from("body");
 
@@ -64,7 +64,7 @@ mod tests {
     fn request_from() {
         let v = JSON::parse(
             r#"{
-                "statusCode": 200,
+                "status_code": 200,
                 "body": [0, 1, 2, 3, 4, 5, 6],
                 "headers": [
                     ["header1", "header1val"],

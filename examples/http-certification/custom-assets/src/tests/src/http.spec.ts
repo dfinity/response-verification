@@ -7,9 +7,8 @@ import {
 
 import { _SERVICE } from '../../declarations/http_certification_custom_assets_backend.did';
 import { setupBackendCanister } from './wasm';
-import { CERTIFICATE_VERSION, mapToCanisterRequest } from './request';
-import { mapFromCanisterResponse } from './response';
 
+const CERTIFICATE_VERSION = 2;
 const NS_PER_MS = 1e6;
 const MS_PER_S = 1e3;
 const S_PER_MIN = 60;
@@ -45,12 +44,11 @@ describe('HTTP', () => {
       method: 'GET',
       headers: [],
       body: new Uint8Array(),
+      certificate_version: [],
     };
-    const canisterRequest = mapToCanisterRequest(request);
 
-    const canisterResponse = await actor.http_request(canisterRequest);
-    const response = mapFromCanisterResponse(canisterResponse);
-    expect(response.statusCode).toBe(200);
+    const response = await actor.http_request(request);
+    expect(response.status_code).toBe(200);
 
     let verificationResult = verifyRequestResponsePair(
       request,

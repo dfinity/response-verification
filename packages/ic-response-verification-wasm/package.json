@@ -21,6 +21,6 @@
   "types": "./dist/web/web.d.ts",
   "scripts": {
     "build": "../../scripts/package.sh . ./dist",
-    "test": " wasm-pack test --node"
+    "test": "wasm-pack test --node"
   }
 }

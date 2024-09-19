@@ -15,17 +15,12 @@ import {
   UpdateTodoItemResponse,
 } from '../../declarations/http_certification_json_api_backend.did';
 import { setupBackendCanister } from './wasm';
-import {
-  CERTIFICATE_VERSION,
-  jsonEncode,
-  mapToCanisterRequest,
-} from './request';
+import { CERTIFICATE_VERSION, jsonEncode } from './request';
 import {
   Ok,
   extractErrResponse,
   extractOkResponse,
   jsonDecode,
-  mapFromCanisterResponse,
 } from './response';
 
 const NS_PER_MS = 1e6;
@@ -63,15 +58,14 @@ describe('Todos', () => {
       method: 'GET',
       headers: [],
       body: new Uint8Array(),
+      certificate_version: [],
     };
-    const canisterRequest = mapToCanisterRequest(request);
 
-    const canisterResponse = await actor.http_request(canisterRequest);
-    const response = mapFromCanisterResponse(canisterResponse);
+    const response = await actor.http_request(request);
     const responseBody = extractOkResponse<Ok<ListTodoItemsResponse>>(
       response.body,
     );
-    expect(response.statusCode).toBe(200);
+    expect(response.status_code).toBe(200);
     expect(responseBody).toEqual([]);
 
     let verificationResult = verifyRequestResponsePair(
@@ -101,21 +95,13 @@ describe('Todos', () => {
       body: jsonEncode<CreateTodoItemRequest>({
         title: todoTitle,
       }),
+      certificate_version: [],
     };
 
-    const canisterCreateRequest = mapToCanisterRequest(createRequest);
+    const createResponse = await actor.http_request(createRequest);
+    expect(createResponse.upgrade).toEqual([true]);
 
-    const canisterCreateResponse = await actor.http_request(
-      canisterCreateRequest,
-    );
-    expect(canisterCreateResponse.upgrade).toEqual([true]);
-
-    const canisterCreateUpdateResponse = await actor.http_request_update(
-      canisterCreateRequest,
-    );
-    const createUpdateResponse = mapFromCanisterResponse(
-      canisterCreateUpdateResponse,
-    );
+    const createUpdateResponse = await actor.http_request_update(createRequest);
     const createUpdateResponseBody = extractOkResponse<
       Ok<CreateTodoItemResponse>
     >(createUpdateResponse.body);
@@ -130,15 +116,10 @@ describe('Todos', () => {
       method: 'GET',
       headers: [],
       body: new Uint8Array(),
+      certificate_version: [],
     };
-    const canisterAfterCreateRequest = mapToCanisterRequest(afterCreateRequest);
 
-    const canisterAfterCreateResponse = await actor.http_request(
-      canisterAfterCreateRequest,
-    );
-    const afterCreateResponse = mapFromCanisterResponse(
-      canisterAfterCreateResponse,
-    );
+    const afterCreateResponse = await actor.http_request(afterCreateRequest);
     const afterCreateResponseBody = jsonDecode<ListTodoItemsResponse>(
       afterCreateResponse.body,
     );
@@ -170,21 +151,13 @@ describe('Todos', () => {
       body: jsonEncode<UpdateTodoItemRequest>({
         completed: true,
       }),
+      certificate_version: [],
     };
 
-    const canisterUpdateRequest = mapToCanisterRequest(updateRequest);
+    const updateResponse = await actor.http_request(updateRequest);
+    expect(updateResponse.upgrade).toEqual([true]);
 
-    const canisterUpdateResponse = await actor.http_request(
-      canisterUpdateRequest,
-    );
-    expect(canisterUpdateResponse.upgrade).toEqual([true]);
-
-    const canisterUpdateUpdateResponse = await actor.http_request_update(
-      canisterUpdateRequest,
-    );
-    const updateUpdateResponse = mapFromCanisterResponse(
-      canisterUpdateUpdateResponse,
-    );
+    const updateUpdateResponse = await actor.http_request_update(updateRequest);
     const updateUpdateResponseBody = extractOkResponse<
       Ok<UpdateTodoItemResponse>
     >(updateUpdateResponse.body);
@@ -195,15 +168,10 @@ describe('Todos', () => {
       method: 'GET',
       headers: [],
       body: new Uint8Array(),
+      certificate_version: [],
     };
-    const canisterAfterUpdateRequest = mapToCanisterRequest(afterUpdateRequest);
 
-    const canisterAfterUpdateResponse = await actor.http_request(
-      canisterAfterUpdateRequest,
-    );
-    const afterUpdateResponse = mapFromCanisterResponse(
-      canisterAfterUpdateResponse,
-    );
+    const afterUpdateResponse = await actor.http_request(afterUpdateRequest);
     const afterUpdateResponseBody = jsonDecode<ListTodoItemsResponse>(
       afterUpdateResponse.body,
     );
@@ -237,24 +205,17 @@ describe('Todos', () => {
       method: 'DELETE',
       headers: [],
       body: new Uint8Array(),
+      certificate_version: [],
     };
-    const canisterDeleteRequest = mapToCanisterRequest(deleteRequest);
 
-    const canisterDeleteResponse = await actor.http_request(
-      canisterDeleteRequest,
-    );
-    expect(canisterDeleteResponse.upgrade).toEqual([true]);
+    const deleteResponse = await actor.http_request(deleteRequest);
+    expect(deleteResponse.upgrade).toEqual([true]);
 
-    const canisterDeleteUpdateResponse = await actor.http_request_update(
-      canisterDeleteRequest,
-    );
-    const deleteUpdateResponse = mapFromCanisterResponse(
-      canisterDeleteUpdateResponse,
-    );
+    const deleteUpdateResponse = await actor.http_request_update(deleteRequest);
     const deleteUpdateResponseBody = extractOkResponse<
       Ok<CreateTodoItemResponse>
     >(deleteUpdateResponse.body);
-    expect(canisterDeleteUpdateResponse.status_code).toEqual(204);
+    expect(deleteUpdateResponse.status_code).toEqual(204);
     expect(deleteUpdateResponseBody).toEqual(null);
 
     const afterDeleteRequest: Request = {
@@ -262,15 +223,10 @@ describe('Todos', () => {
       method: 'GET',
       headers: [],
       body: new Uint8Array(),
+      certificate_version: [],
     };
-    const canisterAfterDeleteRequest = mapToCanisterRequest(afterDeleteRequest);
 
-    const canisterAfterDeleteResponse = await actor.http_request(
-      canisterAfterDeleteRequest,
-    );
-    const afterDeleteResponse = mapFromCanisterResponse(
-      canisterAfterDeleteResponse,
-    );
+    const afterDeleteResponse = await actor.http_request(afterDeleteRequest);
     const afterDeleteResponseBody = jsonDecode<ListTodoItemsResponse>(
       afterDeleteResponse.body,
     );
@@ -307,13 +263,12 @@ describe('Todos', () => {
         method,
         headers: [],
         body: new Uint8Array(),
+        certificate_version: [],
       };
-      const canisterRequest = mapToCanisterRequest(request);
 
-      const canisterResponse = await actor.http_request(canisterRequest);
-      const response = mapFromCanisterResponse(canisterResponse);
+      const response = await actor.http_request(request);
       const responseBody = extractErrResponse(response.body);
-      expect(response.statusCode).toBe(405);
+      expect(response.status_code).toBe(405);
       expect(responseBody).toEqual({
         code: 405,
         message: 'Method not allowed',
@@ -346,13 +301,12 @@ describe('Todos', () => {
       method: 'GET',
       headers: [],
       body: new Uint8Array(),
+      certificate_version: [],
     };
-    const canisterRequest = mapToCanisterRequest(request);
 
-    const canisterResponse = await actor.http_request(canisterRequest);
-    const response = mapFromCanisterResponse(canisterResponse);
+    const response = await actor.http_request(request);
     const responseBody = extractErrResponse(response.body);
-    expect(response.statusCode).toBe(404);
+    expect(response.status_code).toBe(404);
     expect(responseBody).toEqual({
       code: 404,
       message: 'Not found',
@@ -382,7 +336,7 @@ function expectResponseEqual(
   expected: Response,
 ): void {
   expect(actual).toBeDefined();
-  expect(actual?.statusCode).toBe(expected.statusCode);
+  expect(actual?.statusCode).toBe(expected.status_code);
   expect(actual?.body).toEqual(expected.body);
   expect(actual?.headers.length).toEqual(expected.headers.length);
 

@@ -4,10 +4,11 @@ use wasm_bindgen::{prelude::*, JsCast};
 #[wasm_bindgen(typescript_custom_section)]
 const REQUEST: &'static str = r#"
 interface Request {
-    method: string;
     url: string;
+    method: string;
+    body: Uint8Array | number[];
     headers: [string, string][];
-    body: Uint8Array;
+    certificate_version: [] | [number],
 }
 "#;
 
