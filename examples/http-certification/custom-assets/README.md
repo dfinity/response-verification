@@ -157,7 +157,7 @@ fn create_asset_response(
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
         ("cross-origin-opener-policy".to_string(), "same-origin".to_string()),
         ("content-length".to_string(), body.len().to_string()),
-        (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
     ];
     headers.extend(additional_headers);
 
@@ -172,7 +172,6 @@ fn create_asset_response(
 The next function to look at is a reusable function that can certify any asset.
 
 ```rust
-const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 fn certify_asset_response(
     body: &'static [u8],
     additional_headers: Vec<HeaderField>,
@@ -469,12 +468,19 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
 
             let mut response = response.clone();
 
-            add_certificate_header(
-                &mut response,
-                &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
-                &req_path,
-                &asset_tree_path.to_expr_path(),
-            );
+            HTTP_TREE.with_borrow(|http_tree| {
+                add_v2_certificate_header(
+                    &data_certificate().expect("No data certificate available"),
+                    &mut response,
+                    &http_tree
+                        .witness(
+                            &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
+                            &req_path,
+                        )
+                        .unwrap(),
+                    &asset_tree_path.to_expr_path(),
+                );
+            });
 
             response
         })
@@ -496,4 +502,4 @@ fn http_request(req: HttpRequest) -> HttpResponse {
 - [Example source code](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/custom-assets).
 - [`ic-http-certification` crate](https://crates.io/crates/ic-http-certification).
 - [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification).
-- [`ic-http-certification` source code](https://github.com/dfinity/response-verification/tree/main/packages/ic-http-certification)
+- [`ic-http-certification` source code](https://github.com/dfinity/response-verification/tree/main/packages/ic-http-certification).

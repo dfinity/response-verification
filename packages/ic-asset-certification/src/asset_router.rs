@@ -2,11 +2,10 @@ use crate::{
     Asset, AssetCertificationError, AssetCertificationResult, AssetConfig, AssetEncoding,
     AssetFallbackConfig, AssetRedirectKind, NormalizedAssetConfig,
 };
-use ic_certification::HashTree;
 use ic_http_certification::{
-    DefaultCelBuilder, DefaultResponseCertification, Hash, HttpCertification,
-    HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
-    HttpResponse,
+    utils::add_v2_certificate_header, DefaultCelBuilder, DefaultResponseCertification, Hash,
+    HttpCertification, HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry,
+    HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use regex::Regex;
 use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
@@ -98,8 +97,10 @@ struct CertifiedAssetResponse<'a> {
 ///
 /// let index_html_request = HttpRequest::get("/").build();
 ///
-/// let (index_html_response, index_html_tree, index_html_expr_path) = asset_router
-///     .serve_asset(&index_html_request)
+/// // this should normally be retrieved using `ic_cdk::api::data_certificate()`.
+/// let data_certificate = vec![1, 2, 3];
+/// let index_html_response = asset_router
+///     .serve_asset(&data_certificate, &index_html_request)
 ///     .unwrap();
 /// ```
 ///
@@ -149,7 +150,6 @@ struct RangeRequestValues {
     pub range_end: Option<usize>,
 }
 
-const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 const ASSET_CHUNK_SIZE: usize = 2_000_000;
 
 fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
@@ -222,10 +222,13 @@ impl<'content> AssetRouter<'content> {
     /// Returns the corresponding
     /// [HttpResponse](ic_http_certification::HttpResponse) for the provided
     /// [HttpRequest](ic_http_certification::HttpRequest) if it is found
-    /// in the router, along with the
-    /// [certification witness](ic_certification::HashTree) and the
-    /// corresponding
-    /// [expression path](ic_http_certification::HttpCertificationPath).
+    /// in the router.
+    ///
+    /// # Arguments
+    ///
+    /// * `data_certificate` - A byte slice representing the data certificate used for asset certification.
+    ///     This should be retrieved using `ic_cdk::api::data_certificate()`.
+    /// * `request` - A reference to an [HttpRequest](ic_http_certification::HttpRequest) object representing the incoming HTTP request.
     ///
     /// If an exact match is not found, then a fallback will
     /// be searched for. See the
@@ -237,118 +240,26 @@ impl<'content> AssetRouter<'content> {
     /// given [HttpRequest](ic_http_certification::HttpRequest).
     pub fn serve_asset(
         &self,
+        data_certificate: &[u8],
         request: &HttpRequest,
-    ) -> AssetCertificationResult<(HttpResponse<'content>, HashTree, Vec<String>)> {
+    ) -> AssetCertificationResult<HttpResponse<'content>> {
         let preferred_encodings = self.get_preferred_encodings(request);
-        let req_path = request.get_path()?;
-        let maybe_range_begin = Self::maybe_get_range_begin(request)?;
-
-        if let Some(CertifiedAssetResponse {
-            response,
-            tree_entry,
-        }) = self.get_encoded_asset(&preferred_encodings, &req_path)
-        {
-            let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
-            let expr_path = tree_entry.path.to_expr_path();
-            return Ok((response.clone(), witness, expr_path));
-        }
-
-        if let Some(CertifiedAssetResponse {
-            response,
-            tree_entry,
-        }) = self
-            .responses
-            .get(&RequestKey::new(&req_path, None, maybe_range_begin))
-        {
-            println!(
-                "+++ serve_asset request key: {:?}",
-                RequestKey::new(&req_path, None, maybe_range_begin)
-            );
-            println!("+++ serve_asset with response: {:?}", response);
-            if response.body().len() > ASSET_CHUNK_SIZE {
-                if let Some(CertifiedAssetResponse {
-                    response,
-                    tree_entry,
-                }) = self
-                    .responses
-                    .get(&RequestKey::new(&req_path, None, Some(0)))
-                {
-                    let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
-                    let expr_path = tree_entry.path.to_expr_path();
-
-                    return Ok((response.clone(), witness, expr_path));
-                }
-            } else {
-                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
-                let expr_path = tree_entry.path.to_expr_path();
-
-                return Ok((response.clone(), witness, expr_path));
-            }
-        }
-
-        let mut url_scopes = req_path.split('/').collect::<Vec<_>>();
-        url_scopes.pop();
-
-        while !url_scopes.is_empty() {
-            let mut scope = url_scopes.join("/");
-            scope.push('/');
-
-            if let Some(CertifiedAssetResponse {
-                response,
-                tree_entry,
-            }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
-            {
-                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
-                let expr_path = tree_entry.path.to_expr_path();
-
-                return Ok((response.clone(), witness, expr_path));
-            }
-
-            if let Some(CertifiedAssetResponse {
-                response,
-                tree_entry,
-            }) = self
-                .fallback_responses
-                .get(&RequestKey::new(&scope, None, None))
-            {
-                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
-                let expr_path = tree_entry.path.to_expr_path();
-
-                return Ok((response.clone(), witness, expr_path));
-            }
-
-            scope.pop();
-
-            if let Some(CertifiedAssetResponse {
-                response,
-                tree_entry,
-            }) = self.get_encoded_fallback_asset(&preferred_encodings, &scope)
-            {
-                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
-                let expr_path = tree_entry.path.to_expr_path();
-
-                return Ok((response.clone(), witness, expr_path));
-            }
-
-            if let Some(CertifiedAssetResponse {
-                response,
-                tree_entry,
-            }) = self
-                .fallback_responses
-                .get(&RequestKey::new(&scope, None, None))
-            {
-                let witness = self.tree.borrow().witness(tree_entry, &req_path)?;
-                let expr_path = tree_entry.path.to_expr_path();
-
-                return Ok((response.clone(), witness, expr_path));
-            }
-
-            url_scopes.pop();
-        }
-
-        Err(AssetCertificationError::NoAssetMatchingRequestUrl {
-            request_url: req_path.to_string(),
-        })
+        let request_url = request.get_path()?;
+        let mut cert_response = self
+            .get_asset_for_request(request, preferred_encodings)
+            .cloned()?;
+        let witness = self
+            .tree
+            .borrow()
+            .witness(&cert_response.tree_entry, &request_url)?;
+        let expr_path = cert_response.tree_entry.path.to_expr_path();
+        add_v2_certificate_header(
+            data_certificate,
+            &mut cert_response.response,
+            &witness,
+            &expr_path,
+        );
+        Ok(cert_response.response.clone())
     }
 
     /// Certifies multiple assets and inserts them into the router, to be served
@@ -464,6 +375,72 @@ impl<'content> AssetRouter<'content> {
     /// [HttpCertificationTree](ic_http_certification::HttpCertificationTree).
     pub fn root_hash(&self) -> Hash {
         self.tree.borrow().root_hash()
+    }
+
+    fn get_asset_for_request<'a>(
+        &self,
+        request: &HttpRequest,
+        preferred_encodings: Vec<&'a str>,
+    ) -> AssetCertificationResult<&CertifiedAssetResponse<'content>> {
+        let req_path = request.get_path()?;
+        let maybe_range_begin = Self::maybe_get_range_begin(request)?;
+
+        if let Some(response) = self.get_encoded_asset(&preferred_encodings, &req_path) {
+            return Ok(response);
+        }
+
+        if let Some(response) =
+            self.responses
+                .get(&RequestKey::new(&req_path, None, maybe_range_begin))
+        {
+            if response.response.body().len() > ASSET_CHUNK_SIZE {
+                if let Some(first_chunk_response) =
+                    self.responses
+                        .get(&RequestKey::new(&req_path, None, Some(0)))
+                {
+                    return Ok(first_chunk_response);
+                }
+            } else {
+                return Ok(response);
+            }
+        }
+
+        let mut url_scopes = req_path.split('/').collect::<Vec<_>>();
+        url_scopes.pop();
+
+        while !url_scopes.is_empty() {
+            let mut scope = url_scopes.join("/");
+            scope.push('/');
+
+            if let Some(response) = self.get_encoded_fallback_asset(&preferred_encodings, &scope) {
+                return Ok(response);
+            }
+
+            if let Some(response) = self
+                .fallback_responses
+                .get(&RequestKey::new(&scope, None, None))
+            {
+                return Ok(response);
+            }
+
+            scope.pop();
+
+            if let Some(response) = self.get_encoded_fallback_asset(&preferred_encodings, &scope) {
+                return Ok(response);
+            }
+
+            if let Some(response) = self
+                .fallback_responses
+                .get(&RequestKey::new(&scope, None, None))
+            {
+                return Ok(response);
+            }
+
+            url_scopes.pop();
+        }
+        Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+            request_url: req_path,
+        })
     }
 
     fn certify_asset_impl<'path>(
@@ -881,7 +858,7 @@ impl<'content> AssetRouter<'content> {
             ))
             .build();
         let cel_expr_str = cel_expr.to_string();
-        headers.push((IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr_str));
+        headers.push((CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr_str));
 
         let request = HttpRequest::get(url).build();
 
@@ -1010,8 +987,12 @@ mod tests {
     use super::*;
     use crate::AssetFallbackConfig;
     use assert_matches::assert_matches;
-    use ic_certification::hash_tree::SubtreeLookupResult;
-    use ic_http_certification::{cel::DefaultFullCelExpressionBuilder, HeaderField};
+    use ic_certification::{hash_tree::SubtreeLookupResult, HashTree};
+    use ic_http_certification::{
+        cel::DefaultFullCelExpressionBuilder, HeaderField, CERTIFICATE_HEADER_NAME,
+    };
+    use ic_response_verification::CertificateHeader;
+    use ic_response_verification_test_utils::base64_decode;
     use rstest::*;
     use std::vec;
 
@@ -1025,7 +1006,7 @@ mod tests {
     fn test_index_html(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
 
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1037,7 +1018,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<$>"]);
         assert!(matches!(
@@ -1053,7 +1043,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1073,7 +1063,7 @@ mod tests {
     ) {
         // Request the entire asset, should obtain the first chunk.
         let request = HttpRequest::get(req_url).build();
-        let expected_response = build_206_response(
+        let mut expected_response = build_206_response(
             long_asset_body(asset_len)[0..ASSET_CHUNK_SIZE].to_vec(),
             asset_cel_expr(),
             vec![
@@ -1089,7 +1079,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = long_asset_router.serve_asset(&request).unwrap();
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
         assert_matches!(
@@ -1111,7 +1110,7 @@ mod tests {
                 )])
                 .build();
             let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
-            let expected_response = build_206_response(
+            let mut expected_response = build_206_response(
                 long_asset_body(asset_len)[asset_len_so_far..=expected_range_end].to_vec(),
                 asset_cel_expr(),
                 vec![
@@ -1129,11 +1128,19 @@ mod tests {
                     ),
                 ],
             );
-            let (response, witness, expr_path) =
-                long_asset_router.serve_asset(&chunk_request).unwrap();
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
             assert_matches!(
                 witness.lookup_subtree(&expr_path),
                 SubtreeLookupResult::Found(_)
+            );
+            add_v2_certificate_header(
+                &data_certificate(),
+                &mut expected_response,
+                &witness,
+                &expr_path,
             );
             assert_eq!(response, expected_response);
             asset_len_so_far += response.body().len();
@@ -1155,7 +1162,10 @@ mod tests {
         // Request the entire asset and the chunks, all should succeed.
         // First the asset...
         let request = HttpRequest::get(req_url).build();
-        let (response, witness, expr_path) = long_asset_router.serve_asset(&request).unwrap();
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
 
         assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
         assert_matches!(
@@ -1177,8 +1187,10 @@ mod tests {
                     format!("bytes={}-", asset_len_so_far),
                 )])
                 .build();
-            let (response, witness, expr_path) =
-                long_asset_router.serve_asset(&chunk_request).unwrap();
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
             assert_matches!(
                 witness.lookup_subtree(&expr_path),
                 SubtreeLookupResult::Found(_)
@@ -1201,7 +1213,7 @@ mod tests {
 
         // Re-request the asset and the chunks, all should fail.
         for request in all_requests {
-            let result = long_asset_router.serve_asset(&request);
+            let result = long_asset_router.serve_asset(&data_certificate(), &request);
             assert_matches!(
                 result,
                 Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1253,7 +1265,7 @@ mod tests {
                 accept_encoding.to_string(),
             )])
             .build();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             expected_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1268,7 +1280,16 @@ mod tests {
                 ),
             ],
         );
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(
             expr_path,
@@ -1292,7 +1313,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1363,7 +1384,7 @@ mod tests {
                 accept_encoding.to_string(),
             )])
             .build();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             expected_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1379,7 +1400,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         let requested_expr_path = HttpCertificationPath::exact(req_url).to_expr_path();
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
@@ -1405,7 +1435,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1422,7 +1452,7 @@ mod tests {
         #[case] req_url: &str,
         #[case] req_path: &str,
     ) {
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1437,7 +1467,16 @@ mod tests {
         let request = HttpRequest::get(req_url).build();
         let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
@@ -1462,7 +1501,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1482,7 +1521,7 @@ mod tests {
         #[case] req_url: &str,
         #[case] req_path: &str,
     ) {
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1497,7 +1536,16 @@ mod tests {
         let request = HttpRequest::get(req_url).build();
         let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
@@ -1522,7 +1570,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1536,7 +1584,7 @@ mod tests {
     #[case("https://internetcomputer.org/css/app-ba74b708.css")]
     fn text_app_css(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             app_css_body(),
             asset_cel_expr(),
             vec![
@@ -1548,7 +1596,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(
             expr_path,
@@ -1566,7 +1623,7 @@ mod tests {
                 vec![css_config()],
             )
             .unwrap();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -1578,7 +1635,17 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "css", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -1597,7 +1664,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1609,7 +1676,17 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -1629,7 +1706,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1643,7 +1720,7 @@ mod tests {
     #[case("https://internetcomputer.org/css/core-8d4jhgy2.js")]
     fn test_not_found_css(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -1655,7 +1732,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "css", "<*>"]);
         assert!(matches!(
@@ -1675,7 +1761,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1687,7 +1773,17 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -1707,7 +1803,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1721,7 +1817,7 @@ mod tests {
     #[case("https://internetcomputer.org/js/app-488df671.js")]
     fn test_app_js(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             app_js_body(),
             asset_cel_expr(),
             vec![
@@ -1733,7 +1829,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "app-488df671.js", "<$>"]);
         assert!(matches!(
@@ -1753,7 +1858,7 @@ mod tests {
                 vec![js_config()],
             )
             .unwrap();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -1765,7 +1870,17 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "js", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -1784,7 +1899,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1796,7 +1911,17 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -1816,7 +1941,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -1960,7 +2085,7 @@ mod tests {
             )])
             .build();
 
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             expected_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1976,7 +2101,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "app-488df671.js", "<$>"]);
         assert!(matches!(
@@ -1996,7 +2130,7 @@ mod tests {
                 vec![js_config()],
             )
             .unwrap();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             expected_not_found_body,
             encoded_asset_cel_expr(),
             vec![
@@ -2012,7 +2146,17 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "js", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -2031,7 +2175,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             expected_index_body,
             encoded_asset_cel_expr(),
             vec![
@@ -2047,7 +2191,17 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -2067,7 +2221,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -2081,7 +2235,7 @@ mod tests {
     #[case("https://internetcomputer.org/js/core-7dk12y45.js")]
     fn test_not_found_js(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -2093,7 +2247,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "<*>"]);
         assert!(matches!(
@@ -2114,9 +2277,7 @@ mod tests {
             )
             .unwrap();
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
-
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2127,6 +2288,18 @@ mod tests {
                 ),
             ],
         );
+
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -2146,7 +2319,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -2170,8 +2343,7 @@ mod tests {
     #[case("https://internetcomputer.org/not-found/index.html")]
     fn test_not_found_alias(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -2183,7 +2355,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(
             expr_path,
@@ -2207,9 +2388,11 @@ mod tests {
             )
             .unwrap();
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
 
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2220,6 +2403,18 @@ mod tests {
                 ),
             ],
         );
+
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
             witness.lookup_subtree(&expr_path),
@@ -2239,7 +2434,7 @@ mod tests {
             )
             .unwrap();
 
-        let result = asset_router.serve_asset(&request);
+        let result = asset_router.serve_asset(&data_certificate(), &request);
         assert!(matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
@@ -2260,30 +2455,46 @@ mod tests {
         let css_request = HttpRequest::get("/css/app.css").build();
         let old_url_request = HttpRequest::get("/old-url").build();
 
-        let expected_css_response = HttpResponse::builder()
+        let mut expected_css_response = HttpResponse::builder()
             .with_status_code(307)
             .with_headers(vec![
                 ("content-length".to_string(), "0".to_string()),
                 ("location".to_string(), "/css/app-ba74b708.css".to_string()),
                 (
-                    IC_CERTIFICATE_EXPRESSION_HEADER.to_string(),
+                    CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                     cel_expr.clone(),
                 ),
             ])
             .build();
-        let expected_old_url_response = HttpResponse::builder()
+        let mut expected_old_url_response = HttpResponse::builder()
             .with_status_code(301)
             .with_headers(vec![
                 ("content-length".to_string(), "0".to_string()),
                 ("location".to_string(), "/".to_string()),
-                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
             ])
             .build();
 
-        let (css_response, css_witness, css_expr_path) =
-            asset_router.serve_asset(&css_request).unwrap();
-        let (old_url_response, old_url_witness, old_url_expr_path) =
-            asset_router.serve_asset(&old_url_request).unwrap();
+        let css_response = asset_router
+            .serve_asset(&data_certificate(), &css_request)
+            .unwrap();
+        let (css_witness, css_expr_path) = extract_witness_expr_path(&css_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_css_response,
+            &css_witness,
+            &css_expr_path,
+        );
+        let old_url_response = asset_router
+            .serve_asset(&data_certificate(), &old_url_request)
+            .unwrap();
+        let (old_url_witness, old_url_expr_path) = extract_witness_expr_path(&old_url_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_old_url_response,
+            &old_url_witness,
+            &old_url_expr_path,
+        );
 
         assert_eq!(css_expr_path, vec!["http_expr", "css", "app.css", "<$>"]);
         assert!(matches!(
@@ -2305,7 +2516,7 @@ mod tests {
                 vec![old_url_redirect_config(), css_redirect_config()],
             )
             .unwrap();
-        let expected_css_response = build_200_response(
+        let mut expected_css_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -2316,7 +2527,7 @@ mod tests {
                 ("content-type".to_string(), "text/html".to_string()),
             ],
         );
-        let expected_old_url_response = build_200_response(
+        let mut expected_old_url_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2328,10 +2539,26 @@ mod tests {
             ],
         );
 
-        let (css_response, css_witness, css_expr_path) =
-            asset_router.serve_asset(&css_request).unwrap();
-        let (old_url_response, old_url_witness, old_url_expr_path) =
-            asset_router.serve_asset(&old_url_request).unwrap();
+        let css_response = asset_router
+            .serve_asset(&data_certificate(), &css_request)
+            .unwrap();
+        let (css_witness, css_expr_path) = extract_witness_expr_path(&css_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_css_response,
+            &css_witness,
+            &css_expr_path,
+        );
+        let old_url_response = asset_router
+            .serve_asset(&data_certificate(), &old_url_request)
+            .unwrap();
+        let (old_url_witness, old_url_expr_path) = extract_witness_expr_path(&old_url_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_old_url_response,
+            &old_url_witness,
+            &old_url_expr_path,
+        );
 
         assert_eq!(css_expr_path, vec!["http_expr", "css", "<*>"]);
         assert!(matches!(
@@ -2358,7 +2585,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let expected_css_response = build_200_response(
+        let mut expected_css_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2369,7 +2596,7 @@ mod tests {
                 ("content-type".to_string(), "text/html".to_string()),
             ],
         );
-        let expected_old_url_response = build_200_response(
+        let mut expected_old_url_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2381,10 +2608,26 @@ mod tests {
             ],
         );
 
-        let (css_response, css_witness, css_expr_path) =
-            asset_router.serve_asset(&css_request).unwrap();
-        let (old_url_response, old_url_witness, old_url_expr_path) =
-            asset_router.serve_asset(&old_url_request).unwrap();
+        let css_response = asset_router
+            .serve_asset(&data_certificate(), &css_request)
+            .unwrap();
+        let (css_witness, css_expr_path) = extract_witness_expr_path(&css_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_css_response,
+            &css_witness,
+            &css_expr_path,
+        );
+        let old_url_response = asset_router
+            .serve_asset(&data_certificate(), &old_url_request)
+            .unwrap();
+        let (old_url_witness, old_url_expr_path) = extract_witness_expr_path(&old_url_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_old_url_response,
+            &old_url_witness,
+            &old_url_expr_path,
+        );
 
         assert_eq!(css_expr_path, vec!["http_expr", "", "<*>"]);
         assert!(matches!(
@@ -2412,8 +2655,8 @@ mod tests {
             )
             .unwrap();
 
-        let css_result = asset_router.serve_asset(&css_request);
-        let old_url_result = asset_router.serve_asset(&old_url_request);
+        let css_result = asset_router.serve_asset(&data_certificate(), &css_request);
+        let old_url_result = asset_router.serve_asset(&data_certificate(), &old_url_request);
 
         assert!(matches!(
             css_result,
@@ -2455,7 +2698,7 @@ mod tests {
 
         let request = HttpRequest::get("/").build();
 
-        let expected_response = build_200_response(
+        let mut expected_response = build_200_response(
             index_html_body.clone(),
             asset_cel_expr,
             vec![
@@ -2467,7 +2710,16 @@ mod tests {
             ],
         );
 
-        let (response, witness, expr_path) = asset_router.serve_asset(&request).unwrap();
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<$>"]);
         assert!(matches!(
@@ -2840,6 +3092,14 @@ mod tests {
         build_response(206, body, cel_expr, headers)
     }
 
+    // A certificate taken from a real response on mainnet. It doesn't matter what it contains,
+    // as long as it's a valid certificate. If we ever decide to run response verification in these
+    // tests then the content of the certificate will matter.
+    #[fixture]
+    fn data_certificate() -> Vec<u8> {
+        base64_decode("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")
+    }
+
     fn build_response<'a>(
         status_code: u16,
         body: Vec<u8>,
@@ -2850,7 +3110,7 @@ mod tests {
             .into_iter()
             .chain(vec![
                 ("content-length".to_string(), body.len().to_string()),
-                (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+                (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
             ])
             .collect();
 
@@ -2859,5 +3119,19 @@ mod tests {
             .with_body(body)
             .with_headers(combined_headers)
             .build()
+    }
+
+    fn extract_witness_expr_path(response: &HttpResponse) -> (HashTree, Vec<String>) {
+        let (_, certificate_header_str) = response
+            .headers()
+            .iter()
+            .find(|(name, _)| name.to_lowercase() == CERTIFICATE_HEADER_NAME.to_lowercase())
+            .unwrap();
+
+        let certificate_header = CertificateHeader::from(certificate_header_str).unwrap();
+        (
+            certificate_header.tree,
+            certificate_header.expr_path.unwrap(),
+        )
     }
 }

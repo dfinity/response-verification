@@ -1,5 +1,5 @@
 [package]
-name = "http_certification_assets_backend"
+name = "http_certification_custom_assets_backend"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,14 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow.workspace = true
 candid.workspace = true
 ic-cdk.workspace = true
-ic-cdk-macros.workspace = true
-serde.workspace = true
-serde_cbor.workspace = true
-sha2.workspace = true
-ic-http-certification = { workspace = true, features = ["serde"] }
-base64.workspace = true
+ic-http-certification.workspace = true
 lazy_static.workspace = true
 include_dir = { version = "0.7", features = ["glob"] }

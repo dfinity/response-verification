@@ -1,17 +1,15 @@
-use base64::engine::general_purpose::STANDARD as BASE64;
-use base64::Engine;
 use ic_cdk::{
     api::{data_certificate, set_certified_data},
     *,
 };
 use ic_http_certification::{
-    DefaultCelBuilder, DefaultResponseCertification, DefaultResponseOnlyCelExpression, HeaderField,
-    HttpCertification, HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry,
-    HttpRequest, HttpResponse,
+    utils::add_v2_certificate_header, DefaultCelBuilder, DefaultResponseCertification,
+    DefaultResponseOnlyCelExpression, HeaderField, HttpCertification, HttpCertificationPath,
+    HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
+    CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use include_dir::{include_dir, Dir};
 use lazy_static::lazy_static;
-use serde::Serialize;
 use std::{cell::RefCell, collections::HashMap};
 
 // Public methods
@@ -221,7 +219,6 @@ fn certify_asset_with_encoding(
     };
 }
 
-const IC_CERTIFICATE_EXPRESSION_HEADER: &str = "IC-CertificateExpression";
 fn certify_asset_response(
     body: &'static [u8],
     additional_headers: Vec<HeaderField>,
@@ -325,42 +322,23 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
 
             let mut response = response.clone();
 
-            add_certificate_header(
-                &mut response,
-                &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
-                &req_path,
-                &asset_tree_path.to_expr_path(),
-            );
+            HTTP_TREE.with_borrow(|http_tree| {
+                add_v2_certificate_header(
+                    &data_certificate().expect("No data certificate available"),
+                    &mut response,
+                    &http_tree
+                        .witness(
+                            &HttpCertificationTreeEntry::new(&asset_tree_path, certification),
+                            &req_path,
+                        )
+                        .unwrap(),
+                    &asset_tree_path.to_expr_path(),
+                );
+            });
 
             response
         })
     })
-}
-
-const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
-fn add_certificate_header(
-    response: &mut HttpResponse,
-    entry: &HttpCertificationTreeEntry,
-    request_url: &str,
-    expr_path: &[String],
-) {
-    let certified_data = data_certificate().expect("No data certificate available");
-    let witness = HTTP_TREE.with_borrow(|http_tree| {
-        let witness = http_tree.witness(entry, request_url).unwrap();
-
-        cbor_encode(&witness)
-    });
-    let expr_path = cbor_encode(&expr_path);
-
-    response.add_header((
-        IC_CERTIFICATE_HEADER.to_string(),
-        format!(
-            "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
-            BASE64.encode(certified_data),
-            BASE64.encode(witness),
-            BASE64.encode(expr_path)
-        ),
-    ));
 }
 
 fn create_asset_response(
@@ -379,7 +357,7 @@ fn create_asset_response(
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
         ("cross-origin-opener-policy".to_string(), "same-origin".to_string()),
         ("content-length".to_string(), body.len().to_string()),
-        (IC_CERTIFICATE_EXPRESSION_HEADER.to_string(), cel_expr),
+        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
     ];
     headers.extend(additional_headers);
 
@@ -388,16 +366,4 @@ fn create_asset_response(
         .with_headers(headers)
         .with_body(body)
         .build()
-}
-
-// Encoding
-fn cbor_encode(value: &impl Serialize) -> Vec<u8> {
-    let mut serializer = serde_cbor::Serializer::new(Vec::new());
-    serializer
-        .self_describe()
-        .expect("Failed to self describe CBOR");
-    value
-        .serialize(&mut serializer)
-        .expect("Failed to serialize value");
-    serializer.into_inner()
 }

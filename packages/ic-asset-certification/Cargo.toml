@@ -25,3 +25,5 @@ regex.workspace = true
 [dev-dependencies]
 rstest.workspace = true
 assert_matches.workspace = true
+ic-response-verification.workspace = true
+ic-response-verification-test-utils.workspace = true

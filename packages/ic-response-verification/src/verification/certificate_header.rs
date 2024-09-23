@@ -1,36 +1,49 @@
-use super::certificate_header_field::CertificateHeaderField;
+use super::{certificate_header_field::CertificateHeaderField, MIN_VERIFICATION_VERSION};
 use crate::{
     base64::BASE64,
     error::{ResponseVerificationError, ResponseVerificationResult},
 };
 use base64::Engine as _;
+use ic_cbor::{parse_cbor_string_array, CertificateToCbor, HashTreeToCbor};
+use ic_certification::{Certificate, HashTree};
 use log::warn;
 
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.
 #[derive(Debug, PartialEq, Eq)]
 pub struct CertificateHeader {
-    pub certificate: Option<Vec<u8>>,
-    pub tree: Option<Vec<u8>>,
-    pub version: Option<u8>,
-    pub expr_path: Option<Vec<u8>>,
+    /// The [`Certificate`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#certificate) contained in the header.
+    pub certificate: Certificate,
+
+    /// A pruned hash tree containing a witness that certifies the response for the given certificate.
+    pub tree: HashTree,
+
+    /// The version of the verification algorithm that should be used to verify the response.
+    pub version: u8,
+
+    /// The path in the `HashTree` pointing to the CEL expression used to calulate the response's certification.
+    /// This field is not present for response verification v1.
+    pub expr_path: Option<Vec<String>>,
 }
 
 impl CertificateHeader {
     /// Parses the given header and returns a new CertificateHeader.
     pub fn from(header_value: &str) -> ResponseVerificationResult<CertificateHeader> {
-        let mut certificate_header = CertificateHeader {
-            certificate: None,
-            tree: None,
-            version: None,
-            expr_path: None,
-        };
+        let mut certificate = None;
+        let mut tree = None;
+        let mut version = None;
+        let mut expr_path = None;
 
         for field in header_value.split(',') {
             if let Some(CertificateHeaderField(name, value)) = CertificateHeaderField::from(field) {
                 match name {
                     "certificate" => {
-                        certificate_header.certificate = match certificate_header.certificate {
-                            None => Some(decode_base64_header(value)?),
+                        certificate = match certificate {
+                            None => {
+                                let certificate_bytes = decode_base64_header(value)?;
+                                let certificate = Certificate::from_cbor(&certificate_bytes)?;
+
+                                Some(certificate)
+                            }
                             Some(existing_certificate) => {
                                 warn!("Found duplicate certificate field in certificate header, ignoring...");
 
@@ -39,8 +52,13 @@ impl CertificateHeader {
                         };
                     }
                     "tree" => {
-                        certificate_header.tree = match certificate_header.tree {
-                            None => Some(decode_base64_header(value)?),
+                        tree = match tree {
+                            None => {
+                                let tree_bytes = decode_base64_header(value)?;
+                                let tree = HashTree::from_cbor(&tree_bytes)?;
+
+                                Some(tree)
+                            }
                             Some(existing_tree) => {
                                 warn!(
                                     "Found duplicate tree field in certificate header, ignoring..."
@@ -51,7 +69,7 @@ impl CertificateHeader {
                         };
                     }
                     "version" => {
-                        certificate_header.version = match certificate_header.version {
+                        version = match version {
                             None => Some(parse_int_header(value)?),
                             Some(existing_version) => {
                                 warn!(
@@ -63,8 +81,13 @@ impl CertificateHeader {
                         };
                     }
                     "expr_path" => {
-                        certificate_header.expr_path = match certificate_header.expr_path {
-                            None => Some(decode_base64_header(value)?),
+                        expr_path = match expr_path {
+                            None => {
+                                let expr_path_bytes = decode_base64_header(value)?;
+                                let expr_path = parse_cbor_string_array(&expr_path_bytes)?;
+
+                                Some(expr_path)
+                            }
                             Some(existing_expr_path) => {
                                 warn!(
                                     "Found duplicate expr_path field in certificate header, ignoring..."
@@ -79,7 +102,16 @@ impl CertificateHeader {
             }
         }
 
-        Ok(certificate_header)
+        let certificate = certificate.ok_or(ResponseVerificationError::MissingCertificate)?;
+        let tree = tree.ok_or(ResponseVerificationError::MissingTree)?;
+        let version = version.unwrap_or(MIN_VERIFICATION_VERSION);
+
+        Ok(CertificateHeader {
+            certificate,
+            tree,
+            version,
+            expr_path,
+        })
     }
 }
 
@@ -108,178 +140,247 @@ mod tests {
 
     #[test]
     fn certificate_header_parses_valid_header() {
-        let certificate = cbor_encode(&create_certificate(None));
-        let tree = cbor_encode(&create_tree(None));
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
         let version = 2u8;
-        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let expr_path = vec!["/", "assets", "img.jpg"];
         let header = [
-            create_encoded_header_field("certificate", &certificate),
-            create_encoded_header_field("tree", &tree),
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
             create_header_field("version", &version.to_string()),
-            create_encoded_header_field("expr_path", &expr_path),
+            create_encoded_header_field("expr_path", cbor_encode(&expr_path)),
         ]
         .join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
-        assert_eq!(certificate_header.certificate.unwrap(), certificate);
-        assert_eq!(certificate_header.tree.unwrap(), tree);
-        assert_eq!(certificate_header.version.unwrap(), version);
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, version);
         assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
     }
 
     #[test]
-    fn certificate_header_parsed_valid_header_with_unpadded_base64() {
-        let certificate = cbor_encode(&create_certificate(None));
-        let tree = cbor_encode(&create_tree(None));
+    fn certificate_header_parses_valid_header_with_unpadded_base64() {
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
         let version = 2u8;
-        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let expr_path = vec!["/", "assets", "img.jpg"];
         let header = [
-            create_header_field("certificate", &base64_encode_no_padding(&certificate)),
-            create_header_field("tree", &base64_encode_no_padding(&tree)),
+            create_header_field(
+                "certificate",
+                &base64_encode_no_padding(&cbor_encode(&certificate)),
+            ),
+            create_header_field("tree", &base64_encode_no_padding(&cbor_encode(&tree))),
             create_header_field("version", &version.to_string()),
-            create_header_field("expr_path", &base64_encode_no_padding(&expr_path)),
+            create_header_field(
+                "expr_path",
+                &base64_encode_no_padding(&cbor_encode(&expr_path)),
+            ),
         ]
         .join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
-        assert_eq!(certificate_header.certificate.unwrap(), certificate);
-        assert_eq!(certificate_header.tree.unwrap(), tree);
-        assert_eq!(certificate_header.version.unwrap(), version);
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, version);
         assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
-    }
-
-    #[test]
-    fn certificate_header_parses_valid_header_empty_values() {
-        let header = [
-            create_encoded_header_field("certificate", ""),
-            create_encoded_header_field("tree", ""),
-            create_encoded_header_field("version", ""),
-            create_encoded_header_field("expr_path", ""),
-        ]
-        .join(",");
-
-        let result = CertificateHeader::from(header.as_str()).unwrap();
-
-        assert_eq!(
-            result,
-            CertificateHeader {
-                certificate: None,
-                expr_path: None,
-                tree: None,
-                version: None,
-            }
-        );
     }
 
     #[test]
     fn certificate_header_ignores_extraneous_fields() {
-        let certificate = cbor_encode(&create_certificate(None));
-        let tree = cbor_encode(&create_tree(None));
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
         let version = 2u8;
-        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let expr_path = vec!["/", "assets", "img.jpg"];
         let header = [
-            create_encoded_header_field("certificate", &certificate),
-            create_encoded_header_field("tree", &tree),
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
             create_header_field("version", &version.to_string()),
-            create_encoded_header_field("expr_path", &expr_path),
+            create_encoded_header_field("expr_path", cbor_encode(&expr_path)),
             create_encoded_header_field("garbage", "asdhlasjdasdoou"),
         ]
         .join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
-        assert_eq!(certificate_header.certificate.unwrap(), certificate);
-        assert_eq!(certificate_header.tree.unwrap(), tree);
-        assert_eq!(certificate_header.version.unwrap(), version);
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, version);
         assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
     }
 
     #[test]
-    fn certificate_header_handles_missing_tree() {
-        let certificate = cbor_encode(&create_certificate(None));
+    fn certificate_header_throws_with_missing_tree() {
+        let certificate = create_certificate(None);
         let version = 2u8;
         let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
         let header = [
-            create_encoded_header_field("certificate", &certificate),
-            create_header_field("version", &version.to_string()),
-            create_encoded_header_field("expr_path", &expr_path),
-        ]
-        .join(",");
-
-        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
-
-        assert_eq!(certificate_header.certificate.unwrap(), certificate);
-        assert!(certificate_header.tree.is_none());
-        assert_eq!(certificate_header.version.unwrap(), version);
-        assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
-    }
-
-    #[test]
-    fn certificate_header_handles_missing_certificate() {
-        let tree = cbor_encode(&create_tree(None));
-        let version = 2u8;
-        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
-        let header = [
-            create_encoded_header_field("tree", &tree),
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
             create_header_field("version", &version.to_string()),
             create_encoded_header_field("expr_path", expr_path),
         ]
         .join(",");
 
-        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
+        let certificate_header = CertificateHeader::from(header.as_str());
 
-        assert!(certificate_header.certificate.is_none());
-        assert_eq!(certificate_header.tree.unwrap(), tree);
+        assert!(matches!(
+            certificate_header,
+            Err(ResponseVerificationError::MissingTree)
+        ));
+    }
+
+    #[test]
+    fn certificate_header_throws_with_empty_tree() {
+        let certificate = create_certificate(None);
+        let version = 2u8;
+        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let header = [
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
+            create_encoded_header_field("tree", ""),
+            create_header_field("version", &version.to_string()),
+            create_encoded_header_field("expr_path", expr_path),
+        ]
+        .join(",");
+
+        let result = CertificateHeader::from(header.as_str());
+
+        assert!(matches!(
+            result,
+            Err(ResponseVerificationError::MissingTree)
+        ));
+    }
+
+    #[test]
+    fn certificate_header_throws_with_missing_certificate() {
+        let tree = create_tree(None);
+        let version = 2u8;
+        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let header = [
+            create_encoded_header_field("tree", cbor_encode(&tree)),
+            create_header_field("version", &version.to_string()),
+            create_encoded_header_field("expr_path", expr_path),
+        ]
+        .join(",");
+
+        let certificate_header = CertificateHeader::from(header.as_str());
+
+        assert!(matches!(
+            certificate_header,
+            Err(ResponseVerificationError::MissingCertificate)
+        ));
+    }
+
+    #[test]
+    fn certificate_header_throws_with_empty_certificate() {
+        let tree = create_tree(None);
+        let version = 2u8;
+        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let header = [
+            create_encoded_header_field("certificate", ""),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
+            create_header_field("version", &version.to_string()),
+            create_encoded_header_field("expr_path", expr_path),
+        ]
+        .join(",");
+
+        let result = CertificateHeader::from(header.as_str());
+
+        assert!(matches!(
+            result,
+            Err(ResponseVerificationError::MissingCertificate)
+        ));
     }
 
     #[test]
     fn certificate_header_handles_missing_version() {
-        let certificate = cbor_encode(&create_certificate(None));
-        let tree = cbor_encode(&create_tree(None));
-        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
+        let expr_path = vec!["/", "assets", "img.jpg"];
         let header = [
-            create_encoded_header_field("certificate", &certificate),
-            create_encoded_header_field("tree", &tree),
-            create_encoded_header_field("expr_path", &expr_path),
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
+            create_encoded_header_field("expr_path", cbor_encode(&&expr_path)),
         ]
         .join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
-        assert_eq!(certificate_header.certificate.unwrap(), certificate);
-        assert_eq!(certificate_header.tree.unwrap(), tree);
-        assert!(certificate_header.version.is_none());
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, MIN_VERIFICATION_VERSION);
+        assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
+    }
+
+    #[test]
+    fn certificate_header_handles_empty_version() {
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
+        let expr_path = vec!["/", "assets", "img.jpg"];
+        let header = [
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
+            create_encoded_header_field("version", ""),
+            create_encoded_header_field("expr_path", cbor_encode(&expr_path)),
+        ]
+        .join(",");
+
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
+
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, MIN_VERIFICATION_VERSION);
         assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
     }
 
     #[test]
     fn certificate_header_handles_missing_expr_path() {
-        let certificate = cbor_encode(&create_certificate(None));
-        let tree = cbor_encode(&create_tree(None));
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
         let version = 2u8;
         let header = [
-            create_encoded_header_field("certificate", &certificate),
-            create_encoded_header_field("tree", &tree),
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
             create_header_field("version", &version.to_string()),
         ]
         .join(",");
 
         let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
-        assert_eq!(certificate_header.certificate.unwrap(), certificate);
-        assert_eq!(certificate_header.tree.unwrap(), tree);
-        assert_eq!(certificate_header.version.unwrap(), version);
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, version);
+        assert!(certificate_header.expr_path.is_none());
+    }
+
+    #[test]
+    fn certificate_header_handles_empty_expr_path() {
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
+        let version = 2u8;
+        let header = [
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
+            create_header_field("version", &version.to_string()),
+            create_encoded_header_field("expr_path", ""),
+        ]
+        .join(",");
+
+        let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
+
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, version);
         assert!(certificate_header.expr_path.is_none());
     }
 
     #[test]
     fn certificate_header_ignores_duplicate_fields() {
-        let certificate = cbor_encode(&create_certificate(None));
-        let tree = cbor_encode(&create_tree(None));
+        let certificate = create_certificate(None);
+        let tree = create_tree(None);
         let version = 2u8;
-        let expr_path = cbor_encode(&vec!["/", "assets", "img.jpg"]);
+        let expr_path = vec!["/", "assets", "img.jpg"];
 
         let second_certificate = "Goodbye Certificate!";
         let second_tree = "Goodbye tree!";
@@ -287,12 +388,12 @@ mod tests {
         let second_expr_path = "Goodbye expr_path!";
 
         let header = [
-            create_encoded_header_field("certificate", &certificate),
+            create_encoded_header_field("certificate", cbor_encode(&certificate)),
             create_encoded_header_field("certificate", second_certificate),
-            create_encoded_header_field("tree", &tree),
+            create_encoded_header_field("tree", cbor_encode(&tree)),
             create_encoded_header_field("tree", second_tree),
             create_header_field("version", &version.to_string()),
-            create_encoded_header_field("expr_path", &expr_path),
+            create_encoded_header_field("expr_path", cbor_encode(&expr_path)),
             create_encoded_header_field("version", second_version.to_string()),
             create_encoded_header_field("expr_path", second_expr_path),
         ]
@@ -300,9 +401,9 @@ mod tests {
 
         let certificate_header = CertificateHeader::from(header.as_str()).unwrap();
 
-        assert_eq!(certificate_header.certificate.unwrap(), certificate);
-        assert_eq!(certificate_header.tree.unwrap(), tree.as_slice());
-        assert_eq!(certificate_header.version.unwrap(), version);
+        assert_eq!(certificate_header.certificate, certificate);
+        assert_eq!(certificate_header.tree, tree);
+        assert_eq!(certificate_header.version, version);
         assert_eq!(certificate_header.expr_path.unwrap(), expr_path);
     }
 }

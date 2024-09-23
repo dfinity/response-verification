@@ -102,7 +102,7 @@ mod tests {
     use super::*;
     use crate::{
         DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpRequest,
-        HttpResponse,
+        HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_certification::SubtreeLookupResult;
     use rstest::*;
@@ -122,7 +122,7 @@ mod tests {
             .with_status_code(404)
             .with_body(br#"404 Not Found"#)
             .with_headers(vec![(
-                "IC-CertificateExpression".into(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -132,7 +132,7 @@ mod tests {
             .with_status_code(404)
             .with_body(br#"console.log("Hello, World!")"#)
             .with_headers(vec![(
-                "IC-CertificateExpression".into(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -230,7 +230,7 @@ mod tests {
             .with_status_code(200)
             .with_body(br#"console.log("Hello, World!")"#)
             .with_headers(vec![(
-                "IC-CertificateExpression".into(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -238,7 +238,7 @@ mod tests {
             .with_status_code(200)
             .with_body(br#"console.log("Hello, ALT World!")"#)
             .with_headers(vec![(
-                "IC-CertificateExpression".into(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -480,7 +480,7 @@ mod tests {
             .with_status_code(404)
             .with_body(br#"404 Not Found"#)
             .with_headers(vec![(
-                "IC-CertificateExpression".into(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                 cel_expr.to_string(),
             )])
             .build();
@@ -517,7 +517,7 @@ mod tests {
             .with_status_code(200)
             .with_body(index_html_body)
             .with_headers(vec![(
-                "IC-CertificateExpression".into(),
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                 cel_expr.to_string(),
             )])
             .build();

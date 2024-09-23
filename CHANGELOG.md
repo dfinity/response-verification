@@ -1,7 +1,13 @@
 ## Unreleased
 
+### BREAKING CHANGE
+
+- removed serde feature from ic-http-certification, condensed serde_bytes into serde feature of ic-certification.
+
 ### Feat
 
+- **ic-asset-certification**: integrate add_certificate_header into the library so consumers do not need to call it manually
+- **ic-http-certification**: add add_certificate_header util function
 - **ic-response-verification**: remove unused debug feature
 - **ic-asset-certification**: allow deleting assets
 - **ic-asset-certification**: use owned string internally, remove less common HTTP method helpers and add helper docs
@@ -10,8 +16,13 @@
 - **ic-asset-certification**: use response header exclusions instead of inclusions for better security
 - **ic-asset-certification**: more ergonomic config for alternative asset encodings
 
+### Fix
+
+- clippy
+
 ### Refactor
 
+- AssetRouter response handling, for extensibility
 - remove tmp files
 - remove unnecessary asset response type
 - rename asset encoding default and custom config methods

@@ -454,10 +454,11 @@
 //! ## Serving assets
 //!
 //! Assets can be served by calling the `serve_asset` method on the `AssetRouter`.
-//! This method will return a response, a witness and an expression path.
+//! This method will return a response, a witness and an expression path, which can be used
+//! alongside the canister's data certificate to add the required certificate header to the response.
 //!
 //! ```rust
-//! use ic_http_certification::HttpRequest;
+//! use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header};
 //! use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 //!
 //! let mut asset_router = AssetRouter::default();
@@ -484,48 +485,10 @@
 //!
 //! asset_router.certify_assets(vec![asset], vec![asset_config]).unwrap();
 //!
-//! let (mut response, witness, expr_path) = asset_router.serve_asset(&http_request).unwrap();
-//! ```
-//!
-//! Some additional steps are then required to prepare the response for sending:
-//!
-//! - get the canister's certificate data
-//! - CBOR-encode the witness
-//! - CBOR-encode the expression path
-//! - Add the certificate header to the response
-//!
-//! ```ignore
-//! const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
-//! fn add_certificate_header(response: &mut HttpResponse, witness: &HashTree, expr_path: &[String]) {
-//!     let certified_data = data_certificate().expect("No data certificate available");
-//!     let witness = cbor_encode(witness);
-//!     let expr_path = cbor_encode(&expr_path);
-//!
-//!     response.headers.push((
-//!         IC_CERTIFICATE_HEADER.to_string(),
-//!         format!(
-//!             "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
-//!             BASE64.encode(certified_data),
-//!             BASE64.encode(witness),
-//!             BASE64.encode(expr_path)
-//!         ),
-//!     ));
-//! }
-//!
-//! // Encoding
-//! fn cbor_encode(value: &impl Serialize) -> Vec<u8> {
-//!     let mut serializer = serde_cbor::Serializer::new(Vec::new());
-//!     serializer
-//!         .self_describe()
-//!         .expect("Failed to self describe CBOR");
-//!     value
-//!         .serialize(&mut serializer)
-//!         .expect("Failed to serialize value");
-//!     serializer.into_inner()
-//! }
-//!
-//! add_certificate_header(&mut response, &witness, &expr_path);
-//! ```
+//! // this should normally be retrieved using `ic_cdk::api::data_certificate()`.
+//! let data_certificate = vec![1, 2, 3];
+//! let response = asset_router.serve_asset(&data_certificate, &http_request).unwrap();
+//!```
 //!
 //! ## Deleting assets
 //!

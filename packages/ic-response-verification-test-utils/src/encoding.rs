@@ -8,6 +8,10 @@ pub fn base64_encode(data: &[u8]) -> String {
     general_purpose::STANDARD.encode(data)
 }
 
+pub fn base64_decode(data: &str) -> Vec<u8> {
+    general_purpose::STANDARD.decode(data).unwrap()
+}
+
 pub fn hex_encode(data: &[u8]) -> String {
     hex::encode(data)
 }
