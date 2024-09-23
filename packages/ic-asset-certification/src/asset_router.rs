@@ -1026,7 +1026,7 @@ mod tests {
                 format!("bytes={}-", v.range_begin)
             };
             let result = parse_range_header_str(&input);
-            let output = result.expect(&format!("failed parsing '{}'", input));
+            let output = result.unwrap_or_else(|_| panic!("failed parsing '{input}'"));
             assert_eq!(v, output);
         }
     }
@@ -1042,8 +1042,8 @@ mod tests {
             "bytes dead-beef",
         ];
         for input in malformed_inputs {
-            let result = parse_range_header_str(&input);
-            assert_matches!(result, Err(e) if format!("{}", e).contains("malformed Range header"));
+            let result = parse_range_header_str(input);
+            assert_matches!(result, Err(e) if e.to_string().contains("malformed Range header"));
         }
     }
 
