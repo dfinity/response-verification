@@ -145,7 +145,7 @@ impl RequestKey {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 struct RangeRequestValues {
     pub range_begin: usize,
     pub range_end: Option<usize>,
@@ -986,6 +986,66 @@ mod tests {
     const TWO_CHUNKS_ASSET_LEN: usize = ASSET_CHUNK_SIZE + 1;
     const SIX_CHUNKS_ASSET_LEN: usize = 5 * ASSET_CHUNK_SIZE + 12;
     const TEN_CHUNKS_ASSET_LEN: usize = 10 * ASSET_CHUNK_SIZE;
+
+    #[test]
+    fn should_parse_range_header_str() {
+        let header_values = [
+            RangeRequestValues {
+                range_begin: 0,
+                range_end: None,
+            },
+            RangeRequestValues {
+                range_begin: ASSET_CHUNK_SIZE,
+                range_end: None,
+            },
+            RangeRequestValues {
+                range_begin: ASSET_CHUNK_SIZE * 4,
+                range_end: None,
+            },
+            RangeRequestValues {
+                range_begin: 0,
+                range_end: Some(0),
+            },
+            RangeRequestValues {
+                range_begin: 100,
+                range_end: Some(2000),
+            },
+            RangeRequestValues {
+                range_begin: 10_000,
+                range_end: Some(300_000),
+            },
+            RangeRequestValues {
+                range_begin: ASSET_CHUNK_SIZE,
+                range_end: Some(2 * ASSET_CHUNK_SIZE - 1),
+            },
+        ];
+        for v in header_values {
+            let input = if let Some(range_end) = v.range_end {
+                format!("bytes={}-{}", v.range_begin, range_end)
+            } else {
+                format!("bytes={}-", v.range_begin)
+            };
+            let result = parse_range_header_str(&input);
+            let output = result.expect(&format!("failed parsing '{}'", input));
+            assert_eq!(v, output);
+        }
+    }
+
+    #[test]
+    fn should_fail_parse_range_header_str_on_malformed_input() {
+        let malformed_inputs = [
+            "byte 1-2/3",
+            "bites 2-4",
+            "bytes 100-end",
+            "bytes 12345",
+            "something else",
+            "bytes dead-beef",
+        ];
+        for input in malformed_inputs {
+            let result = parse_range_header_str(&input);
+            assert_matches!(result, Err(e) if format!("{}", e).contains("malformed Range header"));
+        }
+    }
 
     #[rstest]
     #[case("/")]
