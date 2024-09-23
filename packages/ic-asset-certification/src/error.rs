@@ -18,4 +18,8 @@ pub enum AssetCertificationError {
     /// Thrown when glob pattern parsing fails.
     #[error(r#"Glob error: {0}"#)]
     GlobsetError(#[from] globset::Error),
+
+    /// Request
+    #[error(r#"Request error: {0}"#)]
+    RequestError(String),
 }
