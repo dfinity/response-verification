@@ -144,6 +144,7 @@ impl RequestKey {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 struct RangeRequestValues {
     pub range_begin: usize,
@@ -179,10 +180,10 @@ fn parse_range_header_str(str_value: &str) -> Result<RangeRequestValues, String>
     };
 
     // TODO: add sanity checks for the parsed values
-    return Ok(RangeRequestValues {
+    Ok(RangeRequestValues {
         range_begin,
         range_end,
-    });
+    })
 }
 
 impl<'content> AssetRouter<'content> {
@@ -208,8 +209,8 @@ impl<'content> AssetRouter<'content> {
 
     fn maybe_get_range_begin(request: &HttpRequest) -> AssetCertificationResult<Option<usize>> {
         if let Some(range_str) = Self::get_range_header(request) {
-            let r = parse_range_header_str(range_str)
-                .map_err(|e| AssetCertificationError::RequestError(e))?;
+            let r =
+                parse_range_header_str(range_str).map_err(AssetCertificationError::RequestError)?;
             Ok(Some(r.range_begin))
         } else {
             Ok(None)
@@ -2372,10 +2373,6 @@ mod tests {
                 ],
                 vec![not_found_html_config()],
             )
-            .unwrap();
-
-        let response = asset_router
-            .serve_asset(&data_certificate(), &request)
             .unwrap();
 
         let mut expected_response = build_200_response(
