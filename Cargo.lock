@@ -1221,6 +1221,7 @@ dependencies = [
  "ic-http-certification",
  "ic-response-verification",
  "ic-response-verification-test-utils",
+ "rand_chacha",
  "regex",
  "rstest",
  "thiserror",
