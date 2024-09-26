@@ -23,6 +23,7 @@ globset = "0.4"
 regex.workspace = true
 
 [dev-dependencies]
+rand_chacha.workspace = true
 rstest.workspace = true
 assert_matches.workspace = true
 ic-response-verification.workspace = true

@@ -130,7 +130,7 @@ pub struct RequestKey {
     pub path: String,
     /// The encoding of the asset.
     pub encoding: Option<String>,
-    /// The requested
+    /// The beginning of the requested range (if any), counting from 0.
     pub range_begin: Option<usize>,
 }
 
@@ -144,10 +144,10 @@ impl RequestKey {
     }
 }
 
-#[allow(unused)]
 #[derive(Debug, PartialEq)]
 struct RangeRequestValues {
     pub range_begin: usize,
+    #[allow(unused)]
     pub range_end: Option<usize>,
 }
 
@@ -169,15 +169,7 @@ fn parse_range_header_str(str_value: &str) -> Result<RangeRequestValues, String>
         .as_str()
         .parse()
         .map_err(|_| "malformed range-begin".to_string())?;
-    let range_end = if let Some(m) = caps.get(2) {
-        if let Ok(value) = m.as_str().parse::<usize>() {
-            Some(value)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
+    let range_end: Option<usize> = caps.get(2).map(|v| v.as_str().parse().ok()).flatten();
 
     // TODO: add sanity checks for the parsed values
     Ok(RangeRequestValues {
@@ -209,9 +201,9 @@ impl<'content> AssetRouter<'content> {
 
     fn maybe_get_range_begin(request: &HttpRequest) -> AssetCertificationResult<Option<usize>> {
         if let Some(range_str) = Self::get_range_header(request) {
-            let r =
-                parse_range_header_str(range_str).map_err(AssetCertificationError::RequestError)?;
-            Ok(Some(r.range_begin))
+            parse_range_header_str(range_str)
+                .map(|e| Some(e.range_begin))
+                .map_err(AssetCertificationError::RequestError)
         } else {
             Ok(None)
         }
@@ -243,8 +235,9 @@ impl<'content> AssetRouter<'content> {
     ) -> AssetCertificationResult<HttpResponse<'content>> {
         let preferred_encodings = self.get_preferred_encodings(request);
         let request_url = request.get_path()?;
+        let maybe_range_begin = Self::maybe_get_range_begin(request)?;
         let mut cert_response = self
-            .get_asset_for_request(request, preferred_encodings)
+            .get_asset_for_request(&request_url, preferred_encodings, maybe_range_begin)
             .cloned()?;
         let witness = self
             .tree
@@ -377,12 +370,10 @@ impl<'content> AssetRouter<'content> {
 
     fn get_asset_for_request<'a>(
         &self,
-        request: &HttpRequest,
+        req_path: &'a str,
         preferred_encodings: Vec<&'a str>,
+        maybe_range_begin: Option<usize>,
     ) -> AssetCertificationResult<&CertifiedAssetResponse<'content>> {
-        let req_path = request.get_path()?;
-        let maybe_range_begin = Self::maybe_get_range_begin(request)?;
-
         if let Some(response) = self.get_encoded_asset(&preferred_encodings, &req_path) {
             return Ok(response);
         }
@@ -437,7 +428,7 @@ impl<'content> AssetRouter<'content> {
             url_scopes.pop();
         }
         Err(AssetCertificationError::NoAssetMatchingRequestUrl {
-            request_url: req_path,
+            request_url: req_path.to_string(),
         })
     }
 
@@ -793,8 +784,9 @@ impl<'content> AssetRouter<'content> {
         encoding: Option<AssetEncoding>,
         range_begin: Option<usize>,
     ) -> AssetCertificationResult<(HttpResponse<'content>, HttpCertification)> {
+        let mut content = asset.content;
+        let mut status_code = 200;
         let mut headers = vec![];
-
         headers.extend(additional_headers);
 
         if let Some(content_type) = content_type {
@@ -806,28 +798,22 @@ impl<'content> AssetRouter<'content> {
         }
 
         if let Some(range_begin) = range_begin {
-            let total_length = asset.content.len();
+            let total_length = content.len();
             let range_end = cmp::min(range_begin + ASSET_CHUNK_SIZE, total_length) - 1;
+            content = content[range_begin..(range_end + 1)].to_owned().into();
+            status_code = 206;
             headers.push((
                 http::header::CONTENT_RANGE.to_string(),
                 format!("bytes {range_begin}-{range_end}/{total_length}"),
             ));
-            Self::prepare_response_and_certification(
-                asset.url.to_string(),
-                206,
-                asset.content[range_begin..(range_end + 1)]
-                    .to_owned()
-                    .into(),
-                headers,
-            )
-        } else {
-            Self::prepare_response_and_certification(
-                asset.url.to_string(),
-                200,
-                asset.content,
-                headers,
-            )
-        }
+        };
+
+        Self::prepare_response_and_certification(
+            asset.url.to_string(),
+            status_code,
+            content,
+            headers,
+        )
     }
 
     fn prepare_response_and_certification(
@@ -979,72 +965,57 @@ mod tests {
         cel::DefaultFullCelExpressionBuilder, HeaderField, CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::CertificateHeader;
-    use ic_response_verification_test_utils::base64_decode;
+    use ic_response_verification_test_utils::{base64_decode, hash};
+    use rand_chacha::rand_core::{RngCore, SeedableRng};
+    use rand_chacha::ChaCha20Rng;
     use rstest::*;
     use std::vec;
 
+    const ONE_CHUNK_ASSET_LEN: usize = ASSET_CHUNK_SIZE;
     const TWO_CHUNKS_ASSET_LEN: usize = ASSET_CHUNK_SIZE + 1;
     const SIX_CHUNKS_ASSET_LEN: usize = 5 * ASSET_CHUNK_SIZE + 12;
     const TEN_CHUNKS_ASSET_LEN: usize = 10 * ASSET_CHUNK_SIZE;
 
-    #[test]
-    fn should_parse_range_header_str() {
-        let header_values = [
+    const ONE_CHUNK_ASSET_NAME: &str = "long_asset_one_chunk";
+    const TWO_CHUNKS_ASSET_NAME: &str = "long_asset_two_chunks";
+    const SIX_CHUNKS_ASSET_NAME: &str = "long_asset_six_chunks";
+    const TEN_CHUNKS_ASSET_NAME: &str = "long_asset_ten_chunks";
+
+    #[rstest]
+    #[case(0, None)]
+    #[case(ASSET_CHUNK_SIZE, None)]
+    #[case(ASSET_CHUNK_SIZE*4, None)]
+    #[case(0, Some(0))]
+    #[case(100, Some(2000))]
+    #[case(10_000, Some(300_000))]
+    #[case(ASSET_CHUNK_SIZE, Some(2 * ASSET_CHUNK_SIZE - 1))]
+    fn should_parse_range_header_str(#[case] range_begin: usize, #[case] range_end: Option<usize>) {
+        let input = if let Some(range_end) = range_end {
+            format!("bytes={}-{}", range_begin, range_end)
+        } else {
+            format!("bytes={}-", range_begin)
+        };
+        let result = parse_range_header_str(&input);
+        let output = result.unwrap_or_else(|_| panic!("failed parsing '{input}'"));
+        assert_eq!(
             RangeRequestValues {
-                range_begin: 0,
-                range_end: None,
+                range_begin,
+                range_end
             },
-            RangeRequestValues {
-                range_begin: ASSET_CHUNK_SIZE,
-                range_end: None,
-            },
-            RangeRequestValues {
-                range_begin: ASSET_CHUNK_SIZE * 4,
-                range_end: None,
-            },
-            RangeRequestValues {
-                range_begin: 0,
-                range_end: Some(0),
-            },
-            RangeRequestValues {
-                range_begin: 100,
-                range_end: Some(2000),
-            },
-            RangeRequestValues {
-                range_begin: 10_000,
-                range_end: Some(300_000),
-            },
-            RangeRequestValues {
-                range_begin: ASSET_CHUNK_SIZE,
-                range_end: Some(2 * ASSET_CHUNK_SIZE - 1),
-            },
-        ];
-        for v in header_values {
-            let input = if let Some(range_end) = v.range_end {
-                format!("bytes={}-{}", v.range_begin, range_end)
-            } else {
-                format!("bytes={}-", v.range_begin)
-            };
-            let result = parse_range_header_str(&input);
-            let output = result.unwrap_or_else(|_| panic!("failed parsing '{input}'"));
-            assert_eq!(v, output);
-        }
+            output
+        );
     }
 
-    #[test]
-    fn should_fail_parse_range_header_str_on_malformed_input() {
-        let malformed_inputs = [
-            "byte 1-2/3",
-            "bites 2-4",
-            "bytes 100-end",
-            "bytes 12345",
-            "something else",
-            "bytes dead-beef",
-        ];
-        for input in malformed_inputs {
-            let result = parse_range_header_str(input);
-            assert_matches!(result, Err(e) if e.to_string().contains("malformed Range header"));
-        }
+    #[rstest]
+    #[case("byte 1-2/3")]
+    #[case("bites 2-4")]
+    #[case("bytes 100-end")]
+    #[case("bytes 12345")]
+    #[case("something else")]
+    #[case("bytes dead-beef")]
+    fn should_fail_parse_range_header_str_on_malformed_input(#[case] malformed_input: &str) {
+        let result = parse_range_header_str(malformed_input);
+        assert_matches!(result, Err(e) if e.to_string().contains("malformed Range header"));
     }
 
     #[rstest]
@@ -1100,18 +1071,17 @@ mod tests {
     }
 
     #[rstest]
-    #[case("/long_asset_two_chunks", TWO_CHUNKS_ASSET_LEN)]
-    #[case("/long_asset_six_chunks", SIX_CHUNKS_ASSET_LEN)]
-    #[case("/long_asset_ten_chunks", TEN_CHUNKS_ASSET_LEN)]
-    fn test_long_asset_served_in_chunks(
-        long_asset_router: AssetRouter,
-        #[case] req_url: &str,
-        #[case] asset_len: usize,
-    ) {
+    #[case(TWO_CHUNKS_ASSET_NAME)]
+    #[case(SIX_CHUNKS_ASSET_NAME)]
+    #[case(TEN_CHUNKS_ASSET_NAME)]
+    fn test_long_asset_served_in_chunks(long_asset_router: AssetRouter, #[case] asset_name: &str) {
+        let req_url = format!("/{asset_name}");
+        let asset_body = long_asset_body(asset_name);
+        let asset_len = asset_body.len();
         // Request the entire asset, should obtain the first chunk.
-        let request = HttpRequest::get(req_url).build();
+        let request = HttpRequest::get(&req_url).build();
         let mut expected_response = build_206_response(
-            long_asset_body(asset_len)[0..ASSET_CHUNK_SIZE].to_vec(),
+            asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
             asset_cel_expr(),
             vec![
                 (
@@ -1150,7 +1120,7 @@ mod tests {
         let mut asset_len_so_far = response.body().len();
         let mut number_of_chunks_so_far = 1;
         while asset_len_so_far < asset_len {
-            let chunk_request = HttpRequest::get(req_url)
+            let chunk_request = HttpRequest::get(&req_url)
                 .with_headers(vec![(
                     "range".to_string(),
                     format!("bytes={}-", asset_len_so_far),
@@ -1158,7 +1128,7 @@ mod tests {
                 .build();
             let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
             let mut expected_response = build_206_response(
-                long_asset_body(asset_len)[asset_len_so_far..=expected_range_end].to_vec(),
+                asset_body[asset_len_so_far..=expected_range_end].to_vec(),
                 asset_cel_expr(),
                 vec![
                     (
@@ -1197,18 +1167,20 @@ mod tests {
     }
 
     #[rstest]
-    #[case("/long_asset_two_chunks", TWO_CHUNKS_ASSET_LEN)]
-    #[case("/long_asset_six_chunks", SIX_CHUNKS_ASSET_LEN)]
-    #[case("/long_asset_ten_chunks", TEN_CHUNKS_ASSET_LEN)]
+    #[case(TWO_CHUNKS_ASSET_NAME)]
+    #[case(SIX_CHUNKS_ASSET_NAME)]
+    #[case(TEN_CHUNKS_ASSET_NAME)]
     fn test_long_asset_deletion_removes_chunks(
         mut long_asset_router: AssetRouter,
-        #[case] req_url: &str,
-        #[case] asset_len: usize,
+        #[case] asset_name: &str,
     ) {
+        let req_url = format!("/{asset_name}");
+        let asset_body = long_asset_body(asset_name);
+        let asset_len = asset_body.len();
         let mut all_requests = vec![];
         // Request the entire asset and the chunks, all should succeed.
         // First the asset...
-        let request = HttpRequest::get(req_url).build();
+        let request = HttpRequest::get(&req_url).build();
         let response = long_asset_router
             .serve_asset(&data_certificate(), &request)
             .unwrap();
@@ -1228,7 +1200,7 @@ mod tests {
         let mut asset_len_so_far = response.body().len();
         let mut number_of_chunks_so_far = 1;
         while asset_len_so_far < asset_len {
-            let chunk_request = HttpRequest::get(req_url)
+            let chunk_request = HttpRequest::get(&req_url)
                 .with_headers(vec![(
                     "range".to_string(),
                     format!("bytes={}-", asset_len_so_far),
@@ -1253,8 +1225,8 @@ mod tests {
         // Delete the asset.
         long_asset_router
             .delete_assets(
-                vec![Asset::new(req_url, long_asset_body(asset_len))],
-                vec![long_asset_config(asset_len)],
+                vec![Asset::new(&req_url, asset_body)],
+                vec![long_asset_config(asset_name)],
             )
             .expect("Asset deletion failed");
 
@@ -2781,8 +2753,18 @@ mod tests {
         b"<html><body><h1>Hello World!</h1></body></html>".to_vec()
     }
 
-    fn long_asset_body(length: usize) -> Vec<u8> {
-        vec![7; length]
+    fn long_asset_body(asset_name: &str) -> Vec<u8> {
+        let asset_length = match asset_name {
+            ONE_CHUNK_ASSET_NAME => ONE_CHUNK_ASSET_LEN,
+            TWO_CHUNKS_ASSET_NAME => TWO_CHUNKS_ASSET_LEN,
+            SIX_CHUNKS_ASSET_NAME => SIX_CHUNKS_ASSET_LEN,
+            TEN_CHUNKS_ASSET_NAME => TEN_CHUNKS_ASSET_LEN,
+            _ => ASSET_CHUNK_SIZE * 2 + 1,
+        };
+        let mut rng = ChaCha20Rng::from_seed(hash(asset_name));
+        let mut body = vec![0u8; asset_length];
+        rng.fill_bytes(&mut body);
+        body
     }
 
     // Gzip compressed version of `index_html_body`,
@@ -3031,17 +3013,9 @@ mod tests {
         }
     }
 
-    fn long_asset_config(length: usize) -> AssetConfig {
-        let path = match length {
-            ASSET_CHUNK_SIZE => "long_asset_one_chunk",
-            TWO_CHUNKS_ASSET_LEN => "long_asset_two_chunks",
-            SIX_CHUNKS_ASSET_LEN => "long_asset_six_chunks",
-            TEN_CHUNKS_ASSET_LEN => "long_asset_ten_chunks",
-            _ => "long_asset",
-        }
-        .to_string();
+    fn long_asset_config(path: &str) -> AssetConfig {
         AssetConfig::File {
-            path,
+            path: path.to_string(),
             content_type: Some("text/html".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -3087,35 +3061,26 @@ mod tests {
         asset_router
     }
 
+    fn long_asset(name: &str) -> Asset {
+        Asset::new(name, long_asset_body(name))
+    }
+
     #[fixture]
     fn long_asset_router() -> AssetRouter<'static> {
         let mut asset_router = AssetRouter::default();
+        let mut assets = vec![];
+        let mut asset_configs = vec![];
 
-        let assets = vec![
-            Asset::new("long_asset_one_chunk", long_asset_body(ASSET_CHUNK_SIZE)),
-            Asset::new(
-                "long_asset_two_chunks",
-                long_asset_body(TWO_CHUNKS_ASSET_LEN),
-            ),
-            Asset::new(
-                "long_asset_six_chunks",
-                long_asset_body(SIX_CHUNKS_ASSET_LEN),
-            ),
-            Asset::new(
-                "long_asset_ten_chunks",
-                long_asset_body(TEN_CHUNKS_ASSET_LEN),
-            ),
-        ];
-
-        let asset_configs = vec![
-            long_asset_config(ASSET_CHUNK_SIZE),
-            long_asset_config(TWO_CHUNKS_ASSET_LEN),
-            long_asset_config(SIX_CHUNKS_ASSET_LEN),
-            long_asset_config(TEN_CHUNKS_ASSET_LEN),
-        ];
-
+        for name in vec![
+            ONE_CHUNK_ASSET_NAME,
+            TWO_CHUNKS_ASSET_NAME,
+            SIX_CHUNKS_ASSET_NAME,
+            TEN_CHUNKS_ASSET_NAME,
+        ] {
+            assets.push(long_asset(name));
+            asset_configs.push(long_asset_config(name));
+        }
         asset_router.certify_assets(assets, asset_configs).unwrap();
-
         asset_router
     }
 
