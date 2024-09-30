@@ -3071,7 +3071,7 @@ mod tests {
         let mut assets = vec![];
         let mut asset_configs = vec![];
 
-        for name in vec![
+        for name in [
             ONE_CHUNK_ASSET_NAME,
             TWO_CHUNKS_ASSET_NAME,
             SIX_CHUNKS_ASSET_NAME,
