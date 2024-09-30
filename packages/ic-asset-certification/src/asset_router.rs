@@ -169,7 +169,7 @@ fn parse_range_header_str(str_value: &str) -> Result<RangeRequestValues, String>
         .as_str()
         .parse()
         .map_err(|_| "malformed range-begin".to_string())?;
-    let range_end: Option<usize> = caps.get(2).map(|v| v.as_str().parse().ok()).flatten();
+    let range_end: Option<usize> = caps.get(2).and_then(|v| v.as_str().parse().ok());
 
     // TODO: add sanity checks for the parsed values
     Ok(RangeRequestValues {
@@ -374,18 +374,18 @@ impl<'content> AssetRouter<'content> {
         preferred_encodings: Vec<&'a str>,
         maybe_range_begin: Option<usize>,
     ) -> AssetCertificationResult<&CertifiedAssetResponse<'content>> {
-        if let Some(response) = self.get_encoded_asset(&preferred_encodings, &req_path) {
+        if let Some(response) = self.get_encoded_asset(&preferred_encodings, req_path) {
             return Ok(response);
         }
 
         if let Some(response) =
             self.responses
-                .get(&RequestKey::new(&req_path, None, maybe_range_begin))
+                .get(&RequestKey::new(req_path, None, maybe_range_begin))
         {
             if response.response.body().len() > ASSET_CHUNK_SIZE {
                 if let Some(first_chunk_response) =
                     self.responses
-                        .get(&RequestKey::new(&req_path, None, Some(0)))
+                        .get(&RequestKey::new(req_path, None, Some(0)))
                 {
                     return Ok(first_chunk_response);
                 }
