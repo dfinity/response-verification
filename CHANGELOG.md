@@ -4,9 +4,11 @@
 
 - removed serde feature from ic-http-certification, condensed serde_bytes into serde feature of ic-certification.
 - removed serde feature from ic-http-certification, condensed serde_bytes into serde feature of ic-certification.
+- removed serde feature from ic-http-certification, condensed serde_bytes into serde feature of ic-certification.
 
 ### Feat
 
+- **ic-http-certification**: add add_certificate_header util function
 - **ic-http-certification**: add common constructs to skip certification
 - **ic-http-certification**: add add_certificate_header util function
 - **ic-asset-certification**: integrate add_certificate_header into the library so consumers do not need to call it manually
