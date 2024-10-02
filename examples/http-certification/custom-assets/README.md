@@ -121,6 +121,7 @@ With the assets loaded, similar to the [JSON API](https://internetcomputer.org/d
 Encoded assets are stored in a separate `HashMap` to make routing easier. This will be more apparent later in this guide.
 
 ```rust
+#[derive(Clone)]
 struct CertifiedHttpResponse<'a> {
     response: HttpResponse<'a>,
     certification: HttpCertification,
@@ -141,11 +142,11 @@ Certifying responses is more involved here compared to the simpler approach used
 The first step is defining a reusable function to create a response with all of the necessary default headers. This function is very similar to the counterpart in the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) example with the biggest difference being in the headers that are used. Since the responses from an API serving static assets will be rendered directly in the browser, more security-focused headers are necessary:
 
 ```rust
-fn create_asset_response(
+fn get_asset_headers(
     additional_headers: Vec<HeaderField>,
-    body: &[u8],
+    content_length: usize,
     cel_expr: String,
-) -> HttpResponse {
+) -> Vec<(String, String)> {
     // set up the default headers and include additional headers provided by the caller
     let mut headers = vec![
         ("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
@@ -156,10 +157,20 @@ fn create_asset_response(
         ("permissions-policy".to_string(), "accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()".to_string()),
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
         ("cross-origin-opener-policy".to_string(), "same-origin".to_string()),
-        ("content-length".to_string(), body.len().to_string()),
+        ("content-length".to_string(), content_length.to_string()),
         (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
     ];
     headers.extend(additional_headers);
+
+    headers
+}
+
+fn create_asset_response(
+    additional_headers: Vec<HeaderField>,
+    body: &[u8],
+    cel_expr: String,
+) -> HttpResponse {
+    let headers = get_asset_headers(additional_headers, body.len(), cel_expr);
 
     HttpResponse::builder()
         .with_status_code(200)
@@ -195,9 +206,6 @@ fn certify_asset_response(
                 asset_tree_path,
                 &certification,
             ));
-
-            // set the canister's certified data
-            set_certified_data(&http_tree.root_hash());
         });
 
         RESPONSES.with_borrow_mut(|responses| {
@@ -253,9 +261,6 @@ fn certify_asset_with_encoding(
                     asset_tree_path,
                     &certification,
                 ));
-
-                // set the canister's certified data
-                set_certified_data(&http_tree.root_hash());
             });
 
             ENCODED_RESPONSES.with_borrow_mut(|responses| {
@@ -381,15 +386,47 @@ fn certify_index_asset() {
 }
 ```
 
+It's also possible to skip certification for certain routes. This can be useful for scenarios where it's difficult to predict what the response will look like for a certain route and the content is not very security sensitive. This can be done as follows:
+
+```rust
+const UNCERTIFIED_REQ_PATH: &str = "/uncertified";
+
+fn add_certification_skips() {
+    let uncertified_req_tree_path = HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH);
+    let uncertified_req_certification = HttpCertification::skip();
+
+    HTTP_TREE.with_borrow_mut(|http_tree| {
+        http_tree.insert(&HttpCertificationTreeEntry::new(
+            uncertified_req_tree_path,
+            &uncertified_req_certification,
+        ));
+    });
+}
+```
+
+After setting all certifications, the canister's [certified data](https://internetcomputer.org/docs/current/references/ic-interface-spec#system-api-certified-data) needs to be set. This will make sure that the correct certified data is set so that it can be signed during the next consensus round:
+
+```rust
+fn update_certified_data() {
+    HTTP_TREE.with_borrow(|http_tree| {
+        set_certified_data(&http_tree.root_hash());
+    });
+}
+```
+
 With all of the above functions, it is now possible to certify all of the frontend project's assets simply.
 
 ```rust
 fn certify_all_assets() {
+    add_certification_skips();
+
     certify_index_asset();
     certify_asset_glob("assets/**/*.css", "text/css");
     certify_asset_glob("assets/**/*.js", "text/javascript");
     certify_asset_glob("assets/**/*.ico", "image/x-icon");
     certify_asset_glob("assets/**/*.svg", "image/svg+xml");
+
+    update_certified_data();
 }
 ```
 
@@ -397,6 +434,8 @@ fn certify_all_assets() {
 
 With all assets certified, they can be served over HTTP. The steps to follow when serving assets are:
 
+- Check if the request path matches the uncertified path.
+  - If the requested path exactly matches the uncertified path, serve the uncertified response.
 - Check if the requested path matches a file (e.g., `/assets/app.js`).
   - If the request path exactly matches an existing file, serve that file.
   - Otherwise, serve the `index.html` file.
@@ -413,19 +452,30 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
     RESPONSES.with_borrow(|responses| {
         ENCODED_RESPONSES.with_borrow(|encoded_responses| {
             let (asset_req_path, asset_tree_path, identity_response) =
+            // if the request path matches the uncertified response's path, serve that
+            if req_path == UNCERTIFIED_REQ_PATH {
+                (
+                    UNCERTIFIED_REQ_PATH.to_string(),
+                    HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH),
+                    CertifiedHttpResponse {
+                        response: create_uncertified_response(),
+                        certification: HttpCertification::skip(),
+                    },
+                )
+            }
             // if the requested path matches a static asset, serve that
-            if let Some(identity_response) = responses.get(&req_path) {
+            else if let Some(identity_response) = responses.get(&req_path) {
                 (
                     req_path.to_string(),
                     HttpCertificationPath::exact(&req_path),
-                    identity_response,
+                    identity_response.clone(),
                 )
             // otherwise serve the index.html
             } else {
                 (
                     INDEX_REQ_PATH.to_string(),
                     INDEX_TREE_PATH.to_owned(),
-                    responses.get(*INDEX_REQ_PATH).unwrap(),
+                    responses.get(*INDEX_REQ_PATH).unwrap().clone(),
                 )
             };
 
@@ -448,7 +498,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
                         if let Some(br_response) =
                             encoded_responses.get(&(asset_req_path.clone(), "br".to_string()))
                         {
-                            return Some(br_response);
+                            return Some(br_response.clone());
                         }
                     }
 
@@ -457,7 +507,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
                         if let Some(gzip_response) =
                             encoded_responses.get(&(asset_req_path, "gzip".to_string()))
                         {
-                            return Some(gzip_response);
+                            return Some(gzip_response.clone());
                         }
                     }
 
@@ -487,6 +537,46 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
     })
 }
 ```
+
+Creating the uncertified response is done as follows:
+
+```rust
+fn create_uncertified_response() -> HttpResponse<'static> {
+    let body = format!(
+        r#"
+            <html>
+                <head>
+                    <title>ICP Skip Certification</title>
+                </head>
+
+                <body>
+                    <h1>ICP Skip Certification</h1>
+                    <p>This is an example of an IC canister that skips certification.</p>
+                    <p>Current timestamp: {}<b>
+                </body>
+            </html>
+        "#,
+        time()
+    )
+    .as_bytes()
+    .to_vec();
+    let additional_headers = vec![("content-type".to_string(), "text/html".to_string())];
+
+    let headers = get_asset_headers(
+        additional_headers,
+        body.len(),
+        DefaultCelBuilder::skip_certification().to_string(),
+    );
+
+    HttpResponse::builder()
+        .with_status_code(200)
+        .with_headers(headers)
+        .with_body(body)
+        .build()
+}
+```
+
+Recall that verification is skipped for this asset, so the response will not be validated and it's possible for the canister (or the replica) to return virtually anything, malicious or otherwise.
 
 This function can then be simply linked up to the `http_request` handler:
 

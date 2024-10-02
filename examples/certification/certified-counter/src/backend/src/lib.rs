@@ -1,15 +1,14 @@
-use ic_cdk::export::candid::CandidType;
+use candid::CandidType;
 use ic_cdk::*;
 use ic_certification::{AsHashTree, RbTree};
 use serde::Serialize;
+use sha2::{Digest, Sha256};
 use std::cell::*;
 
 thread_local! {
     static COUNTER: Cell<u32> = Cell::new(0);
     static TREE: RefCell<RbTree<&'static str, Vec<u8>>> = RefCell::new(RbTree::new());
 }
-
-use sha2::{Digest, Sha256};
 
 pub fn hash(data: &[u8]) -> [u8; 32] {
     let mut hasher = Sha256::new();

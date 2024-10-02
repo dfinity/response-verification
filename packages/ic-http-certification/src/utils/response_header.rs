@@ -24,7 +24,7 @@ use serde::Serialize;
 ///     [`HttpCertificationPath::to_expr_path()`](crate::HttpCertificationPath::to_expr_path). The expression path
 ///     is not validated to be correct for the given response, and the function will not fail if the expression path is invalid.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath, CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME, utils::add_v2_certificate_header};

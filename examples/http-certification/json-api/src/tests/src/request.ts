@@ -1,5 +1,5 @@
 import { Request } from '@dfinity/response-verification';
-import { HttpRequest } from '../../declarations/backend.did';
+import { HttpRequest } from '../../declarations/http_certification_json_api_backend.did';
 
 export const CERTIFICATE_VERSION = 2;
 

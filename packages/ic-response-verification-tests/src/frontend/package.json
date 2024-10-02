@@ -1,0 +1,7 @@
+{
+  "name": "response-verification-tests-frontend",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  }
+}

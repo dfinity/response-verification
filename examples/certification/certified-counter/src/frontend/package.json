@@ -1,0 +1,10 @@
+{
+  "name": "certification-certified-counter-frontend",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@dfinity/certificate-verification": "workspace:*"
+  }
+}

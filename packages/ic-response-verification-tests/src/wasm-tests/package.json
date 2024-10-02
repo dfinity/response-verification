@@ -1,0 +1,13 @@
+{
+  "name": "response-verification-tests",
+  "version": "2.6.0",
+  "scripts": {
+    "e2e-test": "ts-node ./src/main.ts"
+  },
+  "dependencies": {
+    "@dfinity/response-verification": "workspace:*"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1"
+  }
+}

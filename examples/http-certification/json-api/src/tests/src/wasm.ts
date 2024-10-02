@@ -1,6 +1,9 @@
 import { type CanisterFixture, type PocketIc } from '@hadronous/pic';
 import { resolve } from 'node:path';
-import { type _SERVICE, idlFactory } from '../../declarations/backend.did';
+import {
+  type _SERVICE,
+  idlFactory,
+} from '../../declarations/http_certification_json_api_backend.did';
 
 export const BACKEND_WASM_PATH = resolve(
   __dirname,
