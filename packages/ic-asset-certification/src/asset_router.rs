@@ -278,7 +278,6 @@ impl<'content> AssetRouter<'content> {
 
         for asset in asset_map.values() {
             let asset_config = asset_configs.iter().find(|e| e.matches_asset(asset));
-
             for (encoding, postfix) in asset_config
                 .map(|e| match e {
                     NormalizedAssetConfig::File { encodings, .. } => encodings.clone(),
@@ -289,7 +288,6 @@ impl<'content> AssetRouter<'content> {
             {
                 let encoded_asset_path = format!("{}.{}", asset.path, postfix);
                 let encoded_asset = asset_map.get(encoded_asset_path.as_str()).cloned();
-
                 if let Some(mut encoded_asset) = encoded_asset {
                     encoded_asset.url.clone_from(&asset.url);
 
@@ -374,7 +372,9 @@ impl<'content> AssetRouter<'content> {
         preferred_encodings: Vec<&'a str>,
         maybe_range_begin: Option<usize>,
     ) -> AssetCertificationResult<&CertifiedAssetResponse<'content>> {
-        if let Some(response) = self.get_encoded_asset(&preferred_encodings, req_path) {
+        if let Some(response) =
+            self.get_encoded_asset(&preferred_encodings, req_path, maybe_range_begin)
+        {
             return Ok(response);
         }
 
@@ -851,13 +851,27 @@ impl<'content> AssetRouter<'content> {
         &self,
         preferred_encodings: &[&str],
         url: &str,
+        maybe_range_begin: Option<usize>,
     ) -> Option<&CertifiedAssetResponse<'content>> {
         for encoding in preferred_encodings {
-            if let Some(response) =
-                self.responses
-                    .get(&RequestKey::new(url, Some(encoding.to_string()), None))
-            {
-                return Some(response);
+            if let Some(response) = self.responses.get(&RequestKey::new(
+                url,
+                Some(encoding.to_string()),
+                maybe_range_begin,
+            )) {
+                if response.response.body().len() > ASSET_CHUNK_SIZE {
+                    if let Some(first_chunk_response) = self.responses.get(&RequestKey::new(
+                        url,
+                        Some(encoding.to_string()),
+                        Some(0),
+                    )) {
+                        return Some(first_chunk_response);
+                    } else {
+                        return None;
+                    }
+                } else {
+                    return Some(response);
+                }
             }
         }
 
@@ -1070,11 +1084,51 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn test_one_chunk_long_asset_served_in_full() {
+        let asset_name = ONE_CHUNK_ASSET_NAME;
+        let long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
+        let req_url = format!("/{asset_name}");
+        let asset_body = long_asset_body(asset_name);
+        // Request the entire "one-chunk"-asset, should obtain it in full.
+        let request = HttpRequest::get(&req_url).build();
+        let mut expected_response = build_200_response(
+            asset_body,
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+            ],
+        );
+
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
+        assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
+        assert_matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_eq!(response, expected_response);
+    }
+
     #[rstest]
     #[case(TWO_CHUNKS_ASSET_NAME)]
     #[case(SIX_CHUNKS_ASSET_NAME)]
     #[case(TEN_CHUNKS_ASSET_NAME)]
-    fn test_long_asset_served_in_chunks(long_asset_router: AssetRouter, #[case] asset_name: &str) {
+    fn test_long_asset_served_in_chunks(#[case] asset_name: &str) {
+        let long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
         let req_url = format!("/{asset_name}");
         let asset_body = long_asset_body(asset_name);
         let asset_len = asset_body.len();
@@ -1170,10 +1224,8 @@ mod tests {
     #[case(TWO_CHUNKS_ASSET_NAME)]
     #[case(SIX_CHUNKS_ASSET_NAME)]
     #[case(TEN_CHUNKS_ASSET_NAME)]
-    fn test_long_asset_deletion_removes_chunks(
-        mut long_asset_router: AssetRouter,
-        #[case] asset_name: &str,
-    ) {
+    fn test_long_asset_deletion_removes_chunks(#[case] asset_name: &str) {
+        let mut long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
         let req_url = format!("/{asset_name}");
         let asset_body = long_asset_body(asset_name);
         let asset_len = asset_body.len();
@@ -1227,6 +1279,227 @@ mod tests {
             .delete_assets(
                 vec![Asset::new(&req_url, asset_body)],
                 vec![long_asset_config(asset_name)],
+            )
+            .expect("Asset deletion failed");
+
+        // Re-request the asset and the chunks, all should fail.
+        for request in all_requests {
+            let result = long_asset_router.serve_asset(&data_certificate(), &request);
+            assert_matches!(
+                result,
+                Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                    request_url,
+                 }) if request_url == request.get_path().unwrap()
+            );
+        }
+    }
+
+    fn encoding_suffix(encoding: &str) -> String {
+        let suffix = match encoding {
+            "deflate" => ".zz",
+            "gzip" => ".gz",
+            "br" => ".br",
+            "identity" => "",
+            _ => panic!("unknown encoding: {}", encoding),
+        };
+        suffix.to_string()
+    }
+
+    #[rstest]
+    #[case(SIX_CHUNKS_ASSET_NAME, "deflate", "deflate")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "deflate, identity", "deflate")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, identity", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate, identity", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "br", "br")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "br, gzip, deflate, identity", "br")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate, identity, br", "br")]
+    fn test_encoded_long_asset_served_in_encoded_chunks(
+        #[case] asset_name: &str,
+        #[case] accept_encoding: &str,
+        #[case] expected_encoding: &str,
+    ) {
+        let long_asset_router =
+            long_asset_router_with_params(&[asset_name], &["identity", expected_encoding]);
+        let suffix = encoding_suffix(expected_encoding);
+        let req_url = format!("/{asset_name}");
+        let encoded_asset_name = format!("{asset_name}{suffix}");
+        let asset_body = long_asset_body(&encoded_asset_name);
+        let asset_len = asset_body.len();
+
+        let request = HttpRequest::get(&req_url)
+            .with_headers(vec![(
+                "accept-encoding".to_string(),
+                accept_encoding.to_string(),
+            )])
+            .build();
+        let mut expected_response = build_206_response(
+            asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
+            encoded_asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-encoding".to_string(),
+                    expected_encoding.to_string(),
+                ),
+                (
+                    "content-range".to_string(),
+                    format!("bytes 0-{}/{}", ASSET_CHUNK_SIZE - 1, asset_len),
+                ),
+            ],
+        );
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
+        assert_eq!(
+            expr_path,
+            HttpCertificationPath::exact(req_url.clone()).to_expr_path()
+        );
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
+
+        // Request the subsequent chunks, should obtain them.
+        let expected_number_of_chunks =
+            (asset_len as f32 / ASSET_CHUNK_SIZE as f32).ceil() as usize;
+        let mut asset_len_so_far = response.body().len();
+        let mut number_of_chunks_so_far = 1;
+        while asset_len_so_far < asset_len {
+            let chunk_request = HttpRequest::get(&req_url)
+                .with_headers(vec![
+                    ("range".to_string(), format!("bytes={}-", asset_len_so_far)),
+                    ("accept-encoding".to_string(), accept_encoding.to_string()),
+                ])
+                .build();
+            let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
+            let mut expected_response = build_206_response(
+                asset_body[asset_len_so_far..=expected_range_end].to_vec(),
+                asset_cel_expr(),
+                vec![
+                    (
+                        "cache-control".to_string(),
+                        "public, no-cache, no-store".to_string(),
+                    ),
+                    ("content-type".to_string(), "text/html".to_string()),
+                    (
+                        "content-encoding".to_string(),
+                        expected_encoding.to_string(),
+                    ),
+                    (
+                        "content-range".to_string(),
+                        format!(
+                            "bytes {}-{}/{}",
+                            asset_len_so_far, expected_range_end, asset_len
+                        ),
+                    ),
+                ],
+            );
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
+            assert_matches!(
+                witness.lookup_subtree(&expr_path),
+                SubtreeLookupResult::Found(_)
+            );
+            add_v2_certificate_header(
+                &data_certificate(),
+                &mut expected_response,
+                &witness,
+                &expr_path,
+            );
+            assert_eq!(response, expected_response);
+            asset_len_so_far += response.body().len();
+            number_of_chunks_so_far += 1;
+        }
+        assert_eq!(number_of_chunks_so_far, expected_number_of_chunks)
+    }
+
+    #[rstest]
+    #[case(TWO_CHUNKS_ASSET_NAME, "br")]
+    #[case(TWO_CHUNKS_ASSET_NAME, "gzip")]
+    #[case(TWO_CHUNKS_ASSET_NAME, "deflate")]
+    fn test_encoded_long_asset_deletion_removes_encoded_chunks(
+        #[case] asset_name: &str,
+        #[case] encoding: &str,
+    ) {
+        let mut long_asset_router =
+            long_asset_router_with_params(&[asset_name], &["identity", encoding]);
+        let suffix = encoding_suffix(encoding);
+        let req_url = format!("/{asset_name}");
+        let encoded_asset_name = format!("{asset_name}{suffix}");
+        let encoded_asset_body = long_asset_body(&encoded_asset_name);
+        let asset_len = encoded_asset_body.len();
+        let mut all_requests = vec![];
+        // Request the entire asset and the chunks, all should succeed.
+        // First the asset...
+        let request = HttpRequest::get(&req_url)
+            .with_headers(vec![("accept-encoding".to_string(), encoding.to_string())])
+            .build();
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+
+        assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
+        assert_matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_eq!(response.status_code(), 206);
+        all_requests.push(request);
+
+        // ... then the subsequent chunks.
+        let expected_number_of_chunks =
+            (asset_len as f32 / ASSET_CHUNK_SIZE as f32).ceil() as usize;
+        let mut asset_len_so_far = response.body().len();
+        let mut number_of_chunks_so_far = 1;
+        while asset_len_so_far < asset_len {
+            let chunk_request = HttpRequest::get(&req_url)
+                .with_headers(vec![
+                    ("range".to_string(), format!("bytes={asset_len_so_far}-")),
+                    ("accept-encoding".to_string(), encoding.to_string()),
+                ])
+                .build();
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
+            assert_matches!(
+                witness.lookup_subtree(&expr_path),
+                SubtreeLookupResult::Found(_)
+            );
+            assert_eq!(response.status_code(), 206);
+            asset_len_so_far += response.body().len();
+            number_of_chunks_so_far += 1;
+            all_requests.push(chunk_request);
+        }
+        assert_eq!(number_of_chunks_so_far, expected_number_of_chunks);
+        assert_eq!(all_requests.len(), expected_number_of_chunks);
+
+        // Delete the asset.
+        long_asset_router
+            .delete_assets(
+                vec![
+                    Asset::new(&req_url, long_asset_body(asset_name)),
+                    Asset::new(&format!("/{encoded_asset_name}"), encoded_asset_body),
+                ],
+                vec![long_asset_config(&req_url)],
             )
             .expect("Asset deletion failed");
 
@@ -2759,7 +3032,7 @@ mod tests {
             TWO_CHUNKS_ASSET_NAME => TWO_CHUNKS_ASSET_LEN,
             SIX_CHUNKS_ASSET_NAME => SIX_CHUNKS_ASSET_LEN,
             TEN_CHUNKS_ASSET_NAME => TEN_CHUNKS_ASSET_LEN,
-            _ => ASSET_CHUNK_SIZE * 2 + 1,
+            _ => ASSET_CHUNK_SIZE * 3 + 1,
         };
         let mut rng = ChaCha20Rng::from_seed(hash(asset_name));
         let mut body = vec![0u8; asset_length];
@@ -3023,7 +3296,11 @@ mod tests {
             )],
             fallback_for: vec![],
             aliased_by: vec![],
-            encodings: vec![],
+            encodings: vec![
+                AssetEncoding::Brotli.default_config(),
+                AssetEncoding::Deflate.default_config(),
+                AssetEncoding::Gzip.default_config(),
+            ],
         }
     }
 
@@ -3061,23 +3338,25 @@ mod tests {
         asset_router
     }
 
-    fn long_asset(name: &str) -> Asset {
-        Asset::new(name, long_asset_body(name))
+    fn long_asset(name: String) -> Asset<'static, 'static> {
+        let body = long_asset_body(&name);
+        Asset::new(name, body)
     }
 
-    #[fixture]
-    fn long_asset_router() -> AssetRouter<'static> {
+    fn long_asset_router_with_params(
+        asset_names: &[&str],
+        encodings: &[&str],
+    ) -> AssetRouter<'static> {
         let mut asset_router = AssetRouter::default();
         let mut assets = vec![];
         let mut asset_configs = vec![];
 
-        for name in [
-            ONE_CHUNK_ASSET_NAME,
-            TWO_CHUNKS_ASSET_NAME,
-            SIX_CHUNKS_ASSET_NAME,
-            TEN_CHUNKS_ASSET_NAME,
-        ] {
-            assets.push(long_asset(name));
+        for name in asset_names {
+            for encoding in encodings {
+                let suffix = encoding_suffix(encoding);
+                let full_name = format!("{name}{suffix}");
+                assets.push(long_asset(full_name));
+            }
             asset_configs.push(long_asset_config(name));
         }
         asset_router.certify_assets(assets, asset_configs).unwrap();
