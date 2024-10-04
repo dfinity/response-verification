@@ -8,6 +8,7 @@
 
 ### Feat
 
+- **ic-asset-certification**: add chunkwise-handling of long assets with encodings
 - **ic-asset-certification**: add 206-chunking of long assets
 - **ic-http-certification**: add add_certificate_header util function
 - **ic-http-certification**: add common constructs to skip certification
