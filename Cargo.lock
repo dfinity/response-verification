@@ -1222,11 +1222,15 @@ dependencies = [
 name = "ic-asset-certification"
 version = "2.6.0"
 dependencies = [
+ "assert_matches",
  "globset",
+ "http",
  "ic-certification 2.6.0",
  "ic-http-certification",
  "ic-response-verification",
  "ic-response-verification-test-utils",
+ "rand_chacha",
+ "regex",
  "rstest",
  "thiserror",
 ]

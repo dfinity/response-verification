@@ -15,12 +15,16 @@ license.workspace = true
 homepage.workspace = true
 
 [dependencies]
+http.workspace = true
 ic-certification.workspace = true
 ic-http-certification.workspace = true
 thiserror.workspace = true
 globset = "0.4"
+regex.workspace = true
 
 [dev-dependencies]
+rand_chacha.workspace = true
 rstest.workspace = true
+assert_matches.workspace = true
 ic-response-verification.workspace = true
 ic-response-verification-test-utils.workspace = true

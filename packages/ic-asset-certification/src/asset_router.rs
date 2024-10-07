@@ -7,7 +7,8 @@ use ic_http_certification::{
     HttpCertification, HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry,
     HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
-use std::{borrow::Cow, cell::RefCell, collections::HashMap, rc::Rc};
+use regex::Regex;
+use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
 
 #[derive(Debug, Clone)]
 struct CertifiedAssetResponse<'a> {
@@ -127,19 +128,54 @@ pub struct AssetRouter<'content> {
 pub struct RequestKey {
     /// Path of the requested asset.
     pub path: String,
-    /// The encoding of the assset.
+    /// The encoding of the asset.
     pub encoding: Option<String>,
+    /// The beginning of the requested range (if any), counting from 0.
+    pub range_begin: Option<usize>,
 }
 
-fn request_key(path: &str, encoding: Option<String>) -> RequestKey {
-    RequestKey {
-        path: path.to_string(),
-        encoding,
+impl RequestKey {
+    fn new(path: &str, encoding: Option<String>, range_begin: Option<usize>) -> Self {
+        Self {
+            path: path.to_string(),
+            encoding,
+            range_begin,
+        }
     }
 }
 
+#[derive(Debug, PartialEq)]
+struct RangeRequestValues {
+    pub range_begin: usize,
+    #[allow(unused)]
+    pub range_end: Option<usize>,
+}
+
+const ASSET_CHUNK_SIZE: usize = 2_000_000;
+
 fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
     maybe_encoding.map(|enc| enc.to_string())
+}
+
+fn parse_range_header_str(str_value: &str) -> Result<RangeRequestValues, String> {
+    // expected format: `bytes <range-begin>-[<range-end>]`
+    let re = Regex::new(r"bytes=(\d+)-(\d*)").expect("internal: wrong RE");
+    let Some(caps) = re.captures(str_value) else {
+        return Err("malformed Range header".to_string());
+    };
+    let range_begin: usize = caps
+        .get(1)
+        .ok_or_else(|| "missing range-begin".to_string())?
+        .as_str()
+        .parse()
+        .map_err(|_| "malformed range-begin".to_string())?;
+    let range_end: Option<usize> = caps.get(2).and_then(|v| v.as_str().parse().ok());
+
+    // TODO: add sanity checks for the parsed values
+    Ok(RangeRequestValues {
+        range_begin,
+        range_end,
+    })
 }
 
 impl<'content> AssetRouter<'content> {
@@ -160,6 +196,16 @@ impl<'content> AssetRouter<'content> {
             tree,
             responses: HashMap::new(),
             fallback_responses: HashMap::new(),
+        }
+    }
+
+    fn maybe_get_range_begin(request: &HttpRequest) -> AssetCertificationResult<Option<usize>> {
+        if let Some(range_str) = Self::get_range_header(request) {
+            parse_range_header_str(range_str)
+                .map(|e| Some(e.range_begin))
+                .map_err(AssetCertificationError::RequestError)
+        } else {
+            Ok(None)
         }
     }
 
@@ -189,24 +235,22 @@ impl<'content> AssetRouter<'content> {
     ) -> AssetCertificationResult<HttpResponse<'content>> {
         let preferred_encodings = self.get_preferred_encodings(request);
         let request_url = request.get_path()?;
-
-        match self
-            .get_asset_for_request(&request_url, preferred_encodings)
-            .cloned()
-        {
-            Some(CertifiedAssetResponse {
-                mut response,
-                tree_entry,
-            }) => {
-                let witness = self.tree.borrow().witness(&tree_entry, &request_url)?;
-                let expr_path = tree_entry.path.to_expr_path();
-
-                add_v2_certificate_header(data_certificate, &mut response, &witness, &expr_path);
-
-                Ok(response.clone())
-            }
-            None => Err(AssetCertificationError::NoAssetMatchingRequestUrl { request_url }),
-        }
+        let maybe_range_begin = Self::maybe_get_range_begin(request)?;
+        let mut cert_response = self
+            .get_asset_for_request(&request_url, preferred_encodings, maybe_range_begin)
+            .cloned()?;
+        let witness = self
+            .tree
+            .borrow()
+            .witness(&cert_response.tree_entry, &request_url)?;
+        let expr_path = cert_response.tree_entry.path.to_expr_path();
+        add_v2_certificate_header(
+            data_certificate,
+            &mut cert_response.response,
+            &witness,
+            &expr_path,
+        );
+        Ok(cert_response.response.clone())
     }
 
     /// Certifies multiple assets and inserts them into the router, to be served
@@ -234,7 +278,6 @@ impl<'content> AssetRouter<'content> {
 
         for asset in asset_map.values() {
             let asset_config = asset_configs.iter().find(|e| e.matches_asset(asset));
-
             for (encoding, postfix) in asset_config
                 .map(|e| match e {
                     NormalizedAssetConfig::File { encodings, .. } => encodings.clone(),
@@ -245,7 +288,6 @@ impl<'content> AssetRouter<'content> {
             {
                 let encoded_asset_path = format!("{}.{}", asset.path, postfix);
                 let encoded_asset = asset_map.get(encoded_asset_path.as_str()).cloned();
-
                 if let Some(mut encoded_asset) = encoded_asset {
                     encoded_asset.url.clone_from(&asset.url);
 
@@ -328,13 +370,28 @@ impl<'content> AssetRouter<'content> {
         &self,
         req_path: &'a str,
         preferred_encodings: Vec<&'a str>,
-    ) -> Option<&CertifiedAssetResponse<'content>> {
-        if let Some(response) = self.get_encoded_asset(&preferred_encodings, req_path) {
-            return Some(response);
+        maybe_range_begin: Option<usize>,
+    ) -> AssetCertificationResult<&CertifiedAssetResponse<'content>> {
+        if let Some(response) =
+            self.get_encoded_asset(&preferred_encodings, req_path, maybe_range_begin)
+        {
+            return Ok(response);
         }
 
-        if let Some(response) = self.responses.get(&request_key(req_path, None)) {
-            return Some(response);
+        if let Some(response) =
+            self.responses
+                .get(&RequestKey::new(req_path, None, maybe_range_begin))
+        {
+            if response.response.body().len() > ASSET_CHUNK_SIZE {
+                if let Some(first_chunk_response) =
+                    self.responses
+                        .get(&RequestKey::new(req_path, None, Some(0)))
+                {
+                    return Ok(first_chunk_response);
+                }
+            } else {
+                return Ok(response);
+            }
         }
 
         let mut url_scopes = req_path.split('/').collect::<Vec<_>>();
@@ -345,27 +402,34 @@ impl<'content> AssetRouter<'content> {
             scope.push('/');
 
             if let Some(response) = self.get_encoded_fallback_asset(&preferred_encodings, &scope) {
-                return Some(response);
+                return Ok(response);
             }
 
-            if let Some(response) = self.fallback_responses.get(&request_key(&scope, None)) {
-                return Some(response);
+            if let Some(response) = self
+                .fallback_responses
+                .get(&RequestKey::new(&scope, None, None))
+            {
+                return Ok(response);
             }
 
             scope.pop();
 
             if let Some(response) = self.get_encoded_fallback_asset(&preferred_encodings, &scope) {
-                return Some(response);
+                return Ok(response);
             }
 
-            if let Some(response) = self.fallback_responses.get(&request_key(&scope, None)) {
-                return Some(response);
+            if let Some(response) = self
+                .fallback_responses
+                .get(&RequestKey::new(&scope, None, None))
+            {
+                return Ok(response);
             }
 
             url_scopes.pop();
         }
-
-        None
+        Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+            request_url: req_path.to_string(),
+        })
     }
 
     fn certify_asset_impl<'path>(
@@ -492,12 +556,34 @@ impl<'content> AssetRouter<'content> {
         encoding: Option<AssetEncoding>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
+        let total_length = asset.content.len();
+
+        if total_length > ASSET_CHUNK_SIZE {
+            let mut range_begin = 0;
+            while range_begin < asset.content.len() {
+                let response = Self::prepare_static_asset(
+                    asset.clone(),
+                    content_type.clone(),
+                    additional_headers.clone(),
+                    encoding,
+                    Some(range_begin),
+                )?;
+                self.responses.insert(
+                    RequestKey::new(&asset_url, encoding_str(encoding), Some(range_begin)),
+                    response,
+                );
+                range_begin += ASSET_CHUNK_SIZE;
+            }
+        }
+
         let response =
-            Self::prepare_static_asset(asset, content_type, additional_headers, encoding)?;
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding, None)?;
 
         self.tree.borrow_mut().insert(&response.tree_entry);
-        self.responses
-            .insert(request_key(&asset_url, encoding_str(encoding)), response);
+        self.responses.insert(
+            RequestKey::new(&asset_url, encoding_str(encoding), None),
+            response,
+        );
         Ok(())
     }
 
@@ -510,11 +596,24 @@ impl<'content> AssetRouter<'content> {
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
         let response =
-            Self::prepare_static_asset(asset, content_type, additional_headers, encoding)?;
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding, None)?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
         self.responses
-            .remove(&request_key(&asset_url, encoding_str(encoding)));
+            .remove(&RequestKey::new(&asset_url, encoding_str(encoding), None));
+
+        if response.response.body().len() > ASSET_CHUNK_SIZE {
+            // Delete also chunks.
+            let mut range_begin: usize = 0;
+            while range_begin < response.response.body().len() {
+                self.responses.remove(&RequestKey::new(
+                    &asset_url,
+                    encoding_str(encoding),
+                    Some(range_begin),
+                ));
+                range_begin += ASSET_CHUNK_SIZE;
+            }
+        }
 
         Ok(())
     }
@@ -524,6 +623,7 @@ impl<'content> AssetRouter<'content> {
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
         encoding: Option<AssetEncoding>,
+        range_begin: Option<usize>,
     ) -> AssetCertificationResult<CertifiedAssetResponse<'content>> {
         let asset_url = asset.url.to_string();
 
@@ -532,6 +632,7 @@ impl<'content> AssetRouter<'content> {
             additional_headers,
             content_type,
             encoding,
+            range_begin,
         )?;
 
         let tree_entry =
@@ -561,7 +662,7 @@ impl<'content> AssetRouter<'content> {
 
         self.tree.borrow_mut().insert(&response.tree_entry);
         self.fallback_responses.insert(
-            request_key(&fallback_for.scope, encoding_str(encoding)),
+            RequestKey::new(&fallback_for.scope, encoding_str(encoding), None),
             response,
         );
         Ok(())
@@ -584,8 +685,11 @@ impl<'content> AssetRouter<'content> {
         )?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
-        self.fallback_responses
-            .remove(&request_key(&fallback_for.scope, encoding_str(encoding)));
+        self.fallback_responses.remove(&RequestKey::new(
+            &fallback_for.scope,
+            encoding_str(encoding),
+            None,
+        ));
         Ok(())
     }
 
@@ -601,6 +705,7 @@ impl<'content> AssetRouter<'content> {
             additional_headers,
             content_type,
             encoding,
+            None,
         )?;
 
         let tree_entry = HttpCertificationTreeEntry::new(
@@ -624,7 +729,8 @@ impl<'content> AssetRouter<'content> {
 
         self.tree.borrow_mut().insert(&response.tree_entry);
 
-        self.responses.insert(request_key(&from, None), response);
+        self.responses
+            .insert(RequestKey::new(&from, None, None), response);
 
         Ok(())
     }
@@ -638,7 +744,7 @@ impl<'content> AssetRouter<'content> {
         let response = Self::prepare_redirect(from.clone(), to, kind)?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
-        self.responses.remove(&request_key(&from, None));
+        self.responses.remove(&RequestKey::new(&from, None, None));
 
         Ok(())
     }
@@ -676,9 +782,11 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         content_type: Option<String>,
         encoding: Option<AssetEncoding>,
+        range_begin: Option<usize>,
     ) -> AssetCertificationResult<(HttpResponse<'content>, HttpCertification)> {
+        let mut content = asset.content;
+        let mut status_code = 200;
         let mut headers = vec![];
-
         headers.extend(additional_headers);
 
         if let Some(content_type) = content_type {
@@ -689,7 +797,23 @@ impl<'content> AssetRouter<'content> {
             headers.push(("content-encoding".to_string(), encoding.to_string()));
         }
 
-        Self::prepare_response_and_certification(asset.url.to_string(), 200, asset.content, headers)
+        if let Some(range_begin) = range_begin {
+            let total_length = content.len();
+            let range_end = cmp::min(range_begin + ASSET_CHUNK_SIZE, total_length) - 1;
+            content = content[range_begin..(range_end + 1)].to_owned().into();
+            status_code = 206;
+            headers.push((
+                http::header::CONTENT_RANGE.to_string(),
+                format!("bytes {range_begin}-{range_end}/{total_length}"),
+            ));
+        };
+
+        Self::prepare_response_and_certification(
+            asset.url.to_string(),
+            status_code,
+            content,
+            headers,
+        )
     }
 
     fn prepare_response_and_certification(
@@ -727,13 +851,27 @@ impl<'content> AssetRouter<'content> {
         &self,
         preferred_encodings: &[&str],
         url: &str,
+        maybe_range_begin: Option<usize>,
     ) -> Option<&CertifiedAssetResponse<'content>> {
         for encoding in preferred_encodings {
-            if let Some(response) = self
-                .responses
-                .get(&request_key(url, Some(encoding.to_string())))
-            {
-                return Some(response);
+            if let Some(response) = self.responses.get(&RequestKey::new(
+                url,
+                Some(encoding.to_string()),
+                maybe_range_begin,
+            )) {
+                if response.response.body().len() > ASSET_CHUNK_SIZE {
+                    if let Some(first_chunk_response) = self.responses.get(&RequestKey::new(
+                        url,
+                        Some(encoding.to_string()),
+                        Some(0),
+                    )) {
+                        return Some(first_chunk_response);
+                    } else {
+                        return None;
+                    }
+                } else {
+                    return Some(response);
+                }
             }
         }
 
@@ -746,14 +884,24 @@ impl<'content> AssetRouter<'content> {
         scope: &str,
     ) -> Option<&CertifiedAssetResponse<'content>> {
         for encoding in preferred_encodings {
-            if let Some(response) = self
-                .fallback_responses
-                .get(&request_key(scope, Some(encoding.to_string())))
-            {
+            if let Some(response) = self.fallback_responses.get(&RequestKey::new(
+                scope,
+                Some(encoding.to_string()),
+                None,
+            )) {
                 return Some(response);
             }
         }
 
+        None
+    }
+
+    fn get_range_header<'a>(request: &'a HttpRequest) -> Option<&'a str> {
+        for (name, value) in request.headers().iter() {
+            if name.to_lowercase().eq(&http::header::RANGE.as_str()) {
+                return Some(value);
+            }
+        }
         None
     }
 
@@ -825,14 +973,64 @@ impl Default for AssetRouter<'_> {
 mod tests {
     use super::*;
     use crate::AssetFallbackConfig;
+    use assert_matches::assert_matches;
     use ic_certification::{hash_tree::SubtreeLookupResult, HashTree};
     use ic_http_certification::{
         cel::DefaultFullCelExpressionBuilder, HeaderField, CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::CertificateHeader;
-    use ic_response_verification_test_utils::base64_decode;
+    use ic_response_verification_test_utils::{base64_decode, hash};
+    use rand_chacha::rand_core::{RngCore, SeedableRng};
+    use rand_chacha::ChaCha20Rng;
     use rstest::*;
     use std::vec;
+
+    const ONE_CHUNK_ASSET_LEN: usize = ASSET_CHUNK_SIZE;
+    const TWO_CHUNKS_ASSET_LEN: usize = ASSET_CHUNK_SIZE + 1;
+    const SIX_CHUNKS_ASSET_LEN: usize = 5 * ASSET_CHUNK_SIZE + 12;
+    const TEN_CHUNKS_ASSET_LEN: usize = 10 * ASSET_CHUNK_SIZE;
+
+    const ONE_CHUNK_ASSET_NAME: &str = "long_asset_one_chunk";
+    const TWO_CHUNKS_ASSET_NAME: &str = "long_asset_two_chunks";
+    const SIX_CHUNKS_ASSET_NAME: &str = "long_asset_six_chunks";
+    const TEN_CHUNKS_ASSET_NAME: &str = "long_asset_ten_chunks";
+
+    #[rstest]
+    #[case(0, None)]
+    #[case(ASSET_CHUNK_SIZE, None)]
+    #[case(ASSET_CHUNK_SIZE*4, None)]
+    #[case(0, Some(0))]
+    #[case(100, Some(2000))]
+    #[case(10_000, Some(300_000))]
+    #[case(ASSET_CHUNK_SIZE, Some(2 * ASSET_CHUNK_SIZE - 1))]
+    fn should_parse_range_header_str(#[case] range_begin: usize, #[case] range_end: Option<usize>) {
+        let input = if let Some(range_end) = range_end {
+            format!("bytes={}-{}", range_begin, range_end)
+        } else {
+            format!("bytes={}-", range_begin)
+        };
+        let result = parse_range_header_str(&input);
+        let output = result.unwrap_or_else(|_| panic!("failed parsing '{input}'"));
+        assert_eq!(
+            RangeRequestValues {
+                range_begin,
+                range_end
+            },
+            output
+        );
+    }
+
+    #[rstest]
+    #[case("byte 1-2/3")]
+    #[case("bites 2-4")]
+    #[case("bytes 100-end")]
+    #[case("bytes 12345")]
+    #[case("something else")]
+    #[case("bytes dead-beef")]
+    fn should_fail_parse_range_header_str_on_malformed_input(#[case] malformed_input: &str) {
+        let result = parse_range_header_str(malformed_input);
+        assert_matches!(result, Err(e) if e.to_string().contains("malformed Range header"));
+    }
 
     #[rstest]
     #[case("/")]
@@ -840,7 +1038,7 @@ mod tests {
     fn test_index_html(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
 
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -886,6 +1084,437 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn test_one_chunk_long_asset_served_in_full() {
+        let asset_name = ONE_CHUNK_ASSET_NAME;
+        let long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
+        let req_url = format!("/{asset_name}");
+        let asset_body = long_asset_body(asset_name);
+        // Request the entire "one-chunk"-asset, should obtain it in full.
+        let request = HttpRequest::get(&req_url).build();
+        let mut expected_response = build_200_response(
+            asset_body,
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+            ],
+        );
+
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
+        assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
+        assert_matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_eq!(response, expected_response);
+    }
+
+    #[rstest]
+    #[case(TWO_CHUNKS_ASSET_NAME)]
+    #[case(SIX_CHUNKS_ASSET_NAME)]
+    #[case(TEN_CHUNKS_ASSET_NAME)]
+    fn test_long_asset_served_in_chunks(#[case] asset_name: &str) {
+        let long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
+        let req_url = format!("/{asset_name}");
+        let asset_body = long_asset_body(asset_name);
+        let asset_len = asset_body.len();
+        // Request the entire asset, should obtain the first chunk.
+        let request = HttpRequest::get(&req_url).build();
+        let mut expected_response = build_206_response(
+            asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-range".to_string(),
+                    format!("bytes 0-{}/{}", ASSET_CHUNK_SIZE - 1, asset_len),
+                ),
+            ],
+        );
+
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
+        assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
+        assert_matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_eq!(response, expected_response);
+
+        // Request the subsequent chunks, should obtain them.
+        let expected_number_of_chunks =
+            (asset_len as f32 / ASSET_CHUNK_SIZE as f32).ceil() as usize;
+        let mut asset_len_so_far = response.body().len();
+        let mut number_of_chunks_so_far = 1;
+        while asset_len_so_far < asset_len {
+            let chunk_request = HttpRequest::get(&req_url)
+                .with_headers(vec![(
+                    "range".to_string(),
+                    format!("bytes={}-", asset_len_so_far),
+                )])
+                .build();
+            let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
+            let mut expected_response = build_206_response(
+                asset_body[asset_len_so_far..=expected_range_end].to_vec(),
+                asset_cel_expr(),
+                vec![
+                    (
+                        "cache-control".to_string(),
+                        "public, no-cache, no-store".to_string(),
+                    ),
+                    ("content-type".to_string(), "text/html".to_string()),
+                    (
+                        "content-range".to_string(),
+                        format!(
+                            "bytes {}-{}/{}",
+                            asset_len_so_far, expected_range_end, asset_len
+                        ),
+                    ),
+                ],
+            );
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
+            assert_matches!(
+                witness.lookup_subtree(&expr_path),
+                SubtreeLookupResult::Found(_)
+            );
+            add_v2_certificate_header(
+                &data_certificate(),
+                &mut expected_response,
+                &witness,
+                &expr_path,
+            );
+            assert_eq!(response, expected_response);
+            asset_len_so_far += response.body().len();
+            number_of_chunks_so_far += 1;
+        }
+        assert_eq!(number_of_chunks_so_far, expected_number_of_chunks)
+    }
+
+    #[rstest]
+    #[case(TWO_CHUNKS_ASSET_NAME)]
+    #[case(SIX_CHUNKS_ASSET_NAME)]
+    #[case(TEN_CHUNKS_ASSET_NAME)]
+    fn test_long_asset_deletion_removes_chunks(#[case] asset_name: &str) {
+        let mut long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
+        let req_url = format!("/{asset_name}");
+        let asset_body = long_asset_body(asset_name);
+        let asset_len = asset_body.len();
+        let mut all_requests = vec![];
+        // Request the entire asset and the chunks, all should succeed.
+        // First the asset...
+        let request = HttpRequest::get(&req_url).build();
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+
+        assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
+        assert_matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_eq!(response.status_code(), 206);
+        all_requests.push(request);
+
+        // ... then the subsequent chunks.
+        let expected_number_of_chunks =
+            (asset_len as f32 / ASSET_CHUNK_SIZE as f32).ceil() as usize;
+        let mut asset_len_so_far = response.body().len();
+        let mut number_of_chunks_so_far = 1;
+        while asset_len_so_far < asset_len {
+            let chunk_request = HttpRequest::get(&req_url)
+                .with_headers(vec![(
+                    "range".to_string(),
+                    format!("bytes={}-", asset_len_so_far),
+                )])
+                .build();
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
+            assert_matches!(
+                witness.lookup_subtree(&expr_path),
+                SubtreeLookupResult::Found(_)
+            );
+            assert_eq!(response.status_code(), 206);
+            asset_len_so_far += response.body().len();
+            number_of_chunks_so_far += 1;
+            all_requests.push(chunk_request);
+        }
+        assert_eq!(number_of_chunks_so_far, expected_number_of_chunks);
+        assert_eq!(all_requests.len(), expected_number_of_chunks);
+
+        // Delete the asset.
+        long_asset_router
+            .delete_assets(
+                vec![Asset::new(&req_url, asset_body)],
+                vec![long_asset_config(asset_name)],
+            )
+            .expect("Asset deletion failed");
+
+        // Re-request the asset and the chunks, all should fail.
+        for request in all_requests {
+            let result = long_asset_router.serve_asset(&data_certificate(), &request);
+            assert_matches!(
+                result,
+                Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                    request_url,
+                 }) if request_url == request.get_path().unwrap()
+            );
+        }
+    }
+
+    fn encoding_suffix(encoding: &str) -> String {
+        let suffix = match encoding {
+            "deflate" => ".zz",
+            "gzip" => ".gz",
+            "br" => ".br",
+            "identity" => "",
+            _ => panic!("unknown encoding: {}", encoding),
+        };
+        suffix.to_string()
+    }
+
+    #[rstest]
+    #[case(SIX_CHUNKS_ASSET_NAME, "deflate", "deflate")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "deflate, identity", "deflate")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, identity", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate, identity", "gzip")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "br", "br")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "br, gzip, deflate, identity", "br")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate, identity, br", "br")]
+    fn test_encoded_long_asset_served_in_encoded_chunks(
+        #[case] asset_name: &str,
+        #[case] accept_encoding: &str,
+        #[case] expected_encoding: &str,
+    ) {
+        let long_asset_router =
+            long_asset_router_with_params(&[asset_name], &["identity", expected_encoding]);
+        let suffix = encoding_suffix(expected_encoding);
+        let req_url = format!("/{asset_name}");
+        let encoded_asset_name = format!("{asset_name}{suffix}");
+        let asset_body = long_asset_body(&encoded_asset_name);
+        let asset_len = asset_body.len();
+
+        let request = HttpRequest::get(&req_url)
+            .with_headers(vec![(
+                "accept-encoding".to_string(),
+                accept_encoding.to_string(),
+            )])
+            .build();
+        let mut expected_response = build_206_response(
+            asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
+            encoded_asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-encoding".to_string(),
+                    expected_encoding.to_string(),
+                ),
+                (
+                    "content-range".to_string(),
+                    format!("bytes 0-{}/{}", ASSET_CHUNK_SIZE - 1, asset_len),
+                ),
+            ],
+        );
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
+        assert_eq!(
+            expr_path,
+            HttpCertificationPath::exact(req_url.clone()).to_expr_path()
+        );
+        assert!(matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        ));
+        assert_eq!(response, expected_response);
+
+        // Request the subsequent chunks, should obtain them.
+        let expected_number_of_chunks =
+            (asset_len as f32 / ASSET_CHUNK_SIZE as f32).ceil() as usize;
+        let mut asset_len_so_far = response.body().len();
+        let mut number_of_chunks_so_far = 1;
+        while asset_len_so_far < asset_len {
+            let chunk_request = HttpRequest::get(&req_url)
+                .with_headers(vec![
+                    ("range".to_string(), format!("bytes={}-", asset_len_so_far)),
+                    ("accept-encoding".to_string(), accept_encoding.to_string()),
+                ])
+                .build();
+            let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
+            let mut expected_response = build_206_response(
+                asset_body[asset_len_so_far..=expected_range_end].to_vec(),
+                asset_cel_expr(),
+                vec![
+                    (
+                        "cache-control".to_string(),
+                        "public, no-cache, no-store".to_string(),
+                    ),
+                    ("content-type".to_string(), "text/html".to_string()),
+                    (
+                        "content-encoding".to_string(),
+                        expected_encoding.to_string(),
+                    ),
+                    (
+                        "content-range".to_string(),
+                        format!(
+                            "bytes {}-{}/{}",
+                            asset_len_so_far, expected_range_end, asset_len
+                        ),
+                    ),
+                ],
+            );
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
+            assert_matches!(
+                witness.lookup_subtree(&expr_path),
+                SubtreeLookupResult::Found(_)
+            );
+            add_v2_certificate_header(
+                &data_certificate(),
+                &mut expected_response,
+                &witness,
+                &expr_path,
+            );
+            assert_eq!(response, expected_response);
+            asset_len_so_far += response.body().len();
+            number_of_chunks_so_far += 1;
+        }
+        assert_eq!(number_of_chunks_so_far, expected_number_of_chunks)
+    }
+
+    #[rstest]
+    #[case(TWO_CHUNKS_ASSET_NAME, "br")]
+    #[case(TWO_CHUNKS_ASSET_NAME, "gzip")]
+    #[case(TWO_CHUNKS_ASSET_NAME, "deflate")]
+    fn test_encoded_long_asset_deletion_removes_encoded_chunks(
+        #[case] asset_name: &str,
+        #[case] encoding: &str,
+    ) {
+        let mut long_asset_router =
+            long_asset_router_with_params(&[asset_name], &["identity", encoding]);
+        let suffix = encoding_suffix(encoding);
+        let req_url = format!("/{asset_name}");
+        let encoded_asset_name = format!("{asset_name}{suffix}");
+        let encoded_asset_body = long_asset_body(&encoded_asset_name);
+        let asset_len = encoded_asset_body.len();
+        let mut all_requests = vec![];
+        // Request the entire asset and the chunks, all should succeed.
+        // First the asset...
+        let request = HttpRequest::get(&req_url)
+            .with_headers(vec![("accept-encoding".to_string(), encoding.to_string())])
+            .build();
+        let response = long_asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+
+        assert_eq!(expr_path, vec!["http_expr", &req_url[1..], "<$>"]);
+        assert_matches!(
+            witness.lookup_subtree(&expr_path),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_eq!(response.status_code(), 206);
+        all_requests.push(request);
+
+        // ... then the subsequent chunks.
+        let expected_number_of_chunks =
+            (asset_len as f32 / ASSET_CHUNK_SIZE as f32).ceil() as usize;
+        let mut asset_len_so_far = response.body().len();
+        let mut number_of_chunks_so_far = 1;
+        while asset_len_so_far < asset_len {
+            let chunk_request = HttpRequest::get(&req_url)
+                .with_headers(vec![
+                    ("range".to_string(), format!("bytes={asset_len_so_far}-")),
+                    ("accept-encoding".to_string(), encoding.to_string()),
+                ])
+                .build();
+            let response = long_asset_router
+                .serve_asset(&data_certificate(), &chunk_request)
+                .unwrap();
+            let (witness, expr_path) = extract_witness_expr_path(&response);
+            assert_matches!(
+                witness.lookup_subtree(&expr_path),
+                SubtreeLookupResult::Found(_)
+            );
+            assert_eq!(response.status_code(), 206);
+            asset_len_so_far += response.body().len();
+            number_of_chunks_so_far += 1;
+            all_requests.push(chunk_request);
+        }
+        assert_eq!(number_of_chunks_so_far, expected_number_of_chunks);
+        assert_eq!(all_requests.len(), expected_number_of_chunks);
+
+        // Delete the asset.
+        long_asset_router
+            .delete_assets(
+                vec![
+                    Asset::new(&req_url, long_asset_body(asset_name)),
+                    Asset::new(&format!("/{encoded_asset_name}"), encoded_asset_body),
+                ],
+                vec![long_asset_config(&req_url)],
+            )
+            .expect("Asset deletion failed");
+
+        // Re-request the asset and the chunks, all should fail.
+        for request in all_requests {
+            let result = long_asset_router.serve_asset(&data_certificate(), &request);
+            assert_matches!(
+                result,
+                Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                    request_url,
+                 }) if request_url == request.get_path().unwrap()
+            );
+        }
+    }
+
     #[rstest]
     #[case(index_html_zz_body(), "/", "deflate", "deflate")]
     #[case(index_html_zz_body(), "/", "deflate, identity", "deflate")]
@@ -928,7 +1557,7 @@ mod tests {
                 accept_encoding.to_string(),
             )])
             .build();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             expected_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1047,7 +1676,7 @@ mod tests {
                 accept_encoding.to_string(),
             )])
             .build();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             expected_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1115,7 +1744,7 @@ mod tests {
         #[case] req_url: &str,
         #[case] req_path: &str,
     ) {
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1184,7 +1813,7 @@ mod tests {
         #[case] req_url: &str,
         #[case] req_path: &str,
     ) {
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1247,7 +1876,7 @@ mod tests {
     #[case("https://internetcomputer.org/css/app-ba74b708.css")]
     fn text_app_css(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             app_css_body(),
             asset_cel_expr(),
             vec![
@@ -1286,7 +1915,7 @@ mod tests {
                 vec![css_config()],
             )
             .unwrap();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -1327,7 +1956,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1383,7 +2012,7 @@ mod tests {
     #[case("https://internetcomputer.org/css/core-8d4jhgy2.js")]
     fn test_not_found_css(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -1424,7 +2053,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1480,7 +2109,7 @@ mod tests {
     #[case("https://internetcomputer.org/js/app-488df671.js")]
     fn test_app_js(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             app_js_body(),
             asset_cel_expr(),
             vec![
@@ -1521,7 +2150,7 @@ mod tests {
                 vec![js_config()],
             )
             .unwrap();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -1562,7 +2191,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -1748,7 +2377,7 @@ mod tests {
             )])
             .build();
 
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             expected_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1793,7 +2422,7 @@ mod tests {
                 vec![js_config()],
             )
             .unwrap();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             expected_not_found_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1838,7 +2467,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             expected_index_body,
             encoded_asset_cel_expr(),
             vec![
@@ -1898,7 +2527,7 @@ mod tests {
     #[case("https://internetcomputer.org/js/core-7dk12y45.js")]
     fn test_not_found_js(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -1940,7 +2569,7 @@ mod tests {
             )
             .unwrap();
 
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2006,7 +2635,7 @@ mod tests {
     #[case("https://internetcomputer.org/not-found/index.html")]
     fn test_not_found_alias(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -2051,7 +2680,7 @@ mod tests {
             )
             .unwrap();
 
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2175,7 +2804,7 @@ mod tests {
                 vec![old_url_redirect_config(), css_redirect_config()],
             )
             .unwrap();
-        let mut expected_css_response = build_response(
+        let mut expected_css_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -2186,7 +2815,7 @@ mod tests {
                 ("content-type".to_string(), "text/html".to_string()),
             ],
         );
-        let mut expected_old_url_response = build_response(
+        let mut expected_old_url_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2244,7 +2873,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_css_response = build_response(
+        let mut expected_css_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2255,7 +2884,7 @@ mod tests {
                 ("content-type".to_string(), "text/html".to_string()),
             ],
         );
-        let mut expected_old_url_response = build_response(
+        let mut expected_old_url_response = build_200_response(
             index_html_body(),
             asset_cel_expr(),
             vec![
@@ -2357,7 +2986,7 @@ mod tests {
 
         let request = HttpRequest::get("/").build();
 
-        let mut expected_response = build_response(
+        let mut expected_response = build_200_response(
             index_html_body.clone(),
             asset_cel_expr,
             vec![
@@ -2395,6 +3024,20 @@ mod tests {
     #[fixture]
     fn index_html_body() -> Vec<u8> {
         b"<html><body><h1>Hello World!</h1></body></html>".to_vec()
+    }
+
+    fn long_asset_body(asset_name: &str) -> Vec<u8> {
+        let asset_length = match asset_name {
+            ONE_CHUNK_ASSET_NAME => ONE_CHUNK_ASSET_LEN,
+            TWO_CHUNKS_ASSET_NAME => TWO_CHUNKS_ASSET_LEN,
+            SIX_CHUNKS_ASSET_NAME => SIX_CHUNKS_ASSET_LEN,
+            TEN_CHUNKS_ASSET_NAME => TEN_CHUNKS_ASSET_LEN,
+            _ => ASSET_CHUNK_SIZE * 3 + 1,
+        };
+        let mut rng = ChaCha20Rng::from_seed(hash(asset_name));
+        let mut body = vec![0u8; asset_length];
+        rng.fill_bytes(&mut body);
+        body
     }
 
     // Gzip compressed version of `index_html_body`,
@@ -2643,6 +3286,24 @@ mod tests {
         }
     }
 
+    fn long_asset_config(path: &str) -> AssetConfig {
+        AssetConfig::File {
+            path: path.to_string(),
+            content_type: Some("text/html".to_string()),
+            headers: vec![(
+                "cache-control".to_string(),
+                "public, no-cache, no-store".to_string(),
+            )],
+            fallback_for: vec![],
+            aliased_by: vec![],
+            encodings: vec![
+                AssetEncoding::Brotli.default_config(),
+                AssetEncoding::Deflate.default_config(),
+                AssetEncoding::Gzip.default_config(),
+            ],
+        }
+    }
+
     #[fixture]
     fn asset_router() -> AssetRouter<'static> {
         let mut asset_router = AssetRouter::default();
@@ -2677,6 +3338,47 @@ mod tests {
         asset_router
     }
 
+    fn long_asset(name: String) -> Asset<'static, 'static> {
+        let body = long_asset_body(&name);
+        Asset::new(name, body)
+    }
+
+    fn long_asset_router_with_params(
+        asset_names: &[&str],
+        encodings: &[&str],
+    ) -> AssetRouter<'static> {
+        let mut asset_router = AssetRouter::default();
+        let mut assets = vec![];
+        let mut asset_configs = vec![];
+
+        for name in asset_names {
+            for encoding in encodings {
+                let suffix = encoding_suffix(encoding);
+                let full_name = format!("{name}{suffix}");
+                assets.push(long_asset(full_name));
+            }
+            asset_configs.push(long_asset_config(name));
+        }
+        asset_router.certify_assets(assets, asset_configs).unwrap();
+        asset_router
+    }
+
+    fn build_200_response<'a>(
+        body: Vec<u8>,
+        cel_expr: String,
+        headers: Vec<HeaderField>,
+    ) -> HttpResponse<'a> {
+        build_response(200, body, cel_expr, headers)
+    }
+
+    fn build_206_response<'a>(
+        body: Vec<u8>,
+        cel_expr: String,
+        headers: Vec<HeaderField>,
+    ) -> HttpResponse<'a> {
+        build_response(206, body, cel_expr, headers)
+    }
+
     // A certificate taken from a real response on mainnet. It doesn't matter what it contains,
     // as long as it's a valid certificate. If we ever decide to run response verification in these
     // tests then the content of the certificate will matter.
@@ -2686,6 +3388,7 @@ mod tests {
     }
 
     fn build_response<'a>(
+        status_code: u16,
         body: Vec<u8>,
         cel_expr: String,
         headers: Vec<HeaderField>,
@@ -2699,7 +3402,7 @@ mod tests {
             .collect();
 
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(status_code)
             .with_body(body)
             .with_headers(combined_headers)
             .build()
