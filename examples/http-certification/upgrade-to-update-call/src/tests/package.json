@@ -1,0 +1,7 @@
+{
+  "name": "http-certification-upgrade-to-update-call-tests",
+  "private": true,
+  "scripts": {
+    "test": "jest"
+  }
+}

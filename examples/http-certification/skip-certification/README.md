@@ -69,7 +69,7 @@ dfx deploy
 Make a request to the canister using cURL:
 
 ```shell
-curl http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id backend)
+curl http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend)
 ```
 
 You should see output similar to the following:
@@ -91,7 +91,7 @@ You should see output similar to the following:
 Alternatively, print the URL in the terminal and then open in a browser:
 
 ```shell
-echo http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id backend)
+echo http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend)
 ```
 
 ## Resources
