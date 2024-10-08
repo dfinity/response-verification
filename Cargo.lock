@@ -1107,6 +1107,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "http_certification_upgrade_to_update_call_rust_backend"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "ic-cdk",
+ "ic-http-certification",
+]
+
+[[package]]
 name = "httparse"
 version = "1.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

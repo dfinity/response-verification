@@ -61,7 +61,7 @@ dfx deploy
 Print the web URL of the canister:
 
 ```shell
-echo "http://$(dfx canister id frontend).localhost:$(dfx info webserver-port)"
+echo "http://$(dfx canister id certification_certified_counter_frontend).localhost:$(dfx info webserver-port)"
 ```
 
 Now you can open that URL in your web browser.

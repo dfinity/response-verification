@@ -89,6 +89,29 @@
       "shrink": true,
       "optimize": "cycles"
     },
+    "http_certification_upgrade_to_update_call_rust_backend": {
+      "type": "rust",
+      "package": "http_certification_upgrade_to_update_call_rust_backend",
+      "candid": "examples/http-certification/upgrade-to-update-call/src/backend.did",
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "examples/http-certification/upgrade-to-update-call/src/declarations/rust-backend"
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
+    "http_certification_upgrade_to_update_call_motoko_backend": {
+      "type": "motoko",
+      "main": "examples/http-certification/upgrade-to-update-call/src/motoko-backend/main.mo",
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "examples/http-certification/upgrade-to-update-call/src/declarations/motoko-backend"
+      },
+      "gzip": true,
+      "shrink": true,
+      "optimize": "cycles"
+    },
     "response_verification_tests_frontend": {
       "type": "assets",
       "source": ["packages/ic-response-verification-tests/src/frontend/dist"],
