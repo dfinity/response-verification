@@ -1,0 +1,34 @@
+type HeaderField = record { text; text };
+
+type HttpRequest = record {
+  method : text;
+  url : text;
+  headers : vec HeaderField;
+  body : blob;
+  certificate_version : opt nat16;
+};
+
+type HttpUpdateRequest = record {
+  method : text;
+  url : text;
+  headers : vec HeaderField;
+  body : blob;
+};
+
+type HttpResponse = record {
+  status_code : nat16;
+  headers : vec HeaderField;
+  body : blob;
+  upgrade : opt bool;
+};
+
+type HttpUpdateResponse = record {
+  status_code : nat16;
+  headers : vec HeaderField;
+  body : blob;
+};
+
+service : {
+  http_request : (request : HttpRequest) -> (HttpResponse) query;
+  http_request_update : (request : HttpRequest) -> (HttpResponse);
+};
