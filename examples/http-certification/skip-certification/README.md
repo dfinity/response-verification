@@ -6,7 +6,7 @@ This guide walks through an example project that demonstrates how to skip HTTP c
 
 WARNING!!! This means that a malicious replica can return whatever data it wants in response to requests directed towards the canister. Think carefully about whether or not this is the right fit for the canister. If certification should only be skipped for certain paths, then check out the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guide where this approach is covered in more detail.
 
-This is not a beginner's canister development guide. Many foundational concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/skip-certification).
+This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/skip-certification).
 
 ## Prerequisites
 
