@@ -10,11 +10,11 @@ Upgrading query calls to upgrade calls allows for the certification of any kind 
 
 A similairly simple yet more performant, but _insecure_ approach is to skip certification entirely. This is not recommended unless you are absolutely sure that certification really does not make sense for your canister. Check the ["Skipping certification for HTTP responses"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/skipping-certification-for-http-responses) guide for more details on how to do that.
 
-This is not a beginner's canister development guide. Many foundational concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to upgrading to an update call will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/upgrade-to-update-call).
+This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to upgrading to an update call will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/upgrade-to-update-call).
 
 ## How it works
 
-When the HTTP Gateway receives a request from a client, it will forward the request to the target canister's `http_request` method as a query call. To upgrade this query call to an update call, the canister returns a response that sets the optional `upgrade` field to `opt true`.
+When the HTTP Gateway receives a request from a client, it will forward the request to the target canister's `http_request` method as a query call. To upgrade this query call to an update call, the canister returns a response that sets the optional `upgrade` field to `opt true`. Ommiting this field, or setting it to `opt false` will result in the HTTP Gateway treating the query call response as-is, without upgrading.
 
 Upon receiving a response from the canister with the `upgrade` field set to `opt true`, the HTTP Gateway will repeat the original request as an update call to the `http_request_update` method of the canister. The canister can then respond to the update call with any dynamic response and leverage the ICP consensus protocol for security. The certification resulting from putting this response through consensus will be verified by the HTTP Gateway to ensure it has not been tampered with.
 
@@ -22,7 +22,7 @@ Upon receiving a response from the canister with the `upgrade` field set to `opt
 
 This example project features both Rust and Motoko code. If you rather follow the Motoko version, you can skip this section and go straight to the [section covering Motoko](#motoko).
 
-The Rust code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entry point for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `true`. The `http_request_update` function is the entry point for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
+The Rust code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entry point for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `Some(true)` (via the `build_update` method on the `HttpResponse::builder` struct). The `http_request_update` function is the entry point for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
 
 ```rust
 use ic_cdk::*;
@@ -45,7 +45,7 @@ fn http_request_update() -> HttpUpdateResponse<'static> {
 
 ## Motoko
 
-The Motoko code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entry point for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `true`. The `http_request_update` function is the entry point for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
+The Motoko code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entry point for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `Some(true)`. The `http_request_update` function is the entry point for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
 
 ```motoko
 import Text "mo:base/Text";
