@@ -1074,6 +1074,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "http_certification_counter_backend"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "ic-cdk",
+ "ic-http-certification",
+ "lazy_static",
+]
+
+[[package]]
 name = "http_certification_custom_assets_backend"
 version = "0.1.0"
 dependencies = [

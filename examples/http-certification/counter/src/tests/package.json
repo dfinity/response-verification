@@ -1,0 +1,10 @@
+{
+  "name": "http-certification-counter-tests",
+  "private": true,
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@dfinity/response-verification": "workspace:*"
+  }
+}

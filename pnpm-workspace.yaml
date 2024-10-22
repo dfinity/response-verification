@@ -1,6 +1,7 @@
 packages:
   - 'examples/certification/certified-counter/src/frontend'
   - 'examples/http-certification/assets/src/frontend'
+  - 'examples/http-certification/counter/src/tests'
   - 'examples/http-certification/custom-assets/src/frontend'
   - 'examples/http-certification/custom-assets/src/tests'
   - 'examples/http-certification/json-api/src/tests'

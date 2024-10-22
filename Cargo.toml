@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "examples/certification/certified-counter/src/backend",
     "examples/http-certification/assets/src/backend",
+    "examples/http-certification/counter/src/backend",
     "examples/http-certification/custom-assets/src/backend",
     "examples/http-certification/json-api/src/backend",
     "examples/http-certification/skip-certification/src/backend",

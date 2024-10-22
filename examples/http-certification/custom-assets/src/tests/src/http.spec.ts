@@ -50,7 +50,7 @@ describe('HTTP', () => {
     const response = await actor.http_request(request);
     expect(response.status_code).toBe(200);
 
-    let verificationResult = verifyRequestResponsePair(
+    const verificationResult = verifyRequestResponsePair(
       request,
       response,
       canisterId.toUint8Array(),

@@ -1,0 +1,13 @@
+[package]
+name = "http_certification_counter_backend"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+candid.workspace = true
+ic-cdk.workspace = true
+ic-http-certification.workspace = true
+lazy_static.workspace = true

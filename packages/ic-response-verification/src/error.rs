@@ -164,11 +164,11 @@ pub enum ResponseVerificationError {
     MissingCertification,
 
     /// Failed to decode CBOR
-    #[error("CBOR decoding failed")]
+    #[error(r#"CBOR decoding failed: "{0}""#)]
     CborDecodingFailed(#[from] ic_cbor::CborError),
 
     /// Failed to verify certificate
-    #[error("Certificate verification failed")]
+    #[error(r#"Certificate verification failed: "{0}""#)]
     CertificateVerificationFailed(
         #[from] ic_certificate_verification::CertificateVerificationError,
     ),

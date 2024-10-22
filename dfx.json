@@ -49,6 +49,17 @@
       "shrink": true,
       "optimize": "cycles"
     },
+    "http_certification_counter_backend": {
+      "type": "rust",
+      "package": "http_certification_counter_backend",
+      "candid": "examples/http-certification/counter/src/backend/backend.did",
+      "declarations": {
+        "bindings": ["ts", "js"],
+        "output": "examples/http-certification/counter/src/declarations"
+      },
+      "gzip": false,
+      "shrink": false
+    },
     "http_certification_custom_assets_backend": {
       "type": "custom",
       "candid": "examples/http-certification/custom-assets/src/backend/backend.did",
