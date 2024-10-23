@@ -5,6 +5,7 @@ use crate::{
 };
 use std::borrow::Cow;
 use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Color {
@@ -341,6 +342,30 @@ where
             write!(f, "({:?}, {:?})", k, v)?;
         }
         write!(f, "]")
+    }
+}
+
+impl<K, V> Display for RbTree<K, V>
+where
+    K: 'static + AsRef<[u8]>,
+    V: 'static + AsHashTree,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[")?;
+        let mut first = true;
+        for (k, v) in self.iter() {
+            if !first {
+                write!(f, ", ")?;
+                first = false;
+            }
+            write!(
+                f,
+                "\n    (\"{}\", {})",
+                String::from_utf8_lossy(k.as_ref()),
+                v.as_hash_tree()
+            )?;
+        }
+        write!(f, "\n]")
     }
 }
 

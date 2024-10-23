@@ -124,7 +124,7 @@ pub struct AssetRouter<'content> {
 }
 
 /// A key created from request data, to retrieve the corresponding response.
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct RequestKey {
     /// Path of the requested asset.
     pub path: String,
@@ -568,22 +568,34 @@ impl<'content> AssetRouter<'content> {
                     encoding,
                     Some(range_begin),
                 )?;
+                if range_begin == 0 {
+                    self.responses.insert(
+                        RequestKey::new(&asset_url, encoding_str(encoding), None),
+                        response.clone(),
+                    );
+                }
+                self.tree.borrow_mut().insert(&response.tree_entry);
                 self.responses.insert(
                     RequestKey::new(&asset_url, encoding_str(encoding), Some(range_begin)),
                     response,
                 );
                 range_begin += ASSET_CHUNK_SIZE;
             }
+        } else {
+            let response = Self::prepare_static_asset(
+                asset,
+                content_type,
+                additional_headers,
+                encoding,
+                None,
+            )?;
+
+            self.tree.borrow_mut().insert(&response.tree_entry);
+            self.responses.insert(
+                RequestKey::new(&asset_url, encoding_str(encoding), None),
+                response,
+            );
         }
-
-        let response =
-            Self::prepare_static_asset(asset, content_type, additional_headers, encoding, None)?;
-
-        self.tree.borrow_mut().insert(&response.tree_entry);
-        self.responses.insert(
-            RequestKey::new(&asset_url, encoding_str(encoding), None),
-            response,
-        );
         Ok(())
     }
 
@@ -635,8 +647,10 @@ impl<'content> AssetRouter<'content> {
             range_begin,
         )?;
 
-        let tree_entry =
-            HttpCertificationTreeEntry::new(HttpCertificationPath::exact(asset_url), certification);
+        let tree_entry = HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact(asset_url.clone()),
+            certification,
+        );
 
         Ok(CertifiedAssetResponse {
             response,

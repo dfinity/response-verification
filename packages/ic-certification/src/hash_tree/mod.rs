@@ -183,6 +183,14 @@ impl<Storage: AsRef<[u8]>> fmt::Debug for HashTree<Storage> {
     }
 }
 
+impl<Storage: AsRef<[u8]>> fmt::Display for HashTree<Storage> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("HashTree")
+            .field("root", &self.root)
+            .finish()
+    }
+}
+
 #[allow(dead_code)]
 impl<Storage: AsRef<[u8]>> HashTree<Storage> {
     /// Recomputes root hash of the full tree that this hash tree was constructed from.
