@@ -568,6 +568,7 @@ impl<'content> AssetRouter<'content> {
                     encoding,
                     Some(range_begin),
                 )?;
+                self.tree.borrow_mut().insert(&response.tree_entry);
                 self.responses.insert(
                     RequestKey::new(&asset_url, encoding_str(encoding), Some(range_begin)),
                     response,

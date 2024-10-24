@@ -1,12 +1,12 @@
 use crate::{empty, fork, labeled, leaf, pruned, AsHashTree, Hash, HashTree, HashTreeNode, RbTree};
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 
 pub trait NestedTreeKeyRequirements: Debug + Clone + AsRef<[u8]> + 'static {}
 pub trait NestedTreeValueRequirements: Debug + Clone + AsHashTree + 'static {}
 impl<T> NestedTreeKeyRequirements for T where T: Debug + Clone + AsRef<[u8]> + 'static {}
 impl<T> NestedTreeValueRequirements for T where T: Debug + Clone + AsHashTree + 'static {}
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum NestedTree<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> {
     Leaf(V),
     Nested(RbTree<K, NestedTree<K, V>>),
@@ -15,6 +15,18 @@ pub enum NestedTree<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements
 impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> Default for NestedTree<K, V> {
     fn default() -> Self {
         NestedTree::Nested(RbTree::<K, NestedTree<K, V>>::new())
+    }
+}
+
+impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> Debug for NestedTree<K, V> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let s = match &self {
+            NestedTree::Leaf(leaf) => {
+                format!("NestedTree::Leaf({})", hex::encode(leaf.root_hash()))
+            }
+            NestedTree::Nested(rb_tree) => format!("NestedTree({:#?})", rb_tree),
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -443,6 +455,25 @@ mod tests {
     #[case::mismatched_fork_and_leaf(fork_a(), leaf_a())]
     fn merge_hash_trees_inconsistent_structure(#[case] lhs: HashTree, #[case] rhs: HashTree) {
         merge_hash_trees(lhs, rhs);
+    }
+
+    #[test]
+    fn should_display_labels_and_hex_hashes() {
+        let label_1 = "label 1";
+        let label_2 = "label 2";
+
+        let value_1 = [1, 2, 3, 4, 5];
+        let value_2 = [7, 8, 9, 10];
+
+        let mut tree: NestedTree<&str, Vec<u8>> = NestedTree::default();
+        tree.insert(&[label_1, label_2], value_1.to_vec());
+        tree.insert(&[label_2, label_1], value_2.to_vec());
+
+        let s = format!("{:?}", tree);
+        assert!(s.contains(label_1));
+        assert!(s.contains(label_2));
+        assert!(s.contains(&format!("0x{}", hex::encode(value_1))));
+        assert!(s.contains(&format!("0x{}", hex::encode(value_2))));
     }
 
     #[fixture]

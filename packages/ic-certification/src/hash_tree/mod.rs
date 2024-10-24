@@ -341,22 +341,17 @@ impl<Storage: AsRef<[u8]>> fmt::Debug for HashTreeNode<Storage> {
     // }
     // ```
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fn readable_print(f: &mut fmt::Formatter<'_>, v: &[u8]) -> fmt::Result {
+        fn readable_print(v: &[u8]) -> String {
             // If it's UTF-8 and all the characters are graphic ASCII, then show as a string.
             // If it's short, show hex.
             // Otherwise, show length.
             match std::str::from_utf8(v) {
-                Ok(s) if s.chars().all(|c| c.is_ascii_graphic()) => {
-                    f.write_str("\"")?;
-                    f.write_str(s)?;
-                    f.write_str("\"")
-                }
+                Ok(s) if s.chars().all(|c| c.is_ascii_graphic()) => s.to_string(),
                 _ if v.len() <= 32 => {
-                    f.write_str("0x")?;
-                    f.write_str(&hex::encode(v))
+                    format!("0x{}", hex::encode(v))
                 }
                 _ => {
-                    write!(f, "{} bytes", v.len())
+                    format!("{} bytes", v.len())
                 }
             }
         }
@@ -370,16 +365,14 @@ impl<Storage: AsRef<[u8]>> fmt::Debug for HashTreeNode<Storage> {
                 .finish(),
             HashTreeNode::Leaf(v) => {
                 f.write_str("Leaf(")?;
-                readable_print(f, v.as_ref())?;
+                f.write_str(&readable_print(v.as_ref()))?;
                 f.write_str(")")
             }
-            HashTreeNode::Labeled(l, node) => {
-                f.write_str("Label(")?;
-                readable_print(f, l.as_bytes())?;
-                f.write_str(", ")?;
-                node.fmt(f)?;
-                f.write_str(")")
-            }
+            HashTreeNode::Labeled(l, node) => f
+                .debug_tuple("Label")
+                .field(&readable_print(l.as_bytes()))
+                .field(&node)
+                .finish(),
             HashTreeNode::Pruned(digest) => write!(f, "Pruned({})", hex::encode(digest.as_ref())),
         }
     }

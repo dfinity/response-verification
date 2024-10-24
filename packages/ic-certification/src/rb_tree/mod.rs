@@ -3,8 +3,8 @@ use crate::{
     hash_tree::{fork, fork_hash, labeled_hash, leaf_hash, Hash},
     labeled, leaf, pruned, HashTree, HashTreeNode,
 };
-use std::borrow::Cow;
 use std::cmp::Ordering::{self, Equal, Greater, Less};
+use std::{borrow::Cow, fmt::Debug};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Color {
@@ -331,16 +331,15 @@ where
     V: 'static + AsHashTree + std::fmt::Debug,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[")?;
-        let mut first = true;
+        let mut list = f.debug_list();
         for (k, v) in self.iter() {
-            if !first {
-                write!(f, ", ")?;
-            }
-            first = false;
-            write!(f, "({:?}, {:?})", k, v)?;
+            list.entry(&format_args!(
+                "({}, {:#?})",
+                String::from_utf8_lossy(k.as_ref()),
+                v.as_hash_tree()
+            ));
         }
-        write!(f, "]")
+        list.finish()
     }
 }
 
