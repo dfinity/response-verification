@@ -9,13 +9,20 @@ use crate::{
 };
 use ic_certification::{labeled, labeled_hash, merge_hash_trees, AsHashTree, HashTree, NestedTree};
 use ic_representation_independent_hash::Sha256Digest;
+use std::fmt::{Debug, Formatter};
 
 type CertificationTree = NestedTree<CertificationTreePathSegment, Vec<u8>>;
 
 /// A certification tree for generic HTTP requests.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct HttpCertificationTree {
     tree: CertificationTree,
+}
+
+impl Debug for HttpCertificationTree {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "tree: {:#?}", self.tree)
+    }
 }
 
 impl Default for HttpCertificationTree {
