@@ -744,10 +744,14 @@
 
 mod asset;
 mod asset_config;
+mod asset_map;
 mod asset_router;
 mod error;
+mod types;
 
 pub use asset::*;
 pub use asset_config::*;
+pub use asset_map::*;
 pub use asset_router::*;
 pub use error::*;
+pub(crate) use types::*;

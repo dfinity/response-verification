@@ -406,6 +406,9 @@ pub enum AssetRedirectKind {
 /// The encoding of an asset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AssetEncoding {
+    /// The asset is not encoded.
+    Identity,
+
     /// The asset is encoded with the Brotli algorithm.
     Brotli,
 
@@ -453,10 +456,11 @@ impl AssetEncoding {
     /// ```
     pub fn default_config(self) -> (AssetEncoding, String) {
         let file_extension = match self {
-            AssetEncoding::Brotli => "br".to_string(),
-            AssetEncoding::Zstd => "zst".to_string(),
-            AssetEncoding::Gzip => "gz".to_string(),
-            AssetEncoding::Deflate => "zz".to_string(),
+            AssetEncoding::Identity => "".to_string(),
+            AssetEncoding::Brotli => ".br".to_string(),
+            AssetEncoding::Zstd => ".zst".to_string(),
+            AssetEncoding::Gzip => ".gz".to_string(),
+            AssetEncoding::Deflate => ".zz".to_string(),
         };
 
         (self, file_extension)
@@ -484,6 +488,7 @@ impl AssetEncoding {
 impl Display for AssetEncoding {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
+            AssetEncoding::Identity => "identity".to_string(),
             AssetEncoding::Brotli => "br".to_string(),
             AssetEncoding::Zstd => "zstd".to_string(),
             AssetEncoding::Gzip => "gzip".to_string(),
