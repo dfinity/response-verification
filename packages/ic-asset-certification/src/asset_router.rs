@@ -1,6 +1,7 @@
 use crate::{
     Asset, AssetCertificationError, AssetCertificationResult, AssetConfig, AssetEncoding,
-    AssetFallbackConfig, AssetRedirectKind, NormalizedAssetConfig,
+    AssetFallbackConfig, AssetMap, AssetRedirectKind, CertifiedAssetResponse,
+    NormalizedAssetConfig, RequestKey,
 };
 use ic_http_certification::{
     utils::add_v2_certificate_header, DefaultCelBuilder, DefaultResponseCertification, Hash,
@@ -9,12 +10,6 @@ use ic_http_certification::{
 };
 use regex::Regex;
 use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
-
-#[derive(Debug, Clone)]
-struct CertifiedAssetResponse<'a> {
-    response: HttpResponse<'a>,
-    tree_entry: HttpCertificationTreeEntry<'a>,
-}
 
 /// A router for certifying and serving static [Assets](Asset).
 ///
@@ -121,27 +116,6 @@ pub struct AssetRouter<'content> {
     tree: Rc<RefCell<HttpCertificationTree>>,
     responses: HashMap<RequestKey, CertifiedAssetResponse<'content>>,
     fallback_responses: HashMap<RequestKey, CertifiedAssetResponse<'content>>,
-}
-
-/// A key created from request data, to retrieve the corresponding response.
-#[derive(Debug, Eq, Hash, PartialEq)]
-pub struct RequestKey {
-    /// Path of the requested asset.
-    pub path: String,
-    /// The encoding of the asset.
-    pub encoding: Option<String>,
-    /// The beginning of the requested range (if any), counting from 0.
-    pub range_begin: Option<usize>,
-}
-
-impl RequestKey {
-    fn new(path: &str, encoding: Option<String>, range_begin: Option<usize>) -> Self {
-        Self {
-            path: path.to_string(),
-            encoding,
-            range_begin,
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -253,6 +227,26 @@ impl<'content> AssetRouter<'content> {
         Ok(cert_response.response.clone())
     }
 
+    /// Returns all standard assets stored in the router.
+    ///
+    /// See the [get_fallback_assets()](AssetRouter::get_fallback_assets)
+    /// function for fallback assets.
+    ///
+    /// See the [AssetMap] struct for more information on the returned type.
+    pub fn get_assets(&self) -> &impl AssetMap<'content> {
+        &self.responses
+    }
+
+    /// Returns all fallback assets stored in the router.
+    ///
+    /// See the [get_assets()](AssetRouter::get_assets)
+    /// function for standard assets.
+    ///
+    /// See the [AssetMap] struct for more information on the returned type.
+    pub fn get_fallback_assets(&self) -> &impl AssetMap<'content> {
+        &self.fallback_responses
+    }
+
     /// Certifies multiple assets and inserts them into the router, to be served
     /// later by the [serve_asset](AssetRouter::serve_asset) method.
     ///
@@ -286,7 +280,7 @@ impl<'content> AssetRouter<'content> {
                 })
                 .unwrap_or_default()
             {
-                let encoded_asset_path = format!("{}.{}", asset.path, postfix);
+                let encoded_asset_path = format!("{}{}", asset.path, postfix);
                 let encoded_asset = asset_map.get(encoded_asset_path.as_str()).cloned();
                 if let Some(mut encoded_asset) = encoded_asset {
                     encoded_asset.url.clone_from(&asset.url);
@@ -338,7 +332,7 @@ impl<'content> AssetRouter<'content> {
                 })
                 .unwrap_or_default()
             {
-                let encoded_asset_path = format!("{}.{}", asset.path, postfix);
+                let encoded_asset_path = format!("{}{}", asset.path, postfix);
                 let encoded_asset = asset_map.get(encoded_asset_path.as_str()).cloned();
 
                 if let Some(mut encoded_asset) = encoded_asset {
@@ -1038,17 +1032,7 @@ mod tests {
     fn test_index_html(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
 
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let response = asset_router
             .serve_asset(&data_certificate(), &request)
@@ -1087,7 +1071,8 @@ mod tests {
     #[test]
     fn test_one_chunk_long_asset_served_in_full() {
         let asset_name = ONE_CHUNK_ASSET_NAME;
-        let long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
+        let long_asset_router =
+            long_asset_router_with_params(&[asset_name], &[AssetEncoding::Identity]);
         let req_url = format!("/{asset_name}");
         let asset_body = long_asset_body(asset_name);
         // Request the entire "one-chunk"-asset, should obtain it in full.
@@ -1128,7 +1113,8 @@ mod tests {
     #[case(SIX_CHUNKS_ASSET_NAME)]
     #[case(TEN_CHUNKS_ASSET_NAME)]
     fn test_long_asset_served_in_chunks(#[case] asset_name: &str) {
-        let long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
+        let long_asset_router =
+            long_asset_router_with_params(&[asset_name], &[AssetEncoding::Identity]);
         let req_url = format!("/{asset_name}");
         let asset_body = long_asset_body(asset_name);
         let asset_len = asset_body.len();
@@ -1225,7 +1211,8 @@ mod tests {
     #[case(SIX_CHUNKS_ASSET_NAME)]
     #[case(TEN_CHUNKS_ASSET_NAME)]
     fn test_long_asset_deletion_removes_chunks(#[case] asset_name: &str) {
-        let mut long_asset_router = long_asset_router_with_params(&[asset_name], &["identity"]);
+        let mut long_asset_router =
+            long_asset_router_with_params(&[asset_name], &[AssetEncoding::Identity]);
         let req_url = format!("/{asset_name}");
         let asset_body = long_asset_body(asset_name);
         let asset_len = asset_body.len();
@@ -1294,37 +1281,36 @@ mod tests {
         }
     }
 
-    fn encoding_suffix(encoding: &str) -> String {
-        let suffix = match encoding {
-            "deflate" => ".zz",
-            "gzip" => ".gz",
-            "br" => ".br",
-            "identity" => "",
-            _ => panic!("unknown encoding: {}", encoding),
-        };
-        suffix.to_string()
-    }
-
     #[rstest]
-    #[case(SIX_CHUNKS_ASSET_NAME, "deflate", "deflate")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "deflate, identity", "deflate")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "gzip", "gzip")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, identity", "gzip")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate", "gzip")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate, identity", "gzip")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "br", "br")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "br, gzip, deflate, identity", "br")]
-    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate, identity, br", "br")]
+    #[case(SIX_CHUNKS_ASSET_NAME, "deflate", AssetEncoding::Deflate)]
+    #[case(SIX_CHUNKS_ASSET_NAME, "deflate, identity", AssetEncoding::Deflate)]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip", AssetEncoding::Gzip)]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, identity", AssetEncoding::Gzip)]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate", AssetEncoding::Gzip)]
+    #[case(SIX_CHUNKS_ASSET_NAME, "gzip, deflate, identity", AssetEncoding::Gzip)]
+    #[case(SIX_CHUNKS_ASSET_NAME, "br", AssetEncoding::Brotli)]
+    #[case(
+        SIX_CHUNKS_ASSET_NAME,
+        "br, gzip, deflate, identity",
+        AssetEncoding::Brotli
+    )]
+    #[case(
+        SIX_CHUNKS_ASSET_NAME,
+        "gzip, deflate, identity, br",
+        AssetEncoding::Brotli
+    )]
     fn test_encoded_long_asset_served_in_encoded_chunks(
         #[case] asset_name: &str,
         #[case] accept_encoding: &str,
-        #[case] expected_encoding: &str,
+        #[case] expected_encoding: AssetEncoding,
     ) {
-        let long_asset_router =
-            long_asset_router_with_params(&[asset_name], &["identity", expected_encoding]);
-        let suffix = encoding_suffix(expected_encoding);
+        let (_, expected_encoding_suffix) = expected_encoding.default_config();
+        let long_asset_router = long_asset_router_with_params(
+            &[asset_name],
+            &[AssetEncoding::Identity, expected_encoding],
+        );
         let req_url = format!("/{asset_name}");
-        let encoded_asset_name = format!("{asset_name}{suffix}");
+        let encoded_asset_name = format!("{asset_name}{expected_encoding_suffix}");
         let asset_body = long_asset_body(&encoded_asset_name);
         let asset_len = asset_body.len();
 
@@ -1431,18 +1417,18 @@ mod tests {
     }
 
     #[rstest]
-    #[case(TWO_CHUNKS_ASSET_NAME, "br")]
-    #[case(TWO_CHUNKS_ASSET_NAME, "gzip")]
-    #[case(TWO_CHUNKS_ASSET_NAME, "deflate")]
+    #[case(TWO_CHUNKS_ASSET_NAME, AssetEncoding::Brotli)]
+    #[case(TWO_CHUNKS_ASSET_NAME, AssetEncoding::Gzip)]
+    #[case(TWO_CHUNKS_ASSET_NAME, AssetEncoding::Deflate)]
     fn test_encoded_long_asset_deletion_removes_encoded_chunks(
         #[case] asset_name: &str,
-        #[case] encoding: &str,
+        #[case] encoding: AssetEncoding,
     ) {
+        let (_, encoding_suffix) = encoding.default_config();
         let mut long_asset_router =
-            long_asset_router_with_params(&[asset_name], &["identity", encoding]);
-        let suffix = encoding_suffix(encoding);
+            long_asset_router_with_params(&[asset_name], &[AssetEncoding::Identity, encoding]);
         let req_url = format!("/{asset_name}");
-        let encoded_asset_name = format!("{asset_name}{suffix}");
+        let encoded_asset_name = format!("{asset_name}{encoding_suffix}");
         let encoded_asset_body = long_asset_body(&encoded_asset_name);
         let asset_len = encoded_asset_body.len();
         let mut all_requests = vec![];
@@ -1744,17 +1730,7 @@ mod tests {
         #[case] req_url: &str,
         #[case] req_path: &str,
     ) {
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let request = HttpRequest::get(req_url).build();
         let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
@@ -1813,17 +1789,7 @@ mod tests {
         #[case] req_url: &str,
         #[case] req_path: &str,
     ) {
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let request = HttpRequest::get(req_url).build();
         let requested_expr_path = HttpCertificationPath::exact(req_path).to_expr_path();
@@ -1956,17 +1922,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let response = asset_router
             .serve_asset(&data_certificate(), &request)
@@ -2053,17 +2009,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let response = asset_router
             .serve_asset(&data_certificate(), &request)
@@ -2191,17 +2137,7 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let response = asset_router
             .serve_asset(&data_certificate(), &request)
@@ -2569,17 +2505,7 @@ mod tests {
             )
             .unwrap();
 
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                ("content-type".to_string(), "text/html".to_string()),
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let response = asset_router
             .serve_asset(&data_certificate(), &request)
@@ -2680,17 +2606,7 @@ mod tests {
             )
             .unwrap();
 
-        let mut expected_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                ("content-type".to_string(), "text/html".to_string()),
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-            ],
-        );
+        let mut expected_response = expected_index_html_response();
 
         let response = asset_router
             .serve_asset(&data_certificate(), &request)
@@ -2729,6 +2645,378 @@ mod tests {
                 request_url,
              }) if request_url == request.get_path().unwrap()
         ));
+    }
+
+    #[rstest]
+    fn test_asset_map(mut asset_router: AssetRouter) {
+        let index_html_response = asset_router.get_assets().get("/index.html", None, None);
+        assert_matches!(
+            index_html_response,
+            Some(index_html_response) if index_html_response == &expected_index_html_response()
+        );
+
+        let index_html_fallback_response = asset_router.get_fallback_assets().get("/", None, None);
+        assert_matches!(
+            index_html_fallback_response,
+            Some(index_html_fallback_response) if index_html_fallback_response == &expected_index_html_response()
+        );
+
+        let index_html_gz_response =
+            asset_router
+                .get_assets()
+                .get("/index.html", Some(AssetEncoding::Gzip), None);
+        assert_matches!(
+            index_html_gz_response,
+            Some(index_html_gz_response) if index_html_gz_response == &expected_index_html_gz_response()
+        );
+
+        let index_html_gz_fallback_response =
+            asset_router
+                .get_fallback_assets()
+                .get("/", Some(AssetEncoding::Gzip), None);
+        assert_matches!(
+            index_html_gz_fallback_response,
+            Some(index_html_gz_fallback_response) if index_html_gz_fallback_response == &expected_index_html_gz_response()
+        );
+
+        let index_html_zz_response =
+            asset_router
+                .get_assets()
+                .get("/index.html", Some(AssetEncoding::Deflate), None);
+        assert_matches!(
+            index_html_zz_response,
+            Some(index_html_zz_response) if index_html_zz_response == &expected_index_html_zz_response()
+        );
+
+        let index_html_zz_fallback_response =
+            asset_router
+                .get_fallback_assets()
+                .get("/", Some(AssetEncoding::Deflate), None);
+        assert_matches!(
+            index_html_zz_fallback_response,
+            Some(index_html_zz_fallback_response) if index_html_zz_fallback_response == &expected_index_html_zz_response()
+        );
+
+        let index_html_br_response =
+            asset_router
+                .get_assets()
+                .get("/index.html", Some(AssetEncoding::Brotli), None);
+        assert_matches!(
+            index_html_br_response,
+            Some(index_html_br_response) if index_html_br_response == &expected_index_html_br_response()
+        );
+
+        let index_html_br_fallback_response =
+            asset_router
+                .get_fallback_assets()
+                .get("/", Some(AssetEncoding::Brotli), None);
+        assert_matches!(
+            index_html_br_fallback_response,
+            Some(index_html_br_fallback_response) if index_html_br_fallback_response == &expected_index_html_br_response()
+        );
+
+        asset_router
+            .delete_assets(
+                vec![
+                    Asset::new("index.html", index_html_body()),
+                    Asset::new("index.html.gz", index_html_gz_body()),
+                    Asset::new("index.html.zz", index_html_zz_body()),
+                    Asset::new("index.html.br", index_html_br_body()),
+                ],
+                vec![index_html_config()],
+            )
+            .unwrap();
+
+        let index_html_response = asset_router.get_assets().get("/index.html", None, None);
+        assert_matches!(index_html_response, None);
+
+        let index_html_fallback_response = asset_router.get_fallback_assets().get("/", None, None);
+        assert_matches!(index_html_fallback_response, None);
+
+        let index_html_gz_response =
+            asset_router
+                .get_assets()
+                .get("/index.html", Some(AssetEncoding::Gzip), None);
+        assert_matches!(index_html_gz_response, None);
+
+        let index_html_gz_fallback_response =
+            asset_router
+                .get_fallback_assets()
+                .get("/", Some(AssetEncoding::Gzip), None);
+        assert_matches!(index_html_gz_fallback_response, None);
+
+        let index_html_zz_response =
+            asset_router
+                .get_assets()
+                .get("/index.html", Some(AssetEncoding::Deflate), None);
+        assert_matches!(index_html_zz_response, None);
+
+        let index_html_zz_fallback_response =
+            asset_router
+                .get_fallback_assets()
+                .get("/", Some(AssetEncoding::Deflate), None);
+        assert_matches!(index_html_zz_fallback_response, None);
+
+        let index_html_br_response =
+            asset_router
+                .get_assets()
+                .get("/index.html", Some(AssetEncoding::Brotli), None);
+        assert_matches!(index_html_br_response, None);
+
+        let index_html_br_fallback_response =
+            asset_router
+                .get_fallback_assets()
+                .get("/", Some(AssetEncoding::Brotli), None);
+        assert_matches!(index_html_br_fallback_response, None);
+    }
+
+    #[rstest]
+    fn test_asset_map_chunked_responses() {
+        let mut asset_router = long_asset_router_with_params(
+            &[TWO_CHUNKS_ASSET_NAME],
+            &[AssetEncoding::Gzip, AssetEncoding::Identity],
+        );
+
+        let full_body = long_asset_body(TWO_CHUNKS_ASSET_NAME);
+        let (_, gzip_suffix) = AssetEncoding::Gzip.default_config();
+        let full_gz_body = long_asset_body(&format!("{}{}", TWO_CHUNKS_ASSET_NAME, gzip_suffix));
+
+        let first_chunk_body = &full_body[0..ASSET_CHUNK_SIZE];
+        let first_chunk_response =
+            asset_router
+                .get_assets()
+                .get(format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0));
+        let expected_first_chunk_response = build_206_response(
+            first_chunk_body.to_vec(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-range".to_string(),
+                    format!("bytes 0-{}/{}", first_chunk_body.len() - 1, full_body.len()),
+                ),
+            ],
+        );
+        assert_matches!(
+            first_chunk_response,
+            Some(first_chunk_response) if first_chunk_response == &expected_first_chunk_response
+        );
+
+        let first_chunk_gzip_body = &full_gz_body[0..ASSET_CHUNK_SIZE];
+        let first_chunk_gzip_response = asset_router.get_assets().get(
+            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            Some(AssetEncoding::Gzip),
+            Some(0),
+        );
+        let expected_first_chunk_gzip_response = build_206_response(
+            first_chunk_gzip_body.to_vec(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                ("content-encoding".to_string(), "gzip".to_string()),
+                (
+                    "content-range".to_string(),
+                    format!(
+                        "bytes 0-{}/{}",
+                        first_chunk_gzip_body.len() - 1,
+                        full_gz_body.len()
+                    ),
+                ),
+            ],
+        );
+        assert_matches!(
+            first_chunk_gzip_response,
+            Some(first_chunk_gzip_response) if first_chunk_gzip_response == &expected_first_chunk_gzip_response
+        );
+
+        let second_chunk_body = &full_body[ASSET_CHUNK_SIZE..full_body.len()];
+        let second_chunk_response = asset_router.get_assets().get(
+            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            None,
+            Some(ASSET_CHUNK_SIZE),
+        );
+        let expected_second_chunk_response = build_206_response(
+            second_chunk_body.to_vec(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-range".to_string(),
+                    format!(
+                        "bytes {}-{}/{}",
+                        first_chunk_body.len(),
+                        first_chunk_body.len() + second_chunk_body.len() - 1,
+                        full_body.len()
+                    ),
+                ),
+            ],
+        );
+        assert_matches!(
+            second_chunk_response,
+            Some(second_chunk_response) if second_chunk_response == &expected_second_chunk_response
+        );
+
+        let second_chunk_gzip_body = &full_gz_body[ASSET_CHUNK_SIZE..full_gz_body.len()];
+        let second_chunk_gzip_response = asset_router.get_assets().get(
+            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            Some(AssetEncoding::Gzip),
+            Some(ASSET_CHUNK_SIZE),
+        );
+        let expected_second_chunk_gzip_response = build_206_response(
+            second_chunk_gzip_body.to_vec(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                ("content-encoding".to_string(), "gzip".to_string()),
+                (
+                    "content-range".to_string(),
+                    format!(
+                        "bytes {}-{}/{}",
+                        first_chunk_gzip_body.len(),
+                        first_chunk_gzip_body.len() + second_chunk_gzip_body.len() - 1,
+                        full_gz_body.len()
+                    ),
+                ),
+            ],
+        );
+
+        assert_matches!(
+            second_chunk_gzip_response,
+            Some(second_chunk_gzip_response) if second_chunk_gzip_response == &expected_second_chunk_gzip_response
+        );
+
+        asset_router
+            .delete_assets(
+                vec![
+                    long_asset(TWO_CHUNKS_ASSET_NAME.to_string()),
+                    long_asset(format!("{}{}", TWO_CHUNKS_ASSET_NAME, gzip_suffix)),
+                ],
+                vec![
+                    long_asset_config(TWO_CHUNKS_ASSET_NAME),
+                    long_asset_config(&format!("{}{}", TWO_CHUNKS_ASSET_NAME, gzip_suffix)),
+                ],
+            )
+            .unwrap();
+
+        let first_chunk_response =
+            asset_router
+                .get_assets()
+                .get(format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0));
+        assert_matches!(first_chunk_response, None);
+
+        let first_chunk_gzip_response = asset_router.get_assets().get(
+            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            Some(AssetEncoding::Gzip),
+            Some(0),
+        );
+        assert_matches!(first_chunk_gzip_response, None);
+
+        let second_chunk_response = asset_router.get_assets().get(
+            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            None,
+            Some(ASSET_CHUNK_SIZE),
+        );
+        assert_matches!(second_chunk_response, None);
+
+        let second_chunk_gzip_response = asset_router.get_assets().get(
+            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            Some(AssetEncoding::Gzip),
+            Some(ASSET_CHUNK_SIZE),
+        );
+        assert_matches!(second_chunk_gzip_response, None);
+    }
+
+    #[rstest]
+    fn test_asset_map_iter() {
+        let asset_router =
+            long_asset_router_with_params(&[TWO_CHUNKS_ASSET_NAME], &[AssetEncoding::Identity]);
+        let full_body = long_asset_body(TWO_CHUNKS_ASSET_NAME);
+
+        let assets: Vec<_> = asset_router.get_assets().iter().collect();
+        assert!(assets.len() == 3);
+
+        let first_chunk_body = &full_body[0..ASSET_CHUNK_SIZE];
+        let expected_first_chunk_response = build_206_response(
+            first_chunk_body.to_vec(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-range".to_string(),
+                    format!("bytes 0-{}/{}", first_chunk_body.len() - 1, full_body.len()),
+                ),
+            ],
+        );
+        assert!(assets.contains(&(
+            (&format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0)),
+            &expected_first_chunk_response
+        )));
+
+        let second_chunk_body = &full_body[ASSET_CHUNK_SIZE..full_body.len()];
+        let expected_second_chunk_response = build_206_response(
+            second_chunk_body.to_vec(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                (
+                    "content-range".to_string(),
+                    format!(
+                        "bytes {}-{}/{}",
+                        first_chunk_body.len(),
+                        first_chunk_body.len() + second_chunk_body.len() - 1,
+                        full_body.len()
+                    ),
+                ),
+            ],
+        );
+        assert!(assets.contains(&(
+            (
+                &format!("/{}", TWO_CHUNKS_ASSET_NAME),
+                None,
+                Some(ASSET_CHUNK_SIZE)
+            ),
+            &expected_second_chunk_response
+        )));
+
+        let expected_full_response = build_200_response(
+            full_body,
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+            ],
+        );
+        assert!(assets.contains(&(
+            (&format!("/{}", TWO_CHUNKS_ASSET_NAME), None, None),
+            &expected_full_response
+        )));
     }
 
     #[rstest]
@@ -2815,17 +3103,7 @@ mod tests {
                 ("content-type".to_string(), "text/html".to_string()),
             ],
         );
-        let mut expected_old_url_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_old_url_response = expected_index_html_response();
 
         let css_response = asset_router
             .serve_asset(&data_certificate(), &css_request)
@@ -2873,28 +3151,8 @@ mod tests {
                 vec![not_found_html_config()],
             )
             .unwrap();
-        let mut expected_css_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
-        let mut expected_old_url_response = build_200_response(
-            index_html_body(),
-            asset_cel_expr(),
-            vec![
-                (
-                    "cache-control".to_string(),
-                    "public, no-cache, no-store".to_string(),
-                ),
-                ("content-type".to_string(), "text/html".to_string()),
-            ],
-        );
+        let mut expected_css_response = expected_index_html_response();
+        let mut expected_old_url_response = expected_index_html_response();
 
         let css_response = asset_router
             .serve_asset(&data_certificate(), &css_request)
@@ -3021,23 +3279,38 @@ mod tests {
         );
     }
 
-    #[fixture]
-    fn index_html_body() -> Vec<u8> {
-        b"<html><body><h1>Hello World!</h1></body></html>".to_vec()
-    }
-
     fn long_asset_body(asset_name: &str) -> Vec<u8> {
         let asset_length = match asset_name {
-            ONE_CHUNK_ASSET_NAME => ONE_CHUNK_ASSET_LEN,
-            TWO_CHUNKS_ASSET_NAME => TWO_CHUNKS_ASSET_LEN,
-            SIX_CHUNKS_ASSET_NAME => SIX_CHUNKS_ASSET_LEN,
-            TEN_CHUNKS_ASSET_NAME => TEN_CHUNKS_ASSET_LEN,
+            s if s.contains(ONE_CHUNK_ASSET_NAME) => ONE_CHUNK_ASSET_LEN,
+            s if s.contains(TWO_CHUNKS_ASSET_NAME) => TWO_CHUNKS_ASSET_LEN,
+            s if s.contains(SIX_CHUNKS_ASSET_NAME) => SIX_CHUNKS_ASSET_LEN,
+            s if s.contains(TEN_CHUNKS_ASSET_NAME) => TEN_CHUNKS_ASSET_LEN,
             _ => ASSET_CHUNK_SIZE * 3 + 1,
         };
         let mut rng = ChaCha20Rng::from_seed(hash(asset_name));
         let mut body = vec![0u8; asset_length];
         rng.fill_bytes(&mut body);
         body
+    }
+
+    #[fixture]
+    fn index_html_body() -> Vec<u8> {
+        b"<html><body><h1>Hello World!</h1></body></html>".to_vec()
+    }
+
+    #[fixture]
+    fn expected_index_html_response() -> HttpResponse<'static> {
+        build_200_response(
+            index_html_body(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+            ],
+        )
     }
 
     // Gzip compressed version of `index_html_body`,
@@ -3052,6 +3325,22 @@ mod tests {
         ]
     }
 
+    #[fixture]
+    fn expected_index_html_gz_response() -> HttpResponse<'static> {
+        build_200_response(
+            index_html_gz_body(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                ("content-encoding".to_string(), "gzip".to_string()),
+            ],
+        )
+    }
+
     // Deflate compressed version of `index_html_body`,
     // compressed using https://www.zickty.com/texttogzip/,
     // and then converted to bytes using https://conv.darkbyte.ru/.
@@ -3063,6 +3352,22 @@ mod tests {
         ]
     }
 
+    #[fixture]
+    fn expected_index_html_zz_response() -> HttpResponse<'static> {
+        build_200_response(
+            index_html_zz_body(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                ("content-encoding".to_string(), "deflate".to_string()),
+            ],
+        )
+    }
+
     // Deflate compressed version of `index_html_body`,
     // compressed using https://facia.dev/tools/compress-decompress/brotli-compress/,
     // and then converted to bytes using https://conv.darkbyte.ru/.
@@ -3072,6 +3377,22 @@ mod tests {
             1, 2, 0, 8, 1, 9, 36, 2, 72, 65, 4, 25, 0, 5, 84, 0, 5, 18, 1, 64, 14, 5, 4, 1, 9, 0,
             3, 4, 42, 2, 1, 59, 13, 14, 3, 19, 69, 18,
         ]
+    }
+
+    #[fixture]
+    fn expected_index_html_br_response() -> HttpResponse<'static> {
+        build_200_response(
+            index_html_br_body(),
+            asset_cel_expr(),
+            vec![
+                (
+                    "cache-control".to_string(),
+                    "public, no-cache, no-store".to_string(),
+                ),
+                ("content-type".to_string(), "text/html".to_string()),
+                ("content-encoding".to_string(), "br".to_string()),
+            ],
+        )
     }
 
     #[fixture]
@@ -3343,18 +3664,18 @@ mod tests {
         Asset::new(name, body)
     }
 
-    fn long_asset_router_with_params(
+    fn long_asset_router_with_params<'a>(
         asset_names: &[&str],
-        encodings: &[&str],
-    ) -> AssetRouter<'static> {
+        encodings: &[AssetEncoding],
+    ) -> AssetRouter<'a> {
         let mut asset_router = AssetRouter::default();
         let mut assets = vec![];
         let mut asset_configs = vec![];
 
         for name in asset_names {
             for encoding in encodings {
-                let suffix = encoding_suffix(encoding);
-                let full_name = format!("{name}{suffix}");
+                let (_, encoding_suffix) = encoding.default_config();
+                let full_name = format!("{name}{encoding_suffix}");
                 assets.push(long_asset(full_name));
             }
             asset_configs.push(long_asset_config(name));

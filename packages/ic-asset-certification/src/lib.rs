@@ -739,15 +739,40 @@
 //!
 //! set_certified_data(&asset_router.root_hash());
 //! ```
+//!
+//! ## Querying assets
+//!
+//! The [AssetRouter] has two functions to retrieve an [AssetMap] containing assets.
+//!
+//! The [get_assets()](AssetRouter::get_assets) function returns all standard assets, while the
+//! [get_fallback_assets()](AssetRouter::get_fallback_assets) function returns all fallback assets.
+//!
+//! The [AssetMap] can be used to query assets by `path`, `encoding`, and `starting_range`.
+//! For standard assets, the path refers to the asset's path, e.g. `/index.html`.
+//!
+//! For fallback assets, the path refers to the scope that the fallback is valid for, e.g. `/`.
+//! See the [fallback_for](crate::AssetConfig::File::fallback_for) config option for more information
+//! on fallback scopes.
+//!
+//! For all types of assets, the encoding refers to the encoding of the asset, see [AssetEncoding].
+//!
+//! Assets greater than 2mb are split into multiple ranges, the starting range allows retrieval of
+//! individual chunks of these large assets. The first range is `Some(0)`, the second range is
+//! `Some(2_000_000)`, the third range is `Some(4_000_000)`, and so on. The entire asset can
+//! also be retrieved by passing `None` as the `starting_range`.
 
 #![deny(missing_docs, missing_debug_implementations, rustdoc::all, clippy::all)]
 
 mod asset;
 mod asset_config;
+mod asset_map;
 mod asset_router;
 mod error;
+mod types;
 
 pub use asset::*;
 pub use asset_config::*;
+pub use asset_map::*;
 pub use asset_router::*;
 pub use error::*;
+pub(crate) use types::*;

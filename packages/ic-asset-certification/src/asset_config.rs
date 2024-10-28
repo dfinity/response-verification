@@ -406,6 +406,9 @@ pub enum AssetRedirectKind {
 /// The encoding of an asset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AssetEncoding {
+    /// The asset is not encoded.
+    Identity,
+
     /// The asset is encoded with the Brotli algorithm.
     Brotli,
 
@@ -437,26 +440,31 @@ impl AssetEncoding {
     ///
     /// let (encoding, extension) = AssetEncoding::Brotli.default_config();
     /// assert_eq!(encoding, AssetEncoding::Brotli);
-    /// assert_eq!(extension, "br");
+    /// assert_eq!(extension, ".br");
     ///
     /// let (encoding, extension) = AssetEncoding::Zstd.default_config();
     /// assert_eq!(encoding, AssetEncoding::Zstd);
-    /// assert_eq!(extension, "zst");
+    /// assert_eq!(extension, ".zst");
     ///
     /// let (encoding, extension) = AssetEncoding::Gzip.default_config();
     /// assert_eq!(encoding, AssetEncoding::Gzip);
-    /// assert_eq!(extension, "gz");
+    /// assert_eq!(extension, ".gz");
     ///
     /// let (encoding, extension) = AssetEncoding::Deflate.default_config();
     /// assert_eq!(encoding, AssetEncoding::Deflate);
-    /// assert_eq!(extension, "zz");
+    /// assert_eq!(extension, ".zz");
+    ///
+    /// let (encoding, extension) = AssetEncoding::Identity.default_config();
+    /// assert_eq!(encoding, AssetEncoding::Identity);
+    /// assert_eq!(extension, "");
     /// ```
     pub fn default_config(self) -> (AssetEncoding, String) {
         let file_extension = match self {
-            AssetEncoding::Brotli => "br".to_string(),
-            AssetEncoding::Zstd => "zst".to_string(),
-            AssetEncoding::Gzip => "gz".to_string(),
-            AssetEncoding::Deflate => "zz".to_string(),
+            AssetEncoding::Identity => "".to_string(),
+            AssetEncoding::Brotli => ".br".to_string(),
+            AssetEncoding::Zstd => ".zst".to_string(),
+            AssetEncoding::Gzip => ".gz".to_string(),
+            AssetEncoding::Deflate => ".zz".to_string(),
         };
 
         (self, file_extension)
@@ -484,6 +492,7 @@ impl AssetEncoding {
 impl Display for AssetEncoding {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
+            AssetEncoding::Identity => "identity".to_string(),
             AssetEncoding::Brotli => "br".to_string(),
             AssetEncoding::Zstd => "zstd".to_string(),
             AssetEncoding::Gzip => "gzip".to_string(),
@@ -718,5 +727,6 @@ mod tests {
         assert_eq!(AssetEncoding::Zstd.to_string(), "zstd");
         assert_eq!(AssetEncoding::Gzip.to_string(), "gzip");
         assert_eq!(AssetEncoding::Deflate.to_string(), "deflate");
+        assert_eq!(AssetEncoding::Identity.to_string(), "identity");
     }
 }

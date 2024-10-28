@@ -1,6 +1,6 @@
 use crate::HeaderField;
 use candid::{CandidType, Deserialize};
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Debug};
 
 /// A Candid-encodable representation of an HTTP response. This struct is used
 /// by the `http_request` method of the HTTP Gateway Protocol's Candid interface.
@@ -22,7 +22,7 @@ use std::borrow::Cow;
 /// assert_eq!(response.body(), b"Hello, World!");
 /// assert_eq!(response.upgrade(), Some(false));
 /// ```
-#[derive(Clone, Debug, CandidType, Deserialize)]
+#[derive(Clone, CandidType, Deserialize)]
 pub struct HttpResponse<'a> {
     /// HTTP response status code.
     status_code: u16,
@@ -405,6 +405,25 @@ impl PartialEq for HttpResponse<'_> {
             && a_headers == b_headers
             && self.body == other.body
             && self.upgrade == other.upgrade
+    }
+}
+
+impl Debug for HttpResponse<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Truncate body to 100 characters for debug output
+        let max_body_len = 100;
+        let formatted_body = if self.body.len() > max_body_len {
+            format!("{:?}...", &self.body[..max_body_len])
+        } else {
+            format!("{:?}", &self.body)
+        };
+
+        f.debug_struct("HttpResponse")
+            .field("status_code", &self.status_code)
+            .field("headers", &self.headers)
+            .field("body", &formatted_body)
+            .field("upgrade", &self.upgrade)
+            .finish()
     }
 }
 
