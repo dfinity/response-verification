@@ -766,5 +766,5 @@ For all types of assets, the encoding refers to the encoding of the asset, see `
 
 Assets greater than 2mb are split into multiple ranges, the starting range allows retrieval of
 individual chunks of these large assets. The first range is `Some(0)`, the second range is
-`Some(2_000_000)`, the third range is `Some(4_000_000)`, and so on. The entire asset can
-also be retrieved by passing `None` as the `starting_range`.
+`Some(ASSET_CHUNK_SIZE)`, the third range is `Some(ASSET_CHUNK_SIZE * 2)`, and so on. The entire asset can
+also be retrieved by passing `None` as the `starting_range`. Note that `ASSET_CHUNK_SIZE` is a constant defined in the `ic_asset_certification` crate.

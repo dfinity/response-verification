@@ -125,7 +125,8 @@ struct RangeRequestValues {
     pub range_end: Option<usize>,
 }
 
-const ASSET_CHUNK_SIZE: usize = 2_000_000;
+/// The chunk size that will be used when splitting assets larger than 2mb down into smaller chunks.
+pub const ASSET_CHUNK_SIZE: usize = 2_000_000;
 
 fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
     maybe_encoding.map(|enc| enc.to_string())
