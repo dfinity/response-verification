@@ -767,6 +767,7 @@ impl<'content> AssetRouter<'content> {
             status_code,
             Cow::Owned(vec![]),
             headers,
+            vec![],
         )?;
 
         Ok(CertifiedAssetResponse {
@@ -798,6 +799,7 @@ impl<'content> AssetRouter<'content> {
             headers.push(("content-encoding".to_string(), encoding.to_string()));
         }
 
+        let mut request_headers = vec![];
         if let Some(range_begin) = range_begin {
             let total_length = content.len();
             let range_end = cmp::min(range_begin + ASSET_CHUNK_SIZE, total_length) - 1;
@@ -807,6 +809,7 @@ impl<'content> AssetRouter<'content> {
                 http::header::CONTENT_RANGE.to_string(),
                 format!("bytes {range_begin}-{range_end}/{total_length}"),
             ));
+            request_headers.push(http::header::RANGE.to_string());
         };
 
         Self::prepare_response_and_certification(
@@ -814,6 +817,7 @@ impl<'content> AssetRouter<'content> {
             status_code,
             content,
             headers,
+            request_headers,
         )
     }
 
@@ -821,13 +825,19 @@ impl<'content> AssetRouter<'content> {
         url: String,
         status_code: u16,
         body: Cow<'content, [u8]>,
-        additional_headers: Vec<(String, String)>,
+        additional_response_headers: Vec<(String, String)>,
+        certified_request_headers: Vec<String>,
     ) -> AssetCertificationResult<(HttpResponse<'content>, HttpCertification)> {
         let mut headers = vec![("content-length".to_string(), body.len().to_string())];
 
-        headers.extend(additional_headers);
-
+        headers.extend(additional_response_headers);
         let cel_expr = DefaultCelBuilder::full_certification()
+            .with_request_headers(
+                certified_request_headers
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<&str>>(),
+            )
             .with_response_certification(DefaultResponseCertification::response_header_exclusions(
                 vec![],
             ))
@@ -1137,7 +1147,7 @@ mod tests {
         let request = HttpRequest::get(&req_url).build();
         let mut expected_response = build_206_response(
             asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
-            asset_cel_expr(),
+            asset_range_chunk_cel_expr(),
             vec![
                 (
                     "cache-control".to_string(),
@@ -1184,7 +1194,7 @@ mod tests {
             let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
             let mut expected_response = build_206_response(
                 asset_body[asset_len_so_far..=expected_range_end].to_vec(),
-                asset_cel_expr(),
+                asset_range_chunk_cel_expr(),
                 vec![
                     (
                         "cache-control".to_string(),
@@ -1337,7 +1347,7 @@ mod tests {
             .build();
         let mut expected_response = build_206_response(
             asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
-            encoded_asset_cel_expr(),
+            encoded_range_chunk_asset_cel_expr(),
             vec![
                 (
                     "cache-control".to_string(),
@@ -1390,7 +1400,7 @@ mod tests {
             let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
             let mut expected_response = build_206_response(
                 asset_body[asset_len_so_far..=expected_range_end].to_vec(),
-                asset_cel_expr(),
+                encoded_range_chunk_asset_cel_expr(),
                 vec![
                     (
                         "cache-control".to_string(),
@@ -3172,8 +3182,30 @@ mod tests {
     }
 
     #[fixture]
+    fn asset_range_chunk_cel_expr() -> String {
+        DefaultFullCelExpressionBuilder::default()
+            .with_request_headers(vec!["range"])
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build()
+            .to_string()
+    }
+
+    #[fixture]
     fn encoded_asset_cel_expr() -> String {
         DefaultFullCelExpressionBuilder::default()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build()
+            .to_string()
+    }
+
+    #[fixture]
+    fn encoded_range_chunk_asset_cel_expr() -> String {
+        DefaultFullCelExpressionBuilder::default()
+            .with_request_headers(vec!["range"])
             .with_response_certification(DefaultResponseCertification::response_header_exclusions(
                 vec![],
             ))
