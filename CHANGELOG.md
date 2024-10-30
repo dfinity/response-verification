@@ -8,6 +8,8 @@
 
 ### Feat
 
+- **ic-asset-certification**: add Range as a certified request header
+- **ic-asset-certification**: add certification for individual chunks
 - **@dfinity/response-verification**: unify request and response types with the corresponding HTTP Gateway types
 - **ic-asset-certification**: add chunkwise-handling of long assets with encodings
 - **ic-asset-certification**: add 206-chunking of long assets

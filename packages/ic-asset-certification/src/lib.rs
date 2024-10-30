@@ -760,7 +760,7 @@
 //! individual chunks of these large assets. The first range is `Some(0)`, the second range is
 //! `Some(ASSET_CHUNK_SIZE)`, the third range is `Some(ASSET_CHUNK_SIZE * 2)`, and so on. The entire asset can
 //! also be retrieved by passing `None` as the `starting_range`.
-//! See [ASSET_CHUNK_SIZE](crate::ASSET_CHUNK_SIZE) for the size of each chunk.
+//! See [ASSET_CHUNK_SIZE] for the size of each chunk.
 
 #![deny(missing_docs, missing_debug_implementations, rustdoc::all, clippy::all)]
 
