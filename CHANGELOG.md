@@ -8,6 +8,7 @@
 
 ### Feat
 
+- **ic-asset-certification**: add asset map for querying assets in the asset router (#387)
 - **ic-asset-certification**: add Range as a certified request header
 - **ic-asset-certification**: add certification for individual chunks
 - **@dfinity/response-verification**: unify request and response types with the corresponding HTTP Gateway types
