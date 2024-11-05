@@ -18,9 +18,9 @@ homepage.workspace = true
 http.workspace = true
 ic-certification.workspace = true
 ic-http-certification.workspace = true
+text_io.workspace = true
 thiserror.workspace = true
 globset = "0.4"
-regex.workspace = true
 
 [dev-dependencies]
 rand_chacha.workspace = true
