@@ -8,8 +8,8 @@ use ic_http_certification::{
     HttpCertification, HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry,
     HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
-use regex::Regex;
 use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
+use text_io::try_read;
 
 /// A router for certifying and serving static [Assets](Asset).
 ///
@@ -133,19 +133,20 @@ fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
 }
 
 fn parse_range_header_str(str_value: &str) -> Result<RangeRequestValues, String> {
-    // expected format: `bytes <range-begin>-[<range-end>]`
-    let re = Regex::new(r"bytes=(\d+)-(\d*)").expect("internal: wrong RE");
-    let Some(caps) = re.captures(str_value) else {
-        return Err("malformed Range header".to_string());
+    // expected format: `bytes=<range-begin>-[<range-end>]`
+    let range_begin: usize = try_read!("bytes={}-", str_value.bytes())
+        .map_err(|e| format!("malformed Range header: {:?}", e))?;
+    let range_end = if let Some(pos) = str_value.find('-') {
+        if str_value.len() > pos + 1 {
+            let range_end: usize = try_read!("-{}", str_value[pos..].bytes())
+                .map_err(|e| format!("malformed Range header: {:?}", e))?;
+            Some(range_end)
+        } else {
+            None
+        }
+    } else {
+        None
     };
-    let range_begin: usize = caps
-        .get(1)
-        .ok_or_else(|| "missing range-begin".to_string())?
-        .as_str()
-        .parse()
-        .map_err(|_| "malformed range-begin".to_string())?;
-    let range_end: Option<usize> = caps.get(2).and_then(|v| v.as_str().parse().ok());
-
     // TODO: add sanity checks for the parsed values
     Ok(RangeRequestValues {
         range_begin,
@@ -1016,7 +1017,7 @@ mod tests {
             format!("bytes={}-", range_begin)
         };
         let result = parse_range_header_str(&input);
-        let output = result.unwrap_or_else(|_| panic!("failed parsing '{input}'"));
+        let output = result.unwrap_or_else(|e| panic!("failed parsing '{input}': {:?}", e));
         assert_eq!(
             RangeRequestValues {
                 range_begin,
