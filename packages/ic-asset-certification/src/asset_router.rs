@@ -9,7 +9,6 @@ use ic_http_certification::{
     HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
-use text_io::try_read;
 
 /// A router for certifying and serving static [Assets](Asset).
 ///
@@ -132,22 +131,35 @@ fn encoding_str(maybe_encoding: Option<AssetEncoding>) -> Option<String> {
     maybe_encoding.map(|enc| enc.to_string())
 }
 
-fn parse_range_header_str(str_value: &str) -> Result<RangeRequestValues, String> {
+fn parse_range_header_str(range_str: &str) -> Result<RangeRequestValues, String> {
     // expected format: `bytes=<range-begin>-[<range-end>]`
-    let range_begin: usize = try_read!("bytes={}-", str_value.bytes())
-        .map_err(|e| format!("malformed Range header: {:?}", e))?;
-    let range_end = if let Some(pos) = str_value.find('-') {
-        if str_value.len() > pos + 1 {
-            let range_end: usize = try_read!("-{}", str_value[pos..].bytes())
-                .map_err(|e| format!("malformed Range header: {:?}", e))?;
-            Some(range_end)
-        } else {
-            None
-        }
-    } else {
-        None
-    };
-    // TODO: add sanity checks for the parsed values
+    let str_value = range_str.trim();
+    if !str_value.starts_with("bytes=") {
+        return Err(format!("Invalid Range header '{}'", range_str).to_string());
+    }
+    let str_value = str_value.trim_start_matches("bytes=");
+    let range_header_parts = str_value.split('-').collect::<Vec<_>>();
+    if range_header_parts.is_empty() || range_header_parts.len() > 2 {
+        return Err(format!("Invalid Range header '{}'", range_str).to_string());
+    }
+
+    let range_begin = range_header_parts[0].parse::<usize>().map_err(|e| {
+        format!(
+            "Malformed range_begin in Range header '{}': {}",
+            range_str, e
+        )
+    })?;
+    let range_end =
+        match range_header_parts[1] {
+            "" => None,
+            _ => Some(range_header_parts[1].parse::<usize>().map_err(|e| {
+                format!("Malformed range_end in Range header '{}': {}", range_str, e)
+            })?),
+        };
+
+    if range_begin > range_end.unwrap_or(usize::MAX) {
+        return Err(format!("Invalid values in Range header '{}'", range_str).to_string());
+    }
     Ok(RangeRequestValues {
         range_begin,
         range_end,
@@ -1036,7 +1048,7 @@ mod tests {
     #[case("bytes dead-beef")]
     fn should_fail_parse_range_header_str_on_malformed_input(#[case] malformed_input: &str) {
         let result = parse_range_header_str(malformed_input);
-        assert_matches!(result, Err(e) if e.to_string().contains("malformed Range header"));
+        assert_matches!(result, Err(e) if e.to_string().contains("Invalid Range header"));
     }
 
     #[rstest]

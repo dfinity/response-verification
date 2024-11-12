@@ -64,7 +64,6 @@ sha2 = "0.10"
 urlencoding = "2.1"
 rstest = "0.18"
 rstest_reuse = "0.2"
-text_io = "0.1"
 tokio = { version = "1.35", features = ["full"] }
 cached = "0.47"
 lazy_static = "1.4"
