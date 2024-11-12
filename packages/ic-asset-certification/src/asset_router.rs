@@ -139,7 +139,7 @@ fn parse_range_header_str(range_str: &str) -> Result<RangeRequestValues, String>
     }
     let str_value = str_value.trim_start_matches("bytes=");
     let range_header_parts = str_value.split('-').collect::<Vec<_>>();
-    if range_header_parts.is_empty() || range_header_parts.len() > 2 {
+    if range_header_parts.is_empty() || range_header_parts.len() != 2 {
         return Err(format!("Invalid Range header '{}'", range_str).to_string());
     }
 
@@ -1040,15 +1040,32 @@ mod tests {
     }
 
     #[rstest]
-    #[case("byte 1-2/3")]
-    #[case("bites 2-4")]
-    #[case("bytes 100-end")]
-    #[case("bytes 12345")]
+    #[case("")]
+    #[case("byte=1-2")]
+    #[case("bites=2-4")]
+    #[case("bytes 7-11")]
+    #[case("bytes=12345")]
     #[case("something else")]
-    #[case("bytes dead-beef")]
-    fn should_fail_parse_range_header_str_on_malformed_input(#[case] malformed_input: &str) {
+    #[case("bytes=-5-19")]
+    fn should_fail_parse_range_header_str_on_invalid_input(#[case] malformed_input: &str) {
         let result = parse_range_header_str(malformed_input);
         assert_matches!(result, Err(e) if e.to_string().contains("Invalid Range header"));
+    }
+
+    #[rstest]
+    #[case("bytes=100-end")]
+    #[case("bytes=dead-beef")]
+    fn should_fail_parse_range_header_str_on_malformed_input(#[case] malformed_input: &str) {
+        let result = parse_range_header_str(malformed_input);
+        assert_matches!(result, Err(e) if e.to_string().contains("Malformed range_"));
+    }
+
+    #[rstest]
+    #[case("bytes=100-20")]
+    #[case("bytes=20-19")]
+    fn should_fail_parse_range_header_str_on_invalid_values(#[case] malformed_input: &str) {
+        let result = parse_range_header_str(malformed_input);
+        assert_matches!(result, Err(e) if e.to_string().contains("Invalid values in Range header"));
     }
 
     #[rstest]
