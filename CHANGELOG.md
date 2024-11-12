@@ -29,6 +29,9 @@
 
 ### Fix
 
+- update tests and fix a corner-case
+- remove text_io-dependency
+- **ic-asset-certification**: remove dependency on regex to reduce WASM size
 - clippy
 - clippy
 - address review feedback
