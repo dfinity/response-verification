@@ -1240,7 +1240,6 @@ dependencies = [
  "ic-response-verification-test-utils",
  "rand_chacha",
  "rstest",
- "text_io",
  "thiserror",
 ]
 
@@ -3009,12 +3008,6 @@ dependencies = [
  "core-foundation-sys",
  "libc",
 ]
-
-[[package]]
-name = "text_io"
-version = "0.1.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5f0c8eb2ad70c12a6a69508f499b3051c924f4b1cfeae85bfad96e6bc5bba46"
 
 [[package]]
 name = "thiserror"
