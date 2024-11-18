@@ -750,6 +750,16 @@ use ic_cdk::api::set_certified_data;
 set_certified_data(&asset_router.root_hash());
 ```
 
+It's also possible to delete all assets and their certification in one go:
+
+```rust
+# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+
+# let mut asset_router = AssetRouter::default();
+
+asset_router.delete_all_assets();
+```
+
 ## Querying assets
 
 The `AssetRouter` has two functions to retrieve an `AssetMap` containing assets.

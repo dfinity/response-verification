@@ -97,7 +97,7 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
         if let Some(key) = path.first() {
             match self {
                 NestedTree::Leaf(_) => {
-                    *self = NestedTree::default();
+                    self.clear();
                     self.insert(path, value);
                 }
                 NestedTree::Nested(tree) => {
@@ -137,8 +137,12 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> NestedTree<K,
                 }
             }
         } else {
-            *self = NestedTree::default();
+            self.clear();
         }
+    }
+
+    pub fn clear(&mut self) {
+        *self = NestedTree::default();
     }
 
     pub fn witness(&self, path: &[K]) -> HashTree {

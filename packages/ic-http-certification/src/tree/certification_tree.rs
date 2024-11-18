@@ -60,6 +60,13 @@ impl HttpCertificationTree {
         self.tree.delete(&tree_path);
     }
 
+    /// Clears the tree of all [HttpCertificationTreeEntry].
+    /// After performing this operation, the canister's certified variable will need to be updated
+    /// with the new [root hash](HttpCertificationTree::root_hash) of the tree.
+    pub fn clear(&mut self) {
+        self.tree.clear();
+    }
+
     /// Returns a pruned [HashTree] that will prove the presence of a given [HttpCertificationTreeEntry]
     /// in the full [HttpCertificationTree], without needing to return the full tree.
     ///
