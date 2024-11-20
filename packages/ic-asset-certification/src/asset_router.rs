@@ -270,8 +270,8 @@ impl<'content> AssetRouter<'content> {
     /// If no configuration matches an individual asset, the asset will be
     /// served and certified as-is, without headers.
     ///
-    /// After performing this operation, the canister's certified variable will need to be updated
-    /// with the new [root hash](AssetRouter::root_hash) of the tree.
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
     pub fn certify_assets<'path>(
         &mut self,
         assets: impl IntoIterator<Item = Asset<'content, 'path>>,
@@ -324,8 +324,8 @@ impl<'content> AssetRouter<'content> {
     /// multiple responses may be generated for the same asset. To ensure that all generated responses are deleted,
     /// this function accepts the same configuration.
     ///
-    /// After performing this operation, the canister's certified variable will need to be updated
-    /// with the new [root hash](AssetRouter::root_hash) of the tree.
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
     pub fn delete_assets<'path>(
         &mut self,
         assets: impl IntoIterator<Item = Asset<'content, 'path>>,
@@ -376,8 +376,8 @@ impl<'content> AssetRouter<'content> {
 
     /// Deletes all assets from the router, including any certification for those assets.
     ///
-    /// After performing this operation, the canister's certified variable will need to be updated
-    /// with the new [root hash](AssetRouter::root_hash) of the tree.
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
     pub fn delete_all_assets(&mut self) {
         self.responses.clear();
         self.fallback_responses.clear();
@@ -2708,12 +2708,30 @@ mod tests {
     #[rstest]
     fn test_delete_all_assets() {
         let mut asset_router = asset_router();
+
+        let request = HttpRequest::get("/index.html").build();
+
+        let mut expected_response = expected_index_html_response();
+
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
+        assert_eq!(response, expected_response);
+
         asset_router.delete_all_assets();
 
         assert_matches!(
         asset_router.serve_asset(
             &data_certificate(),
-            &HttpRequest::get("/index.html").build(),
+            &request,
         ),
         Err(AssetCertificationError::NoAssetMatchingRequestUrl {
             request_url,

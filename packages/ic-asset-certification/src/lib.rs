@@ -743,7 +743,7 @@
 //! It's also possible to delete all assets and their certification in one go:
 //!
 //! ```rust
-//! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+//! # use ic_asset_certification::AssetRouter;
 //!
 //! # let mut asset_router = AssetRouter::default();
 //!
