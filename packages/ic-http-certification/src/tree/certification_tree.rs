@@ -116,7 +116,7 @@ mod tests {
     use super::*;
     use crate::{
         DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpRequest,
-        HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
+        HttpResponse, HttpStatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_certification::SubtreeLookupResult;
     use rstest::*;
@@ -133,7 +133,7 @@ mod tests {
 
         let not_found_request = HttpRequest::get("/assets/js/not-found.js").build();
         let not_found_response = HttpResponse::builder()
-            .with_status_code(404)
+            .with_status_code(HttpStatusCode::NotFound)
             .with_body(br#"404 Not Found"#)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -143,7 +143,7 @@ mod tests {
 
         let hello_world_request = HttpRequest::get("/assets/js/hello-world.js").build();
         let hello_world_response = HttpResponse::builder()
-            .with_status_code(404)
+            .with_status_code(HttpStatusCode::NotFound)
             .with_body(br#"console.log("Hello, World!")"#)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -241,7 +241,7 @@ mod tests {
         let post_request = HttpRequest::post(req_url).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(br#"console.log("Hello, World!")"#)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -249,7 +249,7 @@ mod tests {
             )])
             .build();
         let alt_response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(br#"console.log("Hello, ALT World!")"#)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -491,7 +491,7 @@ mod tests {
 
         let not_found_request = HttpRequest::get("/assets/js/not-found.js").build();
         let not_found_response = HttpResponse::builder()
-            .with_status_code(404)
+            .with_status_code(HttpStatusCode::NotFound)
             .with_body(br#"404 Not Found"#)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -528,7 +528,7 @@ mod tests {
 
         let index_html_body = b"<html><body><h1>Hello World!</h1></body></html>".to_vec();
         let index_html_response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(index_html_body)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.into(),

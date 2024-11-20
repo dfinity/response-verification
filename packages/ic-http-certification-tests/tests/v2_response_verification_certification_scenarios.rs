@@ -91,7 +91,7 @@ mod tests {
         let expected_certified_response = VerifiedResponse {
             body: expected_response.body().to_vec(),
             headers: expected_headers,
-            status_code: Some(expected_response.status_code()),
+            status_code: Some(expected_response.status_code().into()),
         };
 
         expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
@@ -402,7 +402,7 @@ mod tests {
         let expected_certified_response = VerifiedResponse {
             body: expected_response.body().to_vec(),
             headers: expected_headers,
-            status_code: Some(expected_response.status_code()),
+            status_code: Some(expected_response.status_code().into()),
         };
 
         expected_response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
@@ -478,7 +478,7 @@ mod fixtures {
         DefaultCelBuilder, DefaultFullCelExpression, DefaultResponseCertification,
         DefaultResponseOnlyCelExpression, HttpCertification, HttpCertificationPath,
         HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
-        CERTIFICATE_EXPRESSION_HEADER_NAME,
+        HttpStatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_response_verification_test_utils::{deflate_encode, gzip_encode, hash};
     use rstest::*;
@@ -496,7 +496,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(gzip_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -520,7 +520,7 @@ mod fixtures {
         let body = br#"window.onload=function(){console.log("Hello World")};"#;
 
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(gzip_encode(body))
             .with_headers(vec![
                 ("Content-Type".into(), "text/javascript".into()),
@@ -544,7 +544,7 @@ mod fixtures {
         let body = br#"Not Found"#;
 
         HttpResponse::builder()
-            .with_status_code(404)
+            .with_status_code(HttpStatusCode::NotFound)
             .with_body(body.to_vec())
             .with_headers(vec![
                 ("Content-Type".into(), "text/plain".into()),
@@ -568,7 +568,7 @@ mod fixtures {
         let body = br#"Moved Permanently"#;
 
         HttpResponse::builder()
-            .with_status_code(301)
+            .with_status_code(HttpStatusCode::MovedPermanently)
             .with_body(body)
             .with_headers(vec![
                 ("Location".into(), "/new-path".into()),
@@ -590,7 +590,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(html_body())
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -618,7 +618,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(gzip_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -642,7 +642,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(deflate_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -684,7 +684,7 @@ mod fixtures {
         let body = br#"Not Modified"#;
 
         HttpResponse::builder()
-            .with_status_code(304)
+            .with_status_code(HttpStatusCode::NotModified)
             .with_body(body)
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -730,7 +730,7 @@ mod fixtures {
         let etag = hex::encode(hash(html_body().as_slice()));
 
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(deflate_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),

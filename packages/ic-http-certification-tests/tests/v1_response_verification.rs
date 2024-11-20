@@ -1,7 +1,9 @@
 mod tests {
     use ic_certificate_verification::CertificateVerificationError;
     use ic_certification_testing::{CertificateBuilder, CertificateData};
-    use ic_http_certification::{HttpRequest, HttpResponse, CERTIFICATE_HEADER_NAME};
+    use ic_http_certification::{
+        HttpRequest, HttpResponse, HttpStatusCode, CERTIFICATE_HEADER_NAME,
+    };
     use ic_response_verification::types::{VerificationInfo, VerifiedResponse};
     use ic_response_verification::verify_request_response_pair;
     use ic_response_verification::ResponseVerificationError;
@@ -42,7 +44,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -100,7 +102,7 @@ mod tests {
         let request = HttpRequest::get(encoded_path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -157,7 +159,7 @@ mod tests {
         let request = HttpRequest::get("/").build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -214,7 +216,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(b"Hello IC!")
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -263,7 +265,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -316,7 +318,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -371,7 +373,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -424,7 +426,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -474,7 +476,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -522,7 +524,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();
@@ -570,7 +572,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![(CERTIFICATE_HEADER_NAME.into(), certificate_header)])
             .build();

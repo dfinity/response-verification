@@ -1,5 +1,6 @@
 use crate::{Asset, AssetCertificationError};
 use globset::{Glob, GlobMatcher};
+use ic_http_certification::HttpStatusCode;
 use std::fmt::{Display, Formatter};
 
 /// Certification configuration for [assets](Asset). This configuration
@@ -22,10 +23,12 @@ use std::fmt::{Display, Formatter};
 /// set to `text/javascript` and a `cache-control` header is added.
 ///
 /// ```
+/// use ic_http_certification::HttpStatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
 ///     path: "app.js".to_string(),
+///     status_code: Some(HttpStatusCode::Ok),
 ///     content_type: Some("text/javascript".to_string()),
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
@@ -48,10 +51,12 @@ use std::fmt::{Display, Formatter};
 /// The content type is set to `text/html` and a `cache-control` header is added.
 ///
 /// ```
+/// use ic_http_certification::HttpStatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
 ///     path: "index.html".to_string(),
+///     status_code: Some(HttpStatusCode::Ok),
 ///     content_type: Some("text/html".to_string()),
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
@@ -88,10 +93,12 @@ use std::fmt::{Display, Formatter};
 ///     - `/not-found/index.html`
 ///
 /// ```
+/// use ic_http_certification::HttpStatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
 ///     path: "404.html".to_string(),
+///     status_code: Some(HttpStatusCode::Ok),
 ///     content_type: Some("text/html".to_string()),
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
@@ -126,10 +133,12 @@ use std::fmt::{Display, Formatter};
 /// set to `text/css` and a `cache-control` header is added.
 ///
 /// ```
+/// use ic_http_certification::HttpStatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::Pattern {
 ///     pattern: "**/*.css".to_string(),
+///     status_code: Some(HttpStatusCode::Ok),
 ///     content_type: Some("text/css".to_string()),
 ///     headers: vec![
 ///         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
@@ -178,6 +187,10 @@ pub enum AssetConfig {
         /// path of an [Asset] provided to the [AssetRouter](crate::AssetRouter)
         /// with this config.
         path: String,
+
+        /// The HTTP status code to return when serving the asset.
+        /// If this value is not provided, the default status code will be 200.
+        status_code: Option<HttpStatusCode>,
 
         /// The content type of the file (e.g. "text/javascript").
         ///
@@ -293,6 +306,10 @@ pub enum AssetConfig {
         /// - Metacharacters such as `*` and `?` can be escaped with character
         ///   class notation. e.g., `[*]` matches `*`.
         pattern: String,
+
+        /// The HTTP status code to return when serving this pattern of assets.
+        /// If this value is not provided, the default status code will be 200.
+        status_code: Option<HttpStatusCode>,
 
         /// The content type of the file (e.g. "text/javascript").
         ///
@@ -507,6 +524,7 @@ impl Display for AssetEncoding {
 pub(crate) enum NormalizedAssetConfig {
     File {
         path: String,
+        status_code: Option<HttpStatusCode>,
         content_type: Option<String>,
         headers: Vec<(String, String)>,
         fallback_for: Vec<AssetFallbackConfig>,
@@ -515,6 +533,7 @@ pub(crate) enum NormalizedAssetConfig {
     },
     Pattern {
         pattern: GlobMatcher,
+        status_code: Option<HttpStatusCode>,
         content_type: Option<String>,
         headers: Vec<(String, String)>,
         encodings: Vec<(AssetEncoding, String)>,
@@ -533,6 +552,7 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
         match config {
             AssetConfig::File {
                 path,
+                status_code,
                 content_type,
                 headers,
                 fallback_for,
@@ -540,6 +560,7 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
                 encodings,
             } => Ok(NormalizedAssetConfig::File {
                 path,
+                status_code,
                 content_type,
                 headers,
                 fallback_for,
@@ -548,11 +569,13 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
             }),
             AssetConfig::Pattern {
                 pattern,
+                status_code,
                 content_type,
                 headers,
                 encodings,
             } => Ok(NormalizedAssetConfig::Pattern {
                 pattern: Glob::new(&pattern)?.compile_matcher(),
+                status_code,
                 content_type,
                 headers,
                 encodings,
@@ -593,6 +616,7 @@ mod tests {
         let asset = Asset::new(asset_path, vec![]);
         let config: NormalizedAssetConfig = AssetConfig::File {
             path: config_path.to_string(),
+            status_code: None,
             content_type: None,
             headers: vec![],
             fallback_for: vec![],
@@ -692,6 +716,7 @@ mod tests {
     ) {
         let asset = Asset::new(asset_path, vec![]);
         let config: NormalizedAssetConfig = AssetConfig::Pattern {
+            status_code: None,
             pattern: config_pattern.to_string(),
             content_type: None,
             headers: vec![],

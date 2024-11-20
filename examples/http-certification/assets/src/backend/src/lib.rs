@@ -5,7 +5,9 @@ use ic_cdk::{
     api::{data_certificate, set_certified_data},
     *,
 };
-use ic_http_certification::{HeaderField, HttpCertificationTree, HttpRequest, HttpResponse};
+use ic_http_certification::{
+    HeaderField, HttpCertificationTree, HttpRequest, HttpResponse, HttpStatusCode,
+};
 use include_dir::{include_dir, Dir};
 use std::{cell::RefCell, rc::Rc};
 
@@ -62,6 +64,7 @@ fn certify_all_assets() {
     let asset_configs = vec![
         AssetConfig::File {
             path: "index.html".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/html".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
@@ -75,6 +78,7 @@ fn certify_all_assets() {
         },
         AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/javascript".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
@@ -84,6 +88,7 @@ fn certify_all_assets() {
         },
         AssetConfig::Pattern {
             pattern: "**/*.css".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/css".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
@@ -93,6 +98,7 @@ fn certify_all_assets() {
         },
         AssetConfig::Pattern {
             pattern: "**/*.ico".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("image/x-icon".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
@@ -102,6 +108,7 @@ fn certify_all_assets() {
         },
         AssetConfig::Pattern {
             pattern: "**/*.svg".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("image/svg+xml".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),

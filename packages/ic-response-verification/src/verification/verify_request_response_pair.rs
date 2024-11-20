@@ -260,7 +260,7 @@ fn v2_verification(
 
             Ok(VerificationInfo {
                 response: Some(VerifiedResponse {
-                    status_code: Some(response.status_code()),
+                    status_code: Some(response.status_code().into()),
                     headers: all_headers,
                     body: response.body().to_vec(),
                 }),

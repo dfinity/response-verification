@@ -1,8 +1,8 @@
 mod tests {
     use ic_http_certification::{
         DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpCertificationPath,
-        HttpCertificationTreeEntry, HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
-        CERTIFICATE_HEADER_NAME,
+        HttpCertificationTreeEntry, HttpRequest, HttpResponse, HttpStatusCode,
+        CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::{
         types::{VerificationInfo, VerifiedResponse},
@@ -25,7 +25,7 @@ mod tests {
 
         let request = HttpRequest::get(req_path).build();
         let mut response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (
@@ -83,7 +83,7 @@ mod tests {
 
         let request = HttpRequest::get(req_path).build();
         let mut response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (
@@ -164,7 +164,7 @@ mod tests {
             ])
             .build();
         let mut response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (
@@ -238,7 +238,7 @@ mod tests {
 
         let request = HttpRequest::get(req_path).build();
         let mut response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (

@@ -176,7 +176,7 @@ async fn perform_test(
 
     let request = HttpRequest::get(path).build();
     let response = HttpResponse::builder()
-        .with_status_code(response.status_code)
+        .with_status_code(response.status_code.try_into().unwrap())
         .with_body(response.body)
         .with_headers(
             response

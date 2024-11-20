@@ -48,4 +48,11 @@ pub enum HttpCertificationError {
         /// The expected value of the `IC-CertificateExpression` header. This is the Cel expression used to certify the [HttpResponse](crate::HttpResponse).
         expected: String,
     },
+
+    /// Error converting a number into an HTTP status code.
+    #[error(r#"Error converting number into HTTP status code: "{status_code}""#)]
+    InvalidHttpStatusCode {
+        /// The HTTP status code that was not recognized.
+        status_code: u16,
+    },
 }

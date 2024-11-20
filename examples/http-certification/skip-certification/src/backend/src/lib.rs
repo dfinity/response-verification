@@ -4,7 +4,7 @@ use ic_cdk::{
 };
 use ic_http_certification::{
     utils::{add_skip_certification_header, skip_certification_certified_data},
-    HttpResponse,
+    HttpResponse, HttpStatusCode,
 };
 
 #[init]
@@ -55,7 +55,7 @@ fn create_response() -> HttpResponse<'static> {
     ];
 
     HttpResponse::builder()
-        .with_status_code(200)
+        .with_status_code(HttpStatusCode::Ok)
         .with_headers(headers)
         .with_body(body)
         .build()

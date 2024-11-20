@@ -132,6 +132,7 @@ pub fn response_hash(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::HttpStatusCode;
 
     const HELLO_WORLD_BODY: &[u8] = &[72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33];
     const CERTIFICATE: &str = "certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:,tree=:SGVsbG8gVHJlZSE=:";
@@ -230,7 +231,7 @@ mod tests {
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_headers(vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -276,7 +277,7 @@ mod tests {
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_headers(vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -323,7 +324,7 @@ mod tests {
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_headers(vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
@@ -373,7 +374,7 @@ mod tests {
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_headers(vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
@@ -424,7 +425,7 @@ mod tests {
 
     fn create_response(cel_expression: &str) -> HttpResponse {
         HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(HttpStatusCode::Ok)
             .with_headers(vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (

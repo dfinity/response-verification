@@ -15,6 +15,8 @@ This is implemented in the following steps:
 2. [Configuring asset certification](#configuring-asset-certification)
 3. [Inserting assets into the asset router](#inserting-assets-into-the-asset-router)
 4. [Serving assets](#serving-assets)
+5. [Deleting assets](#deleting-assets)
+6. [Querying assets](#querying-assets)
 
 For canisters that need it, it's also possible to [delete assets](#deleting-assets).
 
@@ -167,10 +169,12 @@ on the `/index.html` path, in addition to serving as the fallback for the `/`
 scope and setting `/` as an alias for this asset.
 
 ```rust
+use ic_http_certification::HttpStatusCode;
 use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
 
 let config = AssetConfig::File {
     path: "index.html".to_string(),
+    status_code: Some(HttpStatusCode::Ok),
     content_type: Some("text/html".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
@@ -206,10 +210,12 @@ Multiple aliases are also configured for this asset, namely:
 Requests to any of those aliases will serve the `/404.html` asset.
 
 ```rust
+use ic_http_certification::HttpStatusCode;
 use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
 
 let config = AssetConfig::File {
     path: "404.html".to_string(),
+    status_code: Some(HttpStatusCode::NotFound),
     content_type: Some("text/html".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
@@ -269,10 +275,12 @@ For example, the following pattern will match all `.js` files in the `js`
 directory:
 
 ```rust
+use ic_http_certification::HttpStatusCode;
 use ic_asset_certification::AssetConfig;
 
 let config = AssetConfig::Pattern {
     pattern: "js/*.js".to_string(),
+    status_code: Some(HttpStatusCode::Ok),
     content_type: Some("application/javascript".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
@@ -331,6 +339,7 @@ the appropriate response.
 Assets can be inserted using the `certify_assets` method:
 
 ```rust
+use ic_http_certification::HttpStatusCode;
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind};
 
 let mut asset_router = AssetRouter::default();
@@ -377,6 +386,7 @@ let assets = vec![
 let asset_configs = vec![
     AssetConfig::File {
         path: "index.html".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/html".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -393,6 +403,7 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.js".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/javascript".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -405,6 +416,7 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.css".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/css".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -460,7 +472,7 @@ This method will return a response, a witness and an expression path, which can 
 alongside the canister's data certificate to add the required certificate header to the response.
 
 ```rust
-use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header};
+use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header, HttpStatusCode};
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 
 let mut asset_router = AssetRouter::default();
@@ -472,6 +484,7 @@ let asset = Asset::new(
 
 let asset_config = AssetConfig::File {
     path: "index.html".to_string(),
+    status_code: Some(HttpStatusCode::Ok),
     content_type: Some("text/html".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
@@ -522,6 +535,7 @@ only includes Brotli, then the Gzip file will not be deleted.
 Using the same base example used to demonstrate certifying assets:
 
 ```rust
+use ic_http_certification::HttpStatusCode;
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 
 let mut asset_router = AssetRouter::default();
@@ -568,6 +582,7 @@ let assets = vec![
 let asset_configs = vec![
     AssetConfig::File {
         path: "index.html".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/html".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -584,6 +599,7 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.js".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/javascript".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -596,6 +612,7 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.css".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/css".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -619,10 +636,6 @@ asset_router.certify_assets(assets, asset_configs).unwrap();
 To delete the `index.html` asset, along with the fallback configuration for the `/` scope, the alias `/` and the alternative encodings:
 
 ```rust
-# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
-
-# let mut asset_router = AssetRouter::default();
-
 asset_router
     .delete_assets(
         vec![
@@ -635,6 +648,7 @@ asset_router
         ],
         vec![AssetConfig::File {
             path: "index.html".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/html".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -656,10 +670,6 @@ asset_router
 To delete the `app.js` asset, along with the alternative encodings:
 
 ```rust
-# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
-
-# let mut asset_router = AssetRouter::default();
-
 asset_router
     .delete_assets(
         vec![
@@ -669,6 +679,7 @@ asset_router
         ],
         vec![AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/javascript".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -686,10 +697,6 @@ asset_router
 To delete the `css/app-ba74b708.css` asset, along with the alternative encodings:
 
 ```rust
-# use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
-
-# let mut asset_router = AssetRouter::default();
-
 asset_router.delete_assets(
     vec![
         Asset::new(
@@ -708,6 +715,7 @@ asset_router.delete_assets(
     vec![
         AssetConfig::Pattern {
             pattern: "**/*.css".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/css".to_string()),
             headers: vec![(
                 "cache-control".to_string(),

@@ -26,7 +26,7 @@ use std::borrow::Cow;
 /// assert_eq!(request.certificate_version(), Some(2));
 /// ```
 ///
-/// ## Helpers
+/// # Helpers
 ///
 /// There are also a number of convenience methods for quickly creating an [HttpRequest] with
 /// commonly used HTTP methods:
@@ -36,8 +36,6 @@ use std::borrow::Cow;
 /// - [PUT](HttpRequest::put)
 /// - [PATCH](HttpRequest::patch)
 /// - [DELETE](HttpRequest::delete)
-///
-/// # Examples
 ///
 /// ```
 /// use ic_http_certification::HttpRequest;

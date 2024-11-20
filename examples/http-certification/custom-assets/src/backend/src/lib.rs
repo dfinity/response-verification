@@ -5,7 +5,7 @@ use ic_cdk::{
 use ic_http_certification::{
     utils::add_v2_certificate_header, DefaultCelBuilder, DefaultResponseCertification,
     DefaultResponseOnlyCelExpression, HeaderField, HttpCertification, HttpCertificationPath,
-    HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
+    HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse, HttpStatusCode,
     CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use include_dir::{include_dir, Dir};
@@ -399,7 +399,7 @@ fn create_uncertified_response() -> HttpResponse<'static> {
     );
 
     HttpResponse::builder()
-        .with_status_code(200)
+        .with_status_code(HttpStatusCode::Ok)
         .with_headers(headers)
         .with_body(body)
         .build()
@@ -436,7 +436,7 @@ fn create_asset_response(
     let headers = get_asset_headers(additional_headers, body.len(), cel_expr);
 
     HttpResponse::builder()
-        .with_status_code(200)
+        .with_status_code(HttpStatusCode::Ok)
         .with_headers(headers)
         .with_body(body)
         .build()
