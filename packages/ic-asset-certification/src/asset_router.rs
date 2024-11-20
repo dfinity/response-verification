@@ -269,6 +269,9 @@ impl<'content> AssetRouter<'content> {
     ///
     /// If no configuration matches an individual asset, the asset will be
     /// served and certified as-is, without headers.
+    ///
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
     pub fn certify_assets<'path>(
         &mut self,
         assets: impl IntoIterator<Item = Asset<'content, 'path>>,
@@ -320,6 +323,9 @@ impl<'content> AssetRouter<'content> {
     /// Depending on the configuration provided to the [certify_assets](AssetRouter::certify_assets) function,
     /// multiple responses may be generated for the same asset. To ensure that all generated responses are deleted,
     /// this function accepts the same configuration.
+    ///
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
     pub fn delete_assets<'path>(
         &mut self,
         assets: impl IntoIterator<Item = Asset<'content, 'path>>,
@@ -366,6 +372,16 @@ impl<'content> AssetRouter<'content> {
         }
 
         Ok(())
+    }
+
+    /// Deletes all assets from the router, including any certification for those assets.
+    ///
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
+    pub fn delete_all_assets(&mut self) {
+        self.responses.clear();
+        self.fallback_responses.clear();
+        self.tree.borrow_mut().clear();
     }
 
     /// Returns the root hash of the underlying
@@ -2690,6 +2706,43 @@ mod tests {
     }
 
     #[rstest]
+    fn test_delete_all_assets() {
+        let mut asset_router = asset_router();
+
+        let request = HttpRequest::get("/index.html").build();
+
+        let mut expected_response = expected_index_html_response();
+
+        let response = asset_router
+            .serve_asset(&data_certificate(), &request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_response,
+            &witness,
+            &expr_path,
+        );
+
+        assert_eq!(response, expected_response);
+
+        asset_router.delete_all_assets();
+
+        assert_matches!(
+        asset_router.serve_asset(
+            &data_certificate(),
+            &request,
+        ),
+        Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+            request_url,
+         }) if request_url == "/index.html"
+        );
+
+        let assets: Vec<_> = asset_router.get_assets().iter().collect();
+        assert!(assets.is_empty());
+    }
+
+    #[rstest]
     fn test_asset_map(mut asset_router: AssetRouter) {
         let index_html_response = asset_router.get_assets().get("/index.html", None, None);
         assert_matches!(
@@ -2993,8 +3046,6 @@ mod tests {
         let assets: Vec<_> = asset_router.get_assets().iter().collect();
         assert!(assets.len() == 3);
 
-        println!("{:#?}", assets);
-
         let first_chunk_body = &full_body[0..ASSET_CHUNK_SIZE];
         let expected_first_chunk_response = build_206_response(
             first_chunk_body.to_vec(),
@@ -3012,7 +3063,6 @@ mod tests {
             ],
         );
 
-        println!("expected first chunk: {:#?}", expected_first_chunk_response);
         assert!(assets.contains(&(
             (&format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0)),
             &expected_first_chunk_response
@@ -3694,7 +3744,7 @@ mod tests {
     }
 
     #[fixture]
-    fn asset_router() -> AssetRouter<'static> {
+    fn asset_router<'a>() -> AssetRouter<'a> {
         let mut asset_router = AssetRouter::default();
 
         let assets = vec![
