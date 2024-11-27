@@ -68,6 +68,12 @@ importers:
 
   examples/http-certification/assets/src/frontend: {}
 
+  examples/http-certification/assets/src/tests:
+    devDependencies:
+      '@dfinity/response-verification':
+        specifier: workspace:*
+        version: link:../../../../../packages/ic-response-verification-wasm
+
   examples/http-certification/custom-assets/src/frontend: {}
 
   examples/http-certification/custom-assets/src/tests:
@@ -87,6 +93,8 @@ importers:
       '@dfinity/response-verification':
         specifier: workspace:*
         version: link:../../../../../packages/ic-response-verification-wasm
+
+  examples/http-certification/upgrade-to-update-call/src/tests: {}
 
   packages/certificate-verification-js:
     dependencies:
