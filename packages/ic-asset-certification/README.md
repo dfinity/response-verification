@@ -174,13 +174,13 @@ use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
 
 let config = AssetConfig::File {
     path: "index.html".to_string(),
-    status_code: Some(HttpStatusCode::Ok),
     content_type: Some("text/html".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
     ],
     fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
     }],
     aliased_by: vec!["/".to_string()],
     encodings: vec![
@@ -215,7 +215,6 @@ use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
 
 let config = AssetConfig::File {
     path: "404.html".to_string(),
-    status_code: Some(HttpStatusCode::NotFound),
     content_type: Some("text/html".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
@@ -223,9 +222,11 @@ let config = AssetConfig::File {
     fallback_for: vec![
         AssetFallbackConfig {
             scope: "/css".to_string(),
+            status_code: Some(HttpStatusCode::NotFound),
         },
         AssetFallbackConfig {
             scope: "/js".to_string(),
+            status_code: Some(HttpStatusCode::NotFound),
         },
     ],
     aliased_by: vec![
@@ -280,7 +281,6 @@ use ic_asset_certification::AssetConfig;
 
 let config = AssetConfig::Pattern {
     pattern: "js/*.js".to_string(),
-    status_code: Some(HttpStatusCode::Ok),
     content_type: Some("application/javascript".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, max-age=31536000, immutable".to_string()),
@@ -386,7 +386,6 @@ let assets = vec![
 let asset_configs = vec![
     AssetConfig::File {
         path: "index.html".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/html".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -394,6 +393,7 @@ let asset_configs = vec![
         )],
         fallback_for: vec![AssetFallbackConfig {
             scope: "/".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
         }],
         aliased_by: vec!["/".to_string()],
         encodings: vec![
@@ -403,7 +403,6 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.js".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/javascript".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -416,7 +415,6 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.css".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/css".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -484,13 +482,13 @@ let asset = Asset::new(
 
 let asset_config = AssetConfig::File {
     path: "index.html".to_string(),
-    status_code: Some(HttpStatusCode::Ok),
     content_type: Some("text/html".to_string()),
     headers: vec![
         ("Cache-Control".to_string(), "public, no-cache, no-store".to_string()),
     ],
     fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
+        status_code: Some(HttpStatusCode::Ok),
     }],
     aliased_by: vec!["/".to_string()],
     encodings: vec![],
@@ -582,7 +580,6 @@ let assets = vec![
 let asset_configs = vec![
     AssetConfig::File {
         path: "index.html".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/html".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -590,6 +587,7 @@ let asset_configs = vec![
         )],
         fallback_for: vec![AssetFallbackConfig {
             scope: "/".to_string(),
+            status_code: Some(HttpStatusCode::Ok),
         }],
         aliased_by: vec!["/".to_string()],
         encodings: vec![
@@ -599,7 +597,6 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.js".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/javascript".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -612,7 +609,6 @@ let asset_configs = vec![
     },
     AssetConfig::Pattern {
         pattern: "**/*.css".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
         content_type: Some("text/css".to_string()),
         headers: vec![(
             "cache-control".to_string(),
@@ -648,7 +644,6 @@ asset_router
         ],
         vec![AssetConfig::File {
             path: "index.html".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/html".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -656,6 +651,7 @@ asset_router
             )],
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
+                status_code: Some(HttpStatusCode::Ok),
             }],
             aliased_by: vec!["/".to_string()],
             encodings: vec![
@@ -679,7 +675,6 @@ asset_router
         ],
         vec![AssetConfig::Pattern {
             pattern: "**/*.js".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/javascript".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -715,7 +710,6 @@ asset_router.delete_assets(
     vec![
         AssetConfig::Pattern {
             pattern: "**/*.css".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/css".to_string()),
             headers: vec![(
                 "cache-control".to_string(),

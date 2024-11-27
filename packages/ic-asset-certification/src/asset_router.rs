@@ -35,13 +35,13 @@ use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
 /// let asset_configs = vec![
 ///     AssetConfig::File {
 ///         path: "index.html".to_string(),
-///         status_code: Some(HttpStatusCode::Ok),
 ///         content_type: Some("text/html".to_string()),
 ///         headers: vec![(
 ///             "cache-control".to_string(),
 ///             "public, no-cache, no-store".to_string(),
 ///         )],
 ///         fallback_for: vec![AssetFallbackConfig {
+///             status_code: Some(HttpStatusCode::Ok),
 ///             scope: "/".to_string(),
 ///         }],
 ///         aliased_by: vec!["/".to_string()],
@@ -52,7 +52,6 @@ use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
 ///     },
 ///     AssetConfig::Pattern {
 ///         pattern: "**/*.js".to_string(),
-///         status_code: Some(HttpStatusCode::Ok),
 ///         content_type: Some("text/javascript".to_string()),
 ///         headers: vec![(
 ///             "cache-control".to_string(),
@@ -65,7 +64,6 @@ use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
 ///     },
 ///     AssetConfig::Pattern {
 ///         pattern: "**/*.css".to_string(),
-///         status_code: Some(HttpStatusCode::Ok),
 ///         content_type: Some("text/css".to_string()),
 ///         headers: vec![(
 ///             "cache-control".to_string(),
@@ -467,21 +465,13 @@ impl<'content> AssetRouter<'content> {
     ) -> AssetCertificationResult {
         match asset_config {
             Some(NormalizedAssetConfig::Pattern {
-                status_code,
                 content_type,
                 headers,
                 ..
             }) => {
-                self.insert_static_asset(
-                    asset,
-                    content_type.clone(),
-                    headers.clone(),
-                    encoding,
-                    *status_code,
-                )?;
+                self.insert_static_asset(asset, content_type.clone(), headers.clone(), encoding)?;
             }
             Some(NormalizedAssetConfig::File {
-                status_code,
                 content_type,
                 headers,
                 fallback_for,
@@ -493,7 +483,6 @@ impl<'content> AssetRouter<'content> {
                     content_type.clone(),
                     headers.clone(),
                     encoding,
-                    *status_code,
                 )?;
 
                 for fallback_for in fallback_for.iter() {
@@ -503,7 +492,6 @@ impl<'content> AssetRouter<'content> {
                         headers.clone(),
                         fallback_for.clone(),
                         encoding,
-                        *status_code,
                     )?;
                 }
 
@@ -516,12 +504,11 @@ impl<'content> AssetRouter<'content> {
                         content_type.clone(),
                         headers.clone(),
                         encoding,
-                        *status_code,
                     )?;
                 }
             }
             _ => {
-                self.insert_static_asset(asset, None, vec![], encoding, None)?;
+                self.insert_static_asset(asset, None, vec![], encoding)?;
             }
         }
 
@@ -536,21 +523,13 @@ impl<'content> AssetRouter<'content> {
     ) -> AssetCertificationResult {
         match asset_config {
             Some(NormalizedAssetConfig::Pattern {
-                status_code,
                 content_type,
                 headers,
                 ..
             }) => {
-                self.delete_static_asset(
-                    asset,
-                    content_type.clone(),
-                    headers.clone(),
-                    encoding,
-                    *status_code,
-                )?;
+                self.delete_static_asset(asset, content_type.clone(), headers.clone(), encoding)?;
             }
             Some(NormalizedAssetConfig::File {
-                status_code,
                 content_type,
                 headers,
                 fallback_for,
@@ -562,7 +541,6 @@ impl<'content> AssetRouter<'content> {
                     content_type.clone(),
                     headers.clone(),
                     encoding,
-                    *status_code,
                 )?;
 
                 for fallback_for in fallback_for.iter() {
@@ -572,7 +550,6 @@ impl<'content> AssetRouter<'content> {
                         headers.clone(),
                         fallback_for.clone(),
                         encoding,
-                        *status_code,
                     )?;
                 }
 
@@ -585,12 +562,11 @@ impl<'content> AssetRouter<'content> {
                         content_type.clone(),
                         headers.clone(),
                         encoding,
-                        *status_code,
                     )?;
                 }
             }
             _ => {
-                self.delete_static_asset(asset, None, vec![], encoding, None)?;
+                self.delete_static_asset(asset, None, vec![], encoding)?;
             }
         }
 
@@ -603,7 +579,6 @@ impl<'content> AssetRouter<'content> {
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
         encoding: Option<AssetEncoding>,
-        status_code: Option<HttpStatusCode>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
         let total_length = asset.content.len();
@@ -617,7 +592,6 @@ impl<'content> AssetRouter<'content> {
                     additional_headers.clone(),
                     encoding,
                     Some(range_begin),
-                    status_code,
                 )?;
                 self.tree.borrow_mut().insert(&response.tree_entry);
                 self.responses.insert(
@@ -628,14 +602,8 @@ impl<'content> AssetRouter<'content> {
             }
         }
 
-        let response = Self::prepare_static_asset(
-            asset,
-            content_type,
-            additional_headers,
-            encoding,
-            None,
-            status_code,
-        )?;
+        let response =
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding, None)?;
 
         self.tree.borrow_mut().insert(&response.tree_entry);
         self.responses.insert(
@@ -651,17 +619,10 @@ impl<'content> AssetRouter<'content> {
         content_type: Option<String>,
         additional_headers: Vec<(String, String)>,
         encoding: Option<AssetEncoding>,
-        status_code: Option<HttpStatusCode>,
     ) -> AssetCertificationResult<()> {
         let asset_url = asset.url.to_string();
-        let response = Self::prepare_static_asset(
-            asset,
-            content_type,
-            additional_headers,
-            encoding,
-            None,
-            status_code,
-        )?;
+        let response =
+            Self::prepare_static_asset(asset, content_type, additional_headers, encoding, None)?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
         self.responses
@@ -689,7 +650,6 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         encoding: Option<AssetEncoding>,
         range_begin: Option<usize>,
-        status_code: Option<HttpStatusCode>,
     ) -> AssetCertificationResult<CertifiedAssetResponse<'content>> {
         let asset_url = asset.url.to_string();
 
@@ -699,7 +659,7 @@ impl<'content> AssetRouter<'content> {
             content_type,
             encoding,
             range_begin,
-            status_code,
+            None,
         )?;
 
         let tree_entry =
@@ -718,7 +678,6 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
         encoding: Option<AssetEncoding>,
-        status_code: Option<HttpStatusCode>,
     ) -> AssetCertificationResult<()> {
         let response = Self::prepare_fallback_asset(
             asset,
@@ -726,7 +685,6 @@ impl<'content> AssetRouter<'content> {
             content_type,
             fallback_for.clone(),
             encoding,
-            status_code,
         )?;
 
         self.tree.borrow_mut().insert(&response.tree_entry);
@@ -744,7 +702,6 @@ impl<'content> AssetRouter<'content> {
         additional_headers: Vec<(String, String)>,
         fallback_for: AssetFallbackConfig,
         encoding: Option<AssetEncoding>,
-        status_code: Option<HttpStatusCode>,
     ) -> AssetCertificationResult<()> {
         let response = Self::prepare_fallback_asset(
             asset,
@@ -752,7 +709,6 @@ impl<'content> AssetRouter<'content> {
             content_type,
             fallback_for.clone(),
             encoding,
-            status_code,
         )?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
@@ -770,7 +726,6 @@ impl<'content> AssetRouter<'content> {
         content_type: Option<String>,
         fallback_for: AssetFallbackConfig,
         encoding: Option<AssetEncoding>,
-        status_code: Option<HttpStatusCode>,
     ) -> AssetCertificationResult<CertifiedAssetResponse<'content>> {
         let (response, certification) = Self::prepare_asset_response_and_certification(
             asset,
@@ -778,7 +733,7 @@ impl<'content> AssetRouter<'content> {
             content_type,
             encoding,
             None,
-            status_code,
+            fallback_for.status_code,
         )?;
 
         let tree_entry = HttpCertificationTreeEntry::new(
@@ -2673,8 +2628,7 @@ mod tests {
     #[case("https://internetcomputer.org/not-found/index.html")]
     fn test_not_found_alias(mut asset_router: AssetRouter, #[case] req_url: &str) {
         let request = HttpRequest::get(req_url).build();
-        let mut expected_response = build_response(
-            HttpStatusCode::NotFound,
+        let mut expected_response = build_200_response(
             not_found_html_body(),
             asset_cel_expr(),
             vec![
@@ -3378,7 +3332,6 @@ mod tests {
         let index_html_asset = Asset::new("index.html", &index_html_body);
         let index_html_config = AssetConfig::File {
             path: "index.html".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/html".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -3386,6 +3339,7 @@ mod tests {
             )],
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
+                status_code: Some(HttpStatusCode::Ok),
             }],
             aliased_by: vec!["/".to_string()],
             encodings: vec![],
@@ -3680,7 +3634,6 @@ mod tests {
     fn index_html_config() -> AssetConfig {
         AssetConfig::File {
             path: "index.html".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/html".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -3688,6 +3641,7 @@ mod tests {
             )],
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
+                status_code: Some(HttpStatusCode::Ok),
             }],
             aliased_by: vec!["/".to_string()],
             encodings: vec![
@@ -3702,7 +3656,6 @@ mod tests {
     fn js_config() -> AssetConfig {
         AssetConfig::Pattern {
             pattern: r"**/*.js".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/javascript".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -3720,7 +3673,6 @@ mod tests {
     fn css_config() -> AssetConfig {
         AssetConfig::Pattern {
             pattern: "**/*.css".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/css".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -3738,7 +3690,6 @@ mod tests {
     fn not_found_html_config() -> AssetConfig {
         AssetConfig::File {
             path: "not-found.html".to_string(),
-            status_code: Some(HttpStatusCode::NotFound),
             content_type: Some("text/html".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
@@ -3747,9 +3698,11 @@ mod tests {
             fallback_for: vec![
                 AssetFallbackConfig {
                     scope: "/js".to_string(),
+                    status_code: Some(HttpStatusCode::NotFound),
                 },
                 AssetFallbackConfig {
                     scope: "/css".to_string(),
+                    status_code: Some(HttpStatusCode::NotFound),
                 },
             ],
             aliased_by: vec![
@@ -3789,7 +3742,6 @@ mod tests {
     fn long_asset_config(path: &str) -> AssetConfig {
         AssetConfig::File {
             path: path.to_string(),
-            status_code: Some(HttpStatusCode::Ok),
             content_type: Some("text/html".to_string()),
             headers: vec![(
                 "cache-control".to_string(),
