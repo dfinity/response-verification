@@ -6,7 +6,7 @@ use ic_http_certification::{
     utils::add_v2_certificate_header, DefaultCelBuilder, DefaultFullCelExpression,
     DefaultResponseCertification, DefaultResponseOnlyCelExpression, HttpCertification,
     HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
-    HttpResponse, HttpStatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
+    HttpResponse, StatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use lazy_static::lazy_static;
 use matchit::{Params, Router};
@@ -176,7 +176,7 @@ fn certify_list_todos_response() {
         )
         .encode()
     });
-    let mut response = create_response(HttpStatusCode::Ok, body);
+    let mut response = create_response(StatusCode::OK, body);
 
     certify_response(request, &mut response, &TODOS_TREE_PATH);
 }
@@ -191,7 +191,7 @@ fn certify_not_allowed_todo_responses() {
                 .build();
 
             let body = ErrorResponse::not_allowed().encode();
-            let mut response = create_response(HttpStatusCode::MethodNotAllowed, body);
+            let mut response = create_response(StatusCode::METHOD_NOT_ALLOWED, body);
 
             certify_response(request, &mut response, &TODOS_TREE_PATH);
         });
@@ -199,7 +199,7 @@ fn certify_not_allowed_todo_responses() {
 
 fn certify_not_found_response() {
     let body = ErrorResponse::not_found().encode();
-    let mut response = create_response(HttpStatusCode::NotFound, body);
+    let mut response = create_response(StatusCode::NOT_FOUND, body);
 
     let tree_path = HttpCertificationPath::wildcard(NOT_FOUND_PATH);
 
@@ -405,7 +405,7 @@ fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse
     certify_list_todos_response();
 
     let body = CreateTodoItemResponse::ok(&todo_item).encode();
-    create_response(HttpStatusCode::Created, body)
+    create_response(StatusCode::CREATED, body)
 }
 
 fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse<'static> {
@@ -427,7 +427,7 @@ fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse<
     certify_list_todos_response();
 
     let body = UpdateTodoItemResponse::ok(&()).encode();
-    create_response(HttpStatusCode::Ok, body)
+    create_response(StatusCode::OK, body)
 }
 
 fn delete_todo_item_handler(_req: &HttpRequest, params: &Params) -> HttpResponse<'static> {
@@ -440,7 +440,7 @@ fn delete_todo_item_handler(_req: &HttpRequest, params: &Params) -> HttpResponse
     certify_list_todos_response();
 
     let body = DeleteTodoItemResponse::ok(&()).encode();
-    create_response(HttpStatusCode::NoContent, body)
+    create_response(StatusCode::NO_CONTENT, body)
 }
 
 fn upgrade_to_update_call_handler(
@@ -451,7 +451,7 @@ fn upgrade_to_update_call_handler(
 }
 
 fn no_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
-    create_response(HttpStatusCode::BadRequest, vec![])
+    create_response(StatusCode::BAD_REQUEST, vec![])
 }
 
 // Encoding
@@ -463,7 +463,7 @@ where
     serde_json::from_slice(value).expect("Failed to deserialize value")
 }
 
-fn create_response(status_code: HttpStatusCode, body: Vec<u8>) -> HttpResponse<'static> {
+fn create_response(status_code: StatusCode, body: Vec<u8>) -> HttpResponse<'static> {
     HttpResponse::builder()
         .with_status_code(status_code)
         .with_headers(vec![

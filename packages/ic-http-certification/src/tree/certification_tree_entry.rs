@@ -54,7 +54,7 @@ mod tests {
     use super::*;
     use crate::{
         request_hash, response_hash, DefaultCelBuilder, DefaultResponseCertification, HttpRequest,
-        HttpResponse, HttpStatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
+        HttpResponse, StatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_representation_independent_hash::hash;
     use rstest::*;
@@ -109,7 +109,7 @@ mod tests {
             .build();
         let cel_expr_hash = hash(cel_expr.to_string().as_bytes());
         let response = HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),
@@ -152,7 +152,7 @@ mod tests {
         let expected_request_hash = request_hash(&request, &cel_expr.request).unwrap();
 
         let response = HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),

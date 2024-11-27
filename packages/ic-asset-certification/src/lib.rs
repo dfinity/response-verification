@@ -170,7 +170,7 @@
 //! scope and setting `/` as an alias for this asset.
 //!
 //! ```rust
-//! use ic_http_certification::HttpStatusCode;
+//! use ic_http_certification::StatusCode;
 //! use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 //!
 //! let config = AssetConfig::File {
@@ -181,7 +181,7 @@
 //!     ],
 //!     fallback_for: vec![AssetFallbackConfig {
 //!         scope: "/".to_string(),
-//!         status_code: Some(HttpStatusCode::Ok),
+//!         status_code: Some(StatusCode::OK),
 //!     }],
 //!     aliased_by: vec!["/".to_string()],
 //!     encodings: vec![
@@ -210,7 +210,7 @@
 //! Requests to any of those aliases will serve the `/404.html` asset.
 //!
 //! ```rust
-//! use ic_http_certification::HttpStatusCode;
+//! use ic_http_certification::StatusCode;
 //! use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 //!
 //! let config = AssetConfig::File {
@@ -222,11 +222,11 @@
 //!     fallback_for: vec![
 //!         AssetFallbackConfig {
 //!             scope: "/css".to_string(),
-//!             status_code: Some(HttpStatusCode::NotFound),
+//!             status_code: Some(StatusCode::NOT_FOUND),
 //!         },
 //!         AssetFallbackConfig {
 //!             scope: "/js".to_string(),
-//!             status_code: Some(HttpStatusCode::NotFound),
+//!             status_code: Some(StatusCode::NOT_FOUND),
 //!         },
 //!     ],
 //!     aliased_by: vec![
@@ -276,7 +276,7 @@
 //! directory:
 //!
 //! ```rust
-//! use ic_http_certification::HttpStatusCode;
+//! use ic_http_certification::StatusCode;
 //! use ic_asset_certification::{AssetConfig, AssetEncoding};
 //!
 //! let config = AssetConfig::Pattern {
@@ -340,7 +340,7 @@
 //! [certify_assets](AssetRouter::certify_assets) method:
 //!
 //! ```rust
-//! use ic_http_certification::HttpStatusCode;
+//! use ic_http_certification::StatusCode;
 //! use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 //!
 //! let mut asset_router = AssetRouter::default();
@@ -394,7 +394,7 @@
 //!         )],
 //!         fallback_for: vec![AssetFallbackConfig {
 //!             scope: "/".to_string(),
-//!             status_code: Some(HttpStatusCode::Ok),
+//!             status_code: Some(StatusCode::OK),
 //!         }],
 //!         aliased_by: vec!["/".to_string()],
 //!         encodings: vec![
@@ -468,7 +468,7 @@
 //! alongside the canister's data certificate to add the required certificate header to the response.
 //!
 //! ```rust
-//! use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header, HttpStatusCode};
+//! use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header, StatusCode};
 //! use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 //!
 //! let mut asset_router = AssetRouter::default();
@@ -486,7 +486,7 @@
 //!     ],
 //!     fallback_for: vec![AssetFallbackConfig {
 //!         scope: "/".to_string(),
-//!         status_code: Some(HttpStatusCode::Ok),
+//!         status_code: Some(StatusCode::OK),
 //!     }],
 //!     aliased_by: vec!["/".to_string()],
 //!     encodings: vec![],
@@ -523,7 +523,7 @@
 //! Using the same base example used to demonstrate certifying assets:
 //!
 //! ```rust
-//! use ic_http_certification::HttpStatusCode;
+//! use ic_http_certification::StatusCode;
 //! use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 //!
 //! let mut asset_router = AssetRouter::default();
@@ -577,7 +577,7 @@
 //!         )],
 //!         fallback_for: vec![AssetFallbackConfig {
 //!             scope: "/".to_string(),
-//!             status_code: Some(HttpStatusCode::Ok),
+//!             status_code: Some(StatusCode::OK),
 //!         }],
 //!         aliased_by: vec!["/".to_string()],
 //!         encodings: vec![
@@ -622,7 +622,7 @@
 //! To delete the `index.html` asset, along with the fallback configuration for the `/` scope, the alias `/` and the alternative encodings:
 //!
 //! ```rust
-//! # use ic_http_certification::HttpStatusCode;
+//! # use ic_http_certification::StatusCode;
 //! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 //!
 //! # let mut asset_router = AssetRouter::default();
@@ -646,7 +646,7 @@
 //!             )],
 //!             fallback_for: vec![AssetFallbackConfig {
 //!                 scope: "/".to_string(),
-//!                 status_code: Some(HttpStatusCode::Ok),
+//!                 status_code: Some(StatusCode::OK),
 //!             }],
 //!             aliased_by: vec!["/".to_string()],
 //!             encodings: vec![
@@ -661,7 +661,7 @@
 //! To delete the `app.js`asset, along with the alternative encodings:
 //!
 //! ```rust
-//! # use ic_http_certification::HttpStatusCode;
+//! # use ic_http_certification::StatusCode;
 //! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 //!
 //! # let mut asset_router = AssetRouter::default();
@@ -692,7 +692,7 @@
 //! To delete the `css/app-ba74b708.css` asset, along with the alternative encodings:
 //!
 //! ```rust
-//! # use ic_http_certification::HttpStatusCode;
+//! # use ic_http_certification::StatusCode;
 //! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 //!
 //! # let mut asset_router = AssetRouter::default();

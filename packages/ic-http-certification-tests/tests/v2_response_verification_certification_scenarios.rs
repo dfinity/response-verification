@@ -477,8 +477,8 @@ mod fixtures {
     use ic_http_certification::{
         DefaultCelBuilder, DefaultFullCelExpression, DefaultResponseCertification,
         DefaultResponseOnlyCelExpression, HttpCertification, HttpCertificationPath,
-        HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
-        HttpStatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
+        HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse, StatusCode,
+        CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_response_verification_test_utils::{deflate_encode, gzip_encode, hash};
     use rstest::*;
@@ -496,7 +496,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_body(gzip_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -520,7 +520,7 @@ mod fixtures {
         let body = br#"window.onload=function(){console.log("Hello World")};"#;
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_body(gzip_encode(body))
             .with_headers(vec![
                 ("Content-Type".into(), "text/javascript".into()),
@@ -544,7 +544,7 @@ mod fixtures {
         let body = br#"Not Found"#;
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::NotFound)
+            .with_status_code(StatusCode::NOT_FOUND)
             .with_body(body.to_vec())
             .with_headers(vec![
                 ("Content-Type".into(), "text/plain".into()),
@@ -568,7 +568,7 @@ mod fixtures {
         let body = br#"Moved Permanently"#;
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::MovedPermanently)
+            .with_status_code(StatusCode::MOVED_PERMANENTLY)
             .with_body(body)
             .with_headers(vec![
                 ("Location".into(), "/new-path".into()),
@@ -590,7 +590,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_body(html_body())
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -618,7 +618,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_body(gzip_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -642,7 +642,7 @@ mod fixtures {
         let cel = asset_cel();
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_body(deflate_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -684,7 +684,7 @@ mod fixtures {
         let body = br#"Not Modified"#;
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::NotModified)
+            .with_status_code(StatusCode::NOT_MODIFIED)
             .with_body(body)
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),
@@ -730,7 +730,7 @@ mod fixtures {
         let etag = hex::encode(hash(html_body().as_slice()));
 
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_body(deflate_encode(&html_body()))
             .with_headers(vec![
                 ("Content-Type".into(), "text/html".into()),

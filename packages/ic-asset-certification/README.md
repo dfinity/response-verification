@@ -169,7 +169,7 @@ on the `/index.html` path, in addition to serving as the fallback for the `/`
 scope and setting `/` as an alias for this asset.
 
 ```rust
-use ic_http_certification::HttpStatusCode;
+use ic_http_certification::StatusCode;
 use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
 
 let config = AssetConfig::File {
@@ -180,7 +180,7 @@ let config = AssetConfig::File {
     ],
     fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
+        status_code: Some(StatusCode::OK),
     }],
     aliased_by: vec!["/".to_string()],
     encodings: vec![
@@ -210,7 +210,7 @@ Multiple aliases are also configured for this asset, namely:
 Requests to any of those aliases will serve the `/404.html` asset.
 
 ```rust
-use ic_http_certification::HttpStatusCode;
+use ic_http_certification::StatusCode;
 use ic_asset_certification::{AssetConfig, AssetFallbackConfig};
 
 let config = AssetConfig::File {
@@ -222,11 +222,11 @@ let config = AssetConfig::File {
     fallback_for: vec![
         AssetFallbackConfig {
             scope: "/css".to_string(),
-            status_code: Some(HttpStatusCode::NotFound),
+            status_code: Some(StatusCode::NOT_FOUND),
         },
         AssetFallbackConfig {
             scope: "/js".to_string(),
-            status_code: Some(HttpStatusCode::NotFound),
+            status_code: Some(StatusCode::NOT_FOUND),
         },
     ],
     aliased_by: vec![
@@ -276,7 +276,7 @@ For example, the following pattern will match all `.js` files in the `js`
 directory:
 
 ```rust
-use ic_http_certification::HttpStatusCode;
+use ic_http_certification::StatusCode;
 use ic_asset_certification::AssetConfig;
 
 let config = AssetConfig::Pattern {
@@ -339,7 +339,7 @@ the appropriate response.
 Assets can be inserted using the `certify_assets` method:
 
 ```rust
-use ic_http_certification::HttpStatusCode;
+use ic_http_certification::StatusCode;
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind};
 
 let mut asset_router = AssetRouter::default();
@@ -393,7 +393,7 @@ let asset_configs = vec![
         )],
         fallback_for: vec![AssetFallbackConfig {
             scope: "/".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
+            status_code: Some(StatusCode::OK),
         }],
         aliased_by: vec!["/".to_string()],
         encodings: vec![
@@ -470,7 +470,7 @@ This method will return a response, a witness and an expression path, which can 
 alongside the canister's data certificate to add the required certificate header to the response.
 
 ```rust
-use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header, HttpStatusCode};
+use ic_http_certification::{HttpRequest, utils::add_v2_certificate_header, StatusCode};
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter};
 
 let mut asset_router = AssetRouter::default();
@@ -488,7 +488,7 @@ let asset_config = AssetConfig::File {
     ],
     fallback_for: vec![AssetFallbackConfig {
         scope: "/".to_string(),
-        status_code: Some(HttpStatusCode::Ok),
+        status_code: Some(StatusCode::OK),
     }],
     aliased_by: vec!["/".to_string()],
     encodings: vec![],
@@ -533,7 +533,7 @@ only includes Brotli, then the Gzip file will not be deleted.
 Using the same base example used to demonstrate certifying assets:
 
 ```rust
-use ic_http_certification::HttpStatusCode;
+use ic_http_certification::StatusCode;
 use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
 
 let mut asset_router = AssetRouter::default();
@@ -587,7 +587,7 @@ let asset_configs = vec![
         )],
         fallback_for: vec![AssetFallbackConfig {
             scope: "/".to_string(),
-            status_code: Some(HttpStatusCode::Ok),
+            status_code: Some(StatusCode::OK),
         }],
         aliased_by: vec!["/".to_string()],
         encodings: vec![
@@ -651,7 +651,7 @@ asset_router
             )],
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
-                status_code: Some(HttpStatusCode::Ok),
+                status_code: Some(StatusCode::OK),
             }],
             aliased_by: vec!["/".to_string()],
             encodings: vec![

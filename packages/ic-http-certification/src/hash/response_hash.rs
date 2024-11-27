@@ -121,7 +121,7 @@ pub fn response_hash(
 
     let filtered_headers = filter_response_headers(response, response_certification);
     let concatenated_hashes = [
-        response_headers_hash(&response.status_code().into(), &filtered_headers),
+        response_headers_hash(&response.status_code().as_u16().into(), &filtered_headers),
         response_body_hash,
     ]
     .concat();
@@ -132,7 +132,7 @@ pub fn response_hash(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::HttpStatusCode;
+    use crate::StatusCode;
 
     const HELLO_WORLD_BODY: &[u8] = &[72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33];
     const CERTIFICATE: &str = "certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:,tree=:SGVsbG8gVHJlZSE=:";
@@ -231,7 +231,7 @@ mod tests {
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -277,7 +277,7 @@ mod tests {
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -313,7 +313,8 @@ mod tests {
                 .unwrap();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
+        let result =
+            response_headers_hash(&response.status_code().as_u16().into(), &filtered_headers);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -324,7 +325,7 @@ mod tests {
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
@@ -337,11 +338,15 @@ mod tests {
             .build();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
+        let result =
+            response_headers_hash(&response.status_code().as_u16().into(), &filtered_headers);
         let filtered_headers_without_excluded_headers =
             filter_response_headers(&response_without_excluded_headers, &response_certification);
         let result_without_excluded_headers = response_headers_hash(
-            &response_without_excluded_headers.status_code().into(),
+            &response_without_excluded_headers
+                .status_code()
+                .as_u16()
+                .into(),
             &filtered_headers_without_excluded_headers,
         );
 
@@ -361,7 +366,8 @@ mod tests {
                 .unwrap();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
+        let result =
+            response_headers_hash(&response.status_code().as_u16().into(), &filtered_headers);
 
         assert_eq!(result, expected_hash.as_slice());
     }
@@ -374,7 +380,7 @@ mod tests {
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
         let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
@@ -389,12 +395,16 @@ mod tests {
             .build();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
-        let result = response_headers_hash(&response.status_code().into(), &filtered_headers);
+        let result =
+            response_headers_hash(&response.status_code().as_u16().into(), &filtered_headers);
 
         let response_headers_without_excluded_headers =
             filter_response_headers(&response_without_excluded_headers, &response_certification);
         let result_without_excluded_headers = response_headers_hash(
-            &response_without_excluded_headers.status_code().into(),
+            &response_without_excluded_headers
+                .status_code()
+                .as_u16()
+                .into(),
             &response_headers_without_excluded_headers,
         );
 
@@ -425,7 +435,7 @@ mod tests {
 
     fn create_response(cel_expression: &str) -> HttpResponse {
         HttpResponse::builder()
-            .with_status_code(HttpStatusCode::Ok)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (

@@ -237,7 +237,7 @@ fn v2_verification(
     let body_hash = hash(response.body());
     let response_headers = filter_response_headers(&response, response_certification);
     let response_headers_hash =
-        response_headers_hash(&response.status_code().into(), &response_headers);
+        response_headers_hash(&response.status_code().as_u16().into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
     let are_hashes_valid = validate_hashes(
