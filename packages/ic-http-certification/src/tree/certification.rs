@@ -167,7 +167,7 @@ impl<'a> From<&'a HttpCertification> for Cow<'a, HttpCertification> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::DefaultResponseCertification;
+    use crate::{DefaultResponseCertification, StatusCode};
     use rstest::*;
 
     #[rstest]
@@ -194,7 +194,7 @@ mod tests {
         let expected_cel_expr_hash = hash(cel_expr.to_string().as_bytes());
 
         let response = &HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),
@@ -230,7 +230,9 @@ mod tests {
             ))
             .build();
 
-        let response = &HttpResponse::builder().with_status_code(200).build();
+        let response = &HttpResponse::builder()
+            .with_status_code(StatusCode::OK)
+            .build();
 
         let result = HttpCertification::response_only(&cel_expr, response, None).unwrap_err();
 
@@ -250,7 +252,7 @@ mod tests {
         let wrong_cel_expr = DefaultCelBuilder::full_certification().build();
 
         let response = &HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 wrong_cel_expr.to_string(),
@@ -275,7 +277,7 @@ mod tests {
             ))
             .build();
         let response = &HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
@@ -311,7 +313,7 @@ mod tests {
         let expected_request_hash = request_hash(request, &cel_expr.request).unwrap();
 
         let response = &HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 cel_expr.to_string(),
@@ -353,7 +355,9 @@ mod tests {
 
         let request = &HttpRequest::get("/index.html").build();
 
-        let response = &HttpResponse::builder().with_status_code(200).build();
+        let response = &HttpResponse::builder()
+            .with_status_code(StatusCode::OK)
+            .build();
 
         let result = HttpCertification::full(&cel_expr, request, response, None).unwrap_err();
 
@@ -377,7 +381,7 @@ mod tests {
         let request = &HttpRequest::get("/index.html").build();
 
         let response = &HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![(
                 CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                 wrong_cel_expr.to_string(),
@@ -407,7 +411,7 @@ mod tests {
         let request = &HttpRequest::get("/index.html").build();
 
         let response = &HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_headers(vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),

@@ -1,6 +1,46 @@
 use crate::HeaderField;
-use candid::{CandidType, Deserialize};
+use candid::{
+    types::{Serializer, Type, TypeInner},
+    CandidType, Deserialize,
+};
+pub use http::StatusCode;
 use std::{borrow::Cow, fmt::Debug};
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+struct StatusCodeWrapper(StatusCode);
+
+impl CandidType for StatusCodeWrapper {
+    fn _ty() -> Type {
+        TypeInner::Nat16.into()
+    }
+
+    fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
+    where
+        S: Serializer,
+    {
+        (self.0.as_u16()).idl_serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for StatusCodeWrapper {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        u16::deserialize(deserializer).and_then(|status_code| {
+            let inner = StatusCode::from_u16(status_code)
+                .map_err(|_| serde::de::Error::custom("Invalid HTTP Status Code."))?;
+
+            Ok(StatusCodeWrapper(inner))
+        })
+    }
+}
+
+impl From<StatusCode> for StatusCodeWrapper {
+    fn from(status_code: StatusCode) -> Self {
+        Self(status_code)
+    }
+}
 
 /// A Candid-encodable representation of an HTTP response. This struct is used
 /// by the `http_request` method of the HTTP Gateway Protocol's Candid interface.
@@ -8,16 +48,16 @@ use std::{borrow::Cow, fmt::Debug};
 /// # Examples
 ///
 /// ```
-/// use ic_http_certification::HttpResponse;
+/// use ic_http_certification::{HttpResponse, StatusCode};
 ///
 /// let response = HttpResponse::builder()
-///     .with_status_code(200)
+///     .with_status_code(StatusCode::OK)
 ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
 ///     .with_body(b"Hello, World!")
 ///     .with_upgrade(false)
 ///     .build();
 ///
-/// assert_eq!(response.status_code(), 200);
+/// assert_eq!(response.status_code(), StatusCode::OK);
 /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
 /// assert_eq!(response.body(), b"Hello, World!");
 /// assert_eq!(response.upgrade(), Some(false));
@@ -25,7 +65,7 @@ use std::{borrow::Cow, fmt::Debug};
 #[derive(Clone, CandidType, Deserialize)]
 pub struct HttpResponse<'a> {
     /// HTTP response status code.
-    status_code: u16,
+    status_code: StatusCodeWrapper,
 
     /// HTTP response headers.
     headers: Vec<HeaderField>,
@@ -45,16 +85,16 @@ impl<'a> HttpResponse<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpResponse;
+    /// use ic_http_certification::{HttpResponse, StatusCode};
     ///
     /// let response = HttpResponse::builder()
-    ///     .with_status_code(200)
+    ///     .with_status_code(StatusCode::OK)
     ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
     ///     .with_body(b"Hello, World!")
     ///     .with_upgrade(false)
     ///     .build();
     ///
-    /// assert_eq!(response.status_code(), 200);
+    /// assert_eq!(response.status_code(), StatusCode::OK);
     /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
     /// assert_eq!(response.body(), b"Hello, World!");
     /// assert_eq!(response.upgrade(), Some(false));
@@ -69,17 +109,17 @@ impl<'a> HttpResponse<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpResponse;
+    /// use ic_http_certification::{HttpResponse, StatusCode};
     ///
     /// let response = HttpResponse::builder()
-    ///     .with_status_code(200)
+    ///     .with_status_code(StatusCode::OK)
     ///     .build();
     ///
-    /// assert_eq!(response.status_code(), 200);
+    /// assert_eq!(response.status_code(), StatusCode::OK);
     /// ```
     #[inline]
-    pub fn status_code(&self) -> u16 {
-        self.status_code
+    pub fn status_code(&self) -> StatusCode {
+        self.status_code.0
     }
 
     /// Returns the HTTP headers of the response.
@@ -186,23 +226,23 @@ impl<'a> HttpResponse<'a> {
 /// # Examples
 ///
 /// ```
-/// use ic_http_certification::HttpResponse;
+/// use ic_http_certification::{HttpResponse, StatusCode};
 ///
 /// let response = HttpResponse::builder()
-///     .with_status_code(200)
+///     .with_status_code(StatusCode::OK)
 ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
 ///     .with_body(b"Hello, World!")
 ///     .with_upgrade(false)
 ///     .build();
 ///
-/// assert_eq!(response.status_code(), 200);
+/// assert_eq!(response.status_code(), StatusCode::OK);
 /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
 /// assert_eq!(response.body(), b"Hello, World!");
 /// assert_eq!(response.upgrade(), Some(false));
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct HttpResponseBuilder<'a> {
-    status_code: Option<u16>,
+    status_code: Option<StatusCodeWrapper>,
     headers: Vec<HeaderField>,
     body: Cow<'a, [u8]>,
     upgrade: Option<bool>,
@@ -215,16 +255,16 @@ impl<'a> HttpResponseBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpResponse;
+    /// use ic_http_certification::{HttpResponse, StatusCode};
     ///
     /// let response = HttpResponse::builder()
-    ///     .with_status_code(200)
+    ///     .with_status_code(StatusCode::OK)
     ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
     ///     .with_body(b"Hello, World!")
     ///     .with_upgrade(false)
     ///     .build();
     ///
-    /// assert_eq!(response.status_code(), 200);
+    /// assert_eq!(response.status_code(), StatusCode::OK);
     /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
     /// assert_eq!(response.body(), b"Hello, World!");
     /// assert_eq!(response.upgrade(), Some(false));
@@ -240,16 +280,16 @@ impl<'a> HttpResponseBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpResponse;
+    /// use ic_http_certification::{HttpResponse, StatusCode};
     ///
     /// let response = HttpResponse::builder()
-    ///     .with_status_code(200)
+    ///     .with_status_code(StatusCode::OK)
     ///     .build();
     ///
-    /// assert_eq!(response.status_code(), 200);
+    /// assert_eq!(response.status_code(), StatusCode::OK);
     /// ```
-    pub fn with_status_code(mut self, status_code: u16) -> Self {
-        self.status_code = Some(status_code);
+    pub fn with_status_code(mut self, status_code: StatusCode) -> Self {
+        self.status_code = Some(status_code.into());
 
         self
     }
@@ -328,23 +368,23 @@ impl<'a> HttpResponseBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpResponse;
+    /// use ic_http_certification::{HttpResponse, StatusCode};
     ///
     /// let response = HttpResponse::builder()
-    ///     .with_status_code(200)
+    ///     .with_status_code(StatusCode::OK)
     ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
     ///     .with_body(b"Hello, World!")
     ///     .with_upgrade(false)
     ///     .build();
     ///
-    /// assert_eq!(response.status_code(), 200);
+    /// assert_eq!(response.status_code(), StatusCode::OK);
     /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
     /// assert_eq!(response.body(), b"Hello, World!");
     /// assert_eq!(response.upgrade(), Some(false));
     /// ```
     pub fn build(self) -> HttpResponse<'a> {
         HttpResponse {
-            status_code: self.status_code.unwrap_or(200),
+            status_code: self.status_code.unwrap_or(StatusCode::OK.into()),
             headers: self.headers,
             body: self.body,
             upgrade: self.upgrade,
@@ -359,23 +399,23 @@ impl<'a> HttpResponseBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::{HttpResponse, HttpUpdateResponse};
+    /// use ic_http_certification::{HttpResponse, HttpUpdateResponse, StatusCode};
     ///
     /// let response = HttpResponse::builder()
-    ///     .with_status_code(200)
+    ///     .with_status_code(StatusCode::OK)
     ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
     ///     .with_body(b"Hello, World!")
     ///     .build();
     ///
     /// let update_response = HttpUpdateResponse::from(response);
     ///
-    /// assert_eq!(update_response.status_code(), 200);
+    /// assert_eq!(update_response.status_code(), StatusCode::OK);
     /// assert_eq!(update_response.headers(), &[("Content-Type".into(), "text/plain".into())]);
     /// assert_eq!(update_response.body(), b"Hello, World!");
     /// ```
     pub fn build_update(self) -> HttpUpdateResponse<'a> {
         HttpUpdateResponse {
-            status_code: self.status_code.unwrap_or(200),
+            status_code: self.status_code.unwrap_or(StatusCode::OK.into()),
             headers: self.headers,
             body: self.body,
         }
@@ -436,24 +476,24 @@ impl Debug for HttpResponse<'_> {
 /// # Examples
 ///
 /// ```
-/// use ic_http_certification::{HttpResponse, HttpUpdateResponse};
+/// use ic_http_certification::{HttpResponse, HttpUpdateResponse, StatusCode};
 ///
 /// let response = HttpResponse::builder()
-///     .with_status_code(200)
+///     .with_status_code(StatusCode::OK)
 ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
 ///     .with_body(b"Hello, World!")
 ///     .build();
 ///
 /// let update_response = HttpUpdateResponse::from(response);
 ///
-/// assert_eq!(update_response.status_code(), 200);
+/// assert_eq!(update_response.status_code(), StatusCode::OK);
 /// assert_eq!(update_response.headers(), &[("Content-Type".into(), "text/plain".into())]);
 /// assert_eq!(update_response.body(), b"Hello, World!");
 /// ```
 #[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
 pub struct HttpUpdateResponse<'a> {
     /// HTTP response status code.
-    status_code: u16,
+    status_code: StatusCodeWrapper,
 
     /// HTTP response headers.
     headers: Vec<HeaderField>,
@@ -468,17 +508,17 @@ impl<'a> HttpUpdateResponse<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpResponse;
+    /// use ic_http_certification::{HttpResponse, StatusCode};
     ///
     /// let response = HttpResponse::builder()
-    ///     .with_status_code(200)
+    ///     .with_status_code(StatusCode::OK)
     ///     .build_update();
     ///
-    /// assert_eq!(response.status_code(), 200);
+    /// assert_eq!(response.status_code(), StatusCode::OK);
     /// ```
     #[inline]
-    pub fn status_code(&self) -> u16 {
-        self.status_code
+    pub fn status_code(&self) -> StatusCode {
+        self.status_code.0
     }
 
     /// Returns the HTTP headers of the response.

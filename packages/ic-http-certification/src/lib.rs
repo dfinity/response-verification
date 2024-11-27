@@ -190,7 +190,7 @@ To perform a full certification, a CEL expression created from [DefaultCelBuilde
 For example:
 
 ```rust
-use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, CERTIFICATE_EXPRESSION_HEADER_NAME};
+use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, CERTIFICATE_EXPRESSION_HEADER_NAME, StatusCode};
 
 let cel_expr = DefaultCelBuilder::full_certification()
     .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
@@ -210,7 +210,7 @@ let request = HttpRequest::get("/index.html?foo=a&bar=b&baz=c")
     .build();
 
 let response = HttpResponse::builder()
-    .with_status_code(200)
+    .with_status_code(StatusCode::OK)
     .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
@@ -229,7 +229,7 @@ To perform a response-only certification, a CEL expression created from [Default
 For example:
 
 ```rust
-use ic_http_certification::{HttpCertification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, CERTIFICATE_EXPRESSION_HEADER_NAME};
+use ic_http_certification::{HttpCertification, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, CERTIFICATE_EXPRESSION_HEADER_NAME, StatusCode};
 
 let cel_expr = DefaultCelBuilder::response_only_certification()
     .with_response_certification(DefaultResponseCertification::certified_response_headers(vec![
@@ -239,7 +239,7 @@ let cel_expr = DefaultCelBuilder::response_only_certification()
     .build();
 
 let response = HttpResponse::builder()
-    .with_status_code(200)
+    .with_status_code(StatusCode::OK)
     .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),
@@ -296,7 +296,7 @@ The [HttpCertificationTree] can be easily initialized with the [Default] trait a
 For example:
 
 ```rust
-use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath, CERTIFICATE_EXPRESSION_HEADER_NAME};
+use ic_http_certification::{HttpCertification, HttpRequest, HttpResponse, DefaultCelBuilder, DefaultResponseCertification, HttpCertificationTree, HttpCertificationTreeEntry, HttpCertificationPath, CERTIFICATE_EXPRESSION_HEADER_NAME, StatusCode};
 
 let cel_expr = DefaultCelBuilder::full_certification()
     .with_request_headers(vec!["Accept", "Accept-Encoding", "If-None-Match"])
@@ -316,7 +316,7 @@ let request = HttpRequest::get("/index.html?foo=a&bar=b&baz=c")
     .build();
 
 let response = HttpResponse::builder()
-    .with_status_code(200)
+    .with_status_code(StatusCode::OK)
     .with_headers(vec![
         ("Cache-Control".to_string(), "no-cache".to_string()),
         ("ETag".to_string(), "123456789".to_string()),

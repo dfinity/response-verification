@@ -1,5 +1,6 @@
 use crate::{Asset, AssetCertificationError};
 use globset::{Glob, GlobMatcher};
+use ic_http_certification::StatusCode;
 use std::fmt::{Display, Formatter};
 
 /// Certification configuration for [assets](Asset). This configuration
@@ -22,6 +23,7 @@ use std::fmt::{Display, Formatter};
 /// set to `text/javascript` and a `cache-control` header is added.
 ///
 /// ```
+/// use ic_http_certification::StatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
@@ -48,6 +50,7 @@ use std::fmt::{Display, Formatter};
 /// The content type is set to `text/html` and a `cache-control` header is added.
 ///
 /// ```
+/// use ic_http_certification::StatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
@@ -58,6 +61,7 @@ use std::fmt::{Display, Formatter};
 ///     ],
 ///     fallback_for: vec![AssetFallbackConfig {
 ///         scope: "/".to_string(),
+///         status_code: Some(StatusCode::OK),
 ///     }],
 ///     aliased_by: vec!["/".to_string()],
 ///     encodings: vec![
@@ -88,6 +92,7 @@ use std::fmt::{Display, Formatter};
 ///     - `/not-found/index.html`
 ///
 /// ```
+/// use ic_http_certification::StatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetFallbackConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::File {
@@ -99,9 +104,11 @@ use std::fmt::{Display, Formatter};
 ///     fallback_for: vec![
 ///         AssetFallbackConfig {
 ///             scope: "/css".to_string(),
+///             status_code: Some(StatusCode::NOT_FOUND),
 ///         },
 ///         AssetFallbackConfig {
 ///             scope: "/js".to_string(),
+///             status_code: Some(StatusCode::NOT_FOUND),
 ///         },
 ///     ],
 ///     aliased_by: vec![
@@ -126,6 +133,7 @@ use std::fmt::{Display, Formatter};
 /// set to `text/css` and a `cache-control` header is added.
 ///
 /// ```
+/// use ic_http_certification::StatusCode;
 /// use ic_asset_certification::{AssetConfig, AssetEncoding};
 ///
 /// let config = AssetConfig::Pattern {
@@ -371,6 +379,10 @@ pub struct AssetFallbackConfig {
     /// See the [fallback_for](AssetConfig::File::fallback_for)
     /// configuration of the [AssetConfig] interface for more information.
     pub scope: String,
+
+    /// The HTTP status code to return when serving the asset.
+    /// If this value is not provided, the default status code will be 200.
+    pub status_code: Option<StatusCode>,
 }
 
 /// The type of redirect to use. Redirects can be either

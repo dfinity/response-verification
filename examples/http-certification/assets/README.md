@@ -180,6 +180,7 @@ fn certify_all_assets() {
             )]),
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
+                status_code: Some(StatusCode::OK),
             }],
             aliased_by: vec!["/".to_string()],
             encodings: encodings.clone(),

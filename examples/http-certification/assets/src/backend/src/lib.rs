@@ -5,7 +5,9 @@ use ic_cdk::{
     api::{data_certificate, set_certified_data},
     *,
 };
-use ic_http_certification::{HeaderField, HttpCertificationTree, HttpRequest, HttpResponse};
+use ic_http_certification::{
+    HeaderField, HttpCertificationTree, HttpRequest, HttpResponse, StatusCode,
+};
 use include_dir::{include_dir, Dir};
 use std::{cell::RefCell, rc::Rc};
 
@@ -69,6 +71,7 @@ fn certify_all_assets() {
             )]),
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
+                status_code: Some(StatusCode::OK),
             }],
             aliased_by: vec!["/".to_string()],
             encodings: encodings.clone(),

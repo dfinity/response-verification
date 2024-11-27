@@ -8,8 +8,8 @@ mod tests {
     use ic_certificate_verification::CertificateVerificationError;
     use ic_http_certification::{
         CelExpression, DefaultFullCelExpression, HttpCertification, HttpCertificationPath,
-        HttpCertificationTreeEntry, HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
-        CERTIFICATE_HEADER_NAME,
+        HttpCertificationTreeEntry, HttpRequest, HttpResponse, StatusCode,
+        CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::{verify_request_response_pair, ResponseVerificationError};
     use ic_response_verification_test_utils::{
@@ -40,7 +40,7 @@ mod tests {
             ])
             .build();
         let mut response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (
@@ -95,7 +95,7 @@ mod tests {
             ])
             .build();
         let response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (
@@ -106,7 +106,7 @@ mod tests {
             ])
             .build();
         let mut wrong_response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (
@@ -163,7 +163,7 @@ mod tests {
             ])
             .build();
         let mut response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (
@@ -254,7 +254,7 @@ mod tests {
         let request = HttpRequest::get(path).build();
 
         let mut response = HttpResponse::builder()
-            .with_status_code(200)
+            .with_status_code(StatusCode::OK)
             .with_body(body.as_bytes())
             .with_headers(vec![
                 (

@@ -48,7 +48,7 @@ pub fn response_from_js(resp: JsValue) -> HttpResponse<'static> {
     }
 
     HttpResponse::builder()
-        .with_status_code(status_code)
+        .with_status_code(status_code.try_into().unwrap())
         .with_headers(headers)
         .with_body(body)
         .build()
@@ -57,6 +57,7 @@ pub fn response_from_js(resp: JsValue) -> HttpResponse<'static> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ic_http_certification::StatusCode;
     use js_sys::JSON;
     use wasm_bindgen_test::wasm_bindgen_test;
 
@@ -78,7 +79,7 @@ mod tests {
         assert_eq!(
             r,
             HttpResponse::builder()
-                .with_status_code(200)
+                .with_status_code(StatusCode::OK)
                 .with_body(vec![0, 1, 2, 3, 4, 5, 6])
                 .with_headers(vec![
                     ("header1".into(), "header1val".into()),
