@@ -1,15 +1,27 @@
+use api::canister_balance;
 use ic_asset_certification::{
-    Asset, AssetConfig, AssetEncoding, AssetFallbackConfig, AssetRedirectKind, AssetRouter,
+    Asset, AssetConfig, AssetEncoding, AssetFallbackConfig, AssetMap, AssetRedirectKind,
+    AssetRouter,
 };
 use ic_cdk::{
     api::{data_certificate, set_certified_data},
     *,
 };
 use ic_http_certification::{
-    HeaderField, HttpCertificationTree, HttpRequest, HttpResponse, StatusCode,
+    utils::add_v2_certificate_header, DefaultCelBuilder, HeaderField, HttpCertification,
+    HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
+    HttpResponse, StatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use include_dir::{include_dir, Dir};
+use serde::Serialize;
 use std::{cell::RefCell, rc::Rc};
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Metrics {
+    pub num_assets: usize,
+    pub num_fallback_assets: usize,
+    pub cycle_balance: u64,
+}
 
 // Public methods
 #[init]
@@ -24,6 +36,14 @@ fn post_upgrade() {
 
 #[query]
 fn http_request(req: HttpRequest) -> HttpResponse {
+    let path = req.get_path().expect("Failed to parse request path");
+
+    // if the request is for the metrics endpoint, serve the metrics
+    if path == "/metrics" {
+        return serve_metrics();
+    }
+
+    // otherwise, serve the requested asset
     serve_asset(&req)
 }
 
@@ -32,7 +52,11 @@ thread_local! {
 
     // initializing the asset router with an HTTP certification tree is optional.
     // if direct access to the HTTP certification tree is not needed for certifying
-    // requests and responses outside of the asset router, then this step can be skipped.
+    // requests and responses outside of the asset router, then this step can be skipped
+    // and the asset router can be initialized like so:
+    // ```
+    // static ASSET_ROUTER: RefCell<AssetRouter<'static>> = Default::default();
+    // ```
     static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::with_tree(HTTP_TREE.with(|tree| tree.clone())));
 }
 
@@ -123,18 +147,67 @@ fn certify_all_assets() {
     let mut assets = Vec::new();
     collect_assets(&ASSETS_DIR, &mut assets);
 
+    // 3. Skip certification for the metrics endpoint.
+    HTTP_TREE.with(|tree| {
+        let mut tree = tree.borrow_mut();
+
+        let metrics_tree_path = HttpCertificationPath::exact("/metrics");
+        let metrics_certification = HttpCertification::skip();
+        let metrics_tree_entry =
+            HttpCertificationTreeEntry::new(metrics_tree_path, metrics_certification);
+
+        tree.insert(&metrics_tree_entry);
+    });
+
     ASSET_ROUTER.with_borrow_mut(|asset_router| {
-        // 3. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
+        // 4. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
         if let Err(err) = asset_router.certify_assets(assets, asset_configs) {
             ic_cdk::trap(&format!("Failed to certify assets: {}", err));
         }
 
-        // 4. Set the canister's certified data.
+        // 5. Set the canister's certified data.
         set_certified_data(&asset_router.root_hash());
     });
 }
 
 // Handlers
+fn serve_metrics() -> HttpResponse<'static> {
+    ASSET_ROUTER.with_borrow(|asset_router| {
+        let metrics = Metrics {
+            num_assets: asset_router.get_assets().len(),
+            num_fallback_assets: asset_router.get_fallback_assets().len(),
+            cycle_balance: canister_balance(),
+        };
+        let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
+        let mut response = HttpResponse::builder()
+            .with_status_code(StatusCode::OK)
+            .with_body(body)
+            .build();
+
+        HTTP_TREE.with(|tree| {
+            let tree = tree.borrow();
+
+            let metrics_tree_path = HttpCertificationPath::exact("/metrics");
+            let metrics_certification = HttpCertification::skip();
+            let metrics_tree_entry =
+                HttpCertificationTreeEntry::new(&metrics_tree_path, metrics_certification);
+            add_v2_certificate_header(
+                &data_certificate().expect("No data certificate available"),
+                &mut response,
+                &tree.witness(&metrics_tree_entry, "/metrics").unwrap(),
+                &metrics_tree_path.to_expr_path(),
+            );
+
+            let headers = get_asset_headers(vec![(
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                DefaultCelBuilder::skip_certification().to_string(),
+            )]);
+            response.headers_mut().extend_from_slice(&headers);
+            response
+        })
+    })
+}
+
 fn serve_asset(req: &HttpRequest) -> HttpResponse<'static> {
     ASSET_ROUTER.with_borrow(|asset_router| {
         if let Ok(response) = asset_router.serve_asset(
@@ -154,7 +227,7 @@ fn get_asset_headers(additional_headers: Vec<HeaderField>) -> Vec<HeaderField> {
         ("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
         ("x-frame-options".to_string(), "DENY".to_string()),
         ("x-content-type-options".to_string(), "nosniff".to_string()),
-        ("content-security-policy".to_string(), "default-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content".to_string()),
+        ("content-security-policy".to_string(), "default-src 'self'; img-src 'self' data:; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content".to_string()),
         ("referrer-policy".to_string(), "no-referrer".to_string()),
         ("permissions-policy".to_string(), "accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()".to_string()),
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
