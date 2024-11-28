@@ -209,15 +209,15 @@ let request = HttpRequest::get("/index.html?foo=a&bar=b&baz=c")
     ])
     .build();
 
-let response = HttpResponse::builder()
-    .with_status_code(StatusCode::OK)
-    .with_headers(vec![
-        ("Cache-Control".to_string(), "no-cache".to_string()),
-        ("ETag".to_string(), "123456789".to_string()),
-        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
-    ])
-    .with_body(vec![1, 2, 3, 4, 5, 6])
-    .build();
+let response = HttpResponse::ok(
+  vec![1, 2, 3, 4, 5, 6],
+  vec![
+    ("Cache-Control".to_string(), "no-cache".to_string()),
+    ("ETag".to_string(), "123456789".to_string()),
+    (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
+  ]
+)
+.build();
 
 let certification = HttpCertification::full(&cel_expr, &request, &response, None);
 ```
@@ -238,15 +238,15 @@ let cel_expr = DefaultCelBuilder::response_only_certification()
     ]))
     .build();
 
-let response = HttpResponse::builder()
-    .with_status_code(StatusCode::OK)
-    .with_headers(vec![
-        ("Cache-Control".to_string(), "no-cache".to_string()),
-        ("ETag".to_string(), "123456789".to_string()),
-        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
-    ])
-    .with_body(vec![1, 2, 3, 4, 5, 6])
-    .build();
+let response = HttpResponse::ok(
+  vec![1, 2, 3, 4, 5, 6],
+  vec![
+    ("Cache-Control".to_string(), "no-cache".to_string()),
+    ("ETag".to_string(), "123456789".to_string()),
+    (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
+  ]
+)
+.build();
 
 let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
 ```
@@ -315,15 +315,15 @@ let request = HttpRequest::get("/index.html?foo=a&bar=b&baz=c")
     ])
     .build();
 
-let response = HttpResponse::builder()
-    .with_status_code(StatusCode::OK)
-    .with_headers(vec![
-        ("Cache-Control".to_string(), "no-cache".to_string()),
-        ("ETag".to_string(), "123456789".to_string()),
-        (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
-    ])
-    .with_body(vec![1, 2, 3, 4, 5, 6])
-    .build();
+let response = HttpResponse::ok(
+  vec![1, 2, 3, 4, 5, 6],
+  vec![
+    ("Cache-Control".to_string(), "no-cache".to_string()),
+    ("ETag".to_string(), "123456789".to_string()),
+    (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
+  ]
+)
+.build();
 
 let request_url = "/example.json";
 let path = HttpCertificationPath::exact(request_url);

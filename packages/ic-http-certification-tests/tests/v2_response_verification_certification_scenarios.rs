@@ -477,7 +477,7 @@ mod fixtures {
     use ic_http_certification::{
         DefaultCelBuilder, DefaultFullCelExpression, DefaultResponseCertification,
         DefaultResponseOnlyCelExpression, HttpCertification, HttpCertificationPath,
-        HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse, StatusCode,
+        HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest, HttpResponse,
         CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use ic_response_verification_test_utils::{deflate_encode, gzip_encode, hash};
@@ -495,15 +495,15 @@ mod fixtures {
     pub fn index_html_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(gzip_encode(&html_body()))
-            .with_headers(vec![
+        HttpResponse::ok(
+            gzip_encode(&html_body()),
+            vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+            ],
+        )
+        .build()
     }
 
     #[fixture]
@@ -519,15 +519,15 @@ mod fixtures {
         let cel = asset_cel();
         let body = br#"window.onload=function(){console.log("Hello World")};"#;
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(gzip_encode(body))
-            .with_headers(vec![
+        HttpResponse::ok(
+            gzip_encode(body),
+            vec![
                 ("Content-Type".into(), "text/javascript".into()),
                 ("Content-Encoding".into(), "gzip".into()),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+            ],
+        )
+        .build()
     }
 
     #[fixture]
@@ -543,15 +543,15 @@ mod fixtures {
         let cel = asset_cel();
         let body = br#"Not Found"#;
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::NOT_FOUND)
-            .with_body(body.to_vec())
-            .with_headers(vec![
+        HttpResponse::not_found(
+            body.to_vec(),
+            vec![
                 ("Content-Type".into(), "text/plain".into()),
                 ("Content-Encoding".into(), "identity".into()),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+            ],
+        )
+        .build()
     }
 
     #[fixture]
@@ -565,16 +565,12 @@ mod fixtures {
     #[fixture]
     pub fn redirect_response() -> HttpResponse<'static> {
         let cel = redirect_cel();
-        let body = br#"Moved Permanently"#;
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::MOVED_PERMANENTLY)
-            .with_body(body)
-            .with_headers(vec![
-                ("Location".into(), "/new-path".into()),
-                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+        HttpResponse::moved_permanently(
+            "/new-path",
+            vec![(CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string())],
+        )
+        .build()
     }
 
     #[fixture]
@@ -589,15 +585,15 @@ mod fixtures {
     pub fn content_encoding_identity_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(html_body())
-            .with_headers(vec![
+        HttpResponse::ok(
+            html_body(),
+            vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "identity".into()),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+            ],
+        )
+        .build()
     }
 
     #[fixture]
@@ -617,15 +613,15 @@ mod fixtures {
     pub fn content_encoding_gzip_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(gzip_encode(&html_body()))
-            .with_headers(vec![
+        HttpResponse::ok(
+            gzip_encode(&html_body()),
+            vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "gzip".into()),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+            ],
+        )
+        .build()
     }
 
     #[fixture]
@@ -641,15 +637,15 @@ mod fixtures {
     pub fn content_encoding_deflate_response() -> HttpResponse<'static> {
         let cel = asset_cel();
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(deflate_encode(&html_body()))
-            .with_headers(vec![
+        HttpResponse::ok(
+            gzip_encode(&html_body()),
+            vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+            ],
+        )
+        .build()
     }
 
     #[fixture]
@@ -681,17 +677,13 @@ mod fixtures {
     #[fixture]
     pub fn etag_caching_match_response() -> HttpResponse<'static> {
         let cel = etag_caching_match_cel();
-        let body = br#"Not Modified"#;
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::NOT_MODIFIED)
-            .with_body(body)
-            .with_headers(vec![
-                ("Content-Type".into(), "text/html".into()),
-                ("Content-Encoding".into(), "deflate".into()),
-                (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+        HttpResponse::not_modified(vec![
+            ("Content-Type".into(), "text/html".into()),
+            ("Content-Encoding".into(), "deflate".into()),
+            (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
+        ])
+        .build()
     }
 
     #[fixture]
@@ -729,16 +721,16 @@ mod fixtures {
         let cel = etag_caching_mismatch_cel();
         let etag = hex::encode(hash(html_body().as_slice()));
 
-        HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(deflate_encode(&html_body()))
-            .with_headers(vec![
+        HttpResponse::ok(
+            deflate_encode(&html_body()),
+            vec![
                 ("Content-Type".into(), "text/html".into()),
                 ("Content-Encoding".into(), "deflate".into()),
                 ("ETag".into(), etag),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.into(), cel.to_string()),
-            ])
-            .build()
+            ],
+        )
+        .build()
     }
 
     #[fixture]
