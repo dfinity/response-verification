@@ -132,7 +132,6 @@ pub fn response_hash(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::StatusCode;
 
     const HELLO_WORLD_BODY: &[u8] = &[72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33];
     const CERTIFICATE: &str = "certificate=:SGVsbG8gQ2VydGlmaWNhdGUh:,tree=:SGVsbG8gVHJlZSE=:";
@@ -230,17 +229,17 @@ mod tests {
         let response_certification =
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_headers(vec![
+        let response_without_excluded_headers = HttpResponse::ok(
+            HELLO_WORLD_BODY,
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
-            ])
-            .with_body(HELLO_WORLD_BODY)
-            .build();
+            ],
+        )
+        .build();
 
         let result = response_hash(&response, &response_certification, None);
         let result_without_excluded_headers = response_hash(
@@ -276,9 +275,9 @@ mod tests {
                 "Content-Security-Policy",
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_headers(vec![
+        let response_without_excluded_headers = HttpResponse::ok(
+            HELLO_WORLD_BODY,
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(HEADER_EXCLUSIONS_CEL_EXPRESSION),
@@ -286,9 +285,9 @@ mod tests {
                 ("Accept-Encoding".into(), "gzip".into()),
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
-            ])
-            .with_body(HELLO_WORLD_BODY)
-            .build();
+            ],
+        )
+        .build();
 
         let result = response_hash(&response, &response_certification, None);
         let result_without_excluded_headers = response_hash(
@@ -324,18 +323,18 @@ mod tests {
         let response_certification =
             DefaultResponseCertification::certified_response_headers(vec!["Accept-Encoding"]);
         let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_headers(vec![
+        let response_without_excluded_headers = HttpResponse::ok(
+            HELLO_WORLD_BODY,
+            vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     remove_whitespace(CERTIFIED_HEADERS_CEL_EXPRESSION),
                 ),
                 ("Accept-Encoding".into(), "gzip".into()),
-            ])
-            .with_body(HELLO_WORLD_BODY)
-            .build();
+            ],
+        )
+        .build();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
         let result =
@@ -379,9 +378,9 @@ mod tests {
                 "Content-Security-Policy",
             ]);
         let response = create_response(HEADER_EXCLUSIONS_CEL_EXPRESSION);
-        let response_without_excluded_headers = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_headers(vec![
+        let response_without_excluded_headers = HttpResponse::ok(
+            HELLO_WORLD_BODY,
+            vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -390,9 +389,9 @@ mod tests {
                 ("Accept-Encoding".into(), "gzip".into()),
                 ("Cache-Control".into(), "no-cache".into()),
                 ("Cache-Control".into(), "no-store".into()),
-            ])
-            .with_body(HELLO_WORLD_BODY)
-            .build();
+            ],
+        )
+        .build();
 
         let filtered_headers = filter_response_headers(&response, &response_certification);
         let result =
@@ -434,9 +433,9 @@ mod tests {
     }
 
     fn create_response(cel_expression: &str) -> HttpResponse {
-        HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_headers(vec![
+        HttpResponse::ok(
+            HELLO_WORLD_BODY,
+            vec![
                 (CERTIFICATE_HEADER_NAME.into(), CERTIFICATE.into()),
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
@@ -449,9 +448,9 @@ mod tests {
                     "Content-Security-Policy".into(),
                     "default-src 'self'".into(),
                 ),
-            ])
-            .with_body(HELLO_WORLD_BODY)
-            .build()
+            ],
+        )
+        .build()
     }
 
     /// Remove white space from CEL expressions to ease the calculation

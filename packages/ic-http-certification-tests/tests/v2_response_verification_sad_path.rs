@@ -8,8 +8,8 @@ mod tests {
     use ic_certificate_verification::CertificateVerificationError;
     use ic_http_certification::{
         CelExpression, DefaultFullCelExpression, HttpCertification, HttpCertificationPath,
-        HttpCertificationTreeEntry, HttpRequest, HttpResponse, StatusCode,
-        CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME,
+        HttpCertificationTreeEntry, HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
+        CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::{verify_request_response_pair, ResponseVerificationError};
     use ic_response_verification_test_utils::{
@@ -39,17 +39,17 @@ mod tests {
                 ("Cache-Control".into(), "immutable".into()),
             ])
             .build();
-        let mut response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let mut response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
@@ -94,29 +94,29 @@ mod tests {
                 ("Cache-Control".into(), "no-store".into()),
             ])
             .build();
-        let response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ])
-            .build();
-        let mut wrong_response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+            ],
+        )
+        .build();
+        let mut wrong_response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "public".into()),
                 ("Cache-Control".into(), "immutable".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
@@ -162,17 +162,17 @@ mod tests {
                 ("Cache-Control".into(), "no-store".into()),
             ])
             .build();
-        let mut response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let mut response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
@@ -253,17 +253,17 @@ mod tests {
 
         let request = HttpRequest::get(path).build();
 
-        let mut response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let mut response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         response.add_header((CERTIFICATE_HEADER_NAME.to_string(), certificate_header));
 
