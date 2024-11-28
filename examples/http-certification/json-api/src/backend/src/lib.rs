@@ -6,7 +6,7 @@ use ic_http_certification::{
     utils::add_v2_certificate_header, DefaultCelBuilder, DefaultFullCelExpression,
     DefaultResponseCertification, DefaultResponseOnlyCelExpression, HttpCertification,
     HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
-    HttpResponse, StatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
+    HttpResponse, Method, StatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
 };
 use lazy_static::lazy_static;
 use matchit::{Params, Router};
@@ -46,7 +46,9 @@ fn http_request(req: HttpRequest) -> HttpResponse<'static> {
     let req_path = req.get_path().expect("Failed to get req path");
 
     QUERY_ROUTER.with_borrow(|query_router| {
-        let method_router = query_router.get(&req.method().to_uppercase()).unwrap();
+        let method_router = query_router
+            .get(&req.method().as_str().to_uppercase())
+            .unwrap();
         let handler_match = method_router.at(&req_path).unwrap();
         let handler = handler_match.value;
 
@@ -59,7 +61,9 @@ fn http_request_update(req: HttpRequest) -> HttpResponse<'static> {
     let req_path = req.get_path().expect("Failed to get req path");
 
     UPDATE_ROUTER.with_borrow(|update_router| {
-        let method_router = update_router.get(&req.method().to_uppercase()).unwrap();
+        let method_router = update_router
+            .get(&req.method().as_str().to_uppercase())
+            .unwrap();
         let handler_match = method_router.at(&req_path).unwrap();
         let handler = handler_match.value;
 
@@ -182,19 +186,26 @@ fn certify_list_todos_response() {
 }
 
 fn certify_not_allowed_todo_responses() {
-    ["HEAD", "PUT", "PATCH", "OPTIONS", "TRACE", "CONNECT"]
-        .into_iter()
-        .for_each(|method| {
-            let request = HttpRequest::builder()
-                .with_method(method)
-                .with_url(TODOS_PATH)
-                .build();
+    [
+        Method::HEAD,
+        Method::PUT,
+        Method::PATCH,
+        Method::OPTIONS,
+        Method::TRACE,
+        Method::CONNECT,
+    ]
+    .into_iter()
+    .for_each(|method| {
+        let request = HttpRequest::builder()
+            .with_method(method)
+            .with_url(TODOS_PATH)
+            .build();
 
-            let body = ErrorResponse::not_allowed().encode();
-            let mut response = create_response(StatusCode::METHOD_NOT_ALLOWED, body);
+        let body = ErrorResponse::not_allowed().encode();
+        let mut response = create_response(StatusCode::METHOD_NOT_ALLOWED, body);
 
-            certify_response(request, &mut response, &TODOS_TREE_PATH);
-        });
+        certify_response(request, &mut response, &TODOS_TREE_PATH);
+    });
 }
 
 fn certify_not_found_response() {

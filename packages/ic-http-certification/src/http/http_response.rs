@@ -4,6 +4,7 @@ use candid::{
     CandidType, Deserialize,
 };
 pub use http::StatusCode;
+use serde::Deserializer;
 use std::{borrow::Cow, fmt::Debug};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -18,20 +19,19 @@ impl CandidType for StatusCodeWrapper {
     where
         S: Serializer,
     {
-        (self.0.as_u16()).idl_serialize(serializer)
+        self.0.as_u16().idl_serialize(serializer)
     }
 }
 
 impl<'de> Deserialize<'de> for StatusCodeWrapper {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         u16::deserialize(deserializer).and_then(|status_code| {
-            let inner = StatusCode::from_u16(status_code)
-                .map_err(|_| serde::de::Error::custom("Invalid HTTP Status Code."))?;
-
-            Ok(StatusCodeWrapper(inner))
+            StatusCode::from_u16(status_code)
+                .map(Into::into)
+                .map_err(|_| serde::de::Error::custom("Invalid HTTP Status Code."))
         })
     }
 }

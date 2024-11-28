@@ -142,7 +142,7 @@ Some headers from this project have not been included:
 To facilitate the consistent usage of these headers, there is a reusable `create_response` function used when creating responses:
 
 ```rust
-fn create_response(status_code: u16, body: Vec<u8>) -> HttpResponse<'static> {
+fn create_response(status_code: StatusCode, body: Vec<u8>) -> HttpResponse<'static> {
     HttpResponse::builder()
         .with_status_code(status_code)
         .with_headers(vec![
@@ -270,25 +270,32 @@ fn certify_list_todos_response() {
         )
         .encode()
     });
-    let mut response = create_response(200, body);
+    let mut response = create_response(StatusCode::OK, body);
 
     certify_response(request, &mut response, &TODOS_TREE_PATH);
 }
 
 fn certify_not_allowed_todo_responses() {
-    ["HEAD", "PUT", "PATCH", "OPTIONS", "TRACE", "CONNECT"]
-        .into_iter()
-        .for_each(|method| {
-            let request = HttpRequest::builder()
-                .with_method(method)
-                .with_url(TODOS_PATH)
-                .build();
+    [
+        Method::HEAD,
+        Method::PUT,
+        Method::PATCH,
+        Method::OPTIONS,
+        Method::TRACE,
+        Method::CONNECT,
+    ]
+    .into_iter()
+    .for_each(|method| {
+        let request = HttpRequest::builder()
+            .with_method(method)
+            .with_url(TODOS_PATH)
+            .build();
 
-            let body = ErrorResponse::not_allowed().encode();
-            let mut response = create_response(405, body);
+        let body = ErrorResponse::not_allowed().encode();
+        let mut response = create_response(StatusCode::METHOD_NOT_ALLOWED, body);
 
-            certify_response(request, &mut response, &TODOS_TREE_PATH);
-        });
+        certify_response(request, &mut response, &TODOS_TREE_PATH);
+    });
 }
 ```
 
@@ -301,7 +308,7 @@ Certifying the "Not found" response requires a slightly different procedure. Thi
 ```rust
 fn certify_not_found_response() {
     let body = ErrorResponse::not_found().encode();
-    let mut response = create_response(404, body);
+    let mut response = create_response(StatusCode::NOT_FOUND, body);
 
     let tree_path = HttpCertificationPath::wildcard(NOT_FOUND_PATH);
 
@@ -401,7 +408,7 @@ When update calls are made to endpoints that do not update state, return an erro
 
 ```rust
 fn no_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
-    create_response(405, vec![])
+    create_response(StatusCode::BAD_REQUEST, vec![])
 }
 ```
 
@@ -447,7 +454,7 @@ fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse
     certify_list_todos_response();
 
     let body = CreateTodoItemResponse::ok(&todo_item).encode();
-    create_response(201, body)
+    create_response(StatusCode::CREATED, body)
 }
 ```
 
@@ -473,7 +480,7 @@ fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse<
     certify_list_todos_response();
 
     let body = UpdateTodoItemResponse::ok(&()).encode();
-    create_response(200, body)
+    create_response(StatusCode::OK, body)
 }
 ```
 
@@ -490,7 +497,7 @@ fn delete_todo_item_handler(_req: &HttpRequest, params: &Params) -> HttpResponse
     certify_list_todos_response();
 
     let body = DeleteTodoItemResponse::ok(&()).encode();
-    create_response(204, body)
+    create_response(StatusCode::NO_CONTENT, body)
 }
 ```
 

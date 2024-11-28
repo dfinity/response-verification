@@ -1,4 +1,5 @@
-use ic_http_certification::HttpRequest;
+use ic_http_certification::{HttpRequest, Method};
+use std::str::FromStr;
 use wasm_bindgen::{prelude::*, JsCast};
 
 #[wasm_bindgen(typescript_custom_section)]
@@ -60,7 +61,7 @@ pub fn request_from_js(req: JsValue) -> HttpRequest<'static> {
     }
 
     HttpRequest::builder()
-        .with_method(method)
+        .with_method(Method::from_str(&method).unwrap())
         .with_url(url)
         .with_headers(headers)
         .with_body(body)
