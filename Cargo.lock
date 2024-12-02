@@ -1084,6 +1084,8 @@ dependencies = [
  "ic-http-certification",
  "include_dir",
  "lazy_static",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1106,6 +1108,8 @@ dependencies = [
  "candid",
  "ic-cdk",
  "ic-http-certification",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

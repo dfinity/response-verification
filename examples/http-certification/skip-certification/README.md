@@ -52,40 +52,32 @@ fn http_request() -> HttpResponse<'static> {
 
 The call to `data_certificate` returns a certificate that proves the canister's certified data was signed by consensus. This will be included in the header along with all additional information required by the HTTP Gateway to safely skip verification of this response.
 
-## Testing out the canister
+## Testing the canister
 
 Start DFX:
 
 ```shell
-dfx start --background
+dfx start --background --clean
 ```
 
 Deploy the canister:
 
 ```shell
-dfx deploy
+dfx deploy http_certification_skip_certification_backend
 ```
 
 Make a request to the canister using cURL:
 
 ```shell
-curl http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend)
+curl -s http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend) | jq
 ```
 
 You should see output similar to the following:
 
-```html
-<html>
-  <head>
-    <title>IC Skip Certification</title>
-  </head>
-
-  <body>
-    <h1>IC Skip Certification</h1>
-    <p>This is an example of an IC canister that skips certification.</p>
-    <p>Current timestamp: 1725546616552162368<b>
-  </body>
-</html>
+```json
+{
+  "cycle_balance": 3092211597987
+}
 ```
 
 Alternatively, print the URL in the terminal and then open in a browser:

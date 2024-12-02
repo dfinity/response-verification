@@ -362,12 +362,14 @@ lazy_static! {
     static ref INDEX_FILE_PATH: &'static str = "index.html";
 }
 
+const NO_CACHE_ASSET_CACHE_CONTROL: &str = "public, no-cache, no-store";
+
 fn certify_index_asset() {
     let additional_headers = vec![
         ("content-type".to_string(), "text/html".to_string()),
         (
             "cache-control".to_string(),
-            "public, no-cache, no-store".to_string(),
+            NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
         ),
     ];
 
@@ -389,16 +391,16 @@ fn certify_index_asset() {
 It's also possible to skip certification for certain routes. This can be useful for scenarios where it's difficult to predict what the response will look like for a certain route and the content is not very security sensitive. This can be done as follows:
 
 ```rust
-const UNCERTIFIED_REQ_PATH: &str = "/uncertified";
+const METRICS_REQ_PATH: &str = "/metrics";
 
 fn add_certification_skips() {
-    let uncertified_req_tree_path = HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH);
-    let uncertified_req_certification = HttpCertification::skip();
+    let metrics_tree_path = HttpCertificationPath::exact(METRICS_REQ_PATH);
+    let metrics_certification = HttpCertification::skip();
 
     HTTP_TREE.with_borrow_mut(|http_tree| {
         http_tree.insert(&HttpCertificationTreeEntry::new(
-            uncertified_req_tree_path,
-            &uncertified_req_certification,
+            metrics_tree_path,
+            &metrics_certification,
         ));
     });
 }
@@ -452,13 +454,13 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
     RESPONSES.with_borrow(|responses| {
         ENCODED_RESPONSES.with_borrow(|encoded_responses| {
             let (asset_req_path, asset_tree_path, identity_response) =
-            // if the request path matches the uncertified response's path, serve that
-            if req_path == UNCERTIFIED_REQ_PATH {
+            // if the request path matches the metrics path, serve that uncertified
+            if req_path == METRICS_REQ_PATH {
                 (
-                    UNCERTIFIED_REQ_PATH.to_string(),
-                    HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH),
+                    METRICS_REQ_PATH.to_string(),
+                    HttpCertificationPath::exact(METRICS_REQ_PATH),
                     CertifiedHttpResponse {
-                        response: create_uncertified_response(),
+                        response: create_metrics_response(),
                         certification: HttpCertification::skip(),
                     },
                 )
@@ -541,27 +543,18 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
 Creating the uncertified response is done as follows:
 
 ```rust
-fn create_uncertified_response() -> HttpResponse<'static> {
-    let body = format!(
-        r#"
-            <html>
-                <head>
-                    <title>ICP Skip Certification</title>
-                </head>
-
-                <body>
-                    <h1>ICP Skip Certification</h1>
-                    <p>This is an example of an IC canister that skips certification.</p>
-                    <p>Current timestamp: {}<b>
-                </body>
-            </html>
-        "#,
-        time()
-    )
-    .as_bytes()
-    .to_vec();
-    let additional_headers = vec![("content-type".to_string(), "text/html".to_string())];
-
+fn create_metrics_response() -> HttpResponse<'static> {
+    let metrics = Metrics {
+        cycle_balance: canister_balance(),
+    };
+    let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
+    let additional_headers = vec![
+        ("content-type".to_string(), "application/json".to_string()),
+        (
+            "cache-control".to_string(),
+            NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
+        ),
+    ];
     let headers = get_asset_headers(
         additional_headers,
         body.len(),
@@ -586,6 +579,33 @@ fn http_request(req: HttpRequest) -> HttpResponse {
     asset_handler(&req)
 }
 ```
+
+## Testing the canister
+
+To test the canister, you can use the `dfx` command-line tool. First, run DFX:
+
+```shell
+dfx start --background --clean
+```
+
+Then, deploy the canister:
+
+```shell
+dfx deploy http_certification_custom_assets_backend
+```
+
+You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command, making sure to replace `backend` with the name of the canister:
+
+```shell
+echo "http://$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port)"
+```
+
+Alternatively, to make a request with cURL, again making sure to replace `backend` with the name of the canister:
+
+```shell
+curl "http://$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port)" --resolve "$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port):127.0.0.1"
+```
+
 
 ## Resources
 

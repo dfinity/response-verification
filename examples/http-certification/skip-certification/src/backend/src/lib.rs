@@ -1,11 +1,18 @@
+use api::canister_balance;
 use ic_cdk::{
-    api::{data_certificate, set_certified_data, time},
+    api::{data_certificate, set_certified_data},
     *,
 };
 use ic_http_certification::{
     utils::{add_skip_certification_header, skip_certification_certified_data},
     HttpResponse, StatusCode,
 };
+use serde::Serialize;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Metrics {
+    pub cycle_balance: u64,
+}
 
 #[init]
 fn init() {
@@ -22,26 +29,16 @@ fn http_request() -> HttpResponse<'static> {
 }
 
 fn create_response() -> HttpResponse<'static> {
-    let body = format!(
-        r#"
-            <html>
-                <head>
-                    <title>ICP Skip Certification</title>
-                </head>
-
-                <body>
-                    <h1>ICP Skip Certification</h1>
-                    <p>This is an example of an IC canister that skips certification.</p>
-                    <p>Current timestamp: {}<b>
-                </body>
-            </html>
-        "#,
-        time()
-    )
-    .as_bytes()
-    .to_vec();
-
+    let metrics = Metrics {
+        cycle_balance: canister_balance(),
+    };
+    let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
     let headers = vec![
+        ("content-type".to_string(), "application/json".to_string()),
+        (
+            "cache-control".to_string(),
+            "public, no-cache, no-store".to_string(),
+        ),
         ("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
         ("x-frame-options".to_string(), "DENY".to_string()),
         ("x-content-type-options".to_string(), "nosniff".to_string()),
@@ -51,7 +48,6 @@ fn create_response() -> HttpResponse<'static> {
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
         ("cross-origin-opener-policy".to_string(), "same-origin".to_string()),
         ("content-length".to_string(), body.len().to_string()),
-        ("content-type".to_string(), "text/html".to_string())
     ];
 
     HttpResponse::builder()

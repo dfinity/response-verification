@@ -1,5 +1,6 @@
+use api::canister_balance;
 use ic_cdk::{
-    api::{data_certificate, set_certified_data, time},
+    api::{data_certificate, set_certified_data},
     *,
 };
 use ic_http_certification::{
@@ -10,10 +11,15 @@ use ic_http_certification::{
 };
 use include_dir::{include_dir, Dir};
 use lazy_static::lazy_static;
+use serde::Serialize;
 use std::{cell::RefCell, collections::HashMap};
 
-// Public methods
+#[derive(Debug, Clone, Serialize)]
+pub struct Metrics {
+    pub cycle_balance: u64,
+}
 
+// Public methods
 #[init]
 fn init() {
     prepare_cel_exprs();
@@ -54,6 +60,8 @@ lazy_static! {
     static ref INDEX_FILE_PATH: &'static str = "index.html";
 }
 
+const NO_CACHE_ASSET_CACHE_CONTROL: &str = "public, no-cache, no-store";
+
 // Certification
 
 fn prepare_cel_exprs() {
@@ -85,16 +93,16 @@ fn certify_all_assets() {
     update_certified_data();
 }
 
-const UNCERTIFIED_REQ_PATH: &str = "/uncertified";
+const METRICS_REQ_PATH: &str = "/metrics";
 
 fn add_certification_skips() {
-    let uncertified_req_tree_path = HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH);
-    let uncertified_req_certification = HttpCertification::skip();
+    let metrics_tree_path = HttpCertificationPath::exact(METRICS_REQ_PATH);
+    let metrics_certification = HttpCertification::skip();
 
     HTTP_TREE.with_borrow_mut(|http_tree| {
         http_tree.insert(&HttpCertificationTreeEntry::new(
-            uncertified_req_tree_path,
-            &uncertified_req_certification,
+            metrics_tree_path,
+            &metrics_certification,
         ));
     });
 }
@@ -104,7 +112,7 @@ fn certify_index_asset() {
         ("content-type".to_string(), "text/html".to_string()),
         (
             "cache-control".to_string(),
-            "public, no-cache, no-store".to_string(),
+            NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
         ),
     ];
 
@@ -286,13 +294,13 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
     RESPONSES.with_borrow(|responses| {
         ENCODED_RESPONSES.with_borrow(|encoded_responses| {
             let (asset_req_path, asset_tree_path, identity_response) =
-            // if the request path matches the uncertified response's path, serve that
-            if req_path == UNCERTIFIED_REQ_PATH {
+            // if the request path matches the metrics path, serve that uncertified
+            if req_path == METRICS_REQ_PATH {
                 (
-                    UNCERTIFIED_REQ_PATH.to_string(),
-                    HttpCertificationPath::exact(UNCERTIFIED_REQ_PATH),
+                    METRICS_REQ_PATH.to_string(),
+                    HttpCertificationPath::exact(METRICS_REQ_PATH),
                     CertifiedHttpResponse {
-                        response: create_uncertified_response(),
+                        response: create_metrics_response(),
                         certification: HttpCertification::skip(),
                     },
                 )
@@ -371,27 +379,18 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
     })
 }
 
-fn create_uncertified_response() -> HttpResponse<'static> {
-    let body = format!(
-        r#"
-            <html>
-                <head>
-                    <title>ICP Skip Certification</title>
-                </head>
-
-                <body>
-                    <h1>ICP Skip Certification</h1>
-                    <p>This is an example of an IC canister that skips certification.</p>
-                    <p>Current timestamp: {}<b>
-                </body>
-            </html>
-        "#,
-        time()
-    )
-    .as_bytes()
-    .to_vec();
-    let additional_headers = vec![("content-type".to_string(), "text/html".to_string())];
-
+fn create_metrics_response() -> HttpResponse<'static> {
+    let metrics = Metrics {
+        cycle_balance: canister_balance(),
+    };
+    let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
+    let additional_headers = vec![
+        ("content-type".to_string(), "application/json".to_string()),
+        (
+            "cache-control".to_string(),
+            NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
+        ),
+    ];
     let headers = get_asset_headers(
         additional_headers,
         body.len(),
