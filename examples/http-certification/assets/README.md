@@ -175,6 +175,7 @@ thread_local! {
 }
 
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
+const NO_CACHE_ASSET_CACHE_CONTROL: &str = "public, no-cache, no-store";
 
 fn certify_all_assets() {
     // 1. Define the asset certification configurations.
@@ -189,7 +190,7 @@ fn certify_all_assets() {
             content_type: Some("text/html".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
-                "public, no-cache, no-store".to_string(),
+                NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
             )]),
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
@@ -219,15 +220,6 @@ fn certify_all_assets() {
         AssetConfig::Pattern {
             pattern: "**/*.ico".to_string(),
             content_type: Some("image/x-icon".to_string()),
-            headers: get_asset_headers(vec![(
-                "cache-control".to_string(),
-                IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
-            )]),
-            encodings: vec![],
-        },
-        AssetConfig::Pattern {
-            pattern: "**/*.svg".to_string(),
-            content_type: Some("image/svg+xml".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
@@ -305,9 +297,21 @@ fn serve_metrics() -> HttpResponse<'static> {
             cycle_balance: canister_balance(),
         };
         let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
+        let headers = get_asset_headers(vec![
+            (
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                DefaultCelBuilder::skip_certification().to_string(),
+            ),
+            ("content-type".to_string(), "application/json".to_string()),
+            (
+                "cache-control".to_string(),
+                NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
+            ),
+        ]);
         let mut response = HttpResponse::builder()
             .with_status_code(200)
             .with_body(body)
+            .with_headers(headers)
             .build();
 
         HTTP_TREE.with(|tree| {
@@ -324,13 +328,41 @@ fn serve_metrics() -> HttpResponse<'static> {
                 &metrics_tree_path.to_expr_path(),
             );
 
-            let headers = get_asset_headers(vec![(
-                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
-                DefaultCelBuilder::skip_certification().to_string(),
-            )]);
-            response.headers_mut().extend_from_slice(&headers);
             response
         })
     })
 }
 ```
+
+## Testing the canister
+
+To test the canister, you can use the `dfx` command-line tool. First, run DFX:
+
+```shell
+dfx start --background --clean
+```
+
+Then, deploy the canister:
+
+```shell
+dfx deploy http_certification_assets_backend
+```
+
+You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command, making sure to replace `backend` with the name of the canister:
+
+```shell
+echo "http://$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port)"
+```
+
+Alternatively, to make a request with cURL, again making sure to replace `backend` with the name of the canister:
+
+```shell
+curl "http://$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port)" --resolve "$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port):127.0.0.1"
+```
+
+## Resources
+
+- [Example source code](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
+- [`ic-asset-certification` crate](https://crates.io/crates/ic-asset-certification).
+- [`ic-asset-certification` docs](https://docs.rs/ic-asset-certification/latest/ic_asset_certification).
+- [`ic-asset-certification` source code](https://github.com/dfinity/response-verification/tree/main/packages/ic-asset-certification).
