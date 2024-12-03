@@ -328,6 +328,10 @@ let config = AssetConfig::Redirect {
   from: "/old".to_string(),
   to: "/new".to_string(),
   kind: AssetRedirectKind::Permanent,
+  headers: vec![(
+    "content-type".to_string(),
+    "text/plain; charset=utf-8".to_string(),
+  )],
 };
 ```
 
@@ -429,6 +433,10 @@ let asset_configs = vec![
         from: "/old".to_string(),
         to: "/new".to_string(),
         kind: AssetRedirectKind::Permanent,
+        headers: vec![(
+            "content-type".to_string(),
+            "text/plain; charset=utf-8".to_string(),
+        )],
     },
 ];
 
@@ -623,6 +631,10 @@ let asset_configs = vec![
         from: "/old".to_string(),
         to: "/new".to_string(),
         kind: AssetRedirectKind::Permanent,
+        headers: vec![(
+            "content-type".to_string(),
+            "text/plain; charset=utf-8".to_string(),
+        )],
     },
 ];
 
@@ -738,6 +750,10 @@ asset_router
             from: "/old".to_string(),
             to: "/new".to_string(),
             kind: AssetRedirectKind::Permanent,
+            headers: vec![(
+                "content-type".to_string(),
+                "text/plain; charset=utf-8".to_string(),
+            )],
         }],
     )
     .unwrap();
