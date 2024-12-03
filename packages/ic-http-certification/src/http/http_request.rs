@@ -1,7 +1,47 @@
 use crate::{HeaderField, HttpCertificationError, HttpCertificationResult};
-use candid::{CandidType, Deserialize};
+use candid::{
+    types::{Serializer, Type, TypeInner},
+    CandidType, Deserialize,
+};
+pub use http::Method;
 use http::Uri;
-use std::borrow::Cow;
+use serde::Deserializer;
+use std::{borrow::Cow, str::FromStr};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct MethodWrapper(Method);
+
+impl CandidType for MethodWrapper {
+    fn _ty() -> Type {
+        TypeInner::Text.into()
+    }
+
+    fn idl_serialize<S>(&self, serializer: S) -> Result<(), S::Error>
+    where
+        S: Serializer,
+    {
+        self.0.as_str().idl_serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for MethodWrapper {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        String::deserialize(deserializer).and_then(|method| {
+            Method::from_str(&method)
+                .map(Into::into)
+                .map_err(|_| serde::de::Error::custom("Invalid HTTP method"))
+        })
+    }
+}
+
+impl From<Method> for MethodWrapper {
+    fn from(method: Method) -> Self {
+        Self(method)
+    }
+}
 
 /// A Candid-encodable representation of an HTTP request. This struct is used by
 /// the `http_request` method of the HTTP Gateway Protocol's Candid interface.
@@ -9,17 +49,17 @@ use std::borrow::Cow;
 /// # Examples
 ///
 /// ```
-/// use ic_http_certification::HttpRequest;
+/// use ic_http_certification::{HttpRequest, Method};
 ///
 /// let request = HttpRequest::builder()
-///     .with_method("GET")
+///     .with_method(Method::GET)
 ///     .with_url("/")
 ///     .with_headers(vec![("X-Custom-Foo".into(), "Bar".into())])
 ///     .with_body(&[1, 2, 3])
 ///     .with_certificate_version(2)
 ///     .build();
 ///
-/// assert_eq!(request.method(), "GET");
+/// assert_eq!(request.method(), Method::GET);
 /// assert_eq!(request.url(), "/");
 /// assert_eq!(request.headers(), &[("X-Custom-Foo".into(), "Bar".into())]);
 /// assert_eq!(request.body(), &[1, 2, 3]);
@@ -48,7 +88,7 @@ use std::borrow::Cow;
 #[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
 pub struct HttpRequest<'a> {
     /// HTTP request method.
-    method: String,
+    method: MethodWrapper,
 
     /// HTTP request URL.
     url: String,
@@ -74,14 +114,16 @@ impl<'a> HttpRequest<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequest;
+    /// use ic_http_certification::{HttpRequest, Method};
     ///
     /// let request = HttpRequest::get("/").build();
     ///
-    /// assert_eq!(request.method(), "GET");
+    /// assert_eq!(request.method(), Method::GET);
     /// ```
     pub fn get(url: impl Into<String>) -> HttpRequestBuilder<'a> {
-        HttpRequestBuilder::new().with_method("GET").with_url(url)
+        HttpRequestBuilder::new()
+            .with_method(Method::GET)
+            .with_url(url)
     }
 
     /// Creates a new [HttpRequestBuilder] initialized with a POST method and
@@ -93,14 +135,16 @@ impl<'a> HttpRequest<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequest;
+    /// use ic_http_certification::{HttpRequest, Method};
     ///
     /// let request = HttpRequest::post("/").build();
     ///
-    /// assert_eq!(request.method(), "POST");
+    /// assert_eq!(request.method(), Method::POST);
     /// ```
     pub fn post(url: impl Into<String>) -> HttpRequestBuilder<'a> {
-        HttpRequestBuilder::new().with_method("POST").with_url(url)
+        HttpRequestBuilder::new()
+            .with_method(Method::POST)
+            .with_url(url)
     }
 
     /// Creates a new [HttpRequestBuilder] initialized with a PUT method and
@@ -112,14 +156,16 @@ impl<'a> HttpRequest<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequest;
+    /// use ic_http_certification::{HttpRequest, Method};
     ///
     /// let request = HttpRequest::put("/").build();
     ///
-    /// assert_eq!(request.method(), "PUT");
+    /// assert_eq!(request.method(), Method::PUT);
     /// ```
     pub fn put(url: impl Into<String>) -> HttpRequestBuilder<'a> {
-        HttpRequestBuilder::new().with_method("PUT").with_url(url)
+        HttpRequestBuilder::new()
+            .with_method(Method::PUT)
+            .with_url(url)
     }
 
     /// Creates a new [HttpRequestBuilder] initialized with a PATCH method and
@@ -131,14 +177,16 @@ impl<'a> HttpRequest<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequest;
+    /// use ic_http_certification::{HttpRequest, Method};
     ///
     /// let request = HttpRequest::patch("/").build();
     ///
-    /// assert_eq!(request.method(), "PATCH");
+    /// assert_eq!(request.method(), Method::PATCH);
     /// ```
     pub fn patch(url: impl Into<String>) -> HttpRequestBuilder<'a> {
-        HttpRequestBuilder::new().with_method("PATCH").with_url(url)
+        HttpRequestBuilder::new()
+            .with_method(Method::PATCH)
+            .with_url(url)
     }
 
     /// Creates a new [HttpRequestBuilder] initialized with a DELETE method and
@@ -150,15 +198,15 @@ impl<'a> HttpRequest<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequest;
+    /// use ic_http_certification::{HttpRequest, Method};
     ///
     /// let request = HttpRequest::delete("/").build();
     ///
-    /// assert_eq!(request.method(), "DELETE");
+    /// assert_eq!(request.method(), Method::DELETE);
     /// ```
     pub fn delete(url: impl Into<String>) -> HttpRequestBuilder<'a> {
         HttpRequestBuilder::new()
-            .with_method("DELETE")
+            .with_method(Method::DELETE)
             .with_url(url)
     }
 
@@ -168,17 +216,17 @@ impl<'a> HttpRequest<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequest;
+    /// use ic_http_certification::{HttpRequest, Method};
     ///
     /// let request = HttpRequest::builder()
-    ///     .with_method("GET")
+    ///     .with_method(Method::GET)
     ///     .with_url("/")
     ///     .with_headers(vec![("X-Custom-Foo".into(), "Bar".into())])
     ///     .with_body(&[1, 2, 3])
     ///     .with_certificate_version(2)
     ///     .build();
     ///
-    /// assert_eq!(request.method(), "GET");
+    /// assert_eq!(request.method(), Method::GET);
     /// assert_eq!(request.url(), "/");
     /// assert_eq!(request.headers(), &[("X-Custom-Foo".into(), "Bar".into())]);
     /// assert_eq!(request.body(), &[1, 2, 3]);
@@ -201,8 +249,8 @@ impl<'a> HttpRequest<'a> {
     /// assert_eq!(request.method(), "GET");
     /// ```
     #[inline]
-    pub fn method(&self) -> &str {
-        &self.method
+    pub fn method(&self) -> &Method {
+        &self.method.0
     }
 
     /// Returns the URL of the request.
@@ -324,17 +372,17 @@ impl<'a> HttpRequest<'a> {
 /// # Examples
 ///
 /// ```
-/// use ic_http_certification::HttpRequestBuilder;
+/// use ic_http_certification::{HttpRequestBuilder, Method};
 ///
 /// let request = HttpRequestBuilder::new()
-///     .with_method("GET")
+///     .with_method(Method::GET)
 ///     .with_url("/")
 ///     .with_headers(vec![("X-Custom-Foo".into(), "Bar".into())])
 ///     .with_body(&[1, 2, 3])
 ///     .with_certificate_version(2)
 ///     .build();
 ///
-/// assert_eq!(request.method(), "GET");
+/// assert_eq!(request.method(), Method::GET);
 /// assert_eq!(request.url(), "/");
 /// assert_eq!(request.headers(), &[("X-Custom-Foo".into(), "Bar".into())]);
 /// assert_eq!(request.body(), &[1, 2, 3]);
@@ -342,7 +390,7 @@ impl<'a> HttpRequest<'a> {
 /// ```
 #[derive(Debug, Clone, Default)]
 pub struct HttpRequestBuilder<'a> {
-    method: Option<String>,
+    method: Option<MethodWrapper>,
     url: Option<String>,
     headers: Vec<HeaderField>,
     body: Cow<'a, [u8]>,
@@ -356,17 +404,17 @@ impl<'a> HttpRequestBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequestBuilder;
+    /// use ic_http_certification::{HttpRequestBuilder, Method};
     ///
     /// let request = HttpRequestBuilder::new()
-    ///     .with_method("GET")
+    ///     .with_method(Method::GET)
     ///     .with_url("/")
     ///     .with_headers(vec![("X-Custom-Foo".into(), "Bar".into())])
     ///     .with_body(&[1, 2, 3])
     ///     .with_certificate_version(2)
     ///     .build();
     ///
-    /// assert_eq!(request.method(), "GET");
+    /// assert_eq!(request.method(), Method::GET);
     /// assert_eq!(request.url(), "/");
     /// assert_eq!(request.headers(), &[("X-Custom-Foo".into(), "Bar".into())]);
     /// assert_eq!(request.body(), &[1, 2, 3]);
@@ -385,16 +433,16 @@ impl<'a> HttpRequestBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequestBuilder;
+    /// use ic_http_certification::{HttpRequestBuilder, Method};
     ///
     /// let request = HttpRequestBuilder::new()
-    ///     .with_method("GET")
+    ///     .with_method(Method::GET)
     ///     .build();
     ///
-    /// assert_eq!(request.method(), "GET");
+    /// assert_eq!(request.method(), Method::GET);
     /// ```
     #[inline]
-    pub fn with_method(mut self, method: impl Into<String>) -> Self {
+    pub fn with_method(mut self, method: Method) -> Self {
         self.method = Some(method.into());
 
         self
@@ -502,17 +550,17 @@ impl<'a> HttpRequestBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequestBuilder;
+    /// use ic_http_certification::{HttpRequestBuilder, Method};
     ///
     /// let request = HttpRequestBuilder::new()
-    ///     .with_method("GET")
+    ///     .with_method(Method::GET)
     ///     .with_url("/")
     ///     .with_headers(vec![("X-Custom-Foo".into(), "Bar".into())])
     ///     .with_body(&[1, 2, 3])
     ///     .with_certificate_version(2)
     ///     .build();
     ///
-    /// assert_eq!(request.method(), "GET");
+    /// assert_eq!(request.method(), Method::GET);
     /// assert_eq!(request.url(), "/");
     /// assert_eq!(request.headers(), &[("X-Custom-Foo".into(), "Bar".into())]);
     /// assert_eq!(request.body(), &[1, 2, 3]);
@@ -521,7 +569,7 @@ impl<'a> HttpRequestBuilder<'a> {
     #[inline]
     pub fn build(self) -> HttpRequest<'a> {
         HttpRequest {
-            method: self.method.unwrap_or("GET".to_string()),
+            method: self.method.unwrap_or(Method::GET.into()),
             url: self.url.unwrap_or("/".to_string()),
             headers: self.headers,
             body: self.body,
@@ -538,16 +586,16 @@ impl<'a> HttpRequestBuilder<'a> {
     /// # Examples
     ///
     /// ```
-    /// use ic_http_certification::HttpRequestBuilder;
+    /// use ic_http_certification::{HttpRequestBuilder, Method};
     ///
     /// let update_request = HttpRequestBuilder::new()
-    ///     .with_method("GET")
+    ///     .with_method(Method::GET)
     ///     .with_url("/")
     ///     .with_headers(vec![("X-Custom-Foo".into(), "Bar".into())])
     ///     .with_body(&[1, 2, 3])
     ///     .build_update();
     ///
-    /// assert_eq!(update_request.method(), "GET");
+    /// assert_eq!(update_request.method(), Method::GET);
     /// assert_eq!(update_request.url(), "/");
     /// assert_eq!(update_request.headers(), &[("X-Custom-Foo".into(), "Bar".into())]);
     /// assert_eq!(update_request.body(), &[1, 2, 3]);
@@ -555,7 +603,7 @@ impl<'a> HttpRequestBuilder<'a> {
     #[inline]
     pub fn build_update(self) -> HttpUpdateRequest<'a> {
         HttpUpdateRequest {
-            method: self.method.unwrap_or("GET".to_string()),
+            method: self.method.unwrap_or(Method::GET.into()),
             url: self.url.unwrap_or("/".to_string()),
             headers: self.headers,
             body: self.body,
@@ -572,10 +620,10 @@ impl<'a> HttpRequestBuilder<'a> {
 /// # Examples
 ///
 /// ```
-/// use ic_http_certification::{HttpUpdateRequest, HttpRequest};
+/// use ic_http_certification::{HttpUpdateRequest, HttpRequest, Method};
 ///
 /// let request = HttpRequest::get("/")
-///     .with_method("GET")
+///     .with_method(Method::GET)
 ///     .with_url("/")
 ///     .with_headers(vec![("X-Custom-Foo".into(), "Bar".into())])
 ///     .with_body(&[1, 2, 3])
@@ -583,7 +631,7 @@ impl<'a> HttpRequestBuilder<'a> {
 ///     .build();
 /// let update_request = HttpUpdateRequest::from(request);
 ///
-/// assert_eq!(update_request.method(), "GET");
+/// assert_eq!(update_request.method(), Method::GET);
 /// assert_eq!(update_request.url(), "/");
 /// assert_eq!(update_request.headers(), &[("X-Custom-Foo".into(), "Bar".into())]);
 /// assert_eq!(update_request.body(), &[1, 2, 3]);
@@ -591,7 +639,7 @@ impl<'a> HttpRequestBuilder<'a> {
 #[derive(Clone, Debug, CandidType, Deserialize, PartialEq, Eq)]
 pub struct HttpUpdateRequest<'a> {
     /// HTTP request method.
-    method: String,
+    method: MethodWrapper,
 
     /// HTTP request URL.
     url: String,
@@ -616,8 +664,8 @@ impl<'a> HttpUpdateRequest<'a> {
     /// assert_eq!(request.method(), "GET");
     /// ```
     #[inline]
-    pub fn method(&self) -> &str {
-        &self.method
+    pub fn method(&self) -> &Method {
+        &self.method.0
     }
 
     /// Returns the URL of the request.

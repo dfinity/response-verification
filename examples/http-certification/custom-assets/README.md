@@ -173,7 +173,7 @@ fn create_asset_response(
     let headers = get_asset_headers(additional_headers, body.len(), cel_expr);
 
     HttpResponse::builder()
-        .with_status_code(200)
+        .with_status_code(StatusCode::OK)
         .with_headers(headers)
         .with_body(body)
         .build()
@@ -569,7 +569,7 @@ fn create_uncertified_response() -> HttpResponse<'static> {
     );
 
     HttpResponse::builder()
-        .with_status_code(200)
+        .with_status_code(StatusCode::OK)
         .with_headers(headers)
         .with_body(body)
         .build()
