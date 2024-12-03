@@ -606,7 +606,6 @@ Alternatively, to make a request with cURL, again making sure to replace `backen
 curl "http://$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port)" --resolve "$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port):127.0.0.1"
 ```
 
-
 ## Resources
 
 - [Example source code](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/custom-assets).

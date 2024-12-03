@@ -230,6 +230,7 @@ fn certify_all_assets() {
             from: "/old-url".to_string(),
             to: "/".to_string(),
             kind: AssetRedirectKind::Permanent,
+            headers: get_asset_headers(vec![]),
         },
     ];
 
