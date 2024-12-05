@@ -76,7 +76,7 @@ fn post_upgrade() {
 
 ## Canister endpoints
 
-There is only one canister endpoint in this example to serve assets, `http_request` query endpoint. The `serve_metrics` and `serve_asset` functions will be covered in a later section.
+There is only one canister endpoint in this example to serve assets, the `http_request` query endpoint. The `http_request` handler uses two auxiliary functions, `serve_metrics` and `serve_asset`, which are covered in a later section.
 
 ```rust
 #[query]
@@ -160,18 +160,17 @@ The `certify_all_assets` function performs the following steps:
 4. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
 5. Set the canister's certified data.
 
-````rust
+```rust
 thread_local! {
     static HTTP_TREE: Rc<RefCell<HttpCertificationTree>> = Default::default();
+
+    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::with_tree(HTTP_TREE.with(|tree| tree.clone())));
 
     // initializing the asset router with an HTTP certification tree is optional.
     // if direct access to the HTTP certification tree is not needed for certifying
     // requests and responses outside of the asset router, then this step can be skipped
     // and the asset router can be initialized like so:
-    // ```
-    // static ASSET_ROUTER: RefCell<AssetRouter<'static>> = Default::default();
-    // ```
-    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::with_tree(HTTP_TREE.with(|tree| tree.clone())));
+    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = Default::default();
 }
 
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
@@ -267,7 +266,7 @@ fn certify_all_assets() {
         set_certified_data(&asset_router.root_hash());
     });
 }
-````
+```
 
 ## Serving assets
 
