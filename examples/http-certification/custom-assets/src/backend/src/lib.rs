@@ -16,7 +16,6 @@ use std::{cell::RefCell, collections::HashMap};
 
 #[init]
 fn init() {
-    prepare_cel_exprs();
     certify_all_assets();
 }
 
@@ -41,37 +40,25 @@ thread_local! {
     static HTTP_TREE: RefCell<HttpCertificationTree> = RefCell::new(HttpCertificationTree::default());
     static ENCODED_RESPONSES: RefCell<HashMap<(String, String), CertifiedHttpResponse<'static>>> = RefCell::new(HashMap::new());
     static RESPONSES: RefCell<HashMap<String, CertifiedHttpResponse<'static>>> = RefCell::new(HashMap::new());
-    static CEL_EXPRS: RefCell<HashMap<String, (DefaultResponseOnlyCelExpression<'static>, String)>> = RefCell::new(HashMap::new());
 }
 
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 
 lazy_static! {
-    static ref ASSET_CEL_EXPR_PATH: &'static str = "assets";
     static ref INDEX_REQ_PATH: &'static str = "";
     static ref INDEX_TREE_PATH: HttpCertificationPath<'static> =
         HttpCertificationPath::wildcard(*INDEX_REQ_PATH);
     static ref INDEX_FILE_PATH: &'static str = "index.html";
+    static ref ASSET_CEL_EXPR_DEF: DefaultResponseOnlyCelExpression<'static> =
+        DefaultCelBuilder::response_only_certification()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build();
+    static ref ASSET_CEL_EXPR: String = ASSET_CEL_EXPR_DEF.to_string();
 }
 
 // Certification
-
-fn prepare_cel_exprs() {
-    let asset_cel_expr_def = DefaultCelBuilder::response_only_certification()
-        .with_response_certification(DefaultResponseCertification::response_header_exclusions(
-            vec![],
-        ))
-        .build();
-
-    let asset_cel_expr = asset_cel_expr_def.to_string();
-
-    CEL_EXPRS.with_borrow_mut(|exprs| {
-        exprs.insert(
-            ASSET_CEL_EXPR_PATH.to_string(),
-            (asset_cel_expr_def, asset_cel_expr),
-        );
-    });
-}
 
 fn certify_all_assets() {
     add_certification_skips();
@@ -202,35 +189,30 @@ fn certify_asset_with_encoding(
         let mut headers = vec![("content-encoding".to_string(), encoding.to_string())];
         headers.extend(additional_headers);
 
-        CEL_EXPRS.with_borrow(|cel_exprs| {
-            // get the relevant CEL expression
-            let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
+        // create the response
+        let response = create_asset_response(headers, body, ASSET_CEL_EXPR.clone());
 
-            // create the response
-            let response = create_asset_response(headers, body, cel_expr_str.to_string());
+        // certify the response
+        let certification =
+            HttpCertification::response_only(&ASSET_CEL_EXPR_DEF, &response, None).unwrap();
 
-            // certify the response
-            let certification =
-                HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
+        HTTP_TREE.with_borrow_mut(|http_tree| {
+            // add the certification to the certification tree
+            http_tree.insert(&HttpCertificationTreeEntry::new(
+                asset_tree_path,
+                &certification,
+            ));
+        });
 
-            HTTP_TREE.with_borrow_mut(|http_tree| {
-                // add the certification to the certification tree
-                http_tree.insert(&HttpCertificationTreeEntry::new(
-                    asset_tree_path,
-                    &certification,
-                ));
-            });
-
-            ENCODED_RESPONSES.with_borrow_mut(|responses| {
-                // store the response for later retrieval
-                responses.insert(
-                    (asset_req_path, encoding.to_string()),
-                    CertifiedHttpResponse {
-                        response,
-                        certification,
-                    },
-                );
-            });
+        ENCODED_RESPONSES.with_borrow_mut(|responses| {
+            // store the response for later retrieval
+            responses.insert(
+                (asset_req_path, encoding.to_string()),
+                CertifiedHttpResponse {
+                    response,
+                    certification,
+                },
+            );
         });
     };
 }
@@ -241,35 +223,30 @@ fn certify_asset_response(
     asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
 ) {
-    CEL_EXPRS.with_borrow(|cel_exprs| {
-        // get the relevant CEL expression
-        let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
+    // create the response
+    let response = create_asset_response(additional_headers, body, ASSET_CEL_EXPR.clone());
 
-        // create the response
-        let response = create_asset_response(additional_headers, body, cel_expr_str.to_string());
+    // certify the response
+    let certification =
+        HttpCertification::response_only(&ASSET_CEL_EXPR_DEF, &response, None).unwrap();
 
-        // certify the response
-        let certification =
-            HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
+    HTTP_TREE.with_borrow_mut(|http_tree| {
+        // add the certification to the certification tree
+        http_tree.insert(&HttpCertificationTreeEntry::new(
+            asset_tree_path,
+            &certification,
+        ));
+    });
 
-        HTTP_TREE.with_borrow_mut(|http_tree| {
-            // add the certification to the certification tree
-            http_tree.insert(&HttpCertificationTreeEntry::new(
-                asset_tree_path,
-                &certification,
-            ));
-        });
-
-        RESPONSES.with_borrow_mut(|responses| {
-            // store the response for later retrieval
-            responses.insert(
-                asset_req_path,
-                CertifiedHttpResponse {
-                    response,
-                    certification,
-                },
-            );
-        });
+    RESPONSES.with_borrow_mut(|responses| {
+        // store the response for later retrieval
+        responses.insert(
+            asset_req_path,
+            CertifiedHttpResponse {
+                response,
+                certification,
+            },
+        );
     });
 }
 
