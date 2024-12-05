@@ -15,19 +15,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/setup-pnpm
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
 
-      - uses: ./.github/actions/setup-dfx
+      - name: Setup DFX
+        uses: dfinity/setup-dfx@main
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
+      - name: Setup Python
+        uses: dfinity/ci-tools/actions/setup-python@main
+
       - name: Setup Commitizen
-        run: pip install commitizen==2.42.1
+        uses: dfinity/ci-tools/actions/setup-commitizen@main
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
