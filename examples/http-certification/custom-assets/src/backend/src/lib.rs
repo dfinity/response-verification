@@ -55,6 +55,7 @@ lazy_static! {
                 vec![],
             ))
             .build();
+    static ref ASSET_CEL_EXPR: String = ASSET_CEL_EXPR_DEF.to_string();
 }
 
 // Certification
@@ -189,7 +190,7 @@ fn certify_asset_with_encoding(
         headers.extend(additional_headers);
 
         // create the response
-        let response = create_asset_response(headers, body, ASSET_CEL_EXPR_DEF.to_string());
+        let response = create_asset_response(headers, body, ASSET_CEL_EXPR.clone());
 
         // certify the response
         let certification =
@@ -223,7 +224,7 @@ fn certify_asset_response(
     asset_req_path: String,
 ) {
     // create the response
-    let response = create_asset_response(additional_headers, body, ASSET_CEL_EXPR_DEF.to_string());
+    let response = create_asset_response(additional_headers, body, ASSET_CEL_EXPR.clone());
 
     // certify the response
     let certification =
