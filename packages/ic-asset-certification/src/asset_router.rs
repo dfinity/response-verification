@@ -375,6 +375,53 @@ impl<'content> AssetRouter<'content> {
         Ok(())
     }
 
+    /// Deletes multiple assets from the router by path, including any certification for those assets.
+    ///
+    /// Depending on the configuration provided to the [certify_assets](AssetRouter::certify_assets) function,
+    /// multiple responses may be generated for the same asset. These assets may exist on different paths,
+    /// for example if the `alias` configuration is used. If `alias` paths are not passed to this function,
+    /// they will not be deleted.
+    ///
+    /// If multiple encodings exist for a path, all encodings will be deleted.
+    ///
+    /// Fallbacks are also not deleted, to delete them, use the
+    /// [delete_fallback_assets_by_path](AssetRouter::delete_fallback_assets_by_path) function.
+    ///
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
+    pub fn delete_assets_by_path<'path>(
+        &mut self,
+        asset_paths: impl IntoIterator<Item = &'path str>,
+    ) {
+        for asset_path in asset_paths {
+            self.responses
+                .remove(&RequestKey::new(asset_path, None, None));
+            self.tree
+                .borrow_mut()
+                .delete_by_path(&HttpCertificationPath::exact(asset_path));
+        }
+    }
+
+    /// Deletes multiple fallback assets from the router by path, including certification for those assets.
+    ///
+    /// This function will only delete fallbacks, to delete standard assets, use the
+    /// [delete_assets_by_path](AssetRouter::delete_assets_by_path) function.
+    ///
+    /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
+    /// to the new [root hash](AssetRouter::root_hash) of the tree.
+    pub fn delete_fallback_assets_by_path<'path>(
+        &mut self,
+        asset_paths: impl IntoIterator<Item = &'path str>,
+    ) {
+        for asset_path in asset_paths {
+            self.fallback_responses
+                .remove(&RequestKey::new(asset_path, None, None));
+            self.tree
+                .borrow_mut()
+                .delete_by_path(&HttpCertificationPath::wildcard(asset_path));
+        }
+    }
+
     /// Deletes all assets from the router, including any certification for those assets.
     ///
     /// After performing this operation, one must set the canister's certified data (`ic_cdk::api::set_certified_data()`)
@@ -1108,10 +1155,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<$>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -1122,12 +1169,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == request.get_path().unwrap()
-        ));
+        );
     }
 
     #[test]
@@ -1416,10 +1463,10 @@ mod tests {
             expr_path,
             HttpCertificationPath::exact(req_url.clone()).to_expr_path()
         );
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         // Request the subsequent chunks, should obtain them.
@@ -1635,10 +1682,10 @@ mod tests {
             expr_path,
             HttpCertificationPath::exact(req_url).to_expr_path()
         );
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -1654,12 +1701,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == req_url
-        ));
+        );
     }
 
     #[rstest]
@@ -1753,14 +1800,14 @@ mod tests {
 
         let requested_expr_path = HttpCertificationPath::exact(req_url).to_expr_path();
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             witness.lookup_subtree(&requested_expr_path),
             SubtreeLookupResult::Absent
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -1776,12 +1823,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == req_url
-        ));
+        );
     }
 
     #[rstest]
@@ -1809,14 +1856,14 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             witness.lookup_subtree(&requested_expr_path),
             SubtreeLookupResult::Absent
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -1832,12 +1879,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == req_path
-        ));
+        );
     }
 
     #[rstest]
@@ -1868,14 +1915,14 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             witness.lookup_subtree(&requested_expr_path),
             SubtreeLookupResult::Absent
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -1891,12 +1938,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == req_path
-        ));
+        );
     }
 
     #[rstest]
@@ -1931,10 +1978,10 @@ mod tests {
             expr_path,
             vec!["http_expr", "css", "app-ba74b708.css", "<$>"]
         );
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -1968,10 +2015,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "css", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -1999,10 +2046,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2018,12 +2065,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == request.get_path().unwrap()
-        ));
+        );
     }
 
     #[rstest]
@@ -2056,10 +2103,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "css", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2087,10 +2134,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2106,12 +2153,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == request.get_path().unwrap()
-        ));
+        );
     }
 
     #[rstest]
@@ -2143,10 +2190,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "app-488df671.js", "<$>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2185,10 +2232,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2216,10 +2263,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2235,12 +2282,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == request.get_path().unwrap()
-        ));
+        );
     }
 
     #[rstest]
@@ -2406,10 +2453,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "app-488df671.js", "<$>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2452,10 +2499,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2497,10 +2544,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2516,12 +2563,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == request.get_path().unwrap()
-        ));
+        );
     }
 
     #[rstest]
@@ -2554,10 +2601,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "js", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2586,10 +2633,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2605,12 +2652,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == request.get_path().unwrap()
-        ));
+        );
     }
 
     #[rstest]
@@ -2655,10 +2702,10 @@ mod tests {
             expr_path,
             HttpCertificationPath::exact(request.get_path().unwrap()).to_expr_path()
         );
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2687,10 +2734,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
 
         asset_router
@@ -2706,12 +2753,12 @@ mod tests {
             .unwrap();
 
         let result = asset_router.serve_asset(&data_certificate(), &request);
-        assert!(matches!(
+        assert_matches!(
             result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == request.get_path().unwrap()
-        ));
+        );
     }
 
     #[rstest]
@@ -2738,17 +2785,134 @@ mod tests {
         asset_router.delete_all_assets();
 
         assert_matches!(
-        asset_router.serve_asset(
-            &data_certificate(),
-            &request,
-        ),
-        Err(AssetCertificationError::NoAssetMatchingRequestUrl {
-            request_url,
-         }) if request_url == "/index.html"
+            asset_router.serve_asset(
+                &data_certificate(),
+                &request,
+            ),
+            Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                request_url,
+            }) if request_url == "/index.html"
         );
 
         let assets: Vec<_> = asset_router.get_assets().iter().collect();
         assert!(assets.is_empty());
+    }
+
+    #[rstest]
+    fn test_delete_by_path() {
+        let mut asset_router = asset_router();
+
+        let index_request = HttpRequest::get("/index.html").build();
+        let mut expected_index_response = expected_index_html_response();
+        let index_response = asset_router
+            .serve_asset(&data_certificate(), &index_request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&index_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_index_response,
+            &witness,
+            &expr_path,
+        );
+        assert_eq!(index_response, expected_index_response);
+
+        let alias_index_request = HttpRequest::get("/").build();
+        let mut expected_alias_index_response = expected_index_html_response();
+        let alias_index_response = asset_router
+            .serve_asset(&data_certificate(), &alias_index_request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&alias_index_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_alias_index_response,
+            &witness,
+            &expr_path,
+        );
+        assert_eq!(alias_index_response, expected_alias_index_response);
+
+        let fallback_index_request = HttpRequest::get("/non-existent").build();
+        let mut expected_fallback_index_response = expected_index_html_response();
+        let fallback_index_response = asset_router
+            .serve_asset(&data_certificate(), &fallback_index_request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&fallback_index_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_fallback_index_response,
+            &witness,
+            &expr_path,
+        );
+        assert_eq!(fallback_index_response, expected_fallback_index_response);
+
+        asset_router.delete_fallback_assets_by_path(vec!["/"]);
+
+        let index_request = HttpRequest::get("/index.html").build();
+        let mut expected_index_response = expected_index_html_response();
+        let index_response = asset_router
+            .serve_asset(&data_certificate(), &index_request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&index_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_index_response,
+            &witness,
+            &expr_path,
+        );
+        assert_eq!(index_response, expected_index_response);
+
+        let alias_index_request = HttpRequest::get("/").build();
+        let mut expected_alias_index_response = expected_index_html_response();
+        let alias_index_response = asset_router
+            .serve_asset(&data_certificate(), &alias_index_request)
+            .unwrap();
+        let (witness, expr_path) = extract_witness_expr_path(&alias_index_response);
+        add_v2_certificate_header(
+            &data_certificate(),
+            &mut expected_alias_index_response,
+            &witness,
+            &expr_path,
+        );
+        assert_eq!(alias_index_response, expected_alias_index_response);
+
+        assert_matches!(
+            asset_router.serve_asset(
+                &data_certificate(),
+                &fallback_index_request,
+            ),
+            Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                request_url,
+            }) if request_url == "/non-existent"
+        );
+
+        asset_router.delete_assets_by_path(vec!["/index.html", "/"]);
+
+        assert_matches!(
+            asset_router.serve_asset(
+                &data_certificate(),
+                &index_request,
+            ),
+            Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                request_url,
+            }) if request_url == "/index.html"
+        );
+        assert_matches!(
+            asset_router.serve_asset(
+                &data_certificate(),
+                &alias_index_request,
+            ),
+            Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                request_url,
+            }) if request_url == "/"
+        );
+        assert_matches!(
+            asset_router.serve_asset(
+                &data_certificate(),
+                &fallback_index_request,
+            ),
+            Err(AssetCertificationError::NoAssetMatchingRequestUrl {
+                request_url,
+            }) if request_url == "/non-existent"
+        );
     }
 
     #[rstest]
@@ -3178,17 +3342,17 @@ mod tests {
         );
 
         assert_eq!(css_expr_path, vec!["http_expr", "css", "app.css", "<$>"]);
-        assert!(matches!(
+        assert_matches!(
             css_witness.lookup_subtree(&css_expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(css_response, expected_css_response);
 
         assert_eq!(old_url_expr_path, vec!["http_expr", "old-url", "<$>"]);
-        assert!(matches!(
+        assert_matches!(
             old_url_witness.lookup_subtree(&old_url_expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(old_url_response, expected_old_url_response);
 
         asset_router
@@ -3233,17 +3397,17 @@ mod tests {
         );
 
         assert_eq!(css_expr_path, vec!["http_expr", "css", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             css_witness.lookup_subtree(&css_expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(css_response, expected_css_response);
 
         assert_eq!(old_url_expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             old_url_witness.lookup_subtree(&old_url_expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(old_url_response, expected_old_url_response);
 
         asset_router
@@ -3282,17 +3446,17 @@ mod tests {
         );
 
         assert_eq!(css_expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             css_witness.lookup_subtree(&css_expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(css_response, expected_css_response);
 
         assert_eq!(old_url_expr_path, vec!["http_expr", "", "<*>"]);
-        assert!(matches!(
+        assert_matches!(
             old_url_witness.lookup_subtree(&old_url_expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(old_url_response, expected_old_url_response);
 
         asset_router
@@ -3310,18 +3474,18 @@ mod tests {
         let css_result = asset_router.serve_asset(&data_certificate(), &css_request);
         let old_url_result = asset_router.serve_asset(&data_certificate(), &old_url_request);
 
-        assert!(matches!(
+        assert_matches!(
             css_result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == css_request.get_path().unwrap()
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             old_url_result,
             Err(AssetCertificationError::NoAssetMatchingRequestUrl {
                 request_url,
              }) if request_url == old_url_request.get_path().unwrap()
-        ));
+        );
     }
 
     #[rstest]
@@ -3375,10 +3539,10 @@ mod tests {
         );
 
         assert_eq!(expr_path, vec!["http_expr", "", "<$>"]);
-        assert!(matches!(
+        assert_matches!(
             witness.lookup_subtree(&expr_path),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(response, expected_response);
         assert_eq!(
             asset_router.root_hash(),
