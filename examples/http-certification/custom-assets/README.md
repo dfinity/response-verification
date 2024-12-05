@@ -81,12 +81,14 @@ fn post_upgrade() {
 The CEL expression definition is simpler in the case of assets compared to the [JSON API example](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) as the same CEL expression is used for every asset, including the fallback response.
 
 ```rust
-thread_local! {
-    static ASSET_CEL_EXPR_DEF: DefaultResponseOnlyCelExpression<'static> = DefaultCelBuilder::response_only_certification()
-        .with_response_certification(DefaultResponseCertification::response_header_exclusions(
-            vec![],
-        ))
-        .build();
+lazy_static! {
+    static ref ASSET_CEL_EXPR_DEF: DefaultResponseOnlyCelExpression<'static> =
+        DefaultCelBuilder::response_only_certification()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build();
+    static ref ASSET_CEL_EXPR: String = ASSET_CEL_EXPR_DEF.to_string();
 }
 ```
 
@@ -173,35 +175,30 @@ fn certify_asset_response(
     asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
 ) {
-    ASSET_CEL_EXPR_DEF.with(|cel_expr_def| {
-        // get the relevant CEL expression
-        let cel_expr_str = cel_expr_def.to_string();
+    // create the response
+    let response = create_asset_response(additional_headers, body, ASSET_CEL_EXPR.clone());
 
-        // create the response
-        let response = create_asset_response(additional_headers, body, cel_expr_str.to_string());
+    // certify the response
+    let certification =
+        HttpCertification::response_only(&ASSET_CEL_EXPR_DEF, &response, None).unwrap();
 
-        // certify the response
-        let certification =
-            HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
+    HTTP_TREE.with_borrow_mut(|http_tree| {
+        // add the certification to the certification tree
+        http_tree.insert(&HttpCertificationTreeEntry::new(
+            asset_tree_path,
+            &certification,
+        ));
+    });
 
-        HTTP_TREE.with_borrow_mut(|http_tree| {
-            // add the certification to the certification tree
-            http_tree.insert(&HttpCertificationTreeEntry::new(
-                asset_tree_path,
-                &certification,
-            ));
-        });
-
-        RESPONSES.with_borrow_mut(|responses| {
-            // store the response for later retrieval
-            responses.insert(
-                asset_req_path,
-                CertifiedHttpResponse {
-                    response,
-                    certification,
-                },
-            );
-        });
+    RESPONSES.with_borrow_mut(|responses| {
+        // store the response for later retrieval
+        responses.insert(
+            asset_req_path,
+            CertifiedHttpResponse {
+                response,
+                certification,
+            },
+        );
     });
 }
 ```
@@ -228,35 +225,30 @@ fn certify_asset_with_encoding(
         let mut headers = vec![("content-encoding".to_string(), encoding.to_string())];
         headers.extend(additional_headers);
 
-        ASSET_CEL_EXPR_DEF.with(|cel_expr_def| {
-            // get the relevant CEL expression
-            let cel_expr_str = cel_expr_def.to_string();
+        // create the response
+        let response = create_asset_response(headers, body, ASSET_CEL_EXPR.clone());
 
-            // create the response
-            let response = create_asset_response(headers, body, cel_expr_str.to_string());
+        // certify the response
+        let certification =
+            HttpCertification::response_only(&ASSET_CEL_EXPR_DEF, &response, None).unwrap();
 
-            // certify the response
-            let certification =
-                HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
+        HTTP_TREE.with_borrow_mut(|http_tree| {
+            // add the certification to the certification tree
+            http_tree.insert(&HttpCertificationTreeEntry::new(
+                asset_tree_path,
+                &certification,
+            ));
+        });
 
-            HTTP_TREE.with_borrow_mut(|http_tree| {
-                // add the certification to the certification tree
-                http_tree.insert(&HttpCertificationTreeEntry::new(
-                    asset_tree_path,
-                    &certification,
-                ));
-            });
-
-            ENCODED_RESPONSES.with_borrow_mut(|responses| {
-                // store the response for later retrieval
-                responses.insert(
-                    (asset_req_path, encoding.to_string()),
-                    CertifiedHttpResponse {
-                        response,
-                        certification,
-                    },
-                );
-            });
+        ENCODED_RESPONSES.with_borrow_mut(|responses| {
+            // store the response for later retrieval
+            responses.insert(
+                (asset_req_path, encoding.to_string()),
+                CertifiedHttpResponse {
+                    response,
+                    certification,
+                },
+            );
         });
     };
 }
