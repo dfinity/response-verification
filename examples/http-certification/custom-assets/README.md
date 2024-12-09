@@ -158,11 +158,7 @@ fn create_asset_response(
 ) -> HttpResponse {
     let headers = get_asset_headers(additional_headers, body.len(), cel_expr);
 
-    HttpResponse::builder()
-        .with_status_code(StatusCode::OK)
-        .with_headers(headers)
-        .with_body(body)
-        .build()
+    HttpResponse::ok(body, headers).build()
 }
 ```
 
@@ -544,11 +540,7 @@ fn create_uncertified_response() -> HttpResponse<'static> {
         DefaultCelBuilder::skip_certification().to_string(),
     );
 
-    HttpResponse::builder()
-        .with_status_code(StatusCode::OK)
-        .with_headers(headers)
-        .with_body(body)
-        .build()
+    HttpResponse::ok(body, headers).build()
 }
 ```
 
