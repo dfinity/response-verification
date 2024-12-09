@@ -18,7 +18,7 @@ pub fn request_hash<'a>(
 
     let filtered_query = request
         .get_query()?
-        .map(|query| get_filtered_query(&query, request_certification));
+        .and_then(|query| get_filtered_query(&query, request_certification));
     if let Some(query_hash) = filtered_query {
         filtered_headers.push((":ic-cert-query".into(), Value::String(query_hash)))
     }
@@ -59,7 +59,10 @@ fn get_filtered_headers(
         .collect()
 }
 
-fn get_filtered_query(query: &str, request_certification: &DefaultRequestCertification) -> String {
+fn get_filtered_query(
+    query: &str,
+    request_certification: &DefaultRequestCertification,
+) -> Option<String> {
     let filtered_query_string = query
         .split('&')
         .filter(|query_fragment| {
@@ -77,10 +80,12 @@ fn get_filtered_query(query: &str, request_certification: &DefaultRequestCertifi
                 })
                 .unwrap_or(false)
         })
-        .collect::<Vec<&str>>()
-        .join("&");
+        .collect::<Vec<_>>();
+    if filtered_query_string.is_empty() {
+        return None;
+    }
 
-    filtered_query_string
+    Some(filtered_query_string.join("&"))
 }
 
 #[cfg(test)]
@@ -91,6 +96,19 @@ mod tests {
     fn request_hash_without_query() {
         let request_certification = DefaultRequestCertification::new(vec!["host"], vec![]);
         let request = create_request("https://ic0.app");
+        let expected_hash =
+            hex::decode("10796453466efb3e333891136b8a5931269f77e40ead9d437fcee94a02fa833c")
+                .unwrap();
+
+        let result = request_hash(&request, &request_certification).unwrap();
+
+        assert_eq!(result, expected_hash.as_slice());
+    }
+
+    #[test]
+    fn request_hash_with_uncertified_query() {
+        let request_certification = DefaultRequestCertification::new(vec!["host"], vec![]);
+        let request = create_request("https://ic0.app?q=search");
         let expected_hash =
             hex::decode("10796453466efb3e333891136b8a5931269f77e40ead9d437fcee94a02fa833c")
                 .unwrap();
