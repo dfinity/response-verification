@@ -124,7 +124,7 @@ mod tests {
     use super::*;
     use crate::{
         DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpRequest,
-        HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
+        HttpResponse, StatusCode, CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
     use assert_matches::assert_matches;
     use ic_certification::SubtreeLookupResult;
