@@ -4,6 +4,8 @@ import {
   verifyRequestResponsePair,
   Request,
 } from '@dfinity/response-verification';
+import { readFile } from 'fs/promises';
+import { resolve } from 'path';
 
 import {
   _SERVICE,
@@ -59,14 +61,20 @@ describe('Assets', () => {
     const response = await actor.http_request(request);
     const textBody = new TextDecoder().decode(Uint8Array.from(response.body));
     const jsonBody = JSON.parse(textBody) as Metrics;
+    const currentCycles = await pic.getCyclesBalance(canisterId);
 
     expect(response.status_code).toBe(200);
     expect(jsonBody).toEqual({
       num_assets: 20,
       num_fallback_assets: 3,
-      cycle_balance: expect.any(Number),
+      cycle_balance: currentCycles,
     });
     expectSecurityHeaders(response.headers);
+    expectHeader(response.headers, ['content-type', 'application/json']);
+    expectHeader(response.headers, [
+      'cache-control',
+      'public, no-cache, no-store',
+    ]);
 
     let verificationResult = verifyRequestResponsePair(
       request,
@@ -82,38 +90,278 @@ describe('Assets', () => {
     expect(verificationResult.response).toBeUndefined();
   });
 
-  function expectSecurityHeaders(headers: HeaderField[]): void {
-    expectHeader(
-      headers,
+  it('should serve a redirect', async () => {
+    const request: Request = {
+      url: '/old-url',
+      method: 'GET',
+      headers: [],
+      body: new Uint8Array(),
+      certificate_version: [],
+    };
+
+    const response = await actor.http_request(request);
+
+    expect(response.status_code).toBe(301);
+    expectHeader(response.headers, ['location', '/']);
+    // enable when additional headers can be added to redirect responses
+    // expectSecurityHeaders(response.headers);
+
+    let verificationResult = verifyRequestResponsePair(
+      request,
+      response,
+      canisterId.toUint8Array(),
+      currentTimeNs,
+      maxCertTimeOffsetNs,
+      new Uint8Array(rootKey),
+      CERTIFICATE_VERSION,
+    );
+
+    expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
+    expect(verificationResult.response?.statusCode).toBe(301);
+    expect(verificationResult.response?.headers).toContainEqual([
+      'location',
+      '/',
+    ]);
+    // enable when additional headers can be added to redirect responses
+    // expectSecurityHeaders(verificationResult.response?.headers);
+  });
+
+  // paths must be updated if the asset content changes
+  [
+    // root path
+    {
+      url: '/',
+      asset: 'index.html',
+      encoding: 'identity',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/',
+      asset: 'index.html.br',
+      encoding: 'identity, gzip, br',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/',
+      asset: 'index.html.gz',
+      encoding: 'identity, gzip',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    // direct request for /index.html
+    {
+      url: '/index.html',
+      asset: 'index.html',
+      encoding: 'identity',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/index.html',
+      asset: 'index.html.br',
+      encoding: 'identity, gzip, br',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/index.html',
+      asset: 'index.html.gz',
+      encoding: 'identity, gzip',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    // fallback to index.html
+    {
+      url: '/fake-path',
+      asset: 'index.html',
+      encoding: 'identity',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/fake-path',
+      asset: 'index.html.br',
+      encoding: 'identity, gzip, br',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/fake-path',
+      asset: 'index.html.gz',
+      encoding: 'identity, gzip',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    // nested fallback to index.html
+    {
+      url: '/nested/fake-path',
+      asset: 'index.html',
+      encoding: 'identity',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/nested/fake-path',
+      asset: 'index.html.br',
+      encoding: 'identity, gzip, br',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/nested/fake-path',
+      asset: 'index.html.gz',
+      encoding: 'identity, gzip',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    // fallback in assets folder to index.html
+    {
+      url: '/assets/fake-path',
+      asset: 'index.html',
+      encoding: 'identity',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/assets/fake-path',
+      asset: 'index.html.br',
+      encoding: 'identity, gzip, br',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    {
+      url: '/assets/fake-path',
+      asset: 'index.html.gz',
+      encoding: 'identity, gzip',
+      contentType: 'text/html',
+      cacheControl: 'public, no-cache, no-store',
+    },
+    // js file
+    {
+      url: '/assets/index-CuiVGY1H.js',
+      asset: 'assets/index-CuiVGY1H.js',
+      encoding: 'identity',
+      contentType: 'text/javascript',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+    {
+      url: '/assets/index-CuiVGY1H.js',
+      asset: 'assets/index-CuiVGY1H.js.br',
+      encoding: 'identity, gzip, br',
+      contentType: 'text/javascript',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+    {
+      url: '/assets/index-CuiVGY1H.js',
+      asset: 'assets/index-CuiVGY1H.js.gz',
+      encoding: 'identity, gzip',
+      contentType: 'text/javascript',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+    // css file
+    {
+      url: '/assets/index-CsnN7p86.css',
+      asset: 'assets/index-CsnN7p86.css',
+      encoding: 'identity',
+      contentType: 'text/css',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+    {
+      url: '/assets/index-CsnN7p86.css',
+      asset: 'assets/index-CsnN7p86.css.br',
+      encoding: 'identity, gzip, br',
+      contentType: 'text/css',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+    {
+      url: '/assets/index-CsnN7p86.css',
+      asset: 'assets/index-CsnN7p86.css.gz',
+      encoding: 'identity, gzip',
+      contentType: 'text/css',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+    // favicon
+    {
+      url: '/assets/favicon-mtvwWgEY.ico',
+      asset: 'assets/favicon-mtvwWgEY.ico',
+      encoding: 'identity',
+      contentType: 'image/x-icon',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+  ].forEach(({ url, asset, encoding, contentType, cacheControl }) => {
+    it(`should return "${asset}" for "${url}" with "${encoding}" encoding`, async () => {
+      const indexHtml = await loadAsset(asset);
+      const request: Request = {
+        url,
+        method: 'GET',
+        headers: [['Accept-Encoding', encoding]],
+        body: new Uint8Array(),
+        certificate_version: [],
+      };
+
+      const response = await actor.http_request(request);
+
+      expect(response.status_code).toBe(200);
+      expect(response.body).toEqual(indexHtml);
+      expectSecurityHeaders(response.headers);
+      expectHeader(response.headers, ['content-type', contentType]);
+      expectHeader(response.headers, ['cache-control', cacheControl]);
+
+      let verificationResult = verifyRequestResponsePair(
+        request,
+        response,
+        canisterId.toUint8Array(),
+        currentTimeNs,
+        maxCertTimeOffsetNs,
+        new Uint8Array(rootKey),
+        CERTIFICATE_VERSION,
+      );
+
+      expect(verificationResult.verificationVersion).toEqual(
+        CERTIFICATE_VERSION,
+      );
+
+      const verifiedResponse = verificationResult.response;
+      expect(verifiedResponse?.statusCode).toBe(200);
+      expect(verifiedResponse?.body).toEqual(response.body);
+      expectSecurityHeaders(verifiedResponse?.headers);
+      expectHeader(verifiedResponse?.headers, ['content-type', contentType]);
+      expectHeader(verifiedResponse?.headers, ['cache-control', cacheControl]);
+    });
+  });
+
+  function expectSecurityHeaders(headers: HeaderField[] = []): void {
+    expectHeader(headers, [
       'strict-transport-security',
       'max-age=31536000; includeSubDomains',
-    );
-    expectHeader(headers, 'x-frame-options', 'DENY');
-    expectHeader(headers, 'x-content-type-options', 'nosniff');
-    expectHeader(
-      headers,
+    ]);
+    expectHeader(headers, ['x-frame-options', 'DENY']);
+    expectHeader(headers, ['x-content-type-options', 'nosniff']);
+    expectHeader(headers, [
       'content-security-policy',
       "default-src 'self'; img-src 'self' data:; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content",
-    );
-    expectHeader(headers, 'referrer-policy', 'no-referrer');
-    expectHeader(
-      headers,
+    ]);
+    expectHeader(headers, ['referrer-policy', 'no-referrer']);
+    expectHeader(headers, [
       'permissions-policy',
       'accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()',
-    );
-    expectHeader(headers, 'cross-origin-embedder-policy', 'require-corp');
-    expectHeader(headers, 'cross-origin-opener-policy', 'same-origin');
+    ]);
+    expectHeader(headers, ['cross-origin-embedder-policy', 'require-corp']);
+    expectHeader(headers, ['cross-origin-opener-policy', 'same-origin']);
   }
 
   function expectHeader(
-    headers: HeaderField[],
-    expectedKey: string,
-    expectedValue: string,
+    headers: HeaderField[] = [],
+    header: HeaderField,
   ): void {
-    expect(
-      headers.some(
-        ([key, value]) => key === expectedKey && value === expectedValue,
-      ),
-    ).toBe(true);
+    expect(headers).toContainEqual(header);
+  }
+
+  async function loadAsset(path: string): Promise<Uint8Array> {
+    const fullPath = resolve(__dirname, '../../frontend/dist', path);
+    const buffer = await readFile(fullPath);
+    return Uint8Array.from(buffer);
   }
 });

@@ -62,6 +62,7 @@ thread_local! {
 
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
+const NO_CACHE_ASSET_CACHE_CONTROL: &str = "public, no-cache, no-store";
 
 /// Rescursively collect all assets from the provided directory
 fn collect_assets<'content, 'path>(
@@ -91,7 +92,7 @@ fn certify_all_assets() {
             content_type: Some("text/html".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
-                "public, no-cache, no-store".to_string(),
+                NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
             )]),
             fallback_for: vec![AssetFallbackConfig {
                 scope: "/".to_string(),
@@ -121,15 +122,6 @@ fn certify_all_assets() {
         AssetConfig::Pattern {
             pattern: "**/*.ico".to_string(),
             content_type: Some("image/x-icon".to_string()),
-            headers: get_asset_headers(vec![(
-                "cache-control".to_string(),
-                IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
-            )]),
-            encodings: vec![],
-        },
-        AssetConfig::Pattern {
-            pattern: "**/*.svg".to_string(),
-            content_type: Some("image/svg+xml".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
                 IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
@@ -179,9 +171,21 @@ fn serve_metrics() -> HttpResponse<'static> {
             cycle_balance: canister_balance(),
         };
         let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
+        let headers = get_asset_headers(vec![
+            (
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                DefaultCelBuilder::skip_certification().to_string(),
+            ),
+            ("content-type".to_string(), "application/json".to_string()),
+            (
+                "cache-control".to_string(),
+                NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
+            ),
+        ]);
         let mut response = HttpResponse::builder()
             .with_status_code(StatusCode::OK)
             .with_body(body)
+            .with_headers(headers)
             .build();
 
         HTTP_TREE.with(|tree| {
@@ -198,11 +202,6 @@ fn serve_metrics() -> HttpResponse<'static> {
                 &metrics_tree_path.to_expr_path(),
             );
 
-            let headers = get_asset_headers(vec![(
-                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
-                DefaultCelBuilder::skip_certification().to_string(),
-            )]);
-            response.headers_mut().extend_from_slice(&headers);
             response
         })
     })

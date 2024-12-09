@@ -522,6 +522,56 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
 }
 ```
 
+## Testing the canister
+
+To test the canister, you can use the `dfx` command-line tool. First, run DFX:
+
+```shell
+dfx start --background --clean
+```
+
+Then, deploy the canister:
+
+```shell
+dfx deploy
+```
+
+To fetch TODO items:
+
+```shell
+curl -s \
+    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos" \
+    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" | jq
+```
+
+To add a TODO item:
+
+```shell
+curl -s -X POST \
+    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos" \
+    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" \
+    -H "Content-Type: application/json" \
+    -d '{ "title": "Learn Motoko" }' | jq
+```
+
+To update a TODO item:
+
+```shell
+curl -s -X PATCH \
+    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos/0" \
+    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" \
+    -H "Content-Type: application/json" \
+    -d '{ "completed": true }' | jq
+```
+
+To delete a TODO item:
+
+```shell
+curl -s -X DELETE \
+    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos/0" \
+    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" | jq
+```
+
 ## Resources
 
 - [Example source code](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/json-api).
