@@ -14,15 +14,12 @@ It's recommended to check out earlier guides before reading this one.
 
 ## Lifecycle
 
-In the `init` lifecycle hook, the CEL expressions are prepared and responses are certified. The same function runs during the `post_upgrade` hook since the certified structure does not persist across upgrades.
+Responses are certified in the `init` lifecycle hook. The same function runs during the `post_upgrade` hook since the certification tree does not persist across upgrades.
 
 ```rust
 // run when a canister is first installed
 #[init]
 fn init() {
-    // prepare reusable CEL expressions
-    prepare_cel_exprs();
-
     // certify all static responses
     certify_list_todos_response();
     certify_not_allowed_todo_responses();
@@ -43,29 +40,14 @@ fn post_upgrade() {
 
 ## CEL expressions
 
-CEL expressions only need to be set up once and can then be reused until the next canister upgrade. Responses can also be set up once and reused. If the response is static and will not change throughout the canister's lifetime, then it only needs to be certified once. If the response can change, however then it will need to be re-certified every time it changes.
+CEL expressions only need to be set up once and can then be reused until the next canister upgrade. Responses can also be set up once and reused. If the response is static and will not change throughout the canister's lifetime, then it only needs to be certified once. If the response can change, however, then it will need to be re-certified every time it changes.
 
-To store CEL expressions, a `HashMap` is created for each type of CEL expression that is needed:
+`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified, then `DefaultFullCelExpression` should be used. Alternatively, the higher-level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future, there may be more schemes, and the higher-level `CelExpression` will be able to hold CEL expressions from those different schemes. It is up to the developers to decide how they want to store and organize their CEL expressions.
 
-```rust
-thread_local! {
-    static RESPONSE_ONLY_CEL_EXPRS: RefCell<HashMap<String, (DefaultResponseOnlyCelExpression<'static>, String)>> = RefCell::new(HashMap::new());
-    static FULL_CEL_EXPRS: RefCell<HashMap<String, (DefaultFullCelExpression<'static>, String)>> = RefCell::new(HashMap::new());
-
-}
-```
-
-The `HashMap` uses the request path as the key, and a tuple of `(DefaultResponseOnlyCelExpression, String)` as the value. `DefaultResponseOnlyCelExpression` is a parsed CEL expression definition and `String` is the stringified version of it.
-
-`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified, then `DefaultFullCelExpression` should be used. Separate `HashMap`s are created to hold different types of CEL expressions, alternatively, the higher-level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme within a single `HashMap`. In the future, there may be more schemes, and the higher-level `CelExpression` will be able to hold CEL expressions from those different schemes. It is up to the developers to decide how they want to store and organize their CEL expressions.
-
-In this example, there are two different CEL expressions used, a "full" CEL expression and a "response-only" CEL expression. The "full" CEL expression is used for every certified response except for the "Not found" response. For more information on defining CEL expressions, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#defining-cel-expressions).
+In this example, there are two different CEL expressions used, a "full" CEL expression and a "response-only" CEL expression. The "full" CEL expression is used for the certified "todos" and the "response-only" CEL expression for the "Not found" response. For more information on defining CEL expressions, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#defining-cel-expressions).
 
 ```rust
-const TODOS_PATH: &str = "todos";
-const NOT_FOUND_PATH: &str = "";
-
-fn prepare_cel_exprs() {
+lazy_static! {
     // define a full CEL expression that will certify the following:
     // - request
     //   - method
@@ -77,25 +59,14 @@ fn prepare_cel_exprs() {
     //   - body
     //   - all headers
     // this CEL expression will be used for all routes except for the not found route
-    let cel_expr_def = DefaultCelBuilder::full_certification()
+    static ref TODO_CEL_EXPR_DEF: DefaultFullCelExpression<'static> = DefaultCelBuilder::full_certification()
         .with_request_headers(vec![])
         .with_request_query_parameters(vec![])
         .with_response_certification(DefaultResponseCertification::response_header_exclusions(
             vec![],
         ))
         .build();
-
-    // also pre-compute the stringified CEL expression
-    let cel_expr_str = cel_expr_def.to_string();
-
-    // insert the CEL expressions
-    FULL_CEL_EXPRS.with_borrow_mut(|exprs| {
-        // insert on the `/todos` path
-        exprs.insert(
-            TODOS_PATH.to_string(),
-            (cel_expr_def.clone(), cel_expr_str.clone()),
-        );
-    });
+    static ref TODO_CEL_EXPR: String = TODO_CEL_EXPR_DEF.to_string();
 
     // define a response-only CEL expression that will certify the following:
     // - response
@@ -103,22 +74,12 @@ fn prepare_cel_exprs() {
     //   - body
     //   - all headers
     // this CEL expression will be used for the not found route
-    let not_found_cel_expr_def = DefaultCelBuilder::response_only_certification()
+    static ref NOT_FOUND_CEL_EXPR_DEF: DefaultResponseOnlyCelExpression<'static> = DefaultCelBuilder::response_only_certification()
         .with_response_certification(DefaultResponseCertification::response_header_exclusions(
             vec![],
         ))
         .build();
-
-    // also pre-compute the stringified CEL expression
-    let not_found_cel_expr = not_found_cel_expr_def.to_string();
-
-    RESPONSE_ONLY_CEL_EXPRS.with_borrow_mut(|exprs| {
-        // insert on the not found path
-        exprs.insert(
-            NOT_FOUND_PATH.to_string(),
-            (not_found_cel_expr_def, not_found_cel_expr),
-        );
-    });
+    static ref NOT_FOUND_CEL_EXPR: String = NOT_FOUND_CEL_EXPR_DEF.to_string();
 }
 ```
 
@@ -166,7 +127,7 @@ fn create_response(status_code: StatusCode, body: Vec<u8>) -> HttpResponse<'stat
 
 ## Responses
 
-The HTTP certification tree has a dedicated data structure while responses, similarly to CEL expressions, are stored in a `HashMap`, along with their respective certifications. The responses and certifications are stored separately from the CEL expressions because they are likely to change throughout the canister's lifecycle, whereas the CEL expressions are set only once. They could all also be stored within the same structure if a developer wishes.
+The HTTP certification tree has a dedicated data structure while responses are stored in a `HashMap`, along with their respective certifications. The responses and certifications are stored separately from the CEL expressions because they are likely to change throughout the canister's lifecycle, whereas the CEL expressions are set only once. They could all also be stored within the same structure if a developer wishes.
 
 Fallback responses (such as the "not found" response) are stored separately from other responses. This is done to allow for simpler routing logic for responses which will be described in more detail later in this guide.
 
@@ -220,19 +181,15 @@ fn certify_response(
         })
     }
 
-    let certification = FULL_CEL_EXPRS.with_borrow(|cel_exprs| {
-        // get the appropriate CEL expression for the provided request path
-        let (cel_expr_def, cel_expr_str) = cel_exprs.get(&request_path).unwrap();
+    // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
+    response.add_header((
+        CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+        TODO_CEL_EXPR.clone(),
+    ));
 
-        // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
-        response.add_header((
-            CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
-            cel_expr_str.to_string(),
-        ));
-
-        // create the certification for this response and CEL expression pair
-        HttpCertification::full(cel_expr_def, &request, &response, None).unwrap()
-    });
+    // create the certification for this response and CEL expression pair
+    let certification =
+        HttpCertification::full(&TODO_CEL_EXPR_DEF, &request, &response, None).unwrap();
 
     RESPONSES.with_borrow_mut(|responses| {
         // store the response for later retrieval
@@ -302,7 +259,7 @@ fn certify_not_allowed_todo_responses() {
 Certifying the "Not found" response requires a slightly different procedure. This is very similar to the reusable `certify_response` function, but the following differences:
 
 - The `HttpCertificationPath` variant used is `wildcard` instead of `exact`.
-- A `DefaultResponseOnlyCelExpression` is used instead of a `DefaultFullCelExpression`, retrieved from the `RESPONSE_ONLY_CEL_EXPRS` `HashMap`.
+- A `DefaultResponseOnlyCelExpression` is used instead of a `DefaultFullCelExpression`.
 - The response is stored in `FALLBACK_RESPONSES` instead of `RESPONSES`.
 
 ```rust
@@ -312,19 +269,15 @@ fn certify_not_found_response() {
 
     let tree_path = HttpCertificationPath::wildcard(NOT_FOUND_PATH);
 
-    let certification = RESPONSE_ONLY_CEL_EXPRS.with_borrow(|cel_exprs| {
-        // get the appropriate CEL expression for the provided request path
-        let (cel_expr_def, cel_expr_str) = cel_exprs.get(NOT_FOUND_PATH).unwrap();
+    // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
+    response.add_header((
+        CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+        NOT_FOUND_CEL_EXPR.clone(),
+    ));
 
-        // insert the `Ic-CertificationExpression` header with the stringified CEL expression as its value
-        response.add_header((
-            CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
-            cel_expr_str.to_string(),
-        ));
-
-        // create the certification for this response and CEL expression pair
-        HttpCertification::response_only(&cel_expr_def, &response, None).unwrap()
-    });
+    // create the certification for this response and CEL expression pair
+    let certification =
+        HttpCertification::response_only(&NOT_FOUND_CEL_EXPR_DEF, &response, None).unwrap();
 
     FALLBACK_RESPONSES.with_borrow_mut(|responses| {
         responses.insert(

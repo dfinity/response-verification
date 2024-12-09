@@ -64,7 +64,7 @@ use serde::Serialize;
 ///         (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr.to_string()),
 ///         (
 ///             CERTIFICATE_HEADER_NAME.to_string(),
-///             "certificate=:AQID:, tree=:2dn3gwJJaHR0cF9leHBygwJMZXhhbXBsZS5qc29ugwJDPCQ+gwJYIFJ2k+R/YYbgGPADidRdRwDurH06HXACVHlTIVrv1q4WgwJYIPZhxTCrVVSCuQKpNIckLOog7Q9SpfZ/0AODejmxpJ7egwJYIM7zUx3VibIaHEUF14Kx813l3Xlilg43Y5uGaABAA/i9ggNA:, expr_path=:2dn3g2lodHRwX2V4cHJsZXhhbXBsZS5qc29uYzwkPg==:, version=2".to_string(),
+///             "certificate=:AQID:, tree=:2dn3gwJJaHR0cF9leHBygwJMZXhhbXBsZS5qc29ugwJDPCQ+gwJYIFJ2k+R/YYbgGPADidRdRwDurH06HXACVHlTIVrv1q4WgwJYIGvHTtoVXrGXb4aD1BvH+OW26d0CtLUdA43LP+42N6xpgwJYIM7zUx3VibIaHEUF14Kx813l3Xlilg43Y5uGaABAA/i9ggNA:, expr_path=:2dn3g2lodHRwX2V4cHJsZXhhbXBsZS5qc29uYzwkPg==:, version=2".to_string(),
 ///         ),
 ///     ]
 /// );

@@ -5,7 +5,7 @@
 
 HTTP certification is a sub-protocol of the [ICP](https://internetcomputer.org/) [HTTP gateway protocol](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec). It is used to verify HTTP responses received by an HTTP gateway from a [canister](https://internetcomputer.org/how-it-works/canister-lifecycle/), with respect to the corresponding HTTP request. This allows HTTP gateways to verify that the responses they receive from canisters are authentic and have not been tampered with.
 
-The `ic-http-certification` crate provides a foundation for implementing the HTTP certification protocol in Rust canisters. Certification is implemented in a number of steps:
+The `ic-http-certification` crate provides the foundation for implementing the HTTP certification protocol in Rust canisters. Certification is implemented in a number of steps:
 
 1. [Defining CEL expressions](#defining-cel-expressions)
 2. [Creating certifications](#creating-certifications)
@@ -15,7 +15,7 @@ The `ic-http-certification` crate provides a foundation for implementing the HTT
 
 [CEL](https://github.com/google/cel-spec) (Common Expression Language) is a portable expression language that can be used for different applications to easily interoperate. It can be seen as the computation or expression counterpart to [protocol buffers](https://github.com/protocolbuffers/protobuf).
 
-CEL expressions are at the core of ICP's HTTP certification system. They are used to define the conditions under which a request and response pair should be certified. They also define what should be included from the corresponding request and response objects in the certification.
+CEL expressions are at the core of ICP's HTTP certification protocol. They are used to define the conditions under which a request and response pair should be certified and also what should be included from the corresponding request and response objects in the certification.
 
 CEL expressions can be created in two ways:
 - Using the [CEL builder](#using-the-cel-builder)
@@ -44,17 +44,34 @@ let cel_expr = create_cel_expr(&certification);
 
 The CEL builder interface is provided to ease the creation of CEL expressions through an ergonomic interface. It is also possible to [create CEL expressions directly](#directly-creating-a-cel-expression). To define a CEL expression, start with [DefaultCelBuilder]. This struct provides a set of associated functions that can be used to define how a request and response pair should be certified.
 
-When certifying requests:
+It's possible to
+- [Fully certify requests and responses](#fully-certified-request--response-pair).
+- [Partially certify requests](#partially-certified-request).
+- [Skip request certification](#skipping-request-certification).
+- [Partially certify responses](#partially-certified-response).
+- [Skip certification entirely](#skipping-certification).
+
+Note that if the request is certified, the response must also be certified. It is not possible to certify a request without also certifying a response. Any combination of fully or partially certified requests and responses can be used.
+
+When a request is certified:
 
 - The request body and method are always certified.
-- To certify request headers and query parameters, use [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) and [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()) respectively. Both associated functions take a [str] slice as an argument.
+- The request headers and query parameters are optionally certified using the `with_request_headers` and `with_request_query_parameters` associated functions respectively. Both associated functions take a `str` slice as an argument.
 
-When certifying responses:
+When a response is certified:
 
 - The response body and status code are always certified.
-- To certify response headers, use [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). This associated function takes the [DefaultResponseCertification] enum as an argument.
-  - To specify header inclusions, use the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification] enum.
-  - To certify all response headers (with some exclusions) use the [response_header_exclusions](DefaultResponseCertification::response_header_exclusions) associated function of the [DefaultResponseCertification] enum. Both associated functions take a [str] slice as an argument.
+- The response headers are optionally certified using the `with_response_certification` associated function. This function takes the `DefaultResponseCertification` enum as an argument.
+  - To specify header inclusions, use the `certified_response_headers` associated function of the `DefaultResponseCertification` enum.
+  - To certify all response headers (with some optional  exclusions) use the `response_header_exclusions` associated function of the `DefaultResponseCertification` enum. Both functions take a `str` slice as an argument.
+
+Regardless of what is included in certification, the request path is always used to determine if that certification should be used. It's also possible to set a certification for a "scope" or "directory" of paths, see [Defining tree paths](#defining-tree-paths) for more information on this.
+
+When defining CEL expressions it's important to determine what should be certified and what can be safely excluded from certification. For example, if a response header is not certified, it will not be included in the certification and will not be verified by the HTTP gateway, meaning that the value of this header cannot be trusted by clients. As a general rule of thumb, starting with a fully certified request and response pair is a good idea, and then removing parts of the certification as needed.
+
+It should be considered unsafe to exclude anything from request certification that can change the expected response. The request method for example can drastically affect what action is taken by the canister, and so excluding it from certification would allow a malicious replica to respond with the expected responses for `'GET'` request, even though a `'POST'` request was made.
+
+For responses, it should be considered unsafe to exclude anything from response certification that will be used by clients in a meaningful way. For example, excluding the `Content-Type` header from certification would allow a malicious replica to respond with a different content type than expected, which could cause clients to misinterpret the response.
 
 #### Fully certified request / response pair
 
@@ -77,9 +94,9 @@ let cel_expr = DefaultCelBuilder::full_certification()
 
 #### Partially certified request
 
-Any number of request headers or request query parameters can be certified via [with_request_headers](cel::DefaultFullCelExpressionBuilder::with_request_headers()) and [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()) respectively. Both methods will accept empty arrays, which is the same as not calling them at all. Likewise for [with_request_query_parameters](cel::DefaultFullCelExpressionBuilder::with_request_query_parameters()), if it is called with an empty array, or not called at all, then no request query parameters will be certified. If both are called with an empty array, or neither are called, then only the request body and method will be certified.
+Any number of request headers or request query parameters can be certified via `with_request_headers` and `with_request_query_parameters` respectively. Both methods will accept empty arrays, which is the same as not calling them at all. Likewise for `with_request_query_parameters`, if it is called with an empty array, or not called at all, then no request query parameters will be certified. If both are called with an empty array, or neither are called, then only the request body and method will be certified, in addition to the response. As a reminder here, the response is always at least partially certified if the request is certified.
 
-For example, to certify only the request body and method:
+For example, to certify only the request body and method, in addition to the response:
 
 ```rust
 use ic_http_certification::{DefaultCelBuilder, DefaultResponseCertification};
@@ -109,7 +126,7 @@ let cel_expr = DefaultCelBuilder::full_certification()
 
 #### Skipping request certification
 
-Request certification can be skipped entirely by using [DefaultCelBuilder::response_only_certification](DefaultCelBuilder::response_only_certification()) instead of [DefaultCelBuilder::full_certification](DefaultCelBuilder::full_certification()).
+Request certification can be skipped entirely by using `DefaultCelBuilder::response_only_certification` instead of `DefaultCelBuilder::full_certification`. Request certification should only be skipped if the response is determined solely by the request path. If any other part of the request can affect the response in a meaningful way, then request certification should not be skipped.
 
 For example:
 
@@ -127,7 +144,7 @@ let cel_expr = DefaultCelBuilder::response_only_certification()
 
 #### Partially certified response
 
-Any number of response headers can be provided via the [certified_response_headers](DefaultResponseCertification::certified_response_headers) associated function of the [DefaultResponseCertification] enum when calling [with_response_certification](cel::DefaultFullCelExpressionBuilder::with_response_certification()). The provided array can also be empty. If the array is empty, or the associated function is not called, no response headers will be certified.
+Any number of response headers can be provided via the `certified_response_headers` associated function of the `DefaultResponseCertification` enum when calling `with_response_certification`. The provided array can also be empty. If the array is empty, or the associated function is not called, no response headers will be certified. If all response headers are to be certified, with some exclusions, use the `response_header_exclusions` associated function of the `DefaultResponseCertification` enum. Care should be taken when choosing what headers to exclude from certification, as they will not be verified by the HTTP gateway. Any headers that hold meaningful information for clients should not be excluded.
 
 For example, to certify only the response body and status code:
 
@@ -174,6 +191,8 @@ let cel_expr = DefaultCelBuilder::skip_certification();
 Skipping certification may seem counter-intuitive at first, but it is not always possible to certify a request and response pair. For example, a canister method that will return different data for every user cannot be easily certified.
 
 Typically, these requests have been routed through `raw` ICP URLs in the past, but this is dangerous because `raw` URLs allow any responding replica to decide whether or not certification is required. In contrast, by skipping certification using the above method with a non-`raw` URL, a replica will no longer be able to decide whether or not certification is required and instead this decision will be made by the canister itself and the result will go through consensus.
+
+Extreme caution should be taken when deciding to skip certification entirely. It should only be done when it is not possible to certify a request and response pair, and a modification of the response's content would not pose a security risk for the application.
 
 ## Creating certifications
 
@@ -342,6 +361,14 @@ let witness = http_certification_tree.witness(&entry, request_url);
 // delete the entry from the tree
 http_certification_tree.delete(&entry);
 ```
+
+### Handling upgrades
+
+CEL expressions, certifications, the certification tree, and the corresponding requests and responses are not persisted across upgrades, by default. This means that if a canister is upgraded, all of this information will be lost. To handle upgrades effectively, all initialization logic run in the canister's `init` hook should also be run in the `post_upgrade` hook. This will ensure that the certification tree is correctly re-initialized after an upgrade. Most data structures, aside from the certification tree, can be persisted using stable memory, and the certification tree can be re-initialized using this persisted data. Care should be taken to not exceed the canister's instruction limit when re-initializing the certification tree, which can easily occur if the number of responses being certified grows very large. This case could potentially be addressed in the future by developing a stable memory compatible certification tree.
+
+### Changing data
+
+In addition to initializing certifications in the `init` and `post_upgrade` hooks, if a response is changed during the canister's lifetime in response to an `update` call, the certification tree should be updated to reflect this change. This can be done by deleting the old certification from the tree and inserting the new certification. This should be done in the same `update` call as the response is changed to ensure that the certification tree is always up-to-date, otherwise, `query` calls returning that response will fail verification.
 
 ## Directly creating a CEL expression
 

@@ -60,6 +60,14 @@ impl HttpCertificationTree {
         self.tree.delete(&tree_path);
     }
 
+    /// Deletes all [HttpCertificationTreeEntry]s that match a given [HttpCertificationPath].
+    /// After performing this operation, the canister's certified variable will need to be updated
+    /// with the new [root hash](HttpCertificationTree::root_hash) of the tree.
+    pub fn delete_by_path(&mut self, path: &HttpCertificationPath) {
+        let tree_path = path.to_tree_path();
+        self.tree.delete(&tree_path);
+    }
+
     /// Clears the tree of all [HttpCertificationTreeEntry].
     /// After performing this operation, the canister's certified variable will need to be updated
     /// with the new [root hash](HttpCertificationTree::root_hash) of the tree.
@@ -118,6 +126,7 @@ mod tests {
         DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpRequest,
         HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
     };
+    use assert_matches::assert_matches;
     use ic_certification::SubtreeLookupResult;
     use rstest::*;
 
@@ -183,10 +192,10 @@ mod tests {
             not_found_witness.lookup_subtree(["http_expr", "assets", "", "<*>"]),
             SubtreeLookupResult::Absent
         );
-        assert!(matches!(
+        assert_matches!(
             not_found_witness.lookup_subtree(["http_expr", "assets", "js", "<*>"]),
             SubtreeLookupResult::Found(_)
-        ));
+        );
         assert_eq!(
             not_found_witness.lookup_subtree(["http_expr", "assets", "js", "0.js", "<*>"]),
             SubtreeLookupResult::Absent
@@ -196,7 +205,7 @@ mod tests {
             .witness(&hello_world_entry, "/assets/js/hello-world.js")
             .unwrap();
 
-        assert!(matches!(
+        assert_matches!(
             hello_world_witness.lookup_subtree([
                 "http_expr",
                 "assets",
@@ -205,7 +214,228 @@ mod tests {
                 "<$>"
             ]),
             SubtreeLookupResult::Found(_)
-        ));
+        );
+    }
+
+    #[rstest]
+    fn test_delete_by_path() {
+        let mut http_tree = HttpCertificationTree::default();
+        let cel_expr = DefaultCelBuilder::full_certification()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build();
+        let req_one_url = "/assets/js/hello.js";
+        let req_two_url = "/assets/js/world.js";
+
+        // arrange four paths in the tree,
+        // two requests, with two responses each
+        //
+        // The tree should look like this:
+        // -- "assets" -- "js" -- "hello.js"
+        //                 |            |-- ${cel_expr_hash}
+        //                 |                |-- ${req_one_hash}
+        //                 |                    |-- ${res_hash}
+        //                 |                    |-- ${alt_res_hash}
+        //                 | ---- "world.js"
+        //                              |-- ${cel_expr_hash}
+        //                                  |-- ${req_two_hash}
+        //                                      |-- ${res_hash}
+        //                                      |-- ${res_hash}
+        //
+        // Resulting in the following paths (number labels are referenced in comments below):
+        // (1) "assets" -- "js" -- "hello.js" -- ${cel_expr_hash} -- ${req_one_hash} -- ${res_hash}
+        // (2) "assets" -- "js" -- "hello.js" -- ${cel_expr_hash} -- ${req_one_hash} -- ${alt_res_hash}
+        // (3) "assets" -- "js" -- "world.js" -- ${cel_expr_hash} -- ${req_two_hash} -- ${res_hash}
+        // (4) "assets" -- "js" -- "world.js" -- ${cel_expr_hash} -- ${req_two_hash} -- ${alt_res_hash}
+
+        let req_one = HttpRequest::get(req_one_url).build();
+        let req_two = HttpRequest::get(req_two_url).build();
+
+        let res = HttpResponse::builder()
+            .with_status_code(StatusCode::OK)
+            .with_body(br#"console.log("Hello, World!")"#)
+            .with_headers(vec![(
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                cel_expr.to_string(),
+            )])
+            .build();
+        let alt_res = HttpResponse::builder()
+            .with_status_code(StatusCode::OK)
+            .with_body(br#"console.log("Hello, ALT World!")"#)
+            .with_headers(vec![(
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                cel_expr.to_string(),
+            )])
+            .build();
+
+        let req_one_entry = HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact(req_one.url()),
+            HttpCertification::full(&cel_expr, &req_one, &res, None).unwrap(),
+        );
+        http_tree.insert(&req_one_entry);
+
+        let req_one_alt_entry = HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact(req_one.url()),
+            HttpCertification::full(&cel_expr, &req_one, &alt_res, None).unwrap(),
+        );
+        http_tree.insert(&req_one_alt_entry);
+
+        let req_two_entry = HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact(req_two.url()),
+            HttpCertification::full(&cel_expr, &req_two, &res, None).unwrap(),
+        );
+        http_tree.insert(&req_two_entry);
+
+        let req_two_alt_entry = HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact(req_two.url()),
+            HttpCertification::full(&cel_expr, &req_two, &alt_res, None).unwrap(),
+        );
+        http_tree.insert(&req_two_alt_entry);
+
+        assert_matches!(
+            http_tree
+                .witness(&req_one_entry, req_one_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_one_entry)),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_matches!(
+            http_tree
+                .witness(&req_one_alt_entry, req_one_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_one_alt_entry)),
+            SubtreeLookupResult::Found(_)
+        );
+
+        assert_matches!(
+            http_tree
+                .witness(&req_two_entry, req_two_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_two_entry)),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_matches!(
+            http_tree
+                .witness(&req_two_alt_entry, req_two_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_two_alt_entry)),
+            SubtreeLookupResult::Found(_)
+        );
+
+        assert!(http_tree
+            .tree
+            .contains_path(&HttpCertificationPath::exact(req_one_url).to_tree_path()));
+        assert!(http_tree.tree.contains_path(&req_one_entry.to_tree_path()));
+        assert!(http_tree
+            .tree
+            .contains_path(&req_one_alt_entry.to_tree_path()));
+
+        assert!(http_tree
+            .tree
+            .contains_path(&HttpCertificationPath::exact(req_two_url).to_tree_path()));
+        assert!(http_tree.tree.contains_path(&req_two_entry.to_tree_path()));
+        assert!(http_tree
+            .tree
+            .contains_path(&req_two_alt_entry.to_tree_path()));
+
+        // delete the (1) and (2) paths, all other paths should remain in the tree
+        http_tree.delete_by_path(&HttpCertificationPath::exact(req_one.url()));
+
+        assert_matches!(
+            http_tree
+                .witness(&req_one_entry, req_one_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_one_entry)),
+            SubtreeLookupResult::Absent
+        );
+        assert_matches!(
+            http_tree
+                .witness(&req_one_alt_entry, req_one_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_one_alt_entry)),
+            SubtreeLookupResult::Absent
+        );
+
+        assert_matches!(
+            http_tree
+                .witness(&req_two_entry, req_two_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_two_entry)),
+            SubtreeLookupResult::Found(_)
+        );
+        assert_matches!(
+            http_tree
+                .witness(&req_two_alt_entry, req_two_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_two_alt_entry)),
+            SubtreeLookupResult::Found(_)
+        );
+
+        assert!(!http_tree
+            .tree
+            .contains_path(&HttpCertificationPath::exact(req_one_url).to_tree_path()));
+        assert!(!http_tree.tree.contains_path(&req_one_entry.to_tree_path()));
+        assert!(!http_tree
+            .tree
+            .contains_path(&req_one_alt_entry.to_tree_path()));
+
+        assert!(http_tree
+            .tree
+            .contains_path(&HttpCertificationPath::exact(req_two_url).to_tree_path()));
+        assert!(http_tree.tree.contains_path(&req_two_entry.to_tree_path()));
+        assert!(http_tree
+            .tree
+            .contains_path(&req_two_alt_entry.to_tree_path()));
+
+        // delete the (3) and (4) paths, now the tree should be empty
+        http_tree.delete_by_path(&HttpCertificationPath::exact(req_two.url()));
+
+        assert_matches!(
+            http_tree
+                .witness(&req_one_entry, req_one_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_one_entry)),
+            SubtreeLookupResult::Absent
+        );
+        assert_matches!(
+            http_tree
+                .witness(&req_one_alt_entry, req_one_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_one_alt_entry)),
+            SubtreeLookupResult::Absent
+        );
+
+        assert_matches!(
+            http_tree
+                .witness(&req_two_entry, req_two_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_two_entry)),
+            SubtreeLookupResult::Absent
+        );
+        assert_matches!(
+            http_tree
+                .witness(&req_two_alt_entry, req_two_url)
+                .unwrap()
+                .lookup_subtree(&lookup_path_from_entry(&req_two_alt_entry)),
+            SubtreeLookupResult::Absent
+        );
+
+        assert!(!http_tree
+            .tree
+            .contains_path(&HttpCertificationPath::exact(req_one_url).to_tree_path()));
+        assert!(!http_tree.tree.contains_path(&req_one_entry.to_tree_path()));
+        assert!(!http_tree
+            .tree
+            .contains_path(&req_one_alt_entry.to_tree_path()));
+
+        assert!(!http_tree
+            .tree
+            .contains_path(&HttpCertificationPath::exact(req_two_url).to_tree_path()));
+        assert!(!http_tree.tree.contains_path(&req_two_entry.to_tree_path()));
+        assert!(!http_tree
+            .tree
+            .contains_path(&req_two_alt_entry.to_tree_path()));
     }
 
     #[rstest]
@@ -281,34 +511,34 @@ mod tests {
         );
         http_tree.insert(&alt_post_entry);
 
-        assert!(matches!(
+        assert_matches!(
             http_tree
                 .witness(&get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&get_entry)),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&post_entry)),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_get_entry)),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_post_entry)),
             SubtreeLookupResult::Found(_)
-        ));
+        );
 
         assert!(http_tree
             .tree
@@ -321,34 +551,34 @@ mod tests {
         // delete the (1) path, all other paths should remain in the tree
         http_tree.delete(&get_entry);
 
-        assert!(matches!(
+        assert_matches!(
             http_tree
                 .witness(&get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&get_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&post_entry)),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_get_entry)),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_post_entry)),
             SubtreeLookupResult::Found(_)
-        ));
+        );
 
         assert!(http_tree
             .tree
@@ -361,34 +591,34 @@ mod tests {
         // delete the (3) path, now only (2) and (4) should remain in the tree
         http_tree.delete(&post_entry);
 
-        assert!(matches!(
+        assert_matches!(
             http_tree
                 .witness(&get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&get_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&post_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_get_entry)),
             SubtreeLookupResult::Found(_)
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_post_entry)),
             SubtreeLookupResult::Found(_)
-        ));
+        );
 
         assert!(http_tree
             .tree
@@ -401,34 +631,34 @@ mod tests {
         // delete the (2) path, now only (4) should remain in the tree
         http_tree.delete(&alt_get_entry);
 
-        assert!(matches!(
+        assert_matches!(
             http_tree
                 .witness(&get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&get_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&post_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_get_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_post_entry)),
             SubtreeLookupResult::Found(_)
-        ));
+        );
 
         assert!(http_tree
             .tree
@@ -441,34 +671,34 @@ mod tests {
         // delete the (4) path, now the tree should be empty
         http_tree.delete(&alt_post_entry);
 
-        assert!(matches!(
+        assert_matches!(
             http_tree
                 .witness(&get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&get_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&post_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_get_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_get_entry)),
             SubtreeLookupResult::Absent
-        ));
-        assert!(matches!(
+        );
+        assert_matches!(
             http_tree
                 .witness(&alt_post_entry, req_url)
                 .unwrap()
                 .lookup_subtree(&lookup_path_from_entry(&alt_post_entry)),
             SubtreeLookupResult::Absent
-        ));
+        );
 
         assert!(!http_tree
             .tree
@@ -508,10 +738,10 @@ mod tests {
 
         let witness = tree.witness(&not_found_entry, "/assets");
 
-        assert!(matches!(
+        assert_matches!(
             witness,
             Err(HttpCertificationError::WildcardPathNotValidForRequestPath { .. })
-        ));
+        );
     }
 
     #[rstest]
@@ -548,10 +778,7 @@ mod tests {
         let mut path = index_html_entry.to_tree_path();
         path.insert(0, b"http_expr".to_vec());
 
-        assert!(matches!(
-            witness.lookup_subtree(&path),
-            SubtreeLookupResult::Found(_)
-        ));
+        assert_matches!(witness.lookup_subtree(&path), SubtreeLookupResult::Found(_));
     }
 
     fn lookup_path_from_entry(entry: &HttpCertificationTreeEntry) -> Vec<Vec<u8>> {
