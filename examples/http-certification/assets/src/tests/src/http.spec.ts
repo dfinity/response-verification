@@ -103,8 +103,12 @@ describe('Assets', () => {
 
     expect(response.status_code).toBe(301);
     expectHeader(response.headers, ['location', '/']);
-    // enable when additional headers can be added to redirect responses
-    // expectSecurityHeaders(response.headers);
+    expectHeader(response.headers, ['content-type', 'text/plain']);
+    expectHeader(response.headers, [
+      'cache-control',
+      'public, no-cache, no-store',
+    ]);
+    expectSecurityHeaders(response.headers);
 
     let verificationResult = verifyRequestResponsePair(
       request,
@@ -116,14 +120,16 @@ describe('Assets', () => {
       CERTIFICATE_VERSION,
     );
 
+    const verifiedResponse = verificationResult.response;
     expect(verificationResult.verificationVersion).toEqual(CERTIFICATE_VERSION);
-    expect(verificationResult.response?.statusCode).toBe(301);
-    expect(verificationResult.response?.headers).toContainEqual([
-      'location',
-      '/',
+    expect(verifiedResponse?.statusCode).toBe(301);
+    expectHeader(verifiedResponse?.headers, ['location', '/']);
+    expectHeader(verifiedResponse?.headers, ['content-type', 'text/plain']);
+    expectHeader(verifiedResponse?.headers, [
+      'cache-control',
+      'public, no-cache, no-store',
     ]);
-    // enable when additional headers can be added to redirect responses
-    // expectSecurityHeaders(verificationResult.response?.headers);
+    expectSecurityHeaders(verifiedResponse?.headers);
   });
 
   // paths must be updated if the asset content changes
