@@ -1566,6 +1566,7 @@ dependencies = [
 name = "ic-http-certification"
 version = "2.6.0"
 dependencies = [
+ "assert_matches",
  "base64 0.21.7",
  "candid",
  "hex",

@@ -67,7 +67,6 @@ The lifecycle hooks are set up similarly to the JSON API.
 ```rust
 #[init]
 fn init() {
-    prepare_cel_exprs();
     certify_all_assets();
 }
 
@@ -79,30 +78,17 @@ fn post_upgrade() {
 
 ## CEL Expressions
 
-CEL expressions are also stored similarly to the [JSON API example](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http).
+The CEL expression definition is simpler in the case of assets compared to the [JSON API example](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) as the same CEL expression is used for every asset, including the fallback response.
 
 ```rust
-thread_local! {
-    static CEL_EXPRS: RefCell<HashMap<String, (DefaultResponseOnlyCelExpression<'static>, String)>> = RefCell::new(HashMap::new());
-}
-```
-
-The CEL expression definition is simpler in the case of assets as the same CEL expression is used for every asset, including the fallback response.
-
-```rust
-fn prepare_cel_exprs() {
-    let asset_cel_expr_def = DefaultCelBuilder::response_only_certification()
-        .with_response_certification(DefaultResponseCertification::response_header_exclusions(vec![]))
-        .build();
-
-    let asset_cel_expr = asset_cel_expr_def.to_string();
-
-    CEL_EXPRS.with_borrow_mut(|exprs| {
-        exprs.insert(
-            ASSET_CEL_EXPR_PATH.to_string(),
-            (asset_cel_expr_def, asset_cel_expr),
-        );
-    });
+lazy_static! {
+    static ref ASSET_CEL_EXPR_DEF: DefaultResponseOnlyCelExpression<'static> =
+        DefaultCelBuilder::response_only_certification()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build();
+    static ref ASSET_CEL_EXPR: String = ASSET_CEL_EXPR_DEF.to_string();
 }
 ```
 
@@ -172,11 +158,7 @@ fn create_asset_response(
 ) -> HttpResponse {
     let headers = get_asset_headers(additional_headers, body.len(), cel_expr);
 
-    HttpResponse::builder()
-        .with_status_code(200)
-        .with_headers(headers)
-        .with_body(body)
-        .build()
+    HttpResponse::ok(body, headers).build()
 }
 ```
 
@@ -189,35 +171,30 @@ fn certify_asset_response(
     asset_tree_path: &HttpCertificationPath,
     asset_req_path: String,
 ) {
-    CEL_EXPRS.with_borrow(|cel_exprs| {
-        // get the relevant CEL expression
-        let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
+    // create the response
+    let response = create_asset_response(additional_headers, body, ASSET_CEL_EXPR.clone());
 
-        // create the response
-        let response = create_asset_response(additional_headers, body, cel_expr_str.to_string());
+    // certify the response
+    let certification =
+        HttpCertification::response_only(&ASSET_CEL_EXPR_DEF, &response, None).unwrap();
 
-        // certify the response
-        let certification =
-            HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
+    HTTP_TREE.with_borrow_mut(|http_tree| {
+        // add the certification to the certification tree
+        http_tree.insert(&HttpCertificationTreeEntry::new(
+            asset_tree_path,
+            &certification,
+        ));
+    });
 
-        HTTP_TREE.with_borrow_mut(|http_tree| {
-            // add the certification to the certification tree
-            http_tree.insert(&HttpCertificationTreeEntry::new(
-                asset_tree_path,
-                &certification,
-            ));
-        });
-
-        RESPONSES.with_borrow_mut(|responses| {
-            // store the response for later retrieval
-            responses.insert(
-                asset_req_path,
-                CertifiedHttpResponse {
-                    response,
-                    certification,
-                },
-            );
-        });
+    RESPONSES.with_borrow_mut(|responses| {
+        // store the response for later retrieval
+        responses.insert(
+            asset_req_path,
+            CertifiedHttpResponse {
+                response,
+                certification,
+            },
+        );
     });
 }
 ```
@@ -244,35 +221,30 @@ fn certify_asset_with_encoding(
         let mut headers = vec![("content-encoding".to_string(), encoding.to_string())];
         headers.extend(additional_headers);
 
-        CEL_EXPRS.with_borrow(|cel_exprs| {
-            // get the relevant CEL expression
-            let (cel_expr_def, cel_expr_str) = cel_exprs.get(*ASSET_CEL_EXPR_PATH).unwrap();
+        // create the response
+        let response = create_asset_response(headers, body, ASSET_CEL_EXPR.clone());
 
-            // create the response
-            let response = create_asset_response(headers, body, cel_expr_str.to_string());
+        // certify the response
+        let certification =
+            HttpCertification::response_only(&ASSET_CEL_EXPR_DEF, &response, None).unwrap();
 
-            // certify the response
-            let certification =
-                HttpCertification::response_only(cel_expr_def, &response, None).unwrap();
+        HTTP_TREE.with_borrow_mut(|http_tree| {
+            // add the certification to the certification tree
+            http_tree.insert(&HttpCertificationTreeEntry::new(
+                asset_tree_path,
+                &certification,
+            ));
+        });
 
-            HTTP_TREE.with_borrow_mut(|http_tree| {
-                // add the certification to the certification tree
-                http_tree.insert(&HttpCertificationTreeEntry::new(
-                    asset_tree_path,
-                    &certification,
-                ));
-            });
-
-            ENCODED_RESPONSES.with_borrow_mut(|responses| {
-                // store the response for later retrieval
-                responses.insert(
-                    (asset_req_path, encoding.to_string()),
-                    CertifiedHttpResponse {
-                        response,
-                        certification,
-                    },
-                );
-            });
+        ENCODED_RESPONSES.with_borrow_mut(|responses| {
+            // store the response for later retrieval
+            responses.insert(
+                (asset_req_path, encoding.to_string()),
+                CertifiedHttpResponse {
+                    response,
+                    certification,
+                },
+            );
         });
     };
 }
@@ -561,11 +533,7 @@ fn create_metrics_response() -> HttpResponse<'static> {
         DefaultCelBuilder::skip_certification().to_string(),
     );
 
-    HttpResponse::builder()
-        .with_status_code(200)
-        .with_headers(headers)
-        .with_body(body)
-        .build()
+    HttpResponse::ok(body, headers).build()
 }
 ```
 
@@ -605,7 +573,6 @@ Alternatively, to make a request with cURL, again making sure to replace `backen
 ```shell
 curl "http://$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port)" --resolve "$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port):127.0.0.1"
 ```
-
 
 ## Resources
 

@@ -1,8 +1,8 @@
 mod tests {
     use ic_http_certification::{
         DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpCertificationPath,
-        HttpCertificationTreeEntry, HttpRequest, HttpResponse, StatusCode,
-        CERTIFICATE_EXPRESSION_HEADER_NAME, CERTIFICATE_HEADER_NAME,
+        HttpCertificationTreeEntry, HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
+        CERTIFICATE_HEADER_NAME,
     };
     use ic_response_verification::{
         types::{VerificationInfo, VerifiedResponse},
@@ -24,17 +24,17 @@ mod tests {
         let cel_expr = DefaultCelBuilder::skip_certification();
 
         let request = HttpRequest::get(req_path).build();
-        let mut response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let mut response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         let certification = HttpCertification::skip();
         let certification_tree_entry =
@@ -82,17 +82,17 @@ mod tests {
             .build();
 
         let request = HttpRequest::get(req_path).build();
-        let mut response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let mut response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
         let certification_tree_entry =
@@ -163,17 +163,17 @@ mod tests {
                 ("Cache-Control".into(), "no-store".into()),
             ])
             .build();
-        let mut response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let mut response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
                 ),
                 ("Cache-Control".into(), "max-age=604800".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
         let certification_tree_entry =
@@ -237,10 +237,9 @@ mod tests {
             .build();
 
         let request = HttpRequest::get(req_path).build();
-        let mut response = HttpResponse::builder()
-            .with_status_code(StatusCode::OK)
-            .with_body(body.as_bytes())
-            .with_headers(vec![
+        let mut response = HttpResponse::ok(
+            body.as_bytes(),
+            vec![
                 (
                     CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
                     cel_expr.to_string(),
@@ -249,8 +248,9 @@ mod tests {
                 ("Content-Encoding".into(), "gzip".into()),
                 ("Content-Language".into(), "en-US".into()),
                 ("Server".into(), "Apache/2.4.1 (Unix)".into()),
-            ])
-            .build();
+            ],
+        )
+        .build();
 
         let certification = HttpCertification::response_only(&cel_expr, &response, None).unwrap();
         let certification_tree_entry = HttpCertificationTreeEntry::new(&expr_path, certification);

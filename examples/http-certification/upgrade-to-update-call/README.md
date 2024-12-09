@@ -36,7 +36,7 @@ fn http_request() -> HttpResponse<'static> {
 #[update]
 fn http_request_update() -> HttpUpdateResponse<'static> {
     HttpResponse::builder()
-        .with_status_code(418)
+        .with_status_code(StatusCode::IM_A_TEAPOT)
         .with_body(b"I'm a teapot")
         .build_update()
 }

@@ -4,6 +4,7 @@ use candid::{
     CandidType, Deserialize,
 };
 pub use http::StatusCode;
+use serde::Deserializer;
 use std::{borrow::Cow, fmt::Debug};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -18,20 +19,19 @@ impl CandidType for StatusCodeWrapper {
     where
         S: Serializer,
     {
-        (self.0.as_u16()).idl_serialize(serializer)
+        self.0.as_u16().idl_serialize(serializer)
     }
 }
 
 impl<'de> Deserialize<'de> for StatusCodeWrapper {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         u16::deserialize(deserializer).and_then(|status_code| {
-            let inner = StatusCode::from_u16(status_code)
-                .map_err(|_| serde::de::Error::custom("Invalid HTTP Status Code."))?;
-
-            Ok(StatusCodeWrapper(inner))
+            StatusCode::from_u16(status_code)
+                .map(Into::into)
+                .map_err(|_| serde::de::Error::custom("Invalid HTTP Status Code."))
         })
     }
 }
@@ -62,6 +62,34 @@ impl From<StatusCode> for StatusCodeWrapper {
 /// assert_eq!(response.body(), b"Hello, World!");
 /// assert_eq!(response.upgrade(), Some(false));
 /// ```
+///
+/// # Helpers
+///
+/// There are also a number of convenience methods for quickly creating an [HttpResponse] with
+/// commonly used HTTP status codes:
+///
+/// - [OK](HttpResponse::ok)
+/// - [CREATED](HttpResponse::created)
+/// - [NO_CONTENT](HttpResponse::no_content)
+/// - [MOVED_PERMANENTLY](HttpResponse::moved_permanently)
+/// - [TEMPORARY_REDIRECT](HttpResponse::temporary_redirect)
+/// - [BAD_REQUEST](HttpResponse::bad_request)
+/// - [UNAUTHORIZED](HttpResponse::unauthorized)
+/// - [FORBIDDEN](HttpResponse::forbidden)
+/// - [NOT_FOUND](HttpResponse::not_found)
+/// - [METHOD_NOT_ALLOWED](HttpResponse::method_not_allowed)
+/// - [TOO_MANY_REQUESTS](HttpResponse::too_many_requests)
+/// - [INTERNAL_SERVER_ERROR](HttpResponse::internal_server_error)
+///
+/// ```
+/// use ic_http_certification::{HttpResponse, StatusCode};
+///
+/// let response = HttpResponse::ok(b"Hello, World!", vec![("Content-Type".into(), "text/plain".into())]).build();
+///
+/// assert_eq!(response.status_code(), StatusCode::OK);
+/// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+/// assert_eq!(response.body(), b"Hello, World!");
+/// ```
 #[derive(Clone, CandidType, Deserialize)]
 pub struct HttpResponse<'a> {
     /// HTTP response status code.
@@ -79,6 +107,353 @@ pub struct HttpResponse<'a> {
 }
 
 impl<'a> HttpResponse<'a> {
+    /// Creates a new [HttpResponseBuilder] initialized with an OK status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::ok(b"Hello, World!", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::OK);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Hello, World!");
+    /// ```
+    pub fn ok(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::OK)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a CREATED status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::created(b"Hello, World!", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::CREATED);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Hello, World!");
+    /// ```
+    pub fn created(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::CREATED)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a NO_CONTENT status code and
+    /// the given headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::no_content(vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::NO_CONTENT);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// ```
+    pub fn no_content(headers: Vec<(String, String)>) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::NO_CONTENT)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a MOVED_PERMANENTLY status code and
+    /// the given location and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::moved_permanently("https://www.example.com", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::MOVED_PERMANENTLY);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into()), ("Location".into(), "https://www.example.com".into())]);
+    /// ```
+    pub fn moved_permanently(
+        location: impl Into<String>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        let headers = headers
+            .into_iter()
+            .chain(std::iter::once(("Location".into(), location.into())))
+            .collect();
+
+        Self::builder()
+            .with_status_code(StatusCode::MOVED_PERMANENTLY)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a NOT_MODIFIED status code and
+    /// the given headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::not_modified(vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::NOT_MODIFIED);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// ```
+    pub fn not_modified(headers: Vec<(String, String)>) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::NOT_MODIFIED)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a TEMPORARY_REDIRECT status code and
+    /// the given location and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::temporary_redirect("https://www.example.com", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::TEMPORARY_REDIRECT);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into()), ("Location".into(), "https://www.example.com".into())]);
+    /// ```
+    pub fn temporary_redirect(
+        location: impl Into<String>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        let headers = headers
+            .into_iter()
+            .chain(std::iter::once(("Location".into(), location.into())))
+            .collect();
+
+        Self::builder()
+            .with_status_code(StatusCode::TEMPORARY_REDIRECT)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a BAD_REQUEST status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::bad_request(b"Bad Request", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::BAD_REQUEST);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Bad Request");
+    /// ```
+    pub fn bad_request(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::BAD_REQUEST)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with an UNAUTHORIZED status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::unauthorized(b"Unauthorized", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::UNAUTHORIZED);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Unauthorized");
+    /// ```
+    pub fn unauthorized(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::UNAUTHORIZED)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a FORBIDDEN status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::forbidden(b"Forbidden", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::FORBIDDEN);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Forbidden");
+    /// ```
+    pub fn forbidden(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::FORBIDDEN)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a NOT_FOUND status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};  
+    ///
+    /// let response = HttpResponse::not_found(b"Not Found", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::NOT_FOUND);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Not Found");
+    /// ```
+    pub fn not_found(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::NOT_FOUND)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a METHOD_NOT_ALLOWED status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::method_not_allowed(b"Method Not Allowed", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::METHOD_NOT_ALLOWED);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Method Not Allowed");
+    /// ```
+    pub fn method_not_allowed(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::METHOD_NOT_ALLOWED)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a CONFLICT status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::too_many_requests(b"Too many requests", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::TOO_MANY_REQUESTS);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Too many requests");
+    /// ```
+    pub fn too_many_requests(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::TOO_MANY_REQUESTS)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
+    /// Creates a new [HttpResponseBuilder] initialized with a INTERNAL_SERVER_ERROR status code and
+    /// the given body and headers.
+    ///
+    /// This method returns an instance of [HttpResponseBuilder] that can be used to
+    /// to create an [HttpResponse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::{HttpResponse, StatusCode};
+    ///
+    /// let response = HttpResponse::internal_server_error(b"Internal Server Error", vec![("Content-Type".into(), "text/plain".into())]).build();
+    ///
+    /// assert_eq!(response.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+    /// assert_eq!(response.headers(), &[("Content-Type".into(), "text/plain".into())]);
+    /// assert_eq!(response.body(), b"Internal Server Error");
+    /// ```
+    pub fn internal_server_error(
+        body: impl Into<Cow<'a, [u8]>>,
+        headers: Vec<(String, String)>,
+    ) -> HttpResponseBuilder<'a> {
+        Self::builder()
+            .with_status_code(StatusCode::INTERNAL_SERVER_ERROR)
+            .with_body(body)
+            .with_headers(headers)
+    }
+
     /// Creates and returns an instance of [HttpResponseBuilder], a builder-style
     /// object that can be used to construct an [HttpResponse].
     ///
@@ -482,7 +857,7 @@ impl Debug for HttpResponse<'_> {
 ///     .with_status_code(StatusCode::OK)
 ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
 ///     .with_body(b"Hello, World!")
-///     .build();
+///     .build_update();
 ///
 /// let update_response = HttpUpdateResponse::from(response);
 ///
