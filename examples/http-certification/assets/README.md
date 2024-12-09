@@ -76,11 +76,19 @@ fn post_upgrade() {
 
 ## Canister endpoints
 
-There is only one canister endpoint in this example to serve assets, `http_request` query endpoint. The `serve_asset` function will be covered in a later section.
+There is only one canister endpoint in this example to serve assets, the `http_request` query endpoint. The `http_request` handler uses two auxiliary functions, `serve_metrics` and `serve_asset`, which are covered in a later section.
 
 ```rust
 #[query]
 fn http_request(req: HttpRequest) -> HttpResponse {
+    let path = req.get_path().expect("Failed to parse request path");
+
+    // if the request is for the metrics endpoint, serve the metrics
+    if path == "/metrics" {
+        return serve_metrics();
+    }
+
+    // otherwise, serve the requested asset
     serve_asset(&req)
 }
 ```
@@ -128,7 +136,7 @@ fn get_asset_headers(additional_headers: Vec<HeaderField>) -> Vec<HeaderField> {
         ("strict-transport-security".to_string(), "max-age=31536000; includeSubDomains".to_string()),
         ("x-frame-options".to_string(), "DENY".to_string()),
         ("x-content-type-options".to_string(), "nosniff".to_string()),
-        ("content-security-policy".to_string(), "default-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content".to_string()),
+        ("content-security-policy".to_string(), "default-src 'self'; img-src 'self' data:; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content".to_string()),
         ("referrer-policy".to_string(), "no-referrer".to_string()),
         ("permissions-policy".to_string(), "accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()".to_string()),
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
@@ -148,17 +156,21 @@ The `certify_all_assets` function performs the following steps:
 
 1. Define the asset certification configurations.
 2. Collect all assets from the frontend build directory.
-3. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
-4. Set the canister's certified data.
+3. Skip certification for the `/metrics` endpoint.
+4. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
+5. Set the canister's certified data.
 
 ```rust
 thread_local! {
     static HTTP_TREE: Rc<RefCell<HttpCertificationTree>> = Default::default();
 
+    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::with_tree(HTTP_TREE.with(|tree| tree.clone())));
+
     // initializing the asset router with an HTTP certification tree is optional.
     // if direct access to the HTTP certification tree is not needed for certifying
-    // requests and responses outside of the asset router, then this step can be skipped.
-    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::with_tree(HTTP_TREE.with(|tree| tree.clone())));
+    // requests and responses outside of the asset router, then this step can be skipped
+    // and the asset router can be initialized like so:
+    static ASSET_ROUTER: RefCell<AssetRouter<'static>> = Default::default();
 }
 
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
@@ -232,13 +244,25 @@ fn certify_all_assets() {
     let mut assets = Vec::new();
     collect_assets(&ASSETS_DIR, &mut assets);
 
+    // 3. Skip certification for the metrics endpoint.
+    HTTP_TREE.with(|tree| {
+        let mut tree = tree.borrow_mut();
+
+        let metrics_tree_path = HttpCertificationPath::exact("/metrics");
+        let metrics_certification = HttpCertification::skip();
+        let metrics_tree_entry =
+            HttpCertificationTreeEntry::new(metrics_tree_path, metrics_certification);
+
+        tree.insert(&metrics_tree_entry);
+    });
+
     ASSET_ROUTER.with_borrow_mut(|asset_router| {
-        // 3. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
+        // 4. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
         if let Err(err) = asset_router.certify_assets(assets, asset_configs) {
             ic_cdk::trap(&format!("Failed to certify assets: {}", err));
         }
 
-        // 4. Set the canister's certified data.
+        // 5. Set the canister's certified data.
         set_certified_data(&asset_router.root_hash());
     });
 }
@@ -259,6 +283,53 @@ fn serve_asset(req: &HttpRequest) -> HttpResponse<'static> {
         } else {
             ic_cdk::trap("Failed to serve asset");
         }
+    })
+}
+```
+
+## Serving metrics
+
+The `serve_metrics` function is responsible for serving metrics. Since metrics are not certified, this procedure is a bit more involved compared to serving assets, which is handled entirely by the `asset_router`.
+
+It's important to determine whether skipping certification is appropriate for the use case. In this example, metrics are not sensitive data and are not used to make decisions that could affect the canister's security. Therefore, it's determined to be acceptable to skip certification for this use case, but that may not be the case for every canister. The important takeaway from this example is to learn how to skip certification, when it is necessary and safe to do so.
+
+The `Metrics` struct is used to collect the number of assets, number of fallback assets, and the cycle balance and serialize this into JSON. The `add_v2_certificate_header` function from the `ic-http-certification` library is used to add the `IC-Certificate` header to the response and then the `IC-Certificate-Expression` header is added too. The `get_asset_headers` function is used to get the same headers for the response that are used for asset responses.
+
+```rust
+fn serve_metrics() -> HttpResponse<'static> {
+    ASSET_ROUTER.with_borrow(|asset_router| {
+        let metrics = Metrics {
+            num_assets: asset_router.get_assets().len(),
+            num_fallback_assets: asset_router.get_fallback_assets().len(),
+            cycle_balance: canister_balance(),
+        };
+        let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
+        let mut response = HttpResponse::builder()
+            .with_status_code(200)
+            .with_body(body)
+            .build();
+
+        HTTP_TREE.with(|tree| {
+            let tree = tree.borrow();
+
+            let metrics_tree_path = HttpCertificationPath::exact("/metrics");
+            let metrics_certification = HttpCertification::skip();
+            let metrics_tree_entry =
+                HttpCertificationTreeEntry::new(&metrics_tree_path, metrics_certification);
+            add_v2_certificate_header(
+                &data_certificate().expect("No data certificate available"),
+                &mut response,
+                &tree.witness(&metrics_tree_entry, "/metrics").unwrap(),
+                &metrics_tree_path.to_expr_path(),
+            );
+
+            let headers = get_asset_headers(vec![(
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                DefaultCelBuilder::skip_certification().to_string(),
+            )]);
+            response.headers_mut().extend_from_slice(&headers);
+            response
+        })
     })
 }
 ```
