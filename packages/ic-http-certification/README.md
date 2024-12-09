@@ -72,7 +72,7 @@ When defining CEL expressions it's important to determine what should be certifi
 
 It should be considered unsafe to exclude anything from request certification that can change the expected response. The request method for example can drastically affect what action is taken by the canister, and so excluding it from certification would allow a malicious replica to respond with the expected responses for `'GET'` request, even though a `'POST'` request was made.
 
-In contrast for responses, it should be considered unsafe to exclude anything from response certification that will be used by clients in a meaningful way. For example, excluding the `Content-Type` header from certification would allow a malicious replica to respond with a different content type than expected, which could cause clients to misinterpret the response.
+For responses, it should be considered unsafe to exclude anything from response certification that will be used by clients in a meaningful way. For example, excluding the `Content-Type` header from certification would allow a malicious replica to respond with a different content type than expected, which could cause clients to misinterpret the response.
 
 #### Fully certified request / response pair
 
@@ -373,7 +373,7 @@ http_certification_tree.delete(&entry);
 
 ### Handling upgrades
 
-CEL expressions, certifications, the certification tree, and the corresponding requests and responses are not persisted across upgrades, by default. This means that if a canister is upgraded, all of this information will be lost. To handle upgrades effectively, all initialization logic run in the canister's `init` hook should also be run in the `post_upgrade` hook. This will ensure that the certification tree is correctly re-initialized after an upgrade. Most data structure, aside from the certification tree, can be persisted using stable memory, and the certification tree can be re-initialized using this persisted data. Care should be taken to not exceed the canister's instruction limit when re-initializing the certification tree, which can easily occur if the number of responses being certified grows very large. To solve this case, a stable memory compatible certification tree should be implemented, but this is unfortunately not supported yet.
+CEL expressions, certifications, the certification tree, and the corresponding requests and responses are not persisted across upgrades, by default. This means that if a canister is upgraded, all of this information will be lost. To handle upgrades effectively, all initialization logic run in the canister's `init` hook should also be run in the `post_upgrade` hook. This will ensure that the certification tree is correctly re-initialized after an upgrade. Most data structures, aside from the certification tree, can be persisted using stable memory, and the certification tree can be re-initialized using this persisted data. Care should be taken to not exceed the canister's instruction limit when re-initializing the certification tree, which can easily occur if the number of responses being certified grows very large. This case could potentially be addressed in the future by developing a stable memory compatible certification tree.
 
 ### Changing data
 
