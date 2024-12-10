@@ -1,0 +1,15 @@
+name: commitizen
+
+on:
+  pull_request:
+
+jobs:
+  check_commit_messages:
+    name: check_commit_messages:required
+    uses: dfinity/ci-tools/.github/workflows/check-commit-messages.yaml@main
+    with:
+      starting_commit: '4b3de72e9b2a1ea5b700851c25db6f42cb55e8fa'
+
+  check_pr_title:
+    name: check_pr_title:required
+    uses: dfinity/ci-tools/.github/workflows/check-pr-title.yaml@main
