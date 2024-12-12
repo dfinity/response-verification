@@ -511,7 +511,14 @@
 //!
 //! ## Deleting assets
 //!
-//! Deleting assets is similar to (certifying them)[#inserting-assets-into-the-asset-router].
+//! There are three ways to delete assets from the asset router:
+//! 1. [By configuration](#deleting-assets-by-configuration).
+//! 1. [By path](#deleting-assets-by-path).
+//! 1. [All at once](#deleting-all-assets).
+//!
+//! ### Deleting assets by configuration
+//!
+//! Deleting assets by configuration is similar to (certifying them)[#inserting-assets-into-the-asset-router].
 //!
 //! Depending on the configuration provided to the [certify_assets](AssetRouter::certify_assets) function,
 //! multiple responses may be generated for the same asset. To ensure that all generated responses are deleted,
@@ -528,7 +535,7 @@
 //! provided to `certify_assets` includes the Brotli and Gzip encodings, but the configuration provided to `delete_assets`
 //! only includes Brotli, then the Gzip file will not be deleted.
 //!
-//! Using the same base example used to demonstrate certifying assets:
+//! Assuming the same base example used above to demonstrate certifying assets:
 //!
 //! ```rust
 //! use ic_http_certification::StatusCode;
@@ -773,6 +780,188 @@
 //! set_certified_data(&asset_router.root_hash());
 //! ```
 //!
+//! ### Deleting assets by path
+//!
+//! To delete assets by path, use the
+//! [delete_assets_by_path](AssetRouter::delete_assets_by_path) function.
+//!
+//! Depending on the configuration provided to the [certify_assets](AssetRouter::certify_assets) function,
+//! multiple responses may be generated for the same asset. These assets may exist on different paths,
+//! for example if the `alias` configuration is used. If `alias` paths are not passed to this function,
+//! they will not be deleted.
+//!
+//! If multiple encodings exist for a path, all encodings will be deleted.
+//!
+//! Fallbacks are also not deleted, to delete them, use the
+//! [delete_fallback_assets_by_path](AssetRouter::delete_fallback_assets_by_path) function.
+//!
+//! Assuming the same base example used above to demonstrate certifying assets:
+//!
+//! ```rust
+//! use ic_http_certification::StatusCode;
+//! use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+//!
+//! let mut asset_router = AssetRouter::default();
+//!
+//! let assets = vec![
+//!     Asset::new(
+//!         "index.html",
+//!         b"<html><body><h1>Hello World!</h1></body></html>".as_slice(),
+//!     ),
+//!     Asset::new(
+//!         "index.html.gz",
+//!         &[0, 1, 2, 3, 4, 5]
+//!     ),
+//!     Asset::new(
+//!         "index.html.br",
+//!         &[6, 7, 8, 9, 10, 11]
+//!     ),
+//!     Asset::new(
+//!         "app.js",
+//!         b"console.log('Hello World!');".as_slice(),
+//!     ),
+//!     Asset::new(
+//!         "app.js.gz",
+//!         &[12, 13, 14, 15, 16, 17],
+//!     ),
+//!     Asset::new(
+//!         "app.js.br",
+//!         &[18, 19, 20, 21, 22, 23],
+//!     ),
+//!     Asset::new(
+//!         "css/app-ba74b708.css",
+//!         b"html,body{min-height:100vh;}".as_slice(),
+//!     ),
+//!     Asset::new(
+//!         "css/app-ba74b708.css.gz",
+//!         &[24, 25, 26, 27, 28, 29],
+//!     ),
+//!     Asset::new(
+//!         "css/app-ba74b708.css.br",
+//!         &[30, 31, 32, 33, 34, 35],
+//!     ),
+//! ];
+//!
+//! let asset_configs = vec![
+//!     AssetConfig::File {
+//!         path: "index.html".to_string(),
+//!         content_type: Some("text/html".to_string()),
+//!         headers: vec![(
+//!             "cache-control".to_string(),
+//!             "public, no-cache, no-store".to_string(),
+//!         )],
+//!         fallback_for: vec![AssetFallbackConfig {
+//!             scope: "/".to_string(),
+//!             status_code: Some(StatusCode::OK),
+//!         }],
+//!         aliased_by: vec!["/".to_string()],
+//!         encodings: vec![
+//!             AssetEncoding::Brotli.default_config(),
+//!             AssetEncoding::Gzip.default_config(),
+//!         ],
+//!     },
+//!     AssetConfig::Pattern {
+//!         pattern: "**/*.js".to_string(),
+//!         content_type: Some("text/javascript".to_string()),
+//!         headers: vec![(
+//!             "cache-control".to_string(),
+//!             "public, max-age=31536000, immutable".to_string(),
+//!         )],
+//!         encodings: vec![
+//!             AssetEncoding::Brotli.default_config(),
+//!             AssetEncoding::Gzip.default_config(),
+//!         ],
+//!     },
+//!     AssetConfig::Pattern {
+//!         pattern: "**/*.css".to_string(),
+//!         content_type: Some("text/css".to_string()),
+//!         headers: vec![(
+//!             "cache-control".to_string(),
+//!             "public, max-age=31536000, immutable".to_string(),
+//!         )],
+//!         encodings: vec![
+//!             AssetEncoding::Brotli.default_config(),
+//!             AssetEncoding::Gzip.default_config(),
+//!         ],
+//!     },
+//!     AssetConfig::Redirect {
+//!         from: "/old".to_string(),
+//!         to: "/new".to_string(),
+//!         kind: AssetRedirectKind::Permanent,
+//!         headers: vec![("content-type".to_string(), "text/plain".to_string())],
+//!     },
+//! ];
+//!
+//! asset_router.certify_assets(assets, asset_configs).unwrap();
+//! ```
+//!
+//! To delete the `index.html` asset, along with the fallback configuration for the `/` scope, the alias `/` and the alternative encodings:
+//!
+//! ```rust
+//! # use ic_http_certification::StatusCode;
+//! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+//!
+//! # let mut asset_router = AssetRouter::default();
+//!
+//! asset_router
+//!     .delete_assets_by_path(
+//!         vec![
+//!             "/index.html", // deletes the index.html asset, along with all encodings
+//!             "/" // deletes the `/` alias for index.html, along with all encodings
+//!         ],
+//!     );
+//!
+//! asset_router
+//!     .delete_fallback_assets_by_path(
+//!        vec![
+//!           "/" // deletes the fallback configuration for the `/` scope, along with all encodings
+//!       ]
+//!    );
+//! ```
+//!
+//! To delete the `app.js`asset, along with the alternative encodings:
+//!
+//! ```rust
+//! # use ic_http_certification::StatusCode;
+//! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+//!
+//! # let mut asset_router = AssetRouter::default();
+//!
+//! asset_router.delete_assets_by_path(vec!["/app.js"]);
+//! ```
+//!
+//! To delete the `css/app-ba74b708.css` asset, along with the alternative encodings:
+//!
+//! ```rust
+//! # use ic_http_certification::StatusCode;
+//! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+//!
+//! # let mut asset_router = AssetRouter::default();
+//!
+//! asset_router.delete_assets_by_path(vec!["/css/app-ba74b708.css"]);
+//! ```
+//!
+//! And finally, to delete the `/old` redirect:
+//!
+//! ```rust
+//! # use ic_asset_certification::{Asset, AssetConfig, AssetFallbackConfig, AssetRouter, AssetRedirectKind, AssetEncoding};
+//!
+//! # let mut asset_router = AssetRouter::default();
+//!
+//! asset_router.delete_assets_by_path(vec!["/old"]);
+//! ```
+//!
+//! After deleting any assets, make sure to set the canister's
+//! certified data again:
+//!
+//! ```ignore
+//! use ic_cdk::api::set_certified_data;
+//!
+//! set_certified_data(&asset_router.root_hash());
+//! ```
+//!
+//! ### Deleting all assets
+//!
 //! It's also possible to delete all assets and their certification in one go:
 //!
 //! ```rust
@@ -781,6 +970,15 @@
 //! # let mut asset_router = AssetRouter::default();
 //!
 //! asset_router.delete_all_assets();
+//! ```
+//!
+//! After deleting any assets, make sure to set the canister's
+//! certified data again:
+//!
+//! ```ignore
+//! use ic_cdk::api::set_certified_data;
+//!
+//! set_certified_data(&asset_router.root_hash());
 //! ```
 //!
 //! ## Querying assets
