@@ -100,18 +100,24 @@ actor Http {
 };
 ```
 
-## Testing out the canister
+## Testing the canister
 
 Start DFX:
 
 ```shell
-dfx start --background
+dfx start --background --clean
 ```
 
-Deploy the canister:
+Deploy the Rust canister:
 
 ```shell
-dfx deploy
+dfx deploy http_certification_upgrade_to_update_call_rust_backend
+```
+
+Or deploy the Motoko canister:
+
+```shell
+dfx deploy http_certification_upgrade_to_update_call_motoko_backend
 ```
 
 Make a request to the Rust canister using cURL:

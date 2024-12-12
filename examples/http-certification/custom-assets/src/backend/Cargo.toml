@@ -12,3 +12,7 @@ ic-cdk.workspace = true
 ic-http-certification.workspace = true
 lazy_static.workspace = true
 include_dir = { version = "0.7", features = ["glob"] }
+
+# The following dependencies are only necessary for JSON serialization of metrics
+serde.workspace = true
+serde_json.workspace = true
