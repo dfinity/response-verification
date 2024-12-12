@@ -347,13 +347,13 @@ Then, deploy the canister:
 dfx deploy http_certification_assets_backend
 ```
 
-You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command, making sure to replace `backend` with the name of the canister:
+You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command:
 
 ```shell
 echo "http://$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port)"
 ```
 
-Alternatively, to make a request with cURL, again making sure to replace `backend` with the name of the canister:
+Alternatively, to make a request with `curl`:
 
 ```shell
 curl "http://$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port)" --resolve "$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port):127.0.0.1"

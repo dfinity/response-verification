@@ -360,7 +360,7 @@ fn certify_index_asset() {
 }
 ```
 
-It's also possible to skip certification for certain routes. This can be useful for scenarios where it's difficult to predict what the response will look like for a certain route and the content is not very security sensitive. This can be done as follows:
+It's also possible to skip certification for certain routes. This can be useful for scenarios where it's difficult to predict what the response will look like for a certain route and the content is not very security sensitive. This can be done for example with metrics served on the `/metrics` route as follows:
 
 ```rust
 const METRICS_REQ_PATH: &str = "/metrics";
@@ -562,13 +562,13 @@ Then, deploy the canister:
 dfx deploy http_certification_custom_assets_backend
 ```
 
-You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command, making sure to replace `backend` with the name of the canister:
+You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command:
 
 ```shell
 echo "http://$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port)"
 ```
 
-Alternatively, to make a request with cURL, again making sure to replace `backend` with the name of the canister:
+Alternatively, to make a request with `curl`:
 
 ```shell
 curl "http://$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port)" --resolve "$(dfx canister id http_certification_custom_assets_backend).localhost:$(dfx info webserver-port):127.0.0.1"
