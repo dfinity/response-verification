@@ -328,6 +328,10 @@
 //!     from: "/old".to_string(),
 //!     to: "/new".to_string(),
 //!     kind: AssetRedirectKind::Permanent,
+//!     headers: vec![(
+//!         "content-type".to_string(),
+//!         "text/plain; charset=utf-8".to_string(),
+//!     )],
 //! };
 //! ```
 //!
@@ -430,6 +434,10 @@
 //!         from: "/old".to_string(),
 //!         to: "/new".to_string(),
 //!         kind: AssetRedirectKind::Permanent,
+//!         headers: vec![(
+//!             "content-type".to_string(),
+//!             "text/plain; charset=utf-8".to_string(),
+//!         )],
 //!     },
 //! ];
 //!
@@ -620,6 +628,10 @@
 //!         from: "/old".to_string(),
 //!         to: "/new".to_string(),
 //!         kind: AssetRedirectKind::Permanent,
+//!         headers: vec![(
+//!             "content-type".to_string(),
+//!             "text/plain; charset=utf-8".to_string(),
+//!         )],
 //!     },
 //! ];
 //!
@@ -750,6 +762,10 @@
 //!             from: "/old".to_string(),
 //!             to: "/new".to_string(),
 //!             kind: AssetRedirectKind::Permanent,
+//!             headers: vec![(
+//!                 "content-type".to_string(),
+//!                 "text/plain; charset=utf-8".to_string(),
+//!              )],
 //!         }],
 //!     )
 //!     .unwrap();
@@ -872,6 +888,7 @@
 //!         from: "/old".to_string(),
 //!         to: "/new".to_string(),
 //!         kind: AssetRedirectKind::Permanent,
+//!         headers: vec![("content-type".to_string(), "text/plain".to_string())],
 //!     },
 //! ];
 //!

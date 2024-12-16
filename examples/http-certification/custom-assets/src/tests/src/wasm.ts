@@ -16,7 +16,7 @@ export const BACKEND_WASM_PATH = resolve(
   'target',
   'wasm32-unknown-unknown',
   'release',
-  'http_certification_skip_certification_backend.wasm',
+  'http_certification_custom_assets_backend.wasm',
 );
 
 export async function setupBackendCanister(
