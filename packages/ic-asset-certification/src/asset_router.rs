@@ -78,11 +78,19 @@ use std::{borrow::Cow, cell::RefCell, cmp, collections::HashMap, rc::Rc};
 ///         from: "/old-url".to_string(),
 ///         to: "/".to_string(),
 ///         kind: AssetRedirectKind::Permanent,
+///         headers: vec![(
+///             "content-type".to_string(),
+///             "text/plain; charset=utf-8".to_string(),
+///         )],
 ///     },
 ///     AssetConfig::Redirect {
 ///         from: "/css/app.css".to_string(),
 ///         to: "/css/app-ba74b708.css".to_string(),
 ///         kind: AssetRedirectKind::Temporary,
+///         headers: vec![(
+///             "content-type".to_string(),
+///             "text/plain; charset=utf-8".to_string(),
+///         )],
 ///     },
 /// ];
 ///
@@ -311,8 +319,14 @@ impl<'content> AssetRouter<'content> {
         }
 
         for asset_config in asset_configs {
-            if let NormalizedAssetConfig::Redirect { from, to, kind } = asset_config {
-                self.insert_redirect(from, to, kind)?;
+            if let NormalizedAssetConfig::Redirect {
+                from,
+                to,
+                kind,
+                headers,
+            } = asset_config
+            {
+                self.insert_redirect(from, to, kind, headers)?;
             }
         }
 
@@ -367,8 +381,14 @@ impl<'content> AssetRouter<'content> {
         }
 
         for asset_config in asset_configs {
-            if let NormalizedAssetConfig::Redirect { from, to, kind } = asset_config {
-                self.delete_redirect(from, to, kind)?;
+            if let NormalizedAssetConfig::Redirect {
+                from,
+                to,
+                kind,
+                headers,
+            } = asset_config
+            {
+                self.delete_redirect(from, to, kind, headers)?;
             }
         }
 
@@ -799,8 +819,9 @@ impl<'content> AssetRouter<'content> {
         from: String,
         to: String,
         kind: AssetRedirectKind,
+        additional_headers: Vec<(String, String)>,
     ) -> AssetCertificationResult<()> {
-        let response = Self::prepare_redirect(from.clone(), to, kind)?;
+        let response = Self::prepare_redirect(from.clone(), to, kind, additional_headers)?;
 
         self.tree.borrow_mut().insert(&response.tree_entry);
 
@@ -815,8 +836,9 @@ impl<'content> AssetRouter<'content> {
         from: String,
         to: String,
         kind: AssetRedirectKind,
+        addtional_headers: Vec<(String, String)>,
     ) -> AssetCertificationResult<()> {
-        let response = Self::prepare_redirect(from.clone(), to, kind)?;
+        let response = Self::prepare_redirect(from.clone(), to, kind, addtional_headers)?;
 
         self.tree.borrow_mut().delete(&response.tree_entry);
         self.responses.remove(&RequestKey::new(&from, None, None));
@@ -828,13 +850,15 @@ impl<'content> AssetRouter<'content> {
         from: String,
         to: String,
         kind: AssetRedirectKind,
+        addtional_headers: Vec<(String, String)>,
     ) -> AssetCertificationResult<CertifiedAssetResponse<'content>> {
         let status_code = match kind {
             AssetRedirectKind::Permanent => StatusCode::MOVED_PERMANENTLY,
             AssetRedirectKind::Temporary => StatusCode::TEMPORARY_REDIRECT,
         };
 
-        let headers = vec![("location".to_string(), to)];
+        let mut headers = vec![("location".to_string(), to)];
+        headers.extend(addtional_headers);
 
         let (response, certification) = Self::prepare_response_and_certification(
             from.clone(),
@@ -3309,6 +3333,10 @@ mod tests {
                     CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
                     cel_expr.clone(),
                 ),
+                (
+                    "content-type".to_string(),
+                    "text/plain; charset=utf-8".to_string(),
+                ),
             ])
             .build();
         let mut expected_old_url_response = HttpResponse::builder()
@@ -3317,6 +3345,10 @@ mod tests {
                 ("content-length".to_string(), "0".to_string()),
                 ("location".to_string(), "/".to_string()),
                 (CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr),
+                (
+                    "content-type".to_string(),
+                    "text/plain; charset=utf-8".to_string(),
+                ),
             ])
             .build();
 
@@ -3891,6 +3923,10 @@ mod tests {
             from: "/old-url".to_string(),
             to: "/".to_string(),
             kind: AssetRedirectKind::Permanent,
+            headers: vec![(
+                "content-type".to_string(),
+                "text/plain; charset=utf-8".to_string(),
+            )],
         }
     }
 
@@ -3900,6 +3936,10 @@ mod tests {
             from: "/css/app.css".to_string(),
             to: "/css/app-ba74b708.css".to_string(),
             kind: AssetRedirectKind::Temporary,
+            headers: vec![(
+                "content-type".to_string(),
+                "text/plain; charset=utf-8".to_string(),
+            )],
         }
     }
 
