@@ -1,4 +1,4 @@
-## Unreleased
+## 3.0.0 (2024-12-17)
 
 ### BREAKING CHANGE
 
@@ -8,6 +8,12 @@
 
 ### Feat
 
+- **ic-asset-certification**: allow adding additional headers to redi… (#400)
+- **ic-http-certification**: add http response convenience methods (#398)
+- **ic-asset-certification**: add ability to delete assets by path (#402)
+- **ic-http-certification**: add request method enum (#397)
+- **ic-asset-certification**: allow overriding asset response status code (#394)
+- **ic-asset-certification**: add function to delete all assets (#393)
 - **ic-asset-certification**: add asset map for querying assets in the asset router (#387)
 - **ic-asset-certification**: add Range as a certified request header
 - **ic-asset-certification**: add certification for individual chunks
@@ -29,6 +35,7 @@
 
 ### Fix
 
+- **ic-http-certification**: fix handling of uncertified query parameters (#403)
 - update tests and fix a corner-case
 - remove text_io-dependency
 - **ic-asset-certification**: remove dependency on regex to reduce WASM size
