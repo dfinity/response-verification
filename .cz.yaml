@@ -8,5 +8,4 @@ commitizen:
   - Cargo.toml
   - packages/certificate-verification-js/package.json:version
   - packages/ic-certification-testing-wasm/package.json:version
-  - packages/ic-response-verification-tests/package.json:version
   - packages/ic-response-verification-wasm/package.json:version

@@ -64,5 +64,4 @@ jobs:
             Cargo.lock
             packages/certificate-verification-js/package.json
             packages/ic-certification-testing-wasm/package.json
-            packages/ic-response-verification-tests/package.json
             packages/ic-response-verification-wasm/package.json

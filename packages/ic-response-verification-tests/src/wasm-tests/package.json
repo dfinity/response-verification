@@ -1,6 +1,5 @@
 {
   "name": "response-verification-tests",
-  "version": "2.6.0",
   "scripts": {
     "e2e-test": "ts-node ./src/main.ts"
   },
