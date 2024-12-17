@@ -132,6 +132,13 @@ fn certify_all_assets() {
             from: "/old-url".to_string(),
             to: "/".to_string(),
             kind: AssetRedirectKind::Permanent,
+            headers: get_asset_headers(vec![
+                ("content-type".to_string(), "text/plain".to_string()),
+                (
+                    "cache-control".to_string(),
+                    NO_CACHE_ASSET_CACHE_CONTROL.to_string(),
+                ),
+            ]),
         },
     ];
 

@@ -161,6 +161,10 @@ use std::fmt::{Display, Formatter};
 ///     from: "/old".to_string(),
 ///     to: "/new".to_string(),
 ///     kind: AssetRedirectKind::Temporary,
+///     headers: vec![(
+///         "content-type".to_string(),
+///         "text/plain; charset=utf-8".to_string(),
+///     )],
 /// };
 /// ```
 ///
@@ -176,6 +180,10 @@ use std::fmt::{Display, Formatter};
 ///     from: "/old".to_string(),
 ///     to: "/new".to_string(),
 ///     kind: AssetRedirectKind::Permanent,
+///     headers: vec![(
+///         "content-type".to_string(),
+///         "text/plain; charset=utf-8".to_string(),
+///     )],
 /// };
 /// ```
 #[derive(Debug, Clone)]
@@ -365,6 +373,14 @@ pub enum AssetConfig {
 
         /// The kind redirect to configure.
         kind: AssetRedirectKind,
+
+        /// Additional headers to be inserted into the response. Each additional
+        /// header added will be included in certification and served by the
+        /// [AssetRouter](crate::AssetRouter) for matching [Assets](Asset).
+        ///
+        /// Note that the `Location` header will be automatically added to the
+        /// response with the value of the `to` field.
+        headers: Vec<(String, String)>,
     },
 }
 
@@ -535,6 +551,7 @@ pub(crate) enum NormalizedAssetConfig {
         from: String,
         to: String,
         kind: AssetRedirectKind,
+        headers: Vec<(String, String)>,
     },
 }
 
@@ -569,9 +586,17 @@ impl TryFrom<AssetConfig> for NormalizedAssetConfig {
                 headers,
                 encodings,
             }),
-            AssetConfig::Redirect { from, to, kind } => {
-                Ok(NormalizedAssetConfig::Redirect { from, to, kind })
-            }
+            AssetConfig::Redirect {
+                from,
+                to,
+                kind,
+                headers,
+            } => Ok(NormalizedAssetConfig::Redirect {
+                from,
+                to,
+                kind,
+                headers,
+            }),
         }
     }
 }
@@ -726,6 +751,10 @@ mod tests {
             from: asset_path.to_string(),
             to: asset_path.to_string(),
             kind: AssetRedirectKind::Permanent,
+            headers: vec![(
+                "content-type".to_string(),
+                "text/plain; charset=utf-8".to_string(),
+            )],
         }
         .try_into()
         .unwrap();
