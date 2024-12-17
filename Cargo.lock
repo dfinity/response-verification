@@ -379,7 +379,7 @@ dependencies = [
  "anyhow",
  "candid",
  "ic-cdk",
- "ic-certification 2.6.0",
+ "ic-certification 3.0.0",
  "serde",
  "serde_cbor",
  "sha2 0.10.8",
@@ -1235,12 +1235,12 @@ dependencies = [
 
 [[package]]
 name = "ic-asset-certification"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "assert_matches",
  "globset",
  "http",
- "ic-certification 2.6.0",
+ "ic-certification 3.0.0",
  "ic-http-certification",
  "ic-response-verification",
  "ic-response-verification-test-utils",
@@ -1295,10 +1295,10 @@ dependencies = [
 
 [[package]]
 name = "ic-cbor"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "candid",
- "ic-certification 2.6.0",
+ "ic-certification 3.0.0",
  "ic-response-verification-test-utils",
  "leb128",
  "nom",
@@ -1334,12 +1334,12 @@ dependencies = [
 
 [[package]]
 name = "ic-certificate-verification"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "cached 0.47.0",
  "candid",
  "ic-cbor",
- "ic-certification 2.6.0",
+ "ic-certification 3.0.0",
  "ic-certification-testing",
  "ic-response-verification-test-utils",
  "ic-types",
@@ -1368,7 +1368,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "hex",
  "rstest",
@@ -1380,7 +1380,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom",
@@ -1403,7 +1403,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing-wasm"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "console_error_panic_hook",
  "ic-certification-testing",
@@ -1564,14 +1564,14 @@ dependencies = [
 
 [[package]]
 name = "ic-http-certification"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "assert_matches",
  "base64 0.21.7",
  "candid",
  "hex",
  "http",
- "ic-certification 2.6.0",
+ "ic-certification 3.0.0",
  "ic-representation-independent-hash",
  "rstest",
  "rstest_reuse",
@@ -1583,7 +1583,7 @@ dependencies = [
 
 [[package]]
 name = "ic-http-certification-tests"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "candid",
  "hex",
@@ -1632,7 +1632,7 @@ dependencies = [
 
 [[package]]
 name = "ic-representation-independent-hash"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "hex",
  "leb128",
@@ -1641,7 +1641,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "base64 0.21.7",
  "candid",
@@ -1650,7 +1650,7 @@ dependencies = [
  "http",
  "ic-cbor",
  "ic-certificate-verification",
- "ic-certification 2.6.0",
+ "ic-certification 3.0.0",
  "ic-certification-testing",
  "ic-crypto-tree-hash",
  "ic-http-certification",
@@ -1673,12 +1673,12 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "base64 0.21.7",
  "flate2",
  "hex",
- "ic-certification 2.6.0",
+ "ic-certification 3.0.0",
  "ic-certification-testing",
  "ic-http-certification",
  "ic-types",
@@ -1690,7 +1690,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-tests"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -1704,7 +1704,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "2.6.0"
+version = "3.0.0"
 dependencies = [
  "base64 0.21.7",
  "console_error_panic_hook",
