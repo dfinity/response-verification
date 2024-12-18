@@ -26,11 +26,16 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
 
-      - name: Setup Commitizen
-        run: pip install commitizen==2.42.1
+        # Triggers installation of the Rust toolchain
+        # Must be done before wasm-pack is installed
+      - name: Cargo metadata
+        run: cargo metadata --format-version 1
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Setup Commitizen
+        run: pip install commitizen==2.42.1
 
       - name: Generate canister declarations
         run: dfx generate
