@@ -98,7 +98,7 @@ actor Http {
 
 ## Testing the canister
 
-To test the canister, you can use [`dfx`]([/docs/current/developer-docs/getting-started/install](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
+To test the canister, you can use [`dfx`](/docs/current/developer-docs/getting-started/install](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
