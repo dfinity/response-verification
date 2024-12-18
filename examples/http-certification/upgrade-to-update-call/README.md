@@ -98,7 +98,7 @@ actor Http {
 
 ## Testing the canister
 
-To test the canister, you can use [`dfx`](/docs/current/developer-docs/getting-started/install](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
@@ -110,7 +110,7 @@ dfx deploy http_certification_upgrade_to_update_call_rust_backend
 dfx deploy http_certification_upgrade_to_update_call_motoko_backend
 ```
 
-Make a request to the Rust canister using cURL:
+Make a request to the Rust canister using curl:
 
 ```shell
 curl -v http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_upgrade_to_update_call_rust_backend)
