@@ -1,10 +1,8 @@
 # Upgrading HTTP calls to update calls
 
-## Overview
-
 This guide walks through an example project that demonstrates how to use the ["Upgrade to Update call"](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec#upgrade-to-update-calls) feature of the HTTP Gateway.
 
-Since browsers are unable to directly interact with the IC network, the HTTP Gateway acts as a bridge between the two. The HTTP Gateway forwards requests from clients to canisters and forwards responses from canisters back to clients. Before returning responses from canister back to clients, the HTTP Gateway verifies the certification of the response to ensure that they have not been tampered with.
+Since browsers are unable to directly interact with the ICP network, the HTTP Gateway acts as a bridge between the two. The HTTP Gateway forwards requests from clients to canisters and forwards responses from canisters back to clients. Before returning responses from canister back to clients, the HTTP Gateway verifies the certification of the response to ensure that they have not been tampered with.
 
 Upgrading query calls to upgrade calls allows for the certification of any kind of dynamic response by leveraging ICP's consensus protocol without having to statically certify the response ahead of time. This is the simplest way to add _secure_ HTTP support to a canister.
 
@@ -22,7 +20,7 @@ Upon receiving a response from the canister with the `upgrade` field set to `opt
 
 This example project features both Rust and Motoko code. If you rather follow the Motoko version, you can skip this section and go straight to the [section covering Motoko](#motoko).
 
-The Rust code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entry point for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `Some(true)` (via the `build_update` method on the `HttpResponse::builder` struct). The `http_request_update` function is the entry point for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
+The Rust code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entrypoint for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `Some(true)` (via the `build_update` method on the `HttpResponse::builder` struct). The `http_request_update` function is the entrypoint for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
 
 ```rust
 use ic_cdk::*;
@@ -45,7 +43,7 @@ fn http_request_update() -> HttpUpdateResponse<'static> {
 
 ## Motoko
 
-The Motoko code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entry point for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `Some(true)`. The `http_request_update` function is the entry point for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
+The Motoko code is split into two functions: `http_request` and `http_request_update`. The `http_request` function is the entrypoint for the query call from the HTTP Gateway. It returns an `HttpResponse` with the `upgrade` field set to `Some(true)`. The `http_request_update` function is the entrypoint for the update call from the HTTP Gateway. It returns an `HttpUpdateResponse` with a custom status code and body.
 
 ```motoko
 import Text "mo:base/Text";
@@ -102,21 +100,15 @@ actor Http {
 
 ## Testing the canister
 
-Start DFX:
+To test the canister, you can use [`dfx`]([/docs/current/developer-docs/getting-started/install](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
-```
 
-Deploy the Rust canister:
-
-```shell
+## Deploy the Rust canister
 dfx deploy http_certification_upgrade_to_update_call_rust_backend
-```
 
-Or deploy the Motoko canister:
-
-```shell
+## Deploy the Motoko canister
 dfx deploy http_certification_upgrade_to_update_call_motoko_backend
 ```
 
