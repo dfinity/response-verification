@@ -522,7 +522,7 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
 
 ## Testing the canister
 
-To test the canister, you can use [`dfx`](/docs/current/developer-docs/getting-started/install](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
