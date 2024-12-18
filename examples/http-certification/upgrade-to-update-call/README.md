@@ -98,15 +98,23 @@ actor Http {
 
 ## Testing the canister
 
+This example uses a Rust canister called `http_certification_upgrade_to_update_call_rust_backend` or a Motoko canister called `http_certification_upgrade_to_update_call_motoko_backend`.
+
 To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
+```
 
-## Deploy the Rust canister
+#### Deploy the Rust canister
+
+```
 dfx deploy http_certification_upgrade_to_update_call_rust_backend
+```
 
-## Deploy the Motoko canister
+#### Deploy the Motoko canister
+
+```
 dfx deploy http_certification_upgrade_to_update_call_motoko_backend
 ```
 
