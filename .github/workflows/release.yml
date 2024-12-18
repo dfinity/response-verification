@@ -119,6 +119,11 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Release ic-asset-certification Cargo crate
+        run: cargo publish -p ic-asset-certification --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+
       - name: Create Github release
         uses: ncipollo/release-action@v1
         with:
