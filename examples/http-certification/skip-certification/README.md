@@ -8,7 +8,7 @@ This is not a beginner's canister development guide. Many fundamental concepts t
 
 ## Prerequisites
 
-This is a relatively simple guide so there's no prerequisites as such, but it's recommended to check out the full certification guides to make sure that certification is not a good fit for your project.
+This is a relatively simple guide, so there are no prerequisites as such, but it's recommended to check out the full certification guides to make sure that certification is not a good fit for your project.
 
 - [x] Complete the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guide.
 - [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
@@ -26,7 +26,7 @@ use ic_http_certification::utils::skip_certification_certified_data;
 
 #[init]
 fn init() {
-    set_certified_data(&skip_certification_certified_data());
+    set_certified_data(&skip_certification_certified_data());
 }
 ```
 
@@ -40,11 +40,11 @@ use ic_http_certification::utils::add_skip_certification_header;
 
 #[query]
 fn http_request() -> HttpResponse<'static> {
-    let mut response = create_response();
+    let mut response = create_response();
 
-    add_skip_certification_header(data_certificate().unwrap(), &mut response);
+    add_skip_certification_header(data_certificate().unwrap(), &mut response);
 
-    response
+    response
 }
 ```
 
@@ -69,11 +69,11 @@ You should see output similar to the following:
 
 ```json
 {
-  "cycle_balance": 3092211597987
+  "cycle_balance": 3092211597987
 }
 ```
 
-Alternatively, print the URL in the terminal and then open in a browser:
+Alternatively, print the URL in the terminal and then open it in a browser:
 
 ```shell
 echo http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend)
