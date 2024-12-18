@@ -552,7 +552,7 @@ To test the canister, you can use [`dfx`]([/docs/current/developer-docs/getting-
 
 ```shell
 dfx start --background --clean
-dfx deploy http_certification_assets_backend
+dfx deploy 
 ```
 
 You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command:
