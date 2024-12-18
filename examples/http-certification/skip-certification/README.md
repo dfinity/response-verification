@@ -52,11 +52,13 @@ The call to `data_certificate` returns a certificate that proves the canister's 
 
 ## Testing the canister
 
+This example uses a canister called `http_certification_skip_certification_backend`.
+
 To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
-dfx deploy
+dfx deploy http_certification_skip_certification_backend
 ```
 
 Make a request to the canister using curl:
