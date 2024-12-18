@@ -1,7 +1,5 @@
 # Serving JSON over HTTP
 
-## Overview
-
 This guide walks through an example project that demonstrates how to create a canister that can serve certified JSON over HTTP. The example project presents a very simple REST API for creating and listing to-do items. There is no authentication or persistent storage.
 
 This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/json-api).
@@ -524,7 +522,7 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
 
 ## Testing the canister
 
-To test the canister, you can use [`dfx`]([/docs/current/developer-docs/getting-started/install](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
+To test the canister, you can use [`dfx`](/docs/current/developer-docs/getting-started/install](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
