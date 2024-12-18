@@ -20,11 +20,16 @@ jobs:
 
       - uses: ./.github/actions/setup-dfx
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
+
+        # Triggers installation of the Rust toolchain
+        # Must be done before wasm-pack is installed
+      - name: Cargo metadata
+        run: cargo metadata --format-version 1
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Bump Version
         id: cz
