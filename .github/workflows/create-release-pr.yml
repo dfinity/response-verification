@@ -48,7 +48,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          title: 'Release ${{ steps.cz.outputs.version }}'
+          title: 'chore: release ${{ steps.cz.outputs.version }}'
           body: |
             After merging this PR, tag the merge commit with:
             ```shell

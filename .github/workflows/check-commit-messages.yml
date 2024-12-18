@@ -26,4 +26,4 @@ jobs:
           pip install -U Commitizen
 
       - name: Check Commit Messages
-        run: cz check --rev-range ac8f90b7c45e13e240d6c01a43d191b99f1aec4a..HEAD
+        run: cz check --rev-range 4b3de72e9b2a1ea5b700851c25db6f42cb55e8fa..HEAD

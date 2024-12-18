@@ -32,11 +32,8 @@ jobs:
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: DFX prepare Certified Counter
-        working-directory: examples/certification/certified-counter
-        run: |
-          dfx canister create --all
-          dfx generate backend
+      - name: Generate canister declarations
+        run: dfx generate
 
       - name: Build NPM packages
         run: pnpm build
