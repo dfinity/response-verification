@@ -548,11 +548,13 @@ fn http_request(req: HttpRequest) -> HttpResponse {
 
 ## Testing the canister
 
+This example uses a canister called `http_certification_custom_assets_backend`.
+
 To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
 
 ```shell
 dfx start --background --clean
-dfx deploy 
+dfx deploy http_certification_custom_assets_backend
 ```
 
 You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command:
