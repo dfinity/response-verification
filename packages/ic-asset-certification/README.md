@@ -92,35 +92,35 @@ In both cases, the following options can be configured for each asset:
   - It's important to include any headers that can affect browser behavior,
     particularly [security headers](https://owasp.org/www-project-secure-headers/index.html).
 - `encodings`
-  - A list of alternative encodings that can be used to serve the asset.
-  - Each entry is a tuple of the [encoding name](AssetEncoding) and the file
-    extension used in the file path, that can be conveniently created with
-    the `default` factory method. For example, to include Brotli and Gzip encodings:
-    `vec![AssetEncoding::Brotli.default(), AssetEncoding::Gzip.default()]`.
-  - The default file extensions for each encoding are:
-    - Brotli: `br`
-    - Gzip: `gz`
-    - Deflate: `zz`
-    - Zstd: `zst`
-  - Alternatively, a custom file extension can be provided for each encoding
-    by using the `custom` factory method. For example, to include a custom
-    file extension for Brotli and Gzip encodings:
-    `vec![AssetEncoding::Brotli.custom("brotli"), AssetEncoding::Gzip.custom("gzip")]`.
-  - Each encoding referenced must be provided to the asset router as a
-    separate file with the same filename as the original file, but with an
-    additional file extension matching the configuration. For example, if the
-    current matched file is named `file.html`, then the asset router will
-    look for `file.html.br` and `file.html.gz`.
-  - If the file is found, the asset will be certified and served with the
-    provided encoding according to the `Accept-Encoding`.
-  - Encodings are prioritized in the following order:
-    - Brotli
-    - Zstd
-    - Gzip
-    - Deflate
-    - Identity
-  - The asset router will return the highest priority encoding that has been
-    certified and is supported by the client.
+  - A list of alternative encodings that can be used to serve the asset.
+  - Each entry is a tuple of the encoding name and the file
+    extension used in the file path, that can be conveniently created with
+    the `default` factory method. For example, to include Brotli and Gzip encodings:
+    `vec![AssetEncoding::Brotli.default(), AssetEncoding::Gzip.default()]`.
+  - The default file extensions for each encoding are:
+    - Brotli: `br`
+    - Gzip: `gz`
+    - Deflate: `zz`
+    - Zstd: `zst`
+  - Alternatively, a custom file extension can be provided for each encoding
+    by using the `custom` factory method. For example, to include a custom
+    file extension for Brotli and Gzip encodings:
+    `vec![AssetEncoding::Brotli.custom("brotli"), AssetEncoding::Gzip.custom("gzip")]`.
+  - Each encoding referenced must be provided to the asset router as a
+    separate file with the same filename as the original file, but with an
+    additional file extension matching the configuration. For example, if the
+    current matched file is named `file.html`, then the asset router will
+    look for `file.html.br` and `file.html.gz`.
+  - If the file is found, the asset will be certified and served with the
+    provided encoding according to the `Accept-Encoding`.
+  - Encodings are prioritized in the following order:
+    - Brotli
+    - Zstd
+    - Gzip
+    - Deflate
+    - Identity
+  - The asset router will return the highest priority encoding that has been
+    certified and is supported by the client.
 
 ### Configuring individual files
 
