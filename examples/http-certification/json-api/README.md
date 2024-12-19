@@ -1,7 +1,5 @@
 # Serving JSON over HTTP
 
-## Overview
-
 This guide walks through an example project that demonstrates how to create a canister that can serve certified JSON over HTTP. The example project presents a very simple REST API for creating and listing to-do items. There is no authentication or persistent storage.
 
 This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/json-api).
@@ -42,7 +40,7 @@ fn post_upgrade() {
 
 CEL expressions only need to be set up once and can then be reused until the next canister upgrade. Responses can also be set up once and reused. If the response is static and will not change throughout the canister's lifetime, then it only needs to be certified once. If the response can change, however, then it will need to be re-certified every time it changes.
 
-`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified, then `DefaultFullCelExpression` should be used. Alternatively, the higher-level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future, there may be more schemes, and the higher-level `CelExpression` will be able to hold CEL expressions from those different schemes. It is up to the developers to decide how they want to store and organize their CEL expressions.
+`DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified, then `DefaultFullCelExpression` should be used. Alternatively, the higher-level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future, there may be more schemes and the higher-level `CelExpression` will be able to hold CEL expressions from those different schemes. It is up to the developers to decide how they want to store and organize their CEL expressions.
 
 In this example, there are two different CEL expressions used, a "full" CEL expression and a "response-only" CEL expression. The "full" CEL expression is used for the certified "todos" and the "response-only" CEL expression for the "Not found" response. For more information on defining CEL expressions, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#defining-cel-expressions).
 
@@ -83,7 +81,7 @@ lazy_static! {
 }
 ```
 
-## Response Headers
+## Response headers
 
 The security headers added to responses are based on the [OWASP Secure Headers project](https://owasp.org/www-project-secure-headers/index.html).
 
@@ -380,7 +378,7 @@ fn upgrade_to_update_call_handler(
 
 Upgrading to an `update` call will instruct the HTTP gateway to remake the request as an [`update` call](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-call). As an update call, the response to this request does not need to be certified. Since the canister's state has changed, however, the static `query` call responses will need to be re-certified. The same functions that certified these responses in the first place can be reused to achieve this.
 
-For creating todo items:
+For creating to-do items:
 
 ```rust
 fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
@@ -411,7 +409,7 @@ fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse
 }
 ```
 
-For updating todo items:
+For updating to-do items:
 
 ```rust
 fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse<'static> {
@@ -437,7 +435,7 @@ fn update_todo_item_handler(req: &HttpRequest, params: &Params) -> HttpResponse<
 }
 ```
 
-And, finally, for deleting todo items:
+And, finally, for deleting to-do items:
 
 ```rust
 fn delete_todo_item_handler(_req: &HttpRequest, params: &Params) -> HttpResponse<'static> {
@@ -524,7 +522,9 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
 
 ## Testing the canister
 
-To test the canister, you can use the `dfx` command-line tool. First, run DFX:
+This example uses a canister called `http_certification_json_api_backend`.
+
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
 
 ```shell
 dfx start --background --clean
@@ -533,10 +533,10 @@ dfx start --background --clean
 Then, deploy the canister:
 
 ```shell
-dfx deploy
+dfx deploy http_certification_json_api_backend
 ```
 
-To fetch TODO items:
+To fetch to-do items:
 
 ```shell
 curl -s \
@@ -544,7 +544,7 @@ curl -s \
     --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" | jq
 ```
 
-To add a TODO item:
+To add a to-do item:
 
 ```shell
 curl -s -X POST \
@@ -554,7 +554,7 @@ curl -s -X POST \
     -d '{ "title": "Learn Motoko" }' | jq
 ```
 
-To update a TODO item:
+To update a to-do item:
 
 ```shell
 curl -s -X PATCH \
@@ -564,7 +564,7 @@ curl -s -X PATCH \
     -d '{ "completed": true }' | jq
 ```
 
-To delete a TODO item:
+To delete a to-do item:
 
 ```shell
 curl -s -X DELETE \
