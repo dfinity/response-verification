@@ -96,7 +96,7 @@ In both cases, the following options can be configured for each asset:
     particularly [security headers](https://owasp.org/www-project-secure-headers/index.html).
 - `encodings`
   - A list of alternative encodings that can be used to serve the asset.
-  - Each entry is a tuple of the [encoding name](AssetEncoding) and the file
+  - Each entry is a tuple of the encoding name and the file
     extension used in the file path, that can be conveniently created with
     the `default` factory method. For example, to include Brotli and Gzip encodings:
     `vec![AssetEncoding::Brotli.default(), AssetEncoding::Gzip.default()]`.
