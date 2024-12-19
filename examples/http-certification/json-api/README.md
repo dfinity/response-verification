@@ -522,11 +522,17 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
 
 ## Testing the canister
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica and deploy the canister:
+This example uses a canister called `http_certification_json_api_backend`.
+
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
 
 ```shell
 dfx start --background --clean
-dfx deploy
+```
+Then, deploy the canister:
+
+```shell
+dfx deploy http_certification_json_api_backend
 ```
 
 To fetch to-do items:
