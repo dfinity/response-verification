@@ -1,7 +1,5 @@
 # Serving static assets over HTTP (custom)
 
-## Overview
-
 This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single-page JavaScript application. Assets are embedded into the canister when it is compiled.
 
 This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/custom-assets).
@@ -76,9 +74,9 @@ fn post_upgrade() {
 }
 ```
 
-## CEL Expressions
+## CEL expressions
 
-The CEL expression definition is simpler in the case of assets compared to the [JSON API example](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) as the same CEL expression is used for every asset, including the fallback response.
+The CEL expression definition is simpler in the case of assets compared to the [JSON API example](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) as the same CEL expression is used for every asset including the fallback response.
 
 ```rust
 lazy_static! {
@@ -199,7 +197,7 @@ fn certify_asset_response(
 }
 ```
 
-The next function to look at is another reusable function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory.
+Next is a reusable function to certify an asset with a specific encoding. This function will check for a file with an additional file extension matching the requested encoding in the statically included asset directory.
 
 For example, when certifying `index.html` with `gzip` encoding, this function will check for `index.html.gzip`. If the encoded asset exists, then it is certified using a procedure similar to the previously defined `certify_asset_response` function. The primary difference in this function is where the encoded asset response is stored.
 
@@ -550,7 +548,9 @@ fn http_request(req: HttpRequest) -> HttpResponse {
 
 ## Testing the canister
 
-To test the canister, you can use the `dfx` command-line tool. First, run DFX:
+This example uses a canister called `http_certification_custom_assets_backend`.
+
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
 
 ```shell
 dfx start --background --clean
