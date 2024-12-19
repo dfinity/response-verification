@@ -1,16 +1,14 @@
 # Skipping certification for HTTP responses
 
-## Overview
-
 This guide walks through an example project that demonstrates how to skip HTTP certification for all possible responses from a canister.
 
-WARNING!!! This means that a malicious replica can return whatever data it wants in response to requests directed towards the canister. Think carefully about whether or not this is the right fit for the canister. If certification should only be skipped for certain paths, then check out the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guide where this approach is covered in more detail.
+**WARNING** This means that a malicious replica can return whatever data it wants in response to requests directed towards the canister. Think carefully about whether or not this is the right fit for the canister. If certification should only be skipped for certain paths, then check out the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guide where this approach is covered in more detail.
 
-This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP Certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/skip-certification).
+This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to HTTP certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/skip-certification).
 
 ## Prerequisites
 
-This is a relatively simple guide so there's no prerequisites as such, but it's recommended to check out the full certification guides to make sure that certification is not a good fit for your project.
+This is a relatively simple guide, so there are no prerequisites as such, but it's recommended to check out the full certification guides to make sure that certification is not a good fit for your project.
 
 - [x] Complete the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guide.
 - [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
@@ -28,7 +26,7 @@ use ic_http_certification::utils::skip_certification_certified_data;
 
 #[init]
 fn init() {
-    set_certified_data(&skip_certification_certified_data());
+    set_certified_data(&skip_certification_certified_data());
 }
 ```
 
@@ -42,11 +40,11 @@ use ic_http_certification::utils::add_skip_certification_header;
 
 #[query]
 fn http_request() -> HttpResponse<'static> {
-    let mut response = create_response();
+    let mut response = create_response();
 
-    add_skip_certification_header(data_certificate().unwrap(), &mut response);
+    add_skip_certification_header(data_certificate().unwrap(), &mut response);
 
-    response
+    response
 }
 ```
 
@@ -54,19 +52,21 @@ The call to `data_certificate` returns a certificate that proves the canister's 
 
 ## Testing the canister
 
-Start DFX:
+This example uses a canister called `http_certification_skip_certification_backend`.
+
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
 
 ```shell
 dfx start --background --clean
 ```
 
-Deploy the canister:
+Then, deploy the canister:
 
 ```shell
 dfx deploy http_certification_skip_certification_backend
 ```
 
-Make a request to the canister using cURL:
+Make a request to the canister using curl:
 
 ```shell
 curl -s http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend) | jq
@@ -80,7 +80,7 @@ You should see output similar to the following:
 }
 ```
 
-Alternatively, print the URL in the terminal and then open in a browser:
+Alternatively, print the URL in the terminal and then open it in a browser:
 
 ```shell
 echo http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend)

@@ -1,36 +1,33 @@
-//!
-//! # Asset Certification
-//!
-//! ## Overview
+//! # Asset certification
 //!
 //! Asset certification is a specialized form of
-//! [HTTP Certification](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters)
-//! purpose-built for certifying static assets in ICP canisters.
+//! [HTTP certification](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters)
+//! purpose-built for certifying static assets in [ICP](https://internetcomputer.org/) canisters.
 //!
 //! The `ic-asset-certification` crate provides the necessary functionality to
 //! certify and serve static assets from Rust canisters.
 //!
 //! This is implemented in the following steps:
 //!
-//! 1. [Preparing assets](#preparing-assets)
-//! 2. [Configuring asset certification](#configuring-asset-certification)
-//! 3. [Inserting assets into the asset router](#inserting-assets-into-the-asset-router)
-//! 4. [Serving assets](#serving-assets)
-//! 5. [Deleting assets](#deleting-assets)
-//! 6. [Querying assets](#querying-assets)
+//! 1. [Preparing assets](#preparing-assets).
+//! 2. [Configuring asset certification](#configuring-asset-certification).
+//! 3. [Inserting assets into the asset router](#inserting-assets-into-the-asset-router).
+//! 4. [Serving assets](#serving-assets).
+//! 5. [Deleting assets](#deleting-assets).
+//! 6. [Querying assets](#querying-assets).
 //!
 //! For canisters that need it, it's also possible to [delete assets](#deleting-assets).
 //!
 //! ## Preparing assets
 //!
 //! This library is unopinionated about where assets come from, so that is not
-//! covered in detail here, but there are three main options:
+//! covered in detail here. However, there are three main options:
 //!
 //! - Embedding assets in the canister at compile time:
 //!   - [include_bytes!](https://doc.rust-lang.org/std/macro.include_bytes.html)
 //!   - [include_dir!](https://docs.rs/include_dir/latest/include_dir/index.html)
-//! - Uploading assets via canister endpoints at runtime.
-//!   - The [DFX asset canister](https://github.com/dfinity/sdk/blob/master/docs/design/asset-canister-interface.md) is a good example of this approach.
+//! - Uploading assets via canister endpoints at runtime:
+//!   - The [`dfx` asset canister](https://github.com/dfinity/sdk/blob/master/docs/design/asset-canister-interface.md) is a good example of this approach.
 //! - Generating assets dynamically in code, at runtime.
 //!
 //! With the assets in memory, they can be converted into the [Asset] type:
@@ -45,7 +42,7 @@
 //! ```
 //!
 //! It is recommended to use references when including assets directly into the
-//! canister, to avoid duplicating the content. This is particularly important for
+//! canister to avoid duplicating the content. This is particularly important for
 //! larger assets.
 //!
 //! ```rust
@@ -74,7 +71,7 @@
 //! ## Configuring asset certification
 //!
 //! [AssetConfig] defines the configuration for any files that will be certified.
-//! The configuration can either be matched to an individual file by [path](AssetConfig::File), or to
+//! The configuration can either be matched to an individual file by [path](AssetConfig::File) or to
 //! many files by a [glob](AssetConfig::Pattern).
 //!
 //! In both cases, the following options can be configured for each asset:
@@ -136,7 +133,7 @@
 //! scope. This can be used to configure 404 pages or single-page application
 //! entry points, for example.
 //!
-//! When serving assets, if a requested path does not exactly match any assets then
+//! When serving assets, if a requested path does not exactly match any assets, then
 //! a search is conducted for an asset configured with the fallback scope that most
 //! closely matches the requested asset's path.
 //!
@@ -192,7 +189,7 @@
 //! ```
 //!
 //! It's also possible to configure multiple fallbacks for a single asset. The
-//! following example configures an individual HTML file to be served by the on the
+//! following example configures an individual HTML file to be served on the
 //! `/404.html` path, in addition to serving as the fallback for the `/js` and `/css`
 //! scopes.
 //!
@@ -270,7 +267,7 @@
 //! - `[ab]` matches `a` or `b` where `a` and `b` are characters.
 //! - `[!ab]` to match any character except for `a` and `b`.
 //! - Metacharacters such as `*` and `?` can be escaped with character
-//! class notation. e.g., `[*]` matches `*`.
+//! class notation, e.g., `[*]` matches `*`.
 //!
 //! For example, the following pattern will match all `.js` files in the `js`
 //! directory:
@@ -295,7 +292,7 @@
 //! ### Configuring redirects
 //!
 //! Redirects can be configured using the [AssetConfig::Redirect] variant. This
-//! variant takes a `from` and `to` paths, and a redirect [kind](AssetRedirectKind).
+//! variant takes `from` and `to` paths, and a redirect [kind](AssetRedirectKind).
 //! When a request is made to the `from` path, the client will be redirected to the
 //! `to` path. The [AssetConfig::Redirect] config is not matched against any [Asset]s.
 //!
@@ -472,7 +469,7 @@
 //! ## Serving assets
 //!
 //! Assets can be served by calling the `serve_asset` method on the `AssetRouter`.
-//! This method will return a response, a witness and an expression path, which can be used
+//! This method will return a response, a witness, and an expression path, which can be used
 //! alongside the canister's data certificate to add the required certificate header to the response.
 //!
 //! ```rust
@@ -504,7 +501,7 @@
 //!
 //! asset_router.certify_assets(vec![asset], vec![asset_config]).unwrap();
 //!
-//! // this should normally be retrieved using `ic_cdk::api::data_certificate()`.
+//! // This should normally be retrieved using `ic_cdk::api::data_certificate()`.
 //! let data_certificate = vec![1, 2, 3];
 //! let response = asset_router.serve_asset(&data_certificate, &http_request).unwrap();
 //!```
@@ -518,20 +515,20 @@
 //!
 //! ### Deleting assets by configuration
 //!
-//! Deleting assets by configuration is similar to (certifying them)[#inserting-assets-into-the-asset-router].
+//! Deleting assets by configuration is similar to [certifying them](#inserting-assets-into-the-asset-router).
 //!
 //! Depending on the configuration provided to the [certify_assets](AssetRouter::certify_assets) function,
 //! multiple responses may be generated for the same asset. To ensure that all generated responses are deleted,
 //! the [delete_assets](AssetRouter::delete_assets) function accepts the same configuration.
 //!
-//! If a configuration different to the one used to certify assets in the first place is provided,
-//! one of two things can happen.
+//! If a configuration different from the one used to certify assets in the first place is provided,
+//! one of two things can happen:
 //!
-//! If the configuration inclues a file that was not certified in the first place, it will be silently ignored.
+//! 1. If the configuration includes a file that was not certified in the first place, it will be silently ignored.
 //! For example, if the configuration provided to `certify_assets` includes the Brotli and Gzip encodings, but the
-//! configuration provided to `delete_assets` includes Brotli, Gzip and Deflate, the Brotli and Gzip encoded files will be deleted, while the Deflate file is ignored, since it doesn't exist.
+//! configuration provided to `delete_assets` includes Brotli, Gzip, and Deflate. the Brotli and Gzip encoded files will be deleted, while the Deflate file is ignored, since it doesn't exist.
 //!
-//! If the configuration excludes a file that was certified, it will not be deleted. For example, if the configuration,
+//! 2. If the configuration excludes a file that was certified, it will not be deleted. For example, if the configuration,
 //! provided to `certify_assets` includes the Brotli and Gzip encodings, but the configuration provided to `delete_assets`
 //! only includes Brotli, then the Gzip file will not be deleted.
 //!
@@ -787,12 +784,12 @@
 //!
 //! Depending on the configuration provided to the [certify_assets](AssetRouter::certify_assets) function,
 //! multiple responses may be generated for the same asset. These assets may exist on different paths,
-//! for example if the `alias` configuration is used. If `alias` paths are not passed to this function,
+//! for example, if the `alias` configuration is used. If `alias` paths are not passed to this function,
 //! they will not be deleted.
 //!
 //! If multiple encodings exist for a path, all encodings will be deleted.
 //!
-//! Fallbacks are also not deleted, to delete them, use the
+//! Fallbacks are also not deleted; to delete them, use the
 //! [delete_fallback_assets_by_path](AssetRouter::delete_fallback_assets_by_path) function.
 //!
 //! Assuming the same base example used above to demonstrate certifying assets:
@@ -989,15 +986,15 @@
 //! [get_fallback_assets()](AssetRouter::get_fallback_assets) function returns all fallback assets.
 //!
 //! The [AssetMap] can be used to query assets by `path`, `encoding`, and `starting_range`.
-//! For standard assets, the path refers to the asset's path, e.g. `/index.html`.
+//! For standard assets, the path refers to the asset's path, e.g., `/index.html`.
 //!
-//! For fallback assets, the path refers to the scope that the fallback is valid for, e.g. `/`.
+//! For fallback assets, the path refers to the scope that the fallback is valid for, e.g., `/`.
 //! See the [fallback_for](crate::AssetConfig::File::fallback_for) config option for more information
 //! on fallback scopes.
 //!
-//! For all types of assets, the encoding refers to the encoding of the asset, see [AssetEncoding].
+//! For all types of assets, the encoding refers to the encoding of the asset; see [AssetEncoding].
 //!
-//! Assets greater than 2mb are split into multiple ranges, the starting range allows retrieval of
+//! Assets greater than 2 MiB are split into multiple ranges; the starting range allows retrieval of
 //! individual chunks of these large assets. The first range is `Some(0)`, the second range is
 //! `Some(ASSET_CHUNK_SIZE)`, the third range is `Some(ASSET_CHUNK_SIZE * 2)`, and so on. The entire asset can
 //! also be retrieved by passing `None` as the `starting_range`.
