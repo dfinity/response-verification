@@ -1,3 +1,9 @@
+## 3.0.2 (2024-12-20)
+
+### Fix
+
+- **ic-asset-certification**: include range header in streaming request certification (#417)
+
 ## 3.0.1 (2024-12-20)
 
 ### Fix
