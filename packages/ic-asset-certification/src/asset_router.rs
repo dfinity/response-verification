@@ -908,7 +908,10 @@ impl<'content> AssetRouter<'content> {
                 http::header::CONTENT_RANGE.to_string(),
                 format!("bytes {range_begin}-{range_end}/{total_length}"),
             ));
-            request_headers.push(http::header::RANGE.to_string());
+            request_headers.push((
+                http::header::RANGE.to_string(),
+                format!("bytes={range_begin}-"),
+            ));
         };
 
         Self::prepare_response_and_certification(
@@ -925,7 +928,7 @@ impl<'content> AssetRouter<'content> {
         status_code: StatusCode,
         body: Cow<'content, [u8]>,
         additional_response_headers: Vec<(String, String)>,
-        certified_request_headers: Vec<String>,
+        certified_request_headers: Vec<(String, String)>,
     ) -> AssetCertificationResult<(HttpResponse<'content>, HttpCertification)> {
         let mut headers = vec![("content-length".to_string(), body.len().to_string())];
 
@@ -934,7 +937,7 @@ impl<'content> AssetRouter<'content> {
             .with_request_headers(
                 certified_request_headers
                     .iter()
-                    .map(|s| s.as_str())
+                    .map(|(s, _)| s.as_str())
                     .collect::<Vec<&str>>(),
             )
             .with_response_certification(DefaultResponseCertification::response_header_exclusions(
@@ -944,7 +947,9 @@ impl<'content> AssetRouter<'content> {
         let cel_expr_str = cel_expr.to_string();
         headers.push((CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(), cel_expr_str));
 
-        let request = HttpRequest::get(url).build();
+        let request = HttpRequest::get(url)
+            .with_headers(certified_request_headers.clone())
+            .build();
 
         let response = HttpResponse::builder()
             .with_status_code(status_code)
