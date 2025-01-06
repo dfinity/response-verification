@@ -139,8 +139,8 @@ fn verify_certificate_time(
             timestamp: encoded_certificate_time.to_vec(),
         }
     })? as u128;
-    let max_certificate_time = current_time_ns + allowed_certificate_time_offset;
-    let min_certificate_time = current_time_ns - allowed_certificate_time_offset;
+    let max_certificate_time = current_time_ns.saturating_add(*allowed_certificate_time_offset);
+    let min_certificate_time = current_time_ns.saturating_sub(*allowed_certificate_time_offset);
 
     if certificate_time > max_certificate_time {
         return Err(CertificateVerificationError::TimeTooFarInTheFuture {
@@ -216,6 +216,29 @@ mod tests {
                 &current_timestamp,
                 &MAX_CERT_TIME_OFFSET_NS,
             )
+            .unwrap();
+    }
+
+    #[test]
+    fn verify_certificate_with_infinite_max_cert_time_offset() {
+        let canister_id = CanisterId::from_u64(0);
+        let CertificateData {
+            cbor_encoded_certificate,
+            root_key,
+            ..
+        } = CertificateBuilder::new(
+            &canister_id.to_string(),
+            &AssetTree::new().get_certified_data(),
+        )
+        .unwrap()
+        .with_time(100)
+        .build()
+        .unwrap();
+
+        let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
+
+        certificate
+            .verify(canister_id.as_ref(), &root_key, &200, &u128::MAX)
             .unwrap();
     }
 
