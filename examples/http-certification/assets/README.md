@@ -1,7 +1,5 @@
 # Serving static assets over HTTP
 
-## Overview
-
 This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single-page JavaScript application. Assets are embedded into the canister when it is compiled.
 
 This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to asset certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
@@ -269,7 +267,7 @@ fn certify_all_assets() {
 
 ## Serving assets
 
-The `serve_asset` function is responsible for serving assets. It uses the `serve_asset` function from the `AssetRouter` to serve the assets. This function returns an `HttpResponse` that can be returned to the caller.
+The `serve_asset` function from the `AssetRouter` is responsible for serving assets. This function returns an `HttpResponse` that can be returned to the caller.
 
 ```rust
 fn serve_asset(req: &HttpRequest) -> HttpResponse<'static> {
@@ -342,7 +340,9 @@ fn serve_metrics() -> HttpResponse<'static> {
 
 ## Testing the canister
 
-To test the canister, you can use the `dfx` command-line tool. First, run DFX:
+This example uses a canister called `http_certification_assets_backend`.
+
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
 
 ```shell
 dfx start --background --clean
