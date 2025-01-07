@@ -1,10 +1,8 @@
 use anyhow::Result;
-use ic_agent::{agent::http_transport::reqwest_transport::ReqwestHttpReplicaV2Transport, Agent};
+use ic_agent::Agent;
 
 pub async fn create_agent(url: &str) -> Result<Agent> {
-    let transport = ReqwestHttpReplicaV2Transport::create(url)?;
-
-    let agent = Agent::builder().with_transport(transport).build()?;
+    let agent = Agent::builder().with_url(url).build()?;
     agent.fetch_root_key().await?;
 
     Ok(agent)
