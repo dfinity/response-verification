@@ -1,4 +1,4 @@
-name: Release
+name: release
 
 on:
   push:
@@ -11,17 +11,25 @@ env:
 
 jobs:
   release:
-    name: Release
+    name: release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/setup-pnpm
+      - name: Setup Python
+        uses: dfinity/ci-tools/actions/setup-python@main
 
-      - uses: ./.github/actions/setup-dfx
+      - name: Setup Commitizen
+        uses: dfinity/ci-tools/actions/setup-commitizen@main
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+
+      - name: Setup DFX
+        uses: dfinity/setup-dfx@main
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
@@ -33,9 +41,6 @@ jobs:
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
-      - name: Setup Commitizen
-        run: pip install commitizen==2.42.1
 
       - name: Generate canister declarations
         run: dfx generate

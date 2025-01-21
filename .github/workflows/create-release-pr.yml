@@ -1,4 +1,4 @@
-name: Create Release PR
+name: create_release_pr
 
 on: workflow_dispatch
 
@@ -8,17 +8,25 @@ env:
 
 jobs:
   bump_version:
-    name: Bump version
+    name: bump_version
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/setup-pnpm
+      - name: Setup Python
+        uses: dfinity/ci-tools/actions/setup-python@main
 
-      - uses: ./.github/actions/setup-dfx
+      - name: Setup Commitizen
+        uses: dfinity/ci-tools/actions/setup-commitizen@main
+
+      - name: Setup PNPM
+        uses: dfinity/ci-tools/actions/setup-pnpm@main
+
+      - name: Setup DFX
+        uses: dfinity/setup-dfx@main
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.3
@@ -28,19 +36,15 @@ jobs:
       - name: Cargo metadata
         run: cargo metadata --format-version 1
 
-      - name: Install wasm-pack
+      - name: Setup wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: Bump Version
-        id: cz
-        uses: commitizen-tools/commitizen-action@master
-        with:
-          commit: false
-          push: false
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bump version
+        id: bump_version
+        uses: dfinity/ci-tools/actions/bump-version@main
 
       - name: Print Version
-        run: echo "Bumping to version ${{ steps.cz.outputs.version }}"
+        run: echo "Bumping to version ${{ steps.bump_version.outputs.version }}"
 
       - name: Generate canister declarations
         run: dfx generate
@@ -51,22 +55,14 @@ jobs:
           pnpm build
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4
+        uses: dfinity/ci-tools/actions/create-pr@main
         with:
-          title: 'chore: release ${{ steps.cz.outputs.version }}'
-          body: |
+          branch_name: 'release/${{ steps.bump_version.outputs.version }}'
+          pull_request_title: 'chore: release ${{ steps.bump_version.outputs.version }}'
+          pull_request_body: |
             After merging this PR, tag the merge commit with:
             ```shell
-            git tag ${{ steps.cz.outputs.version }}
-            git push origin ${{ steps.cz.outputs.version }}
+            git tag ${{ steps.bump_version.outputs.version }}
+            git push origin ${{ steps.bump_version.outputs.version }}
             ```
-          commit-message: 'chore: release ${{ steps.cz.outputs.version }}'
-          branch: 'release/${{ steps.cz.outputs.version }}'
-          add-paths: |
-            .cz.yaml
-            CHANGELOG.md
-            Cargo.toml
-            Cargo.lock
-            packages/certificate-verification-js/package.json
-            packages/ic-certification-testing-wasm/package.json
-            packages/ic-response-verification-wasm/package.json
+          commit_message: 'chore: release ${{ steps.bump_version.outputs.version }}'
