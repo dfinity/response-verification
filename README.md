@@ -183,9 +183,22 @@ flowchart TB;
 - [Example project with a custom implementation serving static assets](./examples/http-certification/custom-assets/README.md).
 - [`ic-http-certification` source code](./packages/ic-http-certification/README.md).
 
+## Asset Certification
+
+Asset certification is a high level abstraction on [HTTP Certification](#http-certification) that allows canisters to serve static assets (e.g., HTML, CSS, JS, images, etc.) to clients. This is a common use case for web developers that want to host a website on the Internet Computer.
+
+The `ic-asset-certification` crate provides a simple API for canisters to serve static assets. It is built on top of the `ic-http-certification` crate and provides a way to serve certified assets without needing to understand how HTTP certification works.
+
+### Resources
+
+- [`ic-asset-certification` Cargo crate](https://crates.io/crates/ic-asset-certification).
+- [`ic-asset-certification` docs](https://docs.rs/ic-asset-certification/latest/ic_asset_certification).
+- [Example project serving a static website](./examples/http-certification/assets/README.md).
+- [`ic-asset-certification` source code](./packages/ic-asset-certification/README.md).
+
 ## Response Verification
 
-Response verification on the [Internet Computer](https://dfinity.org) is the process of verifying that an HTTP-compatible canister response from a replica has gone through consensus with other replicas hosting the same canister. It is the counterpart to [HTTP Certification](#http-certification).
+Response verification on the [Internet Computer](https://dfinity.org) is the process of verifying that an HTTP-compatible canister response from a replica has gone through consensus with other replicas hosting the same canister. It is the client-side counterpart to [HTTP Certification](#http-certification) and [Asset Certification](#asset-certification).
 
 The `ic-response-verification` and `@dfinity/response-verification` packages encapsulate this verification protocol. It is used by [ICX Proxy](https://github.com/dfinity/ic/tree/master/rs/boundary_node/icx_proxy) and the [local HTTP Proxy](https://github.com/dfinity/http-proxy) and may be used by other implementations of the [HTTP Gateway Protocol](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway) in the future.
 
@@ -260,6 +273,14 @@ Make sure to follow the [system setup](#system-setup) instructions first.
 | `cargo build -p ic-http-certification`                | Build Cargo crate      |
 | `cargo test -p ic-http-certification`                 | Test Cargo crate       |
 | `cargo doc -p ic-http-certification --no-deps --open` | Build Cargo crate docs |
+
+### Asset Certification
+
+| Command                                                | Description            |
+| ------------------------------------------------------ | ---------------------- |
+| `cargo build -p ic-asset-certification`                | Build Cargo crate      |
+| `cargo test -p ic-asset-certification`                 | Test Cargo crate       |
+| `cargo doc -p ic-asset-certification --no-deps --open` | Build Cargo crate docs |
 
 ### Response Verification
 
