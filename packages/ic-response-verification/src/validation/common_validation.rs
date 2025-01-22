@@ -1,6 +1,12 @@
+use crate::{ResponseVerificationError, ResponseVerificationResult};
+use candid::Principal;
 use ic_certification::{Certificate, HashTree, LookupResult};
 
-pub fn validate_tree(canister_id: &[u8], certificate: &Certificate, tree: &HashTree) -> bool {
+pub fn validate_tree(
+    canister_id: &[u8],
+    certificate: &Certificate,
+    tree: &HashTree,
+) -> ResponseVerificationResult {
     let certified_data_path = [
         "canister".as_bytes(),
         canister_id,
@@ -10,21 +16,24 @@ pub fn validate_tree(canister_id: &[u8], certificate: &Certificate, tree: &HashT
     let witness = match certificate.tree.lookup_path(&certified_data_path) {
         LookupResult::Found(witness) => witness,
         _ => {
-            return false;
+            return Err(ResponseVerificationError::CertificateMissingCertifiedData {
+                canister_id: Principal::from_slice(canister_id).to_text(),
+            });
         }
     };
 
     let digest = tree.digest();
     if witness != digest {
-        return false;
+        return Err(ResponseVerificationError::InvalidTreeRootHash);
     }
 
-    true
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use assert_matches::assert_matches;
     use ic_cbor::{CertificateToCbor, HashTreeToCbor};
     use ic_certification::hash_tree::HashTree;
     use ic_certification_testing::{CertificateBuilder, CertificateData};
@@ -53,9 +62,7 @@ mod tests {
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 
-        let result = validate_tree(canister_id.as_ref(), &certificate, &tree);
-
-        assert!(result);
+        validate_tree(canister_id.as_ref(), &certificate, &tree).unwrap();
     }
 
     #[test]
@@ -77,9 +84,9 @@ mod tests {
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 
-        let result = validate_tree(canister_id.as_ref(), &certificate, &tree);
+        let result = validate_tree(canister_id.as_ref(), &certificate, &tree).unwrap_err();
 
-        assert!(!result);
+        assert_matches!(result, ResponseVerificationError::InvalidTreeRootHash);
     }
 
     #[test]
@@ -100,9 +107,14 @@ mod tests {
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 
-        let result = validate_tree(canister_id.as_ref(), &certificate, &tree);
+        let result = validate_tree(canister_id.as_ref(), &certificate, &tree).unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::CertificateMissingCertifiedData {
+                canister_id,
+            } if canister_id == canister_id.to_string()
+        );
     }
 
     #[test]
@@ -130,8 +142,13 @@ mod tests {
         let certificate = Certificate::from_cbor(&cbor_encoded_certificate).unwrap();
         let tree = HashTree::from_cbor(&tree.serialize_to_cbor(None)).unwrap();
 
-        let result = validate_tree(canister_id.as_ref(), &certificate, &tree);
+        let result = validate_tree(canister_id.as_ref(), &certificate, &tree).unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::CertificateMissingCertifiedData {
+                canister_id,
+            } if canister_id == canister_id.to_string()
+        );
     }
 }

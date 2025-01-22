@@ -27,3 +27,5 @@ rstest.workspace = true
 assert_matches.workspace = true
 ic-response-verification.workspace = true
 ic-response-verification-test-utils.workspace = true
+ic-certification-testing.workspace = true
+once_cell.workspace = true

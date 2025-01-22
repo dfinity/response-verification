@@ -1,4 +1,5 @@
 mod tests {
+    use assert_matches::assert_matches;
     use ic_http_certification::{
         DefaultCelBuilder, DefaultResponseCertification, HttpCertification, HttpCertificationPath,
         HttpCertificationTreeEntry, HttpRequest, HttpResponse, CERTIFICATE_EXPRESSION_HEADER_NAME,
@@ -59,13 +60,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response.is_none()
-        ));
+        );
     }
 
     #[test]
@@ -133,13 +134,13 @@ mod tests {
             ],
         };
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_response)
-        ));
+        );
     }
 
     #[test]
@@ -214,13 +215,13 @@ mod tests {
             ],
         };
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_response)
-        ));
+        );
     }
 
     #[test]
@@ -291,12 +292,12 @@ mod tests {
             ],
         };
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_response)
-        ));
+        );
     }
 }

@@ -13,6 +13,7 @@ mod tests {
         index_js_certification, index_js_response, not_found_certification, not_found_response,
         redirect_certification, redirect_response,
     };
+    use assert_matches::assert_matches;
     use ic_http_certification::{
         HttpCertificationPath, HttpCertificationTree, HttpCertificationTreeEntry, HttpRequest,
         HttpResponse, CERTIFICATE_HEADER_NAME,
@@ -107,13 +108,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_certified_response)
-        ));
+        );
     }
 
     #[rstest]
@@ -163,12 +164,13 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree { .. })
-        ));
+            ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree { .. }
+        );
     }
 
     #[rstest]
@@ -218,12 +220,13 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::ExactExpressionPathMightExistInTree { .. })
-        ));
+            ResponseVerificationError::ExactExpressionPathMightExistInTree { .. }
+        );
     }
 
     #[rstest]
@@ -285,12 +288,13 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::ExactExpressionPathMismatch { .. })
-        ));
+            ResponseVerificationError::ExactExpressionPathMismatch { .. }
+        );
     }
 
     #[rstest]
@@ -340,12 +344,13 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::WildcardExpressionPathMismatch { .. })
-        ));
+            ResponseVerificationError::WildcardExpressionPathMismatch { .. }
+        );
     }
 
     #[rstest]
@@ -418,13 +423,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 2 && response == Some(expected_certified_response)
-        ));
+        );
     }
 
     #[rstest]
@@ -434,8 +439,9 @@ mod tests {
         #[from(etag_caching_match_response)] mut expected_response: HttpResponse,
     ) {
         let req_path = "/app";
+        let certification_path = HttpCertificationPath::exact("/app");
         let http_certification_tree_entry =
-            etag_caching_match_certification(HttpCertificationPath::exact("/app"));
+            etag_caching_match_certification(certification_path.clone());
         let current_time = get_current_timestamp();
 
         let V2CertificateFixture {
@@ -463,12 +469,15 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::InvalidResponseHashes)
-        ));
+            ResponseVerificationError::InvalidRequestAndResponseHashes {
+                provided_expr_path
+            } if provided_expr_path == certification_path.to_expr_path()
+        );
     }
 }
 

@@ -49,11 +49,15 @@ pub enum ResponseVerificationError {
 
     /// The tree has different root hash from the expected value in the certified variables
     #[error("Invalid tree root hash")]
-    InvalidTree,
+    InvalidTreeRootHash,
 
-    /// The CEL expression path is invalid
-    #[error("Invalid expression path")]
-    InvalidExpressionPath,
+    /// The certificate provided by the "IC-Certificate" response header is missing the
+    /// certified data witness for the canister
+    #[error(r#"The certificate provided by the "IC-Certificate" response header is missing the certified data witness for the canister with ID {canister_id}"#)]
+    CertificateMissingCertifiedData {
+        /// The ID of the canister that returned the response
+        canister_id: String
+    },
 
     /// The expression path provided by the "IC-Certificate" response header
     /// has an unexpected suffix and should end with "<$>" or "<*>"
@@ -135,33 +139,54 @@ pub enum ResponseVerificationError {
         request_path: String,
     },
 
+    /// The hash of the CEL expression provided by the "IC-Certificate-Expression"
+    /// response header does not exist at the expression path provided by the
+    /// "IC-Certificate" response header
+    #[error(r#"The hash of the CEL expression provided by the "IC-Certificate-Expression" response header does not exist at the path provided by the "IC-Certificate" response header ({provided_expr_path:?})"#)]
+    InvalidExpressionHash {
+        /// The expression path provided by the "IC-Certificate" response header
+        provided_expr_path: Vec<String>,
+    },
+
+    /// The hash of the request and response was not found in the tree at the
+    /// expression path provided by the "IC-Certificate" response header
+    #[error(r#"The hash of the request and response was not found in the tree at the expression path provided by the "IC-Certificate" response header ({provided_expr_path:?})"#)]
+    InvalidRequestAndResponseHashes {
+        /// The expression path provided by the "IC-Certificate" response header
+        provided_expr_path: Vec<String>,
+    },
+
+    /// The required empty leaf node was not found in the tree at the expression
+    /// path provided by the "IC-Certificate" response header
+    #[error(r#"The required empty leaf node was not found in the tree at the expression path provided by the "IC-Certificate" response header ({provided_expr_path:?})"#)]
+    MissingLeafNode {
+        /// The expression path provided by the "IC-Certificate" response header
+        provided_expr_path: Vec<String>,
+    },
+
     /// The response body was a mismatch from the expected values in the tree
     #[error("Invalid response body")]
     InvalidResponseBody,
 
-    /// The response hashes were a mismatch from the expected values in the tree
-    #[error("Invalid response hashes")]
-    InvalidResponseHashes,
-
     /// The certificate was missing from the certification header
     #[error("Certificate not found")]
-    MissingCertificate,
+    HeaderMissingCertificate,
 
     /// The tree was missing from the certification header
     #[error("Tree not found")]
-    MissingTree,
+    HeaderMissingTree,
 
     /// The certificate expression path was missing from the certification header
     #[error("Certificate expression path not found")]
-    MissingCertificateExpressionPath,
+    HeaderMissingCertificateExpressionPath,
 
     /// The certificate expression was missing from the response headers
     #[error("Certificate expression not found")]
-    MissingCertificateExpression,
+    HeaderMissingCertificateExpression,
 
     /// The certification values could not be found in the response headers
     #[error("Certification values not found")]
-    MissingCertification,
+    HeaderMissingCertification,
 
     /// Failed to decode CBOR
     #[error("CBOR decoding failed")]
@@ -202,9 +227,10 @@ pub enum ResponseVerificationJsErrorCode {
     /// Error parsing int
     ParseIntError,
     /// The tree has different root hash from the expected value in the certified variables
-    InvalidTree,
-    /// The CEL expression path is invalid
-    InvalidExpressionPath,
+    InvalidTreeRootHash,
+    /// The certificate provided by the "IC-Certificate" response header is missing the
+    /// certified data witness for the canister
+    CertificateMissingCertifiedData,
     /// The expression path provided by the "IC-Certificate" response header
     /// has an unexpected suffix and should end with "<$>" or "<*>"
     UnexpectedExpressionPathPrefix,
@@ -231,20 +257,28 @@ pub enum ResponseVerificationJsErrorCode {
     /// "IC-Certificate" response header that is valid for the request path might
     /// exist in the tree
     MoreSpecificWildcardExpressionMightExistInTree,
+    /// The hash of the CEL expression provided by the "IC-Certificate-Expression"
+    /// response header does not exist at the expression path provided by the
+    /// "IC-Certificate" response header
+    InvalidExpressionHash,
+    /// The hash of the request and response was not found in the tree at the
+    /// expression path provided by the "IC-Certificate" response header
+    InvalidRequestAndResponseHashes,
+    /// The required empty leaf node was not found in the tree at the expression
+    /// path provided by the "IC-Certificate" response header
+    MissingLeafNode,
     /// The response body was a mismatch from the expected values in the tree
     InvalidResponseBody,
-    /// The response hashes were a mismatch from the expected values in the tree
-    InvalidResponseHashes,
     /// The certificate was missing from the certification header
-    MissingCertificate,
+    HeaderMissingCertificate,
     /// The tree was missing from the certification header
-    MissingTree,
+    HeaderMissingTree,
     /// The certificate expression path was missing from the certification header
-    MissingCertificateExpressionPath,
+    HeaderMissingCertificateExpression,
     /// The certificate expression was missing from the response headers
     MissingCertificateExpression,
     /// The certification values could not be found in the response headers
-    MissingCertification,
+    HeaderMissingCertification,
     /// Failed to decode CBOR
     CborDecodingFailed,
     /// Failed to verify certificate
@@ -285,9 +319,11 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::ParseIntError(_) => {
                 ResponseVerificationJsErrorCode::ParseIntError
             }
-            ResponseVerificationError::InvalidTree => ResponseVerificationJsErrorCode::InvalidTree,
-            ResponseVerificationError::InvalidExpressionPath => {
-                ResponseVerificationJsErrorCode::InvalidExpressionPath
+            ResponseVerificationError::InvalidTreeRootHash => {
+                ResponseVerificationJsErrorCode::InvalidTreeRootHash
+            }
+            ResponseVerificationError::CertificateMissingCertifiedData { .. } => {
+                ResponseVerificationJsErrorCode::CertificateMissingCertifiedData
             }
             ResponseVerificationError::UnexpectedExpressionPathPrefix { .. } => {
                 ResponseVerificationJsErrorCode::UnexpectedExpressionPathPrefix
@@ -313,24 +349,30 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::MoreSpecificWildcardExpressionMightExistInTree {
                 ..
             } => ResponseVerificationJsErrorCode::MoreSpecificWildcardExpressionMightExistInTree,
+            ResponseVerificationError::InvalidExpressionHash { .. } => {
+                ResponseVerificationJsErrorCode::InvalidExpressionHash
+            }
+            ResponseVerificationError::InvalidRequestAndResponseHashes { .. } => {
+                ResponseVerificationJsErrorCode::InvalidRequestAndResponseHashes
+            }
+            ResponseVerificationError::MissingLeafNode { .. } => {
+                ResponseVerificationJsErrorCode::MissingLeafNode
+            }
             ResponseVerificationError::InvalidResponseBody => {
                 ResponseVerificationJsErrorCode::InvalidResponseBody
             }
-            ResponseVerificationError::InvalidResponseHashes => {
-                ResponseVerificationJsErrorCode::InvalidResponseHashes
+            ResponseVerificationError::HeaderMissingCertificate => {
+                ResponseVerificationJsErrorCode::HeaderMissingCertificate
             }
-            ResponseVerificationError::MissingCertificate => {
-                ResponseVerificationJsErrorCode::MissingCertificate
+            ResponseVerificationError::HeaderMissingTree => ResponseVerificationJsErrorCode::HeaderMissingTree,
+            ResponseVerificationError::HeaderMissingCertificateExpressionPath => {
+                ResponseVerificationJsErrorCode::HeaderMissingCertificateExpression
             }
-            ResponseVerificationError::MissingTree => ResponseVerificationJsErrorCode::MissingTree,
-            ResponseVerificationError::MissingCertificateExpressionPath => {
-                ResponseVerificationJsErrorCode::MissingCertificateExpressionPath
-            }
-            ResponseVerificationError::MissingCertificateExpression => {
+            ResponseVerificationError::HeaderMissingCertificateExpression => {
                 ResponseVerificationJsErrorCode::MissingCertificateExpression
             }
-            ResponseVerificationError::MissingCertification => {
-                ResponseVerificationJsErrorCode::MissingCertification
+            ResponseVerificationError::HeaderMissingCertification => {
+                ResponseVerificationJsErrorCode::HeaderMissingCertification
             }
             ResponseVerificationError::CborDecodingFailed(_) => {
                 ResponseVerificationJsErrorCode::CborDecodingFailed
@@ -514,28 +556,14 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn error_into_invalid_tree_error() {
-        let error = ResponseVerificationError::InvalidTree;
+        let error = ResponseVerificationError::InvalidTreeRootHash;
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidTree,
+                code: ResponseVerificationJsErrorCode::InvalidTreeRootHash,
                 message: format!(r#"Invalid tree root hash"#),
-            }
-        )
-    }
-
-    #[wasm_bindgen_test]
-    fn error_into_invalid_expression_path_error() {
-        let error = ResponseVerificationError::InvalidExpressionPath;
-        let result = ResponseVerificationJsError::from(error);
-
-        assert_eq!(
-            result,
-            ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidExpressionPath,
-                message: format!(r#"Invalid expression path"#),
             }
         )
     }
@@ -707,28 +735,14 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn error_into_invalid_response_hashes_error() {
-        let error = ResponseVerificationError::InvalidResponseHashes;
-        let result = ResponseVerificationJsError::from(error);
-
-        assert_eq!(
-            result,
-            ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::InvalidResponseHashes,
-                message: format!(r#"Invalid response hashes"#),
-            }
-        )
-    }
-
-    #[wasm_bindgen_test]
     fn error_into_invalid_missing_certificate_error() {
-        let error = ResponseVerificationError::MissingCertificate;
+        let error = ResponseVerificationError::HeaderMissingCertificate;
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::MissingCertificate,
+                code: ResponseVerificationJsErrorCode::HeaderMissingCertificate,
                 message: format!(r#"Certificate not found"#),
             }
         )
@@ -736,13 +750,13 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn error_into_invalid_missing_tree_error() {
-        let error = ResponseVerificationError::MissingTree;
+        let error = ResponseVerificationError::HeaderMissingTree;
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::MissingTree,
+                code: ResponseVerificationJsErrorCode::HeaderMissingTree,
                 message: format!(r#"Tree not found"#),
             }
         )
@@ -750,13 +764,13 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn error_into_invalid_missing_certificate_expr_path_error() {
-        let error = ResponseVerificationError::MissingCertificateExpressionPath;
+        let error = ResponseVerificationError::HeaderMissingCertificateExpressionPath;
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::MissingCertificateExpressionPath,
+                code: ResponseVerificationJsErrorCode::HeaderMissingCertificateExpression,
                 message: format!(r#"Certificate expression path not found"#),
             }
         )
@@ -764,7 +778,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn error_into_invalid_missing_certificate_expr_error() {
-        let error = ResponseVerificationError::MissingCertificateExpression;
+        let error = ResponseVerificationError::HeaderMissingCertificateExpression;
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
@@ -778,13 +792,13 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn error_into_invalid_missing_certification_error() {
-        let error = ResponseVerificationError::MissingCertification;
+        let error = ResponseVerificationError::HeaderMissingCertification;
         let result = ResponseVerificationJsError::from(error);
 
         assert_eq!(
             result,
             ResponseVerificationJsError {
-                code: ResponseVerificationJsErrorCode::MissingCertification,
+                code: ResponseVerificationJsErrorCode::HeaderMissingCertification,
                 message: format!(r#"Certification values not found"#),
             }
         )

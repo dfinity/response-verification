@@ -151,13 +151,15 @@ pub fn validate_expr_hash(
     expr_path: &[String],
     expr_hash: &Hash,
     tree: &HashTree,
-) -> Option<HashTree> {
+) -> ResponseVerificationResult<HashTree> {
     let mut path = path_from_parts(expr_path);
     path.push(expr_hash.into());
 
     match tree.lookup_subtree(&path) {
-        SubtreeLookupResult::Found(expr_tree) => Some(expr_tree),
-        _ => None,
+        SubtreeLookupResult::Found(expr_tree) => Ok(expr_tree),
+        _ => Err(ResponseVerificationError::InvalidExpressionHash {
+            provided_expr_path: expr_path.to_vec(),
+        }),
     }
 }
 
@@ -168,10 +170,8 @@ pub fn validate_hashes(
     expr_path: &[String],
     tree: &HashTree,
     certification: &CelExpression,
-) -> bool {
-    let Some(expr_tree) = validate_expr_hash(expr_path, expr_hash, tree) else {
-        return false;
-    };
+) -> ResponseVerificationResult {
+    let expr_tree = validate_expr_hash(expr_path, expr_hash, tree)?;
 
     let mut expr_tree_path: Vec<Label> = vec![];
     if let (CelExpression::Default(DefaultCelExpression::Full(_)), Some(request_hash)) =
@@ -185,9 +185,17 @@ pub fn validate_hashes(
 
     match expr_tree.lookup_subtree(&expr_tree_path) {
         SubtreeLookupResult::Found(res_tree) => {
-            HashTreeNode::from(res_tree).eq(&HashTreeNode::Leaf("".as_bytes().to_vec()))
+            if HashTreeNode::from(res_tree).eq(&HashTreeNode::Leaf("".as_bytes().to_vec())) {
+                Ok(())
+            } else {
+                Err(ResponseVerificationError::MissingLeafNode {
+                    provided_expr_path: expr_path.to_vec(),
+                })
+            }
         }
-        _ => false,
+        _ => Err(ResponseVerificationError::InvalidRequestAndResponseHashes {
+            provided_expr_path: expr_path.to_vec(),
+        }),
     }
 }
 
@@ -195,6 +203,7 @@ pub fn validate_hashes(
 mod tests {
     use super::*;
     use crate::test_utils::{create_pruned, remove_whitespace, sha256_from_hex};
+    use assert_matches::assert_matches;
     use ic_certification::hash_tree::{fork, label, leaf};
     use ic_http_certification::{
         cel::{DefaultFullCelExpression, DefaultRequestCertification},
@@ -260,16 +269,15 @@ mod tests {
         );
         let certification = create_certification();
 
-        let result = validate_hashes(
+        validate_hashes(
             &expr_hash,
             &Some(request_hash),
             &response_hash,
             &expr_path,
             &tree,
             &certification,
-        );
-
-        assert!(result);
+        )
+        .unwrap();
     }
 
     #[test]
@@ -315,9 +323,15 @@ mod tests {
             &expr_path,
             &tree,
             &certification,
-        );
+        )
+        .unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::InvalidExpressionHash {
+                provided_expr_path
+            } if provided_expr_path == expr_path
+        );
     }
 
     #[test]
@@ -363,9 +377,15 @@ mod tests {
             &expr_path,
             &tree,
             &certification,
-        );
+        )
+        .unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::InvalidExpressionHash {
+                provided_expr_path
+            } if provided_expr_path == expr_path
+        );
     }
 
     #[test]
@@ -405,9 +425,15 @@ mod tests {
             &expr_path,
             &tree,
             &certification,
-        );
+        )
+        .unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::InvalidRequestAndResponseHashes {
+                provided_expr_path
+            } if provided_expr_path == expr_path
+        );
     }
 
     #[test]
@@ -447,9 +473,15 @@ mod tests {
             &expr_path,
             &tree,
             &certification,
-        );
+        )
+        .unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::InvalidRequestAndResponseHashes {
+                provided_expr_path
+            } if provided_expr_path == expr_path
+        );
     }
 
     #[test]
@@ -489,9 +521,15 @@ mod tests {
             &expr_path,
             &tree,
             &certification,
-        );
+        )
+        .unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::InvalidRequestAndResponseHashes {
+                provided_expr_path
+            } if provided_expr_path == expr_path
+        );
     }
 
     #[test]
@@ -531,9 +569,15 @@ mod tests {
             &expr_path,
             &tree,
             &certification,
-        );
+        )
+        .unwrap_err();
 
-        assert!(!result);
+        assert_matches!(
+            result,
+            ResponseVerificationError::InvalidRequestAndResponseHashes {
+                provided_expr_path
+            } if provided_expr_path == expr_path
+        );
     }
 
     #[test]
@@ -560,9 +604,9 @@ mod tests {
             create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
         );
 
-        let result = validate_expr_hash(&expr_path, &expr_hash, &tree);
+        let result = validate_expr_hash(&expr_path, &expr_hash, &tree).unwrap();
 
-        assert_eq!(result, Some(leaf("")));
+        assert_eq!(result, leaf(""));
     }
 
     #[test]
@@ -600,12 +644,12 @@ mod tests {
             create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
         );
 
-        let result = validate_expr_hash(&expr_path, &expr_hash, &tree);
+        let result = validate_expr_hash(&expr_path, &expr_hash, &tree).unwrap();
         let no_certification_result =
-            validate_expr_hash(&expr_path, &no_certification_expr_hash, &tree);
+            validate_expr_hash(&expr_path, &no_certification_expr_hash, &tree).unwrap();
 
-        assert_eq!(result, Some(leaf("")));
-        assert_eq!(no_certification_result, Some(leaf("")));
+        assert_eq!(result, leaf(""));
+        assert_eq!(no_certification_result, leaf(""));
     }
 
     #[test]
@@ -632,9 +676,14 @@ mod tests {
             create_pruned("ea7fd1a6b0cac1fe118016ca3026e58d5ae67a6965478acb561edba542732e24"),
         );
 
-        let result = validate_expr_hash(&expr_path, &expr_hash, &tree);
+        let result = validate_expr_hash(&expr_path, &expr_hash, &tree).unwrap_err();
 
-        assert!(result.is_none());
+        assert_matches!(
+            result,
+            ResponseVerificationError::InvalidExpressionHash {
+                provided_expr_path
+            } if provided_expr_path == expr_path
+        );
     }
 
     #[test]
