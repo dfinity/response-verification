@@ -20,7 +20,7 @@ const MIN_REQUESTED_VERIFICATION_VERSION: u8 = 2;
 
 #[rstest]
 fn test_large_assets(
-    asset_one_body: &'static Vec<u8>,
+    asset_one_body: &'static [u8],
     asset_one_chunk_one: &'static [u8],
     asset_one_chunk_two: &'static [u8],
 ) {
@@ -154,21 +154,21 @@ fn asset_range_cel_expr() -> String {
 }
 
 #[fixture]
-fn asset_one_body() -> &'static Vec<u8> {
+fn asset_one_body() -> &'static [u8] {
     static ASSET_ONE_BODY: OnceCell<Vec<u8>> = OnceCell::new();
 
     ASSET_ONE_BODY.get_or_init(|| asset_body(ASSET_ONE_NAME, ASSET_ONE_SIZE))
 }
 
 #[fixture]
-fn asset_one_chunk_one(asset_one_body: &'static Vec<u8>) -> &'static [u8] {
+fn asset_one_chunk_one(asset_one_body: &'static [u8]) -> &'static [u8] {
     static ASSET_ONE_CHUNK: OnceCell<&[u8]> = OnceCell::new();
 
     ASSET_ONE_CHUNK.get_or_init(|| asset_chunk(asset_one_body, 0))
 }
 
 #[fixture]
-fn asset_one_chunk_two(asset_one_body: &'static Vec<u8>) -> &'static [u8] {
+fn asset_one_chunk_two(asset_one_body: &'static [u8]) -> &'static [u8] {
     static ASSET_ONE_CHUNK: OnceCell<&[u8]> = OnceCell::new();
 
     ASSET_ONE_CHUNK.get_or_init(|| asset_chunk(asset_one_body, 1))

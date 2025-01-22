@@ -56,7 +56,7 @@ pub enum ResponseVerificationError {
     #[error(r#"The certificate provided by the "IC-Certificate" response header is missing the certified data witness for the canister with ID {canister_id}"#)]
     CertificateMissingCertifiedData {
         /// The ID of the canister that returned the response
-        canister_id: String
+        canister_id: String,
     },
 
     /// The expression path provided by the "IC-Certificate" response header
@@ -364,7 +364,9 @@ impl From<ResponseVerificationError> for ResponseVerificationJsError {
             ResponseVerificationError::HeaderMissingCertificate => {
                 ResponseVerificationJsErrorCode::HeaderMissingCertificate
             }
-            ResponseVerificationError::HeaderMissingTree => ResponseVerificationJsErrorCode::HeaderMissingTree,
+            ResponseVerificationError::HeaderMissingTree => {
+                ResponseVerificationJsErrorCode::HeaderMissingTree
+            }
             ResponseVerificationError::HeaderMissingCertificateExpressionPath => {
                 ResponseVerificationJsErrorCode::HeaderMissingCertificateExpression
             }

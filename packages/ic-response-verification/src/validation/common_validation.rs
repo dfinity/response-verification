@@ -112,8 +112,8 @@ mod tests {
         assert_matches!(
             result,
             ResponseVerificationError::CertificateMissingCertifiedData {
-                canister_id,
-            } if canister_id == canister_id.to_string()
+                canister_id: error_canister_id,
+            } if error_canister_id == canister_id.to_string()
         );
     }
 
@@ -147,8 +147,8 @@ mod tests {
         assert_matches!(
             result,
             ResponseVerificationError::CertificateMissingCertifiedData {
-                canister_id,
-            } if canister_id == canister_id.to_string()
+                canister_id: error_canister_id,
+            } if error_canister_id == canister_id.to_string()
         );
     }
 }
