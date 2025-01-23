@@ -19,7 +19,7 @@ const MAX_CERT_TIME_OFFSET_NS: u128 = 300_000_000_000;
 const MIN_REQUESTED_VERIFICATION_VERSION: u8 = 2;
 
 #[rstest]
-fn test_large_assets(
+fn should_certify_long_asset_chunkwise(
     asset_one_body: &'static [u8],
     asset_one_chunk_one: &'static [u8],
     asset_one_chunk_two: &'static [u8],
@@ -39,10 +39,10 @@ fn test_large_assets(
         certificate: _,
         root_key,
     } = CertificateBuilder::new(&canister_id.to_string(), &certified_data)
-        .unwrap()
+        .expect("Failed to create CertificateBuilder")
         .with_time(current_time)
         .build()
-        .unwrap();
+        .expect("Failed to create CertificateData from CertificateBuilder");
 
     let mut expected_headers = common_asset_headers();
     expected_headers.extend(vec![
