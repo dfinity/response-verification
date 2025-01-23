@@ -51,3 +51,4 @@ ic-crypto-tree-hash.workspace = true
 ic-types.workspace = true
 rstest.workspace = true
 ic-certification-testing.workspace = true
+assert_matches.workspace = true

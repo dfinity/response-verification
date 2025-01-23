@@ -43,7 +43,7 @@ pub fn verify_request_response_pair(
         .collect();
 
     let Some(certificate_header_str) = headers.get(&CERTIFICATE_HEADER_NAME.to_lowercase()) else {
-        return Err(ResponseVerificationError::MissingCertification);
+        return Err(ResponseVerificationError::HeaderMissingCertification);
     };
 
     let certificate_header = CertificateHeader::from(certificate_header_str)?;
@@ -75,7 +75,7 @@ pub fn verify_request_response_pair(
         2 => match headers.get(&CERTIFICATE_EXPRESSION_HEADER_NAME.to_lowercase()) {
             Some(certificate_expression_header) => {
                 let Some(expr_path) = certificate_header.expr_path else {
-                    return Err(ResponseVerificationError::MissingCertificateExpressionPath);
+                    return Err(ResponseVerificationError::HeaderMissingCertificateExpressionPath);
                 };
 
                 let cel_ast = parse_cel_expression(certificate_expression_header)?;
@@ -96,7 +96,7 @@ pub fn verify_request_response_pair(
                     ic_public_key,
                 })
             }
-            None => Err(ResponseVerificationError::MissingCertification),
+            None => Err(ResponseVerificationError::HeaderMissingCertification),
         },
         _ => Err(ResponseVerificationError::UnsupportedVerificationVersion {
             min_supported_version: MIN_VERIFICATION_VERSION,
@@ -142,9 +142,7 @@ fn v1_verification(
     let decoded_body = decode_body(response.body(), encoding)?;
     let decoded_body_sha = hash(decoded_body.as_slice());
 
-    if !validate_tree(canister_id, &certificate, &tree) {
-        return Err(ResponseVerificationError::InvalidTree);
-    }
+    validate_tree(canister_id, &certificate, &tree)?;
 
     let mut valid_body = validate_body(&tree, &request_path, &decoded_body_sha);
     if encoding.is_some() && !valid_body {
@@ -204,21 +202,17 @@ fn v2_verification(
         &max_cert_time_offset_ns,
     )?;
 
-    if !validate_tree(canister_id, &certificate, &tree) {
-        return Err(ResponseVerificationError::InvalidTree);
-    }
-
+    validate_tree(canister_id, &certificate, &tree)?;
     validate_expr_path(&expr_path, &request_path, &tree)?;
 
     let (request_certification, response_certification) = match &certification {
         CelExpression::Default(DefaultCelExpression::Skip) => {
-            return match validate_expr_hash(&expr_path, &expr_hash, &tree).is_some() {
-                true => Ok(VerificationInfo {
-                    response: None,
-                    verification_version: 2,
-                }),
-                false => Err(ResponseVerificationError::InvalidExpressionPath),
-            };
+            validate_expr_hash(&expr_path, &expr_hash, &tree)?;
+
+            return Ok(VerificationInfo {
+                response: None,
+                verification_version: 2,
+            });
         }
         CelExpression::Default(DefaultCelExpression::ResponseOnly(
             DefaultResponseOnlyCelExpression { response },
@@ -240,33 +234,28 @@ fn v2_verification(
         response_headers_hash(&response.status_code().as_u16().into(), &response_headers);
     let response_hash = hash([response_headers_hash, body_hash].concat().as_slice());
 
-    let are_hashes_valid = validate_hashes(
+    validate_hashes(
         &expr_hash,
         &request_hash,
         &response_hash,
         &expr_path,
         &tree,
         &certification,
-    );
+    )?;
 
-    match are_hashes_valid {
-        true => {
-            let mut all_headers = response_headers.headers;
-            // add the certificate header back to the response
-            let Some(certificate_header_str) = response_headers.certificate else {
-                return Err(ResponseVerificationError::MissingCertification);
-            };
-            all_headers.push((CERTIFICATE_HEADER_NAME.to_string(), certificate_header_str));
+    let mut all_headers = response_headers.headers;
+    // add the certificate header back to the response
+    let Some(certificate_header_str) = response_headers.certificate else {
+        return Err(ResponseVerificationError::HeaderMissingCertification);
+    };
+    all_headers.push((CERTIFICATE_HEADER_NAME.to_string(), certificate_header_str));
 
-            Ok(VerificationInfo {
-                response: Some(VerifiedResponse {
-                    status_code: Some(response.status_code().into()),
-                    headers: all_headers,
-                    body: response.body().to_vec(),
-                }),
-                verification_version: 2,
-            })
-        }
-        false => Err(ResponseVerificationError::InvalidResponseHashes),
-    }
+    Ok(VerificationInfo {
+        response: Some(VerifiedResponse {
+            status_code: Some(response.status_code().into()),
+            headers: all_headers,
+            body: response.body().to_vec(),
+        }),
+        verification_version: 2,
+    })
 }

@@ -1274,9 +1274,11 @@ dependencies = [
  "globset",
  "http",
  "ic-certification 3.0.2",
+ "ic-certification-testing",
  "ic-http-certification",
  "ic-response-verification",
  "ic-response-verification-test-utils",
+ "once_cell",
  "rand_chacha",
  "rstest",
  "thiserror 1.0.63",
@@ -1618,6 +1620,7 @@ dependencies = [
 name = "ic-http-certification-tests"
 version = "3.0.2"
 dependencies = [
+ "assert_matches",
  "candid",
  "hex",
  "ic-certificate-verification",
@@ -1676,6 +1679,7 @@ dependencies = [
 name = "ic-response-verification"
 version = "3.0.2"
 dependencies = [
+ "assert_matches",
  "base64 0.22.1",
  "candid",
  "flate2",

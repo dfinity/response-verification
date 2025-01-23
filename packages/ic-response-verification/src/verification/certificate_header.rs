@@ -102,8 +102,8 @@ impl CertificateHeader {
             }
         }
 
-        let certificate = certificate.ok_or(ResponseVerificationError::MissingCertificate)?;
-        let tree = tree.ok_or(ResponseVerificationError::MissingTree)?;
+        let certificate = certificate.ok_or(ResponseVerificationError::HeaderMissingCertificate)?;
+        let tree = tree.ok_or(ResponseVerificationError::HeaderMissingTree)?;
         let version = version.unwrap_or(MIN_VERIFICATION_VERSION);
 
         Ok(CertificateHeader {
@@ -227,7 +227,7 @@ mod tests {
 
         assert!(matches!(
             certificate_header,
-            Err(ResponseVerificationError::MissingTree)
+            Err(ResponseVerificationError::HeaderMissingTree)
         ));
     }
 
@@ -248,7 +248,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::MissingTree)
+            Err(ResponseVerificationError::HeaderMissingTree)
         ));
     }
 
@@ -268,7 +268,7 @@ mod tests {
 
         assert!(matches!(
             certificate_header,
-            Err(ResponseVerificationError::MissingCertificate)
+            Err(ResponseVerificationError::HeaderMissingCertificate)
         ));
     }
 
@@ -289,7 +289,7 @@ mod tests {
 
         assert!(matches!(
             result,
-            Err(ResponseVerificationError::MissingCertificate)
+            Err(ResponseVerificationError::HeaderMissingCertificate)
         ));
     }
 

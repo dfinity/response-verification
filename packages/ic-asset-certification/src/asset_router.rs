@@ -908,10 +908,15 @@ impl<'content> AssetRouter<'content> {
                 http::header::CONTENT_RANGE.to_string(),
                 format!("bytes {range_begin}-{range_end}/{total_length}"),
             ));
-            request_headers.push((
-                http::header::RANGE.to_string(),
-                format!("bytes={range_begin}-"),
-            ));
+
+            // The `Range` request header will not be sent with the first request,
+            // so we don't include it in certification for the first chunk.
+            if range_begin != 0 {
+                request_headers.push((
+                    http::header::RANGE.to_string(),
+                    format!("bytes={range_begin}-"),
+                ));
+            }
         };
 
         Self::prepare_response_and_certification(
@@ -1260,7 +1265,7 @@ mod tests {
         let request = HttpRequest::get(&req_url).build();
         let mut expected_response = build_206_response(
             asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
-            asset_range_chunk_cel_expr(),
+            asset_cel_expr(),
             vec![
                 (
                     "cache-control".to_string(),
@@ -1460,7 +1465,7 @@ mod tests {
             .build();
         let mut expected_response = build_206_response(
             asset_body[0..ASSET_CHUNK_SIZE].to_vec(),
-            encoded_range_chunk_asset_cel_expr(),
+            asset_cel_expr(),
             vec![
                 (
                     "cache-control".to_string(),
@@ -3085,7 +3090,7 @@ mod tests {
                 .get(format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0));
         let expected_first_chunk_response = build_206_response(
             first_chunk_body.to_vec(),
-            asset_range_chunk_cel_expr(),
+            asset_cel_expr(),
             vec![
                 (
                     "cache-control".to_string(),
@@ -3111,7 +3116,7 @@ mod tests {
         );
         let expected_first_chunk_gzip_response = build_206_response(
             first_chunk_gzip_body.to_vec(),
-            asset_range_chunk_cel_expr(),
+            encoded_asset_cel_expr(),
             vec![
                 (
                     "cache-control".to_string(),
@@ -3251,7 +3256,7 @@ mod tests {
         let first_chunk_body = &full_body[0..ASSET_CHUNK_SIZE];
         let expected_first_chunk_response = build_206_response(
             first_chunk_body.to_vec(),
-            asset_range_chunk_cel_expr(),
+            asset_cel_expr(),
             vec![
                 (
                     "cache-control".to_string(),

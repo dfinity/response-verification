@@ -1,4 +1,5 @@
 mod tests {
+    use assert_matches::assert_matches;
     use ic_certificate_verification::CertificateVerificationError;
     use ic_certification_testing::{CertificateBuilder, CertificateData};
     use ic_http_certification::{HttpRequest, HttpResponse, CERTIFICATE_HEADER_NAME};
@@ -63,13 +64,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 1 && response == Some(expected_response)
-        ));
+        );
     }
 
     #[test]
@@ -121,13 +122,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 1 && response == Some(expected_response)
-        ));
+        );
     }
 
     #[test]
@@ -178,13 +179,13 @@ mod tests {
         )
         .unwrap();
 
-        assert!(matches!(
+        assert_matches!(
             result,
             VerificationInfo {
                 verification_version,
                 response,
             } if verification_version == 1 && response == Some(expected_response)
-        ));
+        );
     }
 
     #[test]
@@ -227,12 +228,10 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
-            result,
-            Err(ResponseVerificationError::InvalidResponseBody)
-        ));
+        assert_matches!(result, ResponseVerificationError::InvalidResponseBody);
     }
 
     #[test]
@@ -276,14 +275,15 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::CertificateVerificationFailed(
+            ResponseVerificationError::CertificateVerificationFailed(
                 CertificateVerificationError::SignatureVerificationFailed
-            ))
-        ));
+            )
+        );
     }
 
     #[test]
@@ -329,16 +329,17 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture {
+            ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture {
                 certificate_time,
                 max_certificate_time
-            })) if certificate_time == certificate_time &&
+            }) if certificate_time == certificate_time &&
             max_certificate_time == current_time + MAX_CERT_TIME_OFFSET_NS
-        ));
+        );
     }
 
     #[test]
@@ -384,16 +385,17 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast {
+            ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast {
                 certificate_time,
                 min_certificate_time
-            })) if certificate_time == certificate_time &&
+            }) if certificate_time == certificate_time &&
             min_certificate_time == current_time - MAX_CERT_TIME_OFFSET_NS
-        ));
+        );
     }
 
     #[test]
@@ -437,12 +439,15 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::InvalidTree)
-        ));
+            ResponseVerificationError::CertificateMissingCertifiedData {
+                canister_id: err_canister_id
+            } if err_canister_id == canister_id.to_string()
+        );
     }
 
     #[test]
@@ -487,12 +492,10 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
-            result,
-            Err(ResponseVerificationError::InvalidTree)
-        ));
+        assert_matches!(result, ResponseVerificationError::InvalidTreeRootHash);
     }
 
     #[test]
@@ -535,12 +538,10 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
-            result,
-            Err(ResponseVerificationError::InvalidResponseBody)
-        ));
+        assert_matches!(result, ResponseVerificationError::InvalidResponseBody);
     }
 
     #[test]
@@ -583,16 +584,15 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             2,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(
-                ResponseVerificationError::RequestedVerificationVersionMismatch {
-                    min_requested_verification_version: 2,
-                    requested_version: 1
-                }
-            )
-        ));
+            ResponseVerificationError::RequestedVerificationVersionMismatch {
+                min_requested_verification_version: 2,
+                requested_version: 1
+            }
+        );
     }
 }

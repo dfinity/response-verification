@@ -287,6 +287,26 @@ impl<'a> HttpRequest<'a> {
         &self.headers
     }
 
+    /// Returns a mutable reference to the HTTP headers of the request.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ic_http_certification::HttpRequest;
+    ///
+    /// let mut request = HttpRequest::get("/")
+    ///     .with_headers(vec![("Content-Type".into(), "text/plain".into())])
+    ///     .build();
+    ///
+    /// request.headers_mut().push(("Content-Length".into(), "13".into()));
+    ///
+    /// assert_eq!(request.headers(), &[("Content-Type".into(), "text/plain".into()), ("Content-Length".into(), "13".into())]);
+    /// ```
+    #[inline]
+    pub fn headers_mut(&mut self) -> &mut Vec<HeaderField> {
+        &mut self.headers
+    }
+
     /// Returns the body of the request.
     ///
     /// # Examples

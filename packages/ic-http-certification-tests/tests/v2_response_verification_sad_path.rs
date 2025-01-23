@@ -4,6 +4,7 @@ mod tests {
         invalid_root_key_certificate, skip_certification_cel, wrong_canister_certificate,
         MAX_CERT_TIME_OFFSET_NS, MIN_REQUESTED_VERIFICATION_VERSION,
     };
+    use assert_matches::assert_matches;
     use candid::Principal;
     use ic_certificate_verification::CertificateVerificationError;
     use ic_http_certification::{
@@ -71,12 +72,15 @@ mod tests {
             fixtures::MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             fixtures::MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::InvalidResponseHashes)
-        ));
+            ResponseVerificationError::InvalidRequestAndResponseHashes {
+                provided_expr_path
+            } if provided_expr_path == certification_path.to_expr_path()
+        );
     }
 
     #[rstest]
@@ -138,12 +142,15 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::InvalidResponseHashes)
-        ));
+            ResponseVerificationError::InvalidRequestAndResponseHashes {
+                provided_expr_path
+            } if provided_expr_path == certification_path.to_expr_path()
+        );
     }
 
     #[rstest]
@@ -207,12 +214,13 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(matches!(
+        assert_matches!(
             result,
-            Err(ResponseVerificationError::ExactExpressionPathMismatch { .. })
-        ));
+            ResponseVerificationError::ExactExpressionPathMismatch { .. }
+        );
     }
 
     #[rstest]
@@ -275,16 +283,41 @@ mod tests {
             MAX_CERT_TIME_OFFSET_NS,
             &root_key,
             MIN_REQUESTED_VERIFICATION_VERSION,
-        );
+        )
+        .unwrap_err();
 
-        assert!(
-            matches!(result, Err(ref failure) if matches!((failure, expected_failure),
-                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::SignatureVerificationFailed), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::SignatureVerificationFailed)) |
-                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::PrincipalOutOfRange { .. }), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::PrincipalOutOfRange { .. })) |
-                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast { .. }), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInThePast { .. })) |
-                (ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture { .. }), ResponseVerificationError::CertificateVerificationFailed(CertificateVerificationError::TimeTooFarInTheFuture { .. }))
-            ))
-        );
+        assert_matches!(
+            (result, expected_failure),
+            (
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::SignatureVerificationFailed
+                ),
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::SignatureVerificationFailed
+                )
+            ) | (
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::PrincipalOutOfRange { .. }
+                ),
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::PrincipalOutOfRange { .. }
+                )
+            ) | (
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::TimeTooFarInThePast { .. }
+                ),
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::TimeTooFarInThePast { .. }
+                )
+            ) | (
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::TimeTooFarInTheFuture { .. }
+                ),
+                ResponseVerificationError::CertificateVerificationFailed(
+                    CertificateVerificationError::TimeTooFarInTheFuture { .. }
+                )
+            )
+        )
     }
 }
 
