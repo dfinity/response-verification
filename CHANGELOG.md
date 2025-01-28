@@ -1,3 +1,10 @@
+## Unreleased
+
+### Fix
+
+- **ic-asset-certification**: fix range response certification (#420)
+- Fix bug that can cause verification to misbehave when allowed_certificate_time_offset is large (#419)
+
 ## 3.0.2 (2024-12-20)
 
 ### Fix
