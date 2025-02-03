@@ -1,4 +1,6 @@
+.cz.yaml
 CHANGELOG.md
+Cargo.lock
 Cargo.toml
 packages/certificate-verification-js/package.json
 packages/ic-certification-testing-wasm/package.json
