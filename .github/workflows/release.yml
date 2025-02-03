@@ -49,7 +49,7 @@ jobs:
         run: pnpm build
 
       - name: Generate release notes
-        run: cz changelog ${{ github.ref_name }} --file-name RELEASE_NOTES.md
+        uses: dfinity/ci-tools/actions/generate-release-notes@main
 
       - name: Release ic-representation-independent-hash Cargo crate
         run: cargo publish -p ic-representation-independent-hash --token ${CRATES_TOKEN}
