@@ -11,6 +11,13 @@ jobs:
     name: bump_version
     runs-on: ubuntu-latest
     steps:
+      - name: Create GitHub App Token
+        uses: actions/create-github-app-token@v1
+        id: generate_token
+        with:
+          app-id: ${{ vars.PR_AUTOMATION_BOT_PUBLIC_APP_ID }}
+          private-key: ${{ secrets.PR_AUTOMATION_BOT_PUBLIC_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -57,6 +64,7 @@ jobs:
       - name: Create Pull Request
         uses: dfinity/ci-tools/actions/create-pr@main
         with:
+          token: ${{ steps.generate_token.outputs.token }}
           branch_name: 'release/${{ steps.bump_version.outputs.version }}'
           pull_request_title: 'chore: release ${{ steps.bump_version.outputs.version }}'
           pull_request_body: |
