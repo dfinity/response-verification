@@ -317,7 +317,7 @@ Make sure to follow the [system setup](#system-setup) instructions first.
 - [Install Rust](https://www.rust-lang.org/learn/get-started)
 - [Install wasm-pack](https://rustwasm.github.io/wasm-pack/installer)
 - [Install NVM](https://github.com/nvm-sh/nvm)
-- [Install dfx](/docs/building-apps/getting-started/install)
+- [Install dfx](https://internetcomputer.org/docs/building-apps/getting-started/install)
 
 Install the correct version of NodeJS:
 
