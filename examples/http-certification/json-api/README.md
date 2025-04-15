@@ -299,87 +299,14 @@ fn certify_not_found_response() {
 
 ## Serving responses
 
-When serving a certified response, an additional header must be added to the response that will act as a proof of certification for the [HTTP Gateway](https://internetcomputer.org/docs/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into its own function:
-
-```rust
-const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
-fn add_certificate_header(
-    response: &mut HttpResponse,
-    entry: &HttpCertificationTreeEntry,
-    request_url: &str,
-    expr_path: &[String],
-) {
-    // get the current certified data of the canister, note that this will not be available in update calls
-    let certified_data = data_certificate().expect("No data certificate available");
-
-    // generate a witness for the certification entry and current request URL
-    let witness =
-        HTTP_TREE.with_borrow(|http_tree| cbor_encode(&http_tree.witness(entry, request_url)));
-
-    // encode the path in the tree that holds the certification
-    let expr_path = cbor_encode(&expr_path);
-
-    // create the header value and insert it into the response
-    response.headers.push((
-        IC_CERTIFICATE_HEADER.to_string(),
-        format!(
-            "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
-            BASE64.encode(certified_data),
-            BASE64.encode(witness),
-            BASE64.encode(expr_path)
-        ),
-    ));
-}
-```
+When serving a certified response, an additional header must be added to the response that will act as proof of certification for the [HTTP gateway](https://internetcomputer.org/docs/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into a separate function:
 
 With this reusable function, serving certified responses is relatively straightforward.
 
-```rust
-fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
-    let request_path = request.get_path().expect("Failed to get req path");
-
-    // first check if there is a certified response for the request method and path
-    let (tree_path, certified_response) = RESPONSES
-        .with_borrow(|responses| {
-            responses
-                .get(&(request.method().to_string(), request_path.clone()))
-                .map(|response| {
-                    (
-                        HttpCertificationPath::exact(&request_path),
-                        response.clone(),
-                    )
-                })
-        })
-        // if there is no certified response, use the fallback response
-        .unwrap_or_else(|| {
-            FALLBACK_RESPONSES.with_borrow(|fallback_responses| {
-                fallback_responses
-                    .get(NOT_FOUND_PATH)
-                    .clone()
-                    .map(|response| (NOT_FOUND_TREE_PATH.to_owned(), response.clone()))
-                    .unwrap()
-            })
-        });
-
-    let mut response = certified_response.response;
-
-    HTTP_TREE.with_borrow(|http_tree| {
-        add_v2_certificate_header(
-            &data_certificate().expect("No data certificate available"),
-            &mut response,
-            &http_tree
-                .witness(
-                    &HttpCertificationTreeEntry::new(&tree_path, certified_response.certification),
-                    &request_path,
-                )
-                .unwrap(),
-            &tree_path.to_expr_path(),
-        );
-    });
-
-    response
-}
-```
+- First, check if a response for the current request URL and method exists.
+- If a response exists, serve it.
+- Otherwise, serve the fallback "Not found" response.
+- Add the `IC-Certificate` response header.
 
 When update calls are made to endpoints that do not update state, return an error to prevent additional cycle costs for these endpoints:
 
@@ -391,7 +318,7 @@ fn no_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> Http
 
 ## Updating state
 
-The todo list is updatable via `POST` requests. These calls will initially be received as [`query` calls](https://internetcomputer.org/docs/references/ic-interface-spec/#http-query), so we'll need to [upgrade to an update call](https://internetcomputer.org/docs/references/http-gateway-protocol-spec#upgrade-to-update-calls) to allow for the canister's state to change.
+The to-do list is updatable via `POST`, `PATCH`, and `DELETE` requests. These calls will initially be received as [`query` calls](https://internetcomputer.org/docs/references/ic-interface-spec/#http-query) which do not allow for updating the canister state, so the query call is [upgraded to an update call](https://internetcomputer.org/docs/references/http-gateway-protocol-spec#upgrade-to-update-calls) to allow for the canister's state to change.
 
 ```rust
 fn upgrade_to_update_call_handler(
@@ -402,7 +329,9 @@ fn upgrade_to_update_call_handler(
 }
 ```
 
-This will tell the HTTP Gateway to remake the request as an [`update` call](https://internetcomputer.org/docs/references/ic-interface-spec/#http-call). Since it's an update call, the response to this request does not need to be certified. We will however need to re-certify the todo list response. We can reuse the same `certify_list_todos_response` from above to achieve this.
+Upgrading to an `update` call will instruct the HTTP gateway to remake the request as an [`update` call](https://internetcomputer.org/docs/references/ic-interface-spec/#http-call). As an update call, the response to this request does not need to be certified. Since the canister's state has changed, however, the static `query` call responses will need to be re-certified. The same functions that certified these responses in the first place can be reused to achieve this.
+
+For creating to-do items:
 
 ```rust
 fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
