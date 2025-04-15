@@ -550,7 +550,7 @@ fn http_request(req: HttpRequest) -> HttpResponse {
 
 This example uses a canister called `http_certification_custom_assets_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local development environment:
 
 ```shell
 dfx start --background --clean
