@@ -9,7 +9,7 @@ This is not a beginner's canister development guide. Many fundamental concepts t
 It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced and the previous static assets guide will be best suited for most projects. The approach followed in this guide is better tailored for extreme edge cases that require additional flexibility.
 
 - [x] Complete the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-static-assets-over-http) guide.
-- [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
+- [x] Complete the ["Custom HTTP canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
 - [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http) guide.
 
 ## The frontend assets

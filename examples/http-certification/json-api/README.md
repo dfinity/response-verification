@@ -8,7 +8,7 @@ This is not a beginner's canister development guide. Many fundamental concepts t
 
 It's recommended to check out earlier guides before reading this one.
 
-- [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
+- [x] Complete the ["Custom HTTP canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
 
 ## Lifecycle
 

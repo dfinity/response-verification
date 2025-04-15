@@ -11,7 +11,7 @@ This is not a beginner's canister development guide. Many fundamental concepts t
 This is a relatively simple guide, so there are no prerequisites as such, but it's recommended to check out the full certification guides to make sure that certification is not a good fit for your project.
 
 - [x] Complete the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-static-assets-over-http) guide.
-- [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
+- [x] Complete the ["Custom HTTP canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
 - [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http) guide.
 
 ## Skipping certification
