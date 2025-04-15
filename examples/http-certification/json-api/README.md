@@ -301,12 +301,59 @@ fn certify_not_found_response() {
 
 When serving a certified response, an additional header must be added to the response that will act as proof of certification for the [HTTP gateway](https://internetcomputer.org/docs/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into a separate function:
 
-With this reusable function, serving certified responses is relatively straightforward.
+With this reusable function, serving certified responses is relatively straightforward:
 
 - First, check if a response for the current request URL and method exists.
 - If a response exists, serve it.
 - Otherwise, serve the fallback "Not found" response.
 - Add the `IC-Certificate` response header.
+
+```rust
+fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
+    let request_path = request.get_path().expect("Failed to get req path");
+
+    // first check if there is a certified response for the request method and path
+    let (tree_path, certified_response) = RESPONSES
+        .with_borrow(|responses| {
+            responses
+                .get(&(request.method().to_string(), request_path.clone()))
+                .map(|response| {
+                    (
+                        HttpCertificationPath::exact(&request_path),
+                        response.clone(),
+                    )
+                })
+        })
+        // if there is no certified response, use the fallback response
+        .unwrap_or_else(|| {
+            FALLBACK_RESPONSES.with_borrow(|fallback_responses| {
+                fallback_responses
+                    .get(NOT_FOUND_PATH)
+                    .clone()
+                    .map(|response| (NOT_FOUND_TREE_PATH.to_owned(), response.clone()))
+                    .unwrap()
+            })
+        });
+
+    let mut response = certified_response.response;
+
+    HTTP_TREE.with_borrow(|http_tree| {
+        add_v2_certificate_header(
+            &data_certificate().expect("No data certificate available"),
+            &mut response,
+            &http_tree
+                .witness(
+                    &HttpCertificationTreeEntry::new(&tree_path, certified_response.certification),
+                    &request_path,
+                )
+                .unwrap(),
+            &tree_path.to_expr_path(),
+        );
+    });
+
+    response
+}
+```
 
 When update calls are made to endpoints that do not update state, return an error to prevent additional cycle costs for these endpoints:
 
