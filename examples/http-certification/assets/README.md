@@ -1,10 +1,10 @@
-# HTTP certified assets
-
-## Overview
+# Serving static assets over HTTP
 
 This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single page JavaScript application. Assets are embedded into the canister at compile time.
 
 This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to asset certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
+
+The certification and serving of assets is based on the high-level [`ic-asset-certification` crate](https://crates.io/crates/ic-asset-certification).
 
 ## Prerequisites
 
@@ -77,7 +77,7 @@ fn post_upgrade() {
 }
 ```
 
-## CEL expressions
+## Canister endpoints
 
 There is only one canister endpoint in this example to serve assets, the `http_request` query endpoint. The `http_request` handler uses two auxiliary functions, `serve_metrics` and `serve_asset`, which are covered in a later section.
 
