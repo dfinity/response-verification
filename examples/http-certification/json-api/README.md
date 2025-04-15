@@ -8,7 +8,7 @@ This is not a beginner's canister development guide. Many fundamental concepts t
 
 It's recommended to check out earlier guides before reading this one.
 
-- [x] Complete the ["Custom HTTP canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
+- [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
 
 ## Lifecycle
 
@@ -37,8 +37,6 @@ fn post_upgrade() {
 ```
 
 ## CEL expressions
-
-CEL expressions only need to be set up once and can then be reused until the next canister upgrade. Responses can also be set up once and reused. If the response is static and will not change throughout the canister's lifetime, then it only needs to be certified once. If the response can change, however, then it will need to be re-certified every time it changes.
 
 `DefaultResponseOnlyCelExpression` is used when only the response is to be certified. If the request is also to be certified, then `DefaultFullCelExpression` should be used. Alternatively, the higher-level `DefaultCelExpression` can hold any type of CEL expression using the "Default" scheme. In the future, there may be more schemes and the higher-level `CelExpression` will be able to hold CEL expressions from those different schemes. It is up to the developers to decide how they want to store and organize their CEL expressions.
 
@@ -152,7 +150,7 @@ Responses are certified with several steps, which are encapsulated into a reusab
 - Calculate the certification for the given response and CEL expression.
 - Store the response together with its certification.
 - Insert the certification into the certification tree at the appropriate path.
-- Update the canister's [certified data](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data).
+- Update the canister's [certified data](https://internetcomputer.org/docs/references/ic-interface-spec/#system-api-certified-data).
 
 For more information on creating certifications, see the relevant section in the [`ic-http-certification` docs](https://docs.rs/ic-http-certification/latest/ic_http_certification/#creating-certifications).
 
@@ -299,14 +297,40 @@ fn certify_not_found_response() {
 
 ## Serving responses
 
-When serving a certified response, an additional header must be added to the response that will act as proof of certification for the [HTTP gateway](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into a separate function:
+When serving a certified response, an additional header must be added to the response that will act as a proof of certification for the [HTTP Gateway](https://internetcomputer.org/docs/references/http-gateway-protocol-spec) that will perform validation. Adding this header to the response has been abstracted into its own function:
 
-With this reusable function, serving certified responses is relatively straightforward:
+```rust
+const IC_CERTIFICATE_HEADER: &str = "IC-Certificate";
+fn add_certificate_header(
+    response: &mut HttpResponse,
+    entry: &HttpCertificationTreeEntry,
+    request_url: &str,
+    expr_path: &[String],
+) {
+    // get the current certified data of the canister, note that this will not be available in update calls
+    let certified_data = data_certificate().expect("No data certificate available");
 
-- First, check if a response for the current request URL and method exists.
-- If a response exists, serve it.
-- Otherwise, serve the fallback "Not found" response.
-- Add the `IC-Certificate` response header.
+    // generate a witness for the certification entry and current request URL
+    let witness =
+        HTTP_TREE.with_borrow(|http_tree| cbor_encode(&http_tree.witness(entry, request_url)));
+
+    // encode the path in the tree that holds the certification
+    let expr_path = cbor_encode(&expr_path);
+
+    // create the header value and insert it into the response
+    response.headers.push((
+        IC_CERTIFICATE_HEADER.to_string(),
+        format!(
+            "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
+            BASE64.encode(certified_data),
+            BASE64.encode(witness),
+            BASE64.encode(expr_path)
+        ),
+    ));
+}
+```
+
+With this reusable function, serving certified responses is relatively straightforward.
 
 ```rust
 fn query_handler(request: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
@@ -365,7 +389,7 @@ fn no_update_call_handler(_http_request: &HttpRequest, _params: &Params) -> Http
 
 ## Updating state
 
-The to-do list is updatable via `POST`, `PATCH`, and `DELETE` requests. These calls will initially be received as [`query` calls](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-query) which do not allow for updating the canister state, so the query call is [upgraded to an update call](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec#upgrade-to-update-calls) to allow for the canister's state to change.
+The todo list is updatable via `POST` requests. These calls will initially be received as [`query` calls](https://internetcomputer.org/docs/references/ic-interface-spec/#http-query), so we'll need to [upgrade to an update call](https://internetcomputer.org/docs/references/http-gateway-protocol-spec#upgrade-to-update-calls) to allow for the canister's state to change.
 
 ```rust
 fn upgrade_to_update_call_handler(
@@ -376,9 +400,7 @@ fn upgrade_to_update_call_handler(
 }
 ```
 
-Upgrading to an `update` call will instruct the HTTP gateway to remake the request as an [`update` call](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-call). As an update call, the response to this request does not need to be certified. Since the canister's state has changed, however, the static `query` call responses will need to be re-certified. The same functions that certified these responses in the first place can be reused to achieve this.
-
-For creating to-do items:
+This will tell the HTTP Gateway to remake the request as an [`update` call](https://internetcomputer.org/docs/references/ic-interface-spec/#http-call). Since it's an update call, the response to this request does not need to be certified. We will however need to re-certify the todo list response. We can reuse the same `certify_list_todos_response` from above to achieve this.
 
 ```rust
 fn create_todo_item_handler(req: &HttpRequest, _params: &Params) -> HttpResponse<'static> {
@@ -524,7 +546,7 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
 
 This example uses a canister called `http_certification_json_api_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local development environment:
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
 
 ```shell
 dfx start --background --clean

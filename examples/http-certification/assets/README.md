@@ -1,12 +1,17 @@
-# Serving static assets over HTTP
+# HTTP certified assets
 
-This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single-page JavaScript application. Assets are embedded into the canister when it is compiled.
+## Overview
+
+This guide walks through an example project that demonstrates how to create a canister that can serve certified static assets (HTML, CSS, JS) over HTTP. The example project presents a very simple single page JavaScript application. Assets are embedded into the canister at compile time.
 
 This is not a beginner's canister development guide. Many fundamental concepts that a relatively experienced canister developer should already know will be omitted. Concepts specific to asset certification will be called out here and can help to understand the [full code example](https://github.com/dfinity/response-verification/tree/main/examples/http-certification/assets).
 
-The certification and serving of assets is based on the high-level [`ic-asset-certification` crate](https://crates.io/crates/ic-asset-certification).
+## Prerequisites
 
-If more flexibility than what this crate provides is needed, the lower-level [`ic-http-certification` crate](https://crates.io/crates/ic-http-certification) can be used. Be sure to check out the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) and ["Custom asset canisters"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guides to learn more about how to use that library for serving assets.
+It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced here so as to not explain similar things again.
+
+- [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
+- [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http) guide.
 
 ## The frontend assets
 
@@ -72,7 +77,7 @@ fn post_upgrade() {
 }
 ```
 
-## Canister endpoints
+## CEL expressions
 
 There is only one canister endpoint in this example to serve assets, the `http_request` query endpoint. The `http_request` handler uses two auxiliary functions, `serve_metrics` and `serve_asset`, which are covered in a later section.
 
@@ -342,7 +347,7 @@ fn serve_metrics() -> HttpResponse<'static> {
 
 This example uses a canister called `http_certification_assets_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local development environment:
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
 
 ```shell
 dfx start --background --clean

@@ -14,11 +14,11 @@ The different properties of query and update calls present a trade off in terms 
 
 Canister certification provides a solution to this problem by pre-calculating responses and putting those pre-calculated responses through consensus. Consensus will produce a certificate for the pre-calculated responses that can be returned with the responses by any individual replica. Any clients requesting these responses can then verify this certificate to validate that consensus has agreed on this response prior to the request. This approach will give the performance characteristics of a query call, with the security profile of an update call, providing the best of both types of calls.
 
-Canister certification is enabled by the [Certified data](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data) feature of the Internet Computer. This feature allows canisters to specify a 32 byte blob that will be included in consensus. How this 32 byte blob is determined is entirely up to canister developers to decide for themselves. This repo provides solutions that rely on merkle trees and won't discuss any other methods, but there are many other possibilities for imaginative developers that would like to roll their own solution.
+Canister certification is enabled by the [Certified data](https://internetcomputer.org/docs/references/ic-interface-spec/#system-api-certified-data) feature of the Internet Computer. This feature allows canisters to specify a 32 byte blob that will be included in consensus. How this 32 byte blob is determined is entirely up to canister developers to decide for themselves. This repo provides solutions that rely on merkle trees and won't discuss any other methods, but there are many other possibilities for imaginative developers that would like to roll their own solution.
 
-In the next consensus round following this 32 byte blob being set (via [`ic0.certified_data_set`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data)), the Internet Computer will prepare a certificate for the canister. This certificate, and the process for verifying it, is described in detail in the [interface spec](https://internetcomputer.org/docs/current/references/ic-interface-spec/#certification).
+In the next consensus round following this 32 byte blob being set (via [`ic0.certified_data_set`](https://internetcomputer.org/docs/references/ic-interface-spec/#system-api-certified-data)), the Internet Computer will prepare a certificate for the canister. This certificate, and the process for verifying it, is described in detail in the [interface spec](https://internetcomputer.org/docs/references/ic-interface-spec/#certification).
 
-When responding to query calls, a canister can request the certificate (via [`ic0.certified_data_size`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data) and [`ic0.certified_data_copy`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#system-api-certified-data)) and then include this certificate in the response, to allow for clients to validate the response's authenticity.
+When responding to query calls, a canister can request the certificate (via [`ic0.certified_data_size`](https://internetcomputer.org/docs/references/ic-interface-spec/#system-api-certified-data) and [`ic0.certified_data_copy`](https://internetcomputer.org/docs/references/ic-interface-spec/#system-api-certified-data)) and then include this certificate in the response, to allow for clients to validate the response's authenticity.
 
 ## Standard Certification
 
@@ -37,7 +37,7 @@ There are a number of questions that a developer needs to answer on a per-projec
   - What properties are included/excluded? (e.g., `response_timestamp` is excluded but `id` is included).
   - What format of each property is hashed? (e.g., leb, big/little endian encoding for numbers).
   - In what order are properties hashed? (e.g., sort properties alphabetically).
-  - The [representation independent hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map) from the Internet Computer Protocol spec can be used, or serve as inspiration for developers.
+  - The [representation independent hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map) from the Internet Computer Protocol spec can be used, or serve as inspiration for developers.
 - How are response hashes arranged in the tree?
   - Each exposed canister method should have a pre-determined path where its response hash will be presented in the merkle tree (e.g., the `get_count` method returns a response and the hash of this response is present at the `["count"]` path of the merkle tree).
   - This pre-determined path may use parameters of the request or calling principal to arrange more dynamic data in the tree (e.g., the `get_account` method returns a response and the hash of this response is present at the `["account", caller.to_text()]` path of the merkle tree).
@@ -200,7 +200,7 @@ The `ic-asset-certification` crate provides a simple API for canisters to serve 
 
 Response verification on the [Internet Computer](https://dfinity.org) is the process of verifying that an HTTP-compatible canister response from a replica has gone through consensus with other replicas hosting the same canister. It is the client-side counterpart to [HTTP Certification](#http-certification) and [Asset Certification](#asset-certification).
 
-The `ic-response-verification` and `@dfinity/response-verification` packages encapsulate this verification protocol. It is used by [ICX Proxy](https://github.com/dfinity/ic/tree/master/rs/boundary_node/icx_proxy) and the [local HTTP Proxy](https://github.com/dfinity/http-proxy) and may be used by other implementations of the [HTTP Gateway Protocol](https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway) in the future.
+The `ic-response-verification` and `@dfinity/response-verification` packages encapsulate this verification protocol. It is used by [ICX Proxy](https://github.com/dfinity/ic/tree/master/rs/boundary_node/icx_proxy) and the [local HTTP Proxy](https://github.com/dfinity/http-proxy) and may be used by other implementations of the [HTTP Gateway Protocol](https://internetcomputer.org/docs/references/ic-interface-spec/#http-gateway) in the future.
 
 ### Resources
 
@@ -212,7 +212,7 @@ The `ic-response-verification` and `@dfinity/response-verification` packages enc
 
 ### Representation Independent Hash
 
-This is a utility crate to implement [representation independent hashing](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map) of data.
+This is a utility crate to implement [representation independent hashing](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map) of data.
 
 - [`ic-representation-independant-hash` Cargo crate](https://crates.io/crates/ic-representation-independent-hash).
 - [`ic-representation-independant-hash` docs](https://docs.rs/ic-representation-independent-hash/2.3.0/ic_representation_independent_hash).
@@ -317,7 +317,7 @@ Make sure to follow the [system setup](#system-setup) instructions first.
 - [Install Rust](https://www.rust-lang.org/learn/get-started)
 - [Install wasm-pack](https://rustwasm.github.io/wasm-pack/installer)
 - [Install NVM](https://github.com/nvm-sh/nvm)
-- [Install DFX](https://internetcomputer.org/docs/current/developer-docs/setup/install)
+- [Install dfx](/docs/building-apps/getting-started/install)
 
 Install the correct version of NodeJS:
 

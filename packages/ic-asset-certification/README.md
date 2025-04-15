@@ -1,7 +1,7 @@
 # Asset certification
 
 Asset certification is a specialized form of
-[HTTP certification](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters)
+[HTTP certification](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters)
 built for certifying static assets in [ICP](https://internetcomputer.org/) canisters.
 
 The `ic-asset-certification` crate provides the necessary functionality to

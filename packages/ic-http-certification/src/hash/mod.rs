@@ -1,5 +1,5 @@
 //! Utilities for calculating
-//! [Representation Independent Hashes](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+//! [Representation Independent Hashes](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map)
 //! of [HttpRequest](crate::HttpRequest) and [HttpResponse](crate::HttpRequest) objects.
 
 mod request_hash;

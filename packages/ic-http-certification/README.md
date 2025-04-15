@@ -1,8 +1,6 @@
 # HTTP certification
 
-HTTP certification is a sub-protocol of the [ICP](https://internetcomputer.org/) [HTTP gateway protocol](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec). It is used to verify HTTP responses received by an HTTP gateway from a [canister](https://internetcomputer.org/how-it-works/canister-lifecycle/), with respect to the corresponding HTTP request. This allows HTTP gateways to verify that the responses they receive from canisters are authentic and have not been tampered with.
-
-The `ic-http-certification` crate provides the foundation for implementing the HTTP certification protocol in Rust canisters. Certification is implemented in a number of steps:
+HTTP Certification is a sub-protocol of the [Internet Computer](https://internetcomputer.org/) [HTTP Gateway Protocol](https://internetcomputer.org/docs/references/http-gateway-protocol-spec). It is used to verify HTTP responses received by an HTTP Gateway from a [canister](https://internetcomputer.org/how-it-works/canister-lifecycle/), with respect to the corresponding HTTP request sent by the HTTP Gateway to the canister. This allows HTTP Gateways to verify that the responses they receive from canisters are authentic and have not been tampered with by a malicious replica.
 
 1. [Defining CEL expressions](#defining-cel-expressions).
 2. [Creating certifications](#creating-certifications).
