@@ -14,38 +14,11 @@ enum HttpCertificationType {
     },
     ResponseOnly {
         cel_expr_hash: Hash,
-
-        /// The
-        /// [Representation Independent Hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map)
-        /// of an [HTTP response](crate::HttpResponse), calculated according to a
-        /// [CEL expression](crate::DefaultCelExpression::ResponseOnly).
-        ///
-        /// The [CEL expression](crate::DefaultCelExpression::ResponseOnly) used to calculate the hash of
-        /// this [response](crate::HttpResponse), is also used to produce the
-        /// [cel_expr_hash](HttpCertification::ResponseOnly::cel_expr_hash) property.
         response_hash: Hash,
     },
     Full {
         cel_expr_hash: Hash,
-
-        /// The
-        /// [Representation Independent Hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map)
-        /// of an [HTTP response](crate::HttpResponse), calculated according to a
-        /// [CEL expression](crate::DefaultCelExpression::Full).
-        ///
-        /// The [CEL expression](crate::DefaultCelExpression::Full) used to calculate the hash of
-        /// this [request](crate::HttpRequest), is also used to produce the
-        /// [cel_expr_hash](HttpCertification::Full::cel_expr_hash) property.
         request_hash: Hash,
-
-        /// The
-        /// [Representation Independent Hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map)
-        /// of an [HTTP response](crate::HttpResponse), calculated according to a
-        /// [CEL expression](crate::DefaultCelExpression::Full).
-        ///
-        /// The [CEL expression](crate::DefaultCelExpression::Full) used to calculate the hash of
-        /// this [response](crate::HttpResponse), is also used to produce the
-        /// [cel_expr_hash](HttpCertification::Full::cel_expr_hash) property.
         response_hash: Hash,
     },
 }
