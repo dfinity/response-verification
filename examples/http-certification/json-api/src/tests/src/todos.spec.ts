@@ -1,4 +1,4 @@
-import { Actor, PocketIc } from '@hadronous/pic';
+import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
 import { Principal } from '@dfinity/principal';
 import {
   verifyRequestResponsePair,
@@ -28,6 +28,7 @@ const MS_PER_S = 1e3;
 const S_PER_MIN = 60;
 
 describe('Todos', () => {
+  let picServer: PocketIcServer;
   let pic: PocketIc;
   let actor: Actor<_SERVICE>;
   let canisterId: Principal;
@@ -38,13 +39,21 @@ describe('Todos', () => {
   const currentTimeNs = BigInt(currentDate.getTime() * NS_PER_MS);
   const maxCertTimeOffsetNs = BigInt(5 * S_PER_MIN * MS_PER_S * NS_PER_MS);
 
+  beforeAll(async () => {
+    picServer = await PocketIcServer.start();
+  });
+
+  afterAll(async () => {
+    picServer.stop();
+  });
+
   beforeEach(async () => {
-    pic = await PocketIc.create();
+    pic = await PocketIc.create(picServer.getUrl());
     const fixture = await setupBackendCanister(pic, currentDate);
     actor = fixture.actor;
     canisterId = fixture.canisterId;
 
-    const subnets = pic.getApplicationSubnets();
+    const subnets = await pic.getApplicationSubnets();
     rootKey = await pic.getPubKey(subnets[0].id);
   });
 

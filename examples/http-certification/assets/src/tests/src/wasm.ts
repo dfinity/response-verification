@@ -1,4 +1,4 @@
-import { type CanisterFixture, type PocketIc } from '@hadronous/pic';
+import { type CanisterFixture, type PocketIc } from '@dfinity/pic';
 import { resolve } from 'node:path';
 import {
   type _SERVICE,

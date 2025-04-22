@@ -14,12 +14,12 @@ importers:
       '@dfinity/candid':
         specifier: ^1.0.1
         version: 1.0.1(@dfinity/principal@1.0.1)
+      '@dfinity/pic':
+        specifier: 0.12.0
+        version: 0.12.0(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/identity@1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@1.0.1)
       '@dfinity/principal':
         specifier: ^1.0.1
         version: 1.0.1
-      '@hadronous/pic':
-        specifier: 0.6.1-b1
-        version: 0.6.1-b1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/identity@1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@1.0.1)
       '@types/jest':
         specifier: ^29.5.13
         version: 29.5.13
@@ -364,6 +364,14 @@ packages:
       '@dfinity/principal': ^1.0.1
       '@peculiar/webcrypto': ^1.4.0
 
+  '@dfinity/pic@0.12.0':
+    resolution: {integrity: sha512-o5KwV1eonfwVZTMn0Fx9ZJxlqaD8b3CD4BVwStxtzAPKNYF5RgGh6G5e6g1IeKXgOCn+ZyxNHfplQuy0BYFilA==}
+    peerDependencies:
+      '@dfinity/agent': ^2.3.0
+      '@dfinity/candid': ^2.3.0
+      '@dfinity/identity': ^2.3.0
+      '@dfinity/principal': ^2.3.0
+
   '@dfinity/principal@1.0.1':
     resolution: {integrity: sha512-pCAuTLcvZEZ8fYgVzTVhfUfFGadxeWN4v2z8Q0rizeiqcHKhbJVfWUiXXjzPGG5lNz2DxKyUHQ/WS4UTbTaxvg==}
 
@@ -504,14 +512,6 @@ packages:
     engines: {node: '>=12'}
     cpu: [x64]
     os: [win32]
-
-  '@hadronous/pic@0.6.1-b1':
-    resolution: {integrity: sha512-9e1qjZooTvY41jcHTNYnZp6JN81SgbeWTfqoo4CSp0Iuuv2aNfzZ1/kYvH88WEGs/HG8QUn/MMgs1Y3g0u5vZg==}
-    peerDependencies:
-      '@dfinity/agent': ^1.0.1
-      '@dfinity/candid': ^1.0.1
-      '@dfinity/identity': ^1.0.1
-      '@dfinity/principal': ^1.0.1
 
   '@istanbuljs/load-nyc-config@1.1.0':
     resolution: {integrity: sha512-VjeHSlIzpv/NyD3N0YuHfXOPDIixcA1q2ZV98wsMqcYlPmv2n3Yb2lYP9XMElnaFVXg5A7YLTeLu6V84uQDjmQ==}
@@ -2619,6 +2619,14 @@ snapshots:
       '@peculiar/webcrypto': 1.4.5
       borc: 2.1.2
 
+  '@dfinity/pic@0.12.0(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/identity@1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@1.0.1)':
+    dependencies:
+      '@dfinity/agent': 1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)
+      '@dfinity/candid': 1.0.1(@dfinity/principal@1.0.1)
+      '@dfinity/identity': 1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5)
+      '@dfinity/principal': 1.0.1
+      bip39: 3.1.0
+
   '@dfinity/principal@1.0.1':
     dependencies:
       '@noble/hashes': 1.5.0
@@ -2691,14 +2699,6 @@ snapshots:
 
   '@esbuild/win32-x64@0.21.5':
     optional: true
-
-  '@hadronous/pic@0.6.1-b1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/identity@1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@1.0.1)':
-    dependencies:
-      '@dfinity/agent': 1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)
-      '@dfinity/candid': 1.0.1(@dfinity/principal@1.0.1)
-      '@dfinity/identity': 1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5)
-      '@dfinity/principal': 1.0.1
-      bip39: 3.1.0
 
   '@istanbuljs/load-nyc-config@1.1.0':
     dependencies:
