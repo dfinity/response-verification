@@ -36,7 +36,7 @@ jobs:
         uses: dfinity/setup-dfx@main
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
 
         # Triggers installation of the Rust toolchain
         # Must be done before wasm-pack is installed

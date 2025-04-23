@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Build Cargo crates
         run: cargo build --release
@@ -52,7 +52,7 @@ jobs:
           dfx-version: 'auto'
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
 
         # Triggers installation of the Rust toolchain
         # Must be done before wasm-pack is installed
