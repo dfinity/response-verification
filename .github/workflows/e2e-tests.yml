@@ -22,7 +22,7 @@ jobs:
         uses: dfinity/ci-tools/actions/setup-pnpm@main
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Setup e2e Deps Cache
         uses: actions/cache@v3
