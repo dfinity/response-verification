@@ -1,4 +1,4 @@
-use ic_http_certification::{HttpRequest, HttpResponse};
+use ic_http_certification::{HttpRequest, HttpResponse, StatusCode};
 use matchit::Params;
 use serde::{Deserialize, Serialize};
 
@@ -23,15 +23,21 @@ impl<'a, T: Serialize> ApiResponse<'a, T> {
     }
 
     pub fn not_found() -> Self {
-        Self::err(404, "Not found".to_string())
+        Self::err(StatusCode::NOT_FOUND, "Not found".to_string())
     }
 
     pub fn not_allowed() -> Self {
-        Self::err(405, "Method not allowed".to_string())
+        Self::err(
+            StatusCode::METHOD_NOT_ALLOWED,
+            "Method not allowed".to_string(),
+        )
     }
 
-    fn err(code: u16, message: String) -> Self {
-        Self::Err { code, message }
+    fn err(code: StatusCode, message: String) -> Self {
+        Self::Err {
+            code: code.as_u16(),
+            message,
+        }
     }
 
     pub fn encode(&self) -> Vec<u8> {
