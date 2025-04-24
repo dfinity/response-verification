@@ -76,7 +76,7 @@ dfx_start() {
 
   "$DFX" start --clean --background -qq --log file --logfile "./replica.log" -vv
 
-  DFX_REPLICA_PORT=$("$DFX" info replica-port)
+  DFX_REPLICA_PORT=$("$DFX" info webserver-port)
   DFX_REPLICA_ADDRESS="http://localhost:$DFX_REPLICA_PORT"
 
   echo "DFX local replica running at $DFX_REPLICA_ADDRESS."

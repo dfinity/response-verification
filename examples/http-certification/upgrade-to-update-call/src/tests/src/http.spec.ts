@@ -1,4 +1,4 @@
-import { Actor, PocketIc } from '@hadronous/pic';
+import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
 
 import {
   _SERVICE as RUST_SERVICE,
@@ -8,12 +8,21 @@ import { _SERVICE as MOTOKO_SERVICE } from '../../declarations/motoko-backend/ht
 import { setupMotokoBackendCanister, setupRustBackendCanister } from './wasm';
 
 describe('HTTP', () => {
+  let picServer: PocketIcServer;
   let pic: PocketIc;
   let rustActor: Actor<RUST_SERVICE>;
   let motokoActor: Actor<MOTOKO_SERVICE>;
 
+  beforeAll(async () => {
+    picServer = await PocketIcServer.start();
+  });
+
+  afterAll(async () => {
+    picServer.stop();
+  });
+
   beforeEach(async () => {
-    pic = await PocketIc.create();
+    pic = await PocketIc.create(picServer.getUrl());
 
     const rustFixture = await setupRustBackendCanister(pic);
     rustActor = rustFixture.actor;
