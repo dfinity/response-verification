@@ -18,7 +18,7 @@ pub enum ApiResponse<'a, T = ()> {
 }
 
 impl<'a, T: Serialize> ApiResponse<'a, T> {
-    pub fn ok(data: &'a T) -> ApiResponse<T> {
+    pub fn ok(data: &'a T) -> ApiResponse<'a, T> {
         Self::Ok { data }
     }
 
