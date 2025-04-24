@@ -1,6 +1,6 @@
 use crate::hash_tree::HashTree;
 
-/// A `Certificate` as defined in <https://internetcomputer.org/docs/current/references/ic-interface-spec/#certificate>
+/// A `Certificate` as defined in <https://internetcomputer.org/docs/references/ic-interface-spec/#certificate>
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(
@@ -20,7 +20,7 @@ pub struct Certificate<Storage: AsRef<[u8]>> {
     pub delegation: Option<Delegation<Storage>>,
 }
 
-/// A `Delegation` as defined in <https://internetcomputer.org/docs/current/references/ic-interface-spec/#certification-delegation>
+/// A `Delegation` as defined in <https://internetcomputer.org/docs/references/ic-interface-spec/#certification-delegation>
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[cfg_attr(

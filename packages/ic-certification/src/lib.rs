@@ -25,9 +25,9 @@ pub type Label = hash_tree::Label<Vec<u8>>;
 /// A result of looking up for a subtree.
 pub type SubtreeLookupResult = hash_tree::SubtreeLookupResult<Vec<u8>>;
 
-/// A `Delegation` as defined in <https://internetcomputer.org/docs/current/references/ic-interface-spec/#certification-delegation>
+/// A `Delegation` as defined in <https://internetcomputer.org/docs/references/ic-interface-spec/#certification-delegation>
 pub type Delegation = certificate::Delegation<Vec<u8>>;
-/// A `Certificate` as defined in <https://internetcomputer.org/docs/current/references/ic-interface-spec/#certificate>
+/// A `Certificate` as defined in <https://internetcomputer.org/docs/references/ic-interface-spec/#certificate>
 pub type Certificate = certificate::Certificate<Vec<u8>>;
 
 /// Create an empty hash tree.

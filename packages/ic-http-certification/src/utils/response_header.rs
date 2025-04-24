@@ -3,7 +3,7 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use ic_certification::HashTree;
 use serde::Serialize;
 
-/// Adds the [`IC-Certificate` header](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec/#the-certificate-header)
+/// Adds the [`IC-Certificate` header](https://internetcomputer.org/docs/references/http-gateway-protocol-spec/#the-certificate-header)
 /// to a given [`HttpResponse`]. This header is used by the HTTP Gateway to verify the authenticity of query call responses made to the
 /// `http_request` method of the target canister.
 ///

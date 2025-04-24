@@ -8,7 +8,7 @@ pub fn validate_body(tree: &HashTree, request_path: &str, body_sha: &Hash) -> bo
         LookupResult::Found(v) => v,
 
         // This is a strange fallback, but it is necessary for SPA routing at the moment.
-        // https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway-certification
+        // https://internetcomputer.org/docs/references/ic-interface-spec/#http-gateway-certification
         //
         // It may be possible to remove this with a combination of asset canister redirect rules and v2 response verification.
         _ => match tree.lookup_path(&index_fallback_path) {
@@ -50,7 +50,7 @@ mod tests {
     }
 
     /// This is a strange fallback, but it is necessary for SPA routing at the moment.
-    /// https://internetcomputer.org/docs/current/references/ic-interface-spec/#http-gateway-certification
+    /// https://internetcomputer.org/docs/references/ic-interface-spec/#http-gateway-certification
     ///
     /// It may be possible to remove this with a combination of asset canister redirect rules and v2 response verification.
     #[test]
