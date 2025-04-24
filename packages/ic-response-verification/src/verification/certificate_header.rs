@@ -11,7 +11,7 @@ use log::warn;
 /// Parsed `Ic-Certificate` header, containing a certificate and tree.
 #[derive(Debug, PartialEq, Eq)]
 pub struct CertificateHeader {
-    /// The [`Certificate`](https://internetcomputer.org/docs/current/references/ic-interface-spec/#certificate) contained in the header.
+    /// The [`Certificate`](https://internetcomputer.org/docs/references/ic-interface-spec/#certificate) contained in the header.
     pub certificate: Certificate,
 
     /// A pruned hash tree containing a witness that certifies the response for the given certificate.

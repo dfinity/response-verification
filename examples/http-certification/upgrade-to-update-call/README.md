@@ -1,12 +1,12 @@
 # Upgrading HTTP calls to update calls
 
-This guide walks through an example project that demonstrates how to use the ["Upgrade to Update call"](https://internetcomputer.org/docs/current/references/http-gateway-protocol-spec#upgrade-to-update-calls) feature of the HTTP gateway.
+This guide walks through an example project that demonstrates how to use the ["Upgrade to Update call"](https://internetcomputer.org/docs/references/http-gateway-protocol-spec#upgrade-to-update-calls) feature of the HTTP gateway.
 
 Since browsers are unable to directly interact with the ICP network, the HTTP gateway acts as a bridge between the two. The HTTP gateway forwards requests from clients to canisters and forwards responses from canisters back to clients. Before returning responses from the canister back to clients, the HTTP gateway verifies the certification of the response to ensure that they have not been tampered with.
 
 Upgrading query calls to upgrade calls allows for the certification of any kind of dynamic response by leveraging ICP's consensus protocol without having to statically certify the response ahead of time. This is the simplest way to add _secure_ HTTP support to a canister.
 
-A similarly simple yet more performant, but _insecure_ approach is to skip certification entirely. This is not recommended unless you are absolutely sure that certification really does not make sense for your canister. Check the ["Skipping certification for HTTP responses"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/skipping-certification-for-http-responses) guide for more details on how to do that.
+A similarly simple yet more performant, but _insecure_ approach is to skip certification entirely. This is not recommended unless you are absolutely sure that certification really does not make sense for your canister. Check the ["Skipping certification for HTTP responses"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/skipping-certification-for-http-responses) guide for more details on how to do that.
 
 ## How it works
 
@@ -100,7 +100,7 @@ actor Http {
 
 This example uses a Rust canister called `http_certification_upgrade_to_update_call_rust_backend` or a Motoko canister called `http_certification_upgrade_to_update_call_motoko_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
 
 ```shell
 dfx start --background --clean

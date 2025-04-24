@@ -3,7 +3,7 @@ use crate::{cel::DefaultRequestCertification, HttpCertificationResult, HttpReque
 use ic_representation_independent_hash::{hash, representation_independent_hash, Value};
 
 /// Calculates the
-/// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+/// [Representation Independent Hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map)
 /// of an [HttpRequest] according to a CEL expression defined by [DefaultRequestCertification].
 pub fn request_hash<'a>(
     request: &'a HttpRequest,

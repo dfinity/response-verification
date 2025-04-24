@@ -17,7 +17,7 @@ pub enum Value {
 /// A partial implementation of [`Representation Independent Hash`] that only supports
 /// UTF-8 strings or numbers as values.
 ///
-/// [`Representation Independent Hash`]: https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map
+/// [`Representation Independent Hash`]: https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map
 pub fn representation_independent_hash(map: &[(String, Value)]) -> Sha256Digest {
     let mut hashes: Vec<_> = map
         .iter()

@@ -8,9 +8,9 @@ This is not a beginner's canister development guide. Many fundamental concepts t
 
 It's recommended to check out earlier guides before reading this one. The JSON API example in particular will be referenced and the previous static assets guide will be best suited for most projects. The approach followed in this guide is better tailored for extreme edge cases that require additional flexibility.
 
-- [x] Complete the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/current/developer-docs/web-apps/http-compatible-canisters/serving-static-assets-over-http) guide.
-- [x] Complete the ["Custom HTTP Canisters"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/custom-http-canisters) guide.
-- [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) guide.
+- [x] Complete the ["Serving static assets over HTTP"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-static-assets-over-http) guide.
+- [x] Complete the ["Custom HTTP canisters"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/custom-http-canisters) guide.
+- [x] Complete the ["Serving JSON over HTTP"](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http) guide.
 
 ## The frontend assets
 
@@ -76,7 +76,7 @@ fn post_upgrade() {
 
 ## CEL expressions
 
-The CEL expression definition is simpler in the case of assets compared to the [JSON API example](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) as the same CEL expression is used for every asset including the fallback response.
+The CEL expression definition is simpler in the case of assets compared to the [JSON API example](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http) as the same CEL expression is used for every asset including the fallback response.
 
 ```rust
 lazy_static! {
@@ -100,7 +100,7 @@ The assets are imported from the frontend build directory:
 static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
 ```
 
-With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example, however, a slightly different structure is used.
+With the assets loaded, similar to the [JSON API](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http), the pre-calculated responses and certifications need to be stored somewhere. In this example, however, a slightly different structure is used.
 
 Encoded assets are stored in a separate `HashMap` to make routing easier. This will be more apparent later in this guide.
 
@@ -117,13 +117,13 @@ thread_local! {
 }
 ```
 
-Certifying responses is more involved here compared to the simpler approach used in the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) example. There are some paths used in the following functions that warrant some explanation:
+Certifying responses is more involved here compared to the simpler approach used in the [JSON API](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http) example. There are some paths used in the following functions that warrant some explanation:
 
 - `asset_tree_path`: the `HttpCertificationPath` that will be used to store the asset in the tree, for example, `HttpCertificationPath::exact("/assets/app.js")`.
 - `asset_file_path`: the relative file path of the asset on disk before being imported into the canister, for example, `assets/app.js`.
 - `asset_req_path`: the absolute path that will be used to request the asset `/assets/app.js` from a browser.
 
-The first step is defining a reusable function to create a response with all of the necessary default headers. This function is very similar to the counterpart in the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http) example with the biggest difference being in the headers that are used. Since the responses from an API serving static assets will be rendered directly in the browser, more security-focused headers are necessary:
+The first step is defining a reusable function to create a response with all of the necessary default headers. This function is very similar to the counterpart in the [JSON API](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http) example with the biggest difference being in the headers that are used. Since the responses from an API serving static assets will be rendered directly in the browser, more security-focused headers are necessary:
 
 ```rust
 fn get_asset_headers(
@@ -376,7 +376,7 @@ fn add_certification_skips() {
 }
 ```
 
-After setting all certifications, the canister's [certified data](https://internetcomputer.org/docs/current/references/ic-interface-spec#system-api-certified-data) needs to be set. This will make sure that the correct certified data is set so that it can be signed during the next consensus round:
+After setting all certifications, the canister's [certified data](https://internetcomputer.org/docs/references/ic-interface-spec#system-api-certified-data) needs to be set. This will make sure that the correct certified data is set so that it can be signed during the next consensus round:
 
 ```rust
 fn update_certified_data() {
@@ -415,7 +415,7 @@ With all assets certified, they can be served over HTTP. The steps to follow whe
   - Serve the Brotli encoded asset if it exists and it was requested.
   - Otherwise, serve the Gzip encoded asset if it exists and it was requested.
   - Otherwise, serve the original asset.
-- Add the certificate header. This is the same process as with the [JSON API](https://internetcomputer.org/docs/current/developer-docs/http-compatible-canisters/serving-json-over-http).
+- Add the certificate header. This is the same process as with the [JSON API](https://internetcomputer.org/docs/building-apps/network-features/using-http/http-certification/serving-json-over-http).
 
 ```rust
 fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
@@ -550,7 +550,7 @@ fn http_request(req: HttpRequest) -> HttpResponse {
 
 This example uses a canister called `http_certification_custom_assets_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/current/developer-docs/getting-started/install) to start a local instance of the replica:
+To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
 
 ```shell
 dfx start --background --clean

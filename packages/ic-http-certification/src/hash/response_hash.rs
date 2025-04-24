@@ -84,7 +84,7 @@ pub fn filter_response_headers(
 }
 
 /// Calculates the
-/// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+/// [Representation Independent Hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map)
 /// of [ResponseHeaders] that have been filtered with [filter_response_headers].
 pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeaders) -> Hash {
     let mut headers_to_verify: Vec<(String, Value)> = response_headers
@@ -107,7 +107,7 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
 }
 
 /// Calculates the
-/// [Representation Independent Hash](https://internetcomputer.org/docs/current/references/ic-interface-spec/#hash-of-map)
+/// [Representation Independent Hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map)
 /// of an [HttpResponse] according to a CEL expression defined by [DefaultResponseCertification].
 ///
 /// An optional response body hash may be provided if this is known beforehand. If this override is not
