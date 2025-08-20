@@ -1,16 +1,152 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <link rel="shortcut icon" type="image/ico" href="/src/assets/favicon.ico" />
-    <title>Solid App</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+<head>
+  <meta charset="UTF-8">
+  <!-- Ensures responsiveness on mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <script src="/src/index.tsx" type="module"></script>
-  </body>
+  <title>CO.DELTA △ Known Neuron</title>
+  
+  <link rel="stylesheet" href="assets/css/site.css">
+  <script src="assets/js/site.js"></script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-content">
+      <div class="logo glitch" data-text="CO.DELTA △">
+        <span>C</span><span>O</span>.DELTA △
+      </div>
+      <div>
+        <a href="https://internetcomputer.org/" target="_blank" class="powered-by">
+          Powered by ICP
+          <svg height="13px" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 358.8 179.8">
+            <linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="224.7853" y1="257.7536" x2="348.0663" y2="133.4581" gradientTransform="matrix(1 0 0 -1 0 272)">
+				<stop id="SVGID_1_A" offset="0.21"/>
+				<stop id="SVGID_1_B" offset="0.6841"/>
+            </linearGradient>
+            <path class="st0" d="M271.6,0c-20,0-41.9,10.9-65,32.4c-10.9,10.1-20.5,21.1-27.5,29.8c0,0,11.2,12.9,23.5,26.8  c6.7-8.4,16.2-19.8,27.3-30.1c20.5-19.2,33.9-23.1,41.6-23.1c28.8,0,52.2,24.2,52.2,54.1c0,29.6-23.4,53.8-52.2,54.1  c-1.4,0-3-0.2-5-0.6c8.4,3.9,17.5,6.7,26,6.7c52.8,0,63.2-36.5,63.8-39.1c1.5-6.7,2.4-13.7,2.4-20.9C358.6,40.4,319.6,0,271.6,0z"/>
+            <linearGradient id="SVGID_2_" gradientUnits="userSpaceOnUse" x1="133.9461" y1="106.4262" x2="10.6653" y2="230.7215" gradientTransform="matrix(1 0 0 -1 0 272)">
+				<stop id="SVGID_2_A" offset="0.21"/>
+				<stop id="SVGID_2_B" offset="0.8929"/>
+            </linearGradient>
+            <path class="st1" d="M87.1,179.8c20,0,41.9-10.9,65-32.4c10.9-10.1,20.5-21.1,27.5-29.8c0,0-11.2-12.9-23.5-26.8  c-6.7,8.4-16.2,19.8-27.3,30.1c-20.5,19-34,23.1-41.6,23.1c-28.8,0-52.2-24.2-52.2-54.1c0-29.6,23.4-53.8,52.2-54.1  c1.4,0,3,0.2,5,0.6c-8.4-3.9-17.5-6.7-26-6.7C13.4,29.6,3,66.1,2.4,68.8C0.9,75.5,0,82.5,0,89.7C0,139.4,39,179.8,87.1,179.8z"/>
+            <path class="st2" d="M127.3,59.7c-5.8-5.6-34-28.5-61-29.3C18.1,29.2,4,64.2,2.7,68.7C12,29.5,46.4,0.2,87.2,0  c33.3,0,67,32.7,91.9,62.2c0,0,0.1-0.1,0.1-0.1c0,0,11.2,12.9,23.5,26.8c0,0,14,16.5,28.8,31c5.8,5.6,33.9,28.2,60.9,29  c49.5,1.4,63.2-35.6,63.9-38.4c-9.1,39.5-43.6,68.9-84.6,69.1c-33.3,0-67-32.7-92-62.2c0,0.1-0.1,0.1-0.1,0.2  c0,0-11.2-12.9-23.5-26.8C156.2,90.8,142.2,74.2,127.3,59.7z M2.7,69.1c0-0.1,0-0.2,0.1-0.3C2.7,68.9,2.7,69,2.7,69.1z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN SVG SECTION -->
+  <section class="svg-container">
+    <img src="/assets/images/co_delta.svg" alt="CO.DELTA △">
+  </section>
+
+  <!-- MAIN CONTENT SECTIONS -->
+  <section class="container">
+    <p>We're a verifiably decentralised <strong>co</strong>llective who review IC <strong>delta</strong>s (changes applied by NNS proposals). We follow a common <strong>code</strong>:</p>
+
+    <ul>
+    <li><strong>L</strong>ook: We observe the details and context of NNS proposals</li>
+    <li><strong>T</strong>est: We test and verify the claims made by those proposals</li>
+    <li><strong>A</strong>utomate: We automate as much as possible by building increasingly sophisticated tools that streamline and strengthen the reviewal process.</li>
+    </ul>
+
+    <p>Every vote cast by <strong>CO.DELTA</strong> is the result of consensus among diligent, skilled and experienced team members acting independently. The <a href="https://dashboard.internetcomputer.org/neuron/33138099823745946" target="_blank">CO.DELTA neuron</a> follows the vote of <a href="https://dashboard.internetcomputer.org/neuron/4713806069430754115" target="_blank">D-QUORUM</a> on NNS topics that the CO.DELTA team does not handle directly. You can therefore follow CO.DELTA on all NNS topics and rely on a high quality vote.</p>
+  </section>
+
+  <section class="container team">
+    <h1><strong>CO.DELTA △</strong> Team</h1>
+    <ul class="people-list">
+      <li>
+        <img src="assets/images/aligatorr89.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40aligatorr89%20order%3Alatest" target="_blank">@aligatorr89</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/3203160769604620227"target="_blank">3203160769604620227</a></p>
+          <p>koiza-s6kz2-m45zq-4lrn7-4v65m-6zemu-neoxj-vz6cb-ouolw-rrawv-mae</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/Gabriel.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40Gabriel%20order%3Alatest" target="_blank">@Gabriel</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/11774714342582604360" target="_blank">11774714342582604360</a>
+          <p>bn6wo-xpofx-5va6n-knhsi-d26er-6oxej-a5m3i-i5yh7-h3il7-s65zr-lae</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/Gekctek.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40Gekctek%20order%3Alatest" target="_blank">@Gekctek</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/5703278777295362811"target="_blank">5703278777295362811</a>
+          <p>pib55-fsiwt-ftxf3-a6e7q-ed7dm-qfbgq-tdld3-jrotf-7y5bf-xsyju-uqe</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/Gwojda.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40Gwojda%20order%3Alatest" target="_blank">@Gwojda</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/1637856224910350276"target="_blank">1637856224910350276</a>
+          <p>yvi2m-qclpo-iof7c-xbzh5-4g2hb-i36yy-yx7i2-iczo2-oei56-ldao3-rae</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/Lorimer.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40lorimer%20order%3Alatest" target="_blank">@Lorimer</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/16459595263909468577"target="_blank">16459595263909468577</a>
+          <p>zkkkd-i34qc-367ln-e2u7o-ezznu-dkfqh-gtfvz-cviph-6qa4v-evtfs-wqe</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/MalithHatananchchige.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40MalithHatananchchige%20order%3Alatest" target="_blank">@MalithHatananchchige</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/4152527621380014044"target="_blank">4152527621380014044</a>
+          <p>hfbtd-e2vzk-rvwfx-c55l3-tsuue-oizir-hl4bg-tajby-skikk-iefse-fqe</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/rem_codes.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40rem.codes%20order%3Alatest" target="_blank">@rem.codes</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/14075804400279764601" target="_blank">14075804400279764601</a>
+          <p>mrzkb-iqvzd-crtjw-g2fai-hapm4-hlchs-exq4o-in7jm-szk73-o7bjn-cqe</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/Thyassa.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40Thyassa%20order%3Alatest" target="_blank">@Thyassa</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/2334327054503903846"target="_blank">2334327054503903846</a>
+          <p>7extd-ynwj7-vgvma-2qki6-ya7lp-duihw-5t7bn-bfo4u-77qv5-w4umb-fae</p>
+        </div>
+      </li>
+      <li>
+        <img src="assets/images/Zane.png">
+        <div>
+          <h3><a href="https://forum.dfinity.org/search?q=co.delta%20%40Zane%20order%3Alatest" target="_blank">@Zane</a></h3>
+          <p><a href="https://dashboard.internetcomputer.org/neuron/7406666698684293556" target="_blank">7406666698684293556</a>
+          <p>3sbdf-73gy7-fe4ta-ycey4-r2sgo-usien-c7d7u-yznr5-fficl-azvb7-fqe</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="container more-info">
+	<p><strong>More info coming soon. In the meantime, <a href="https://forum.dfinity.org/search?q=co.delta%20order%3Alatest" class="nowrap" target="_blank">check out our reviews...</a></strong></p>
+  </section>
+
+  <!-- FOOTER / LINKS -->
+  <footer>
+    <a href="https://dashboard.internetcomputer.org/neuron/33138099823745946" target="_blank">Known neuron</a>
+    <span class="lightgrey">|</span>
+    <a href="https://github.com/aodl/CO.DELTA" target="_blank">Github repo</a>
+    <span class="lightgrey">|</span>
+    <a href="https://forum.dfinity.org/t/announcing-co-delta/41155" target="_blank">DFINITY forum</a>
+  </footer>
+ 
+</body>
 </html>

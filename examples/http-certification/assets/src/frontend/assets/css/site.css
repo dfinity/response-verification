@@ -1,0 +1,284 @@
+/* Global resets */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #fff;
+  color: #595959;
+}
+
+/* Header area */
+header {
+  width: 100%;
+  background: #F2F2F2;
+  box-shadow: 0 2px 4px 0 rgba(0,0,0,.1);
+  padding: 5px 0;
+}
+
+.header-content {
+  /* Centers content and limits max width */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+
+  /* Flex layout for brand and link on one line */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-weight: bold;
+}
+
+/* Example color styling for C & O in "CO" */
+.logo span:first-child {
+  color: #B0421A; /* “C” in red/brown */
+}
+.logo span:last-child {
+  color: #16419F; /* “O” in blue */
+}
+
+.powered-by {
+  font-size: 0.8rem;
+}
+
+.powered-by svg {
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* Main container for the page content */
+.container {
+  max-width: 800px;
+  margin: 10px auto;
+  padding: 0 15px;
+  text-align: justify;
+  color: #595959;
+}
+
+section.team {
+  text-align:center; 
+  padding-bottom: 10px;
+}
+
+section.more-info {
+  text-align:center;
+  padding-bottom: 30px;
+}
+
+.lightgrey {
+  color: lightgrey;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Centered section specifically for an SVG logo */
+.svg-container {
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Allow the SVG to be responsive, but don't let it shrink too small */
+.svg-container img {
+  width: 33%;
+  min-width: 200px; /* stops it from shrinking beyond 200px */
+  max-width: 300px; /* cap how large it can get */
+  height: auto;
+}
+
+/* Footer as a sticky bar at the bottom */
+footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: #F2F2F2;
+  box-shadow: 0 -2px 4px 0 rgba(0,0,0,.05);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 7px 0;
+}
+
+footer a {
+  margin: 0 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-content {
+	flex-direction: column;
+	align-items: flex-start;
+  }
+
+  /* On smaller screens, remove fixed widths/margins */
+  .container {
+	margin: 10px;
+	text-align: left; /* optional: revert to left-aligned text */
+  }
+
+  footer {
+	font-size: 0.8rem;
+  }
+}
+
+.people-list {
+  text-align: left;
+  list-style: none;        
+  margin: auto;
+  padding: 0;
+  max-width: 400px;        
+}
+
+.people-list li {
+  display: flex;           
+  align-items: center;     
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 1rem;   
+  padding: 1rem;
+}
+
+.people-list li img {
+  width: 60px;           
+  height: 60px;
+  border-radius: 50%;    
+  object-fit: cover;     
+  margin-right: 1rem;    
+}
+
+.people-list li h3 {
+  margin: 0;             
+  font-size: 1.2rem;
+  color: #333;
+}    
+
+.people-list li p {
+  font-size: 0.7rem;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* Glitch animations */
+@keyframes glitch {
+  0% {
+	transform: translate(0);
+	opacity: 1;
+  }
+  15% {
+	transform: translate(-0.5px, -0.5px) skew(-1deg);
+	opacity: 0.9;
+  }
+  30% {
+	transform: translate(0.5px, 0.5px) skew(1deg);
+	opacity: 1;
+  }
+  45% {
+	transform: translate(-0.5px, 0.25px) skew(-2deg);
+	opacity: 0.8;
+  }
+  60% {
+	transform: translate(0.5px, -0.25px) skew(2deg);
+	opacity: 1;
+  }
+  75% {
+	transform: translate(-0.25px, 0.25px) skew(-1deg);
+	opacity: 0.9;
+  }
+  100% {
+	transform: translate(0);
+	opacity: 1;
+  }
+}
+
+/* Flicker and color shift animations */
+@keyframes glitchColor {
+  0% {
+	text-shadow: 0.75px 0 red, -0.75px 0 blue;
+  }
+  15% {
+	text-shadow: -0.75px -0.75px #00ff00, 0.75px 0.75px #ff00ff;
+  }
+  30% {
+	text-shadow: 0.5px -0.5px #000, -0.5px 0.5px #888;
+  }
+  45% {
+	text-shadow: 0.5px 0.5px red, -0.5px -0.5px blue;
+  }
+  60% {
+	text-shadow: 0.75px -0.75px #333, -0.75px 0.75px #bbb;
+  }
+  75% {
+	text-shadow: 0.5px 0 red, -0.5px 0 blue;
+  }
+  100% {
+	text-shadow: 0 0 #000;
+  }
+}
+
+.glitch {
+  position: relative;
+  color: #000;
+  animation: glitch 1s infinite ease-in-out alternate,
+			 glitchColor 1s infinite ease-in-out alternate;
+  user-select: none;
+}
+
+/* Pseudo-elements for layering extra glitch color flickers */
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  overflow: hidden;
+  color: #000;
+  pointer-events: none;
+}
+
+.glitch::before {
+  z-index: -1;
+  animation: glitch 1s infinite ease-in-out alternate,
+			 glitchColor 1s infinite ease-in-out alternate;
+  clip: rect(0, 1400px, 45px, 0);
+}
+
+.glitch::after {
+  z-index: -2;
+  animation: glitch 1s infinite ease-in-out alternate,
+			 glitchColor 1s infinite ease-in-out alternate;
+  clip: rect(80px, 1400px, 140px, 0);
+}
+
+/* Remove glitch effect after 3 seconds */
+@keyframes removeGlitch {
+  to {
+	animation: none;
+	text-shadow: none;
+  }
+}
+
+.glitch.remove {
+  animation: removeGlitch 1s forwards;
+}
+
+.glitch.remove::before,
+.glitch.remove::after {
+  animation: removeGlitch 1s forwards;
+}
+
+/* powered by ICP svg fill styles */
+.st0{fill:url(#SVGID_1_);}
+.st1{fill:url(#SVGID_2_);}
+.st2{fill-rule:evenodd;clip-rule:evenodd;fill:#29ABE2;}
+#SVGID_1_A{stop-color:#F15A24;}
+#SVGID_1_B{stop-color:#FBB03B;}
+#SVGID_2_A{stop-color:#ED1E79;}
+#SVGID_2_B{stop-color:#522785;}

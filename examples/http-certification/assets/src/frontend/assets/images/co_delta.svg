@@ -1,0 +1,121 @@
+<svg version="1.1" id="Layer_1"
+		 xmlns="http://www.w3.org/2000/svg"
+		 x="0px" y="0px"
+		 viewBox="4.419 4.651 169.149 168.614"
+		 style="enable-background:new 0 0 358.8 179.8;"
+		 xmlns:bx="https://boxy-svg.com"
+		 width="33%">
+
+  <style>
+		/* 
+		 * Animate from bright (1.5) at 0% to normal (1.0) at 100%.
+		 * Use "forwards" so it stays at normal after finishing.
+		 */
+		ellipse, path {
+		  animation: fadeToNormal 10s ease-in-out forwards;
+		}
+		@keyframes fadeToNormal {
+		  0% {
+				filter: brightness(1.5); /* start bright */
+		  }
+		  100% {
+				filter: brightness(1.0); /* end normal */
+		  }
+		}
+
+		/* 
+		 * For the black triangle, we animate fill from #888 to #000.
+		 * Also "forwards" to remain at #000 once finished.
+		 */
+		.black-triangle {
+		  animation: fadeTriangle 10s ease-in-out forwards;
+		  /* Avoid brightness filter from the universal ellipse/path rule: */
+		  filter: none;
+		}
+		@keyframes fadeTriangle {
+		  0% {
+				fill: #888; /* lighter grey at start */
+		  }
+		  100% {
+				fill: #000; /* black at end */
+		  }
+		}
+  </style>
+
+  <defs>
+		<bx:export>
+		  <bx:file format="svg" path="codelta_svg_3.svg"/>
+		  <bx:file format="png" path="codelta_large_3.png">
+				<bx:variant scale="7" suffix="@7x"/>
+		  </bx:file>
+		</bx:export>
+
+		<linearGradient gradientUnits="userSpaceOnUse"
+										x1="69.686" y1="99.302" x2="69.686" y2="135.488"
+										id="gradient-3"
+										gradientTransform="matrix(0.802372, -0.596826, 0.315002, 0.423487, -27.919375, 112.786822)">
+		  <stop offset="0" style="stop-color: rgb(11.373% 33.725% 82.745%);"/>
+		  <stop offset="1" style=""/>
+		</linearGradient>
+
+		<radialGradient gradientUnits="userSpaceOnUse"
+										cx="88.065" cy="91.305" r="83.802"
+										id="gradient-0"
+										gradientTransform="matrix(0.95228, 0.011036, -0.011035, 0.952199, 5.210061, 3.392579)">
+		  <stop offset="0" style="stop-color: rgb(255, 255, 255);" />
+		  <stop offset="0.63" style="stop-color: rgb(255, 255, 255);" />
+		  <stop offset="0.754" style="stop-color: rgb(230, 230, 230);" />
+		  <stop offset="1" style="stop-color: rgb(187, 187, 187);" />
+		</radialGradient>
+  </defs>
+
+  <style type="text/css">
+		.st0 { fill: url(#SVGID_1_); }
+		.st1 { fill: url(#SVGID_2_); }
+		.st2 { fill-rule:evenodd; clip-rule:evenodd; fill:#29ABE2; }
+  </style>
+
+  <linearGradient id="SVGID_1_"
+								  gradientUnits="userSpaceOnUse"
+								  x1="224.7853" y1="257.7536"
+								  x2="348.0663" y2="133.4581"
+								  gradientTransform="matrix(-0.425877, 0, 0, -0.418271, 174.846163, 161.846715)">
+		<stop offset="0.21" style="stop-color:#F15A24"/>
+		<stop offset="0.6841" style="stop-color:#FBB03B"/>
+  </linearGradient>
+
+  <!-- Background circle -->
+  <ellipse style="stroke-width:0px; stroke:rgba(255,255,255,0); fill:url(#gradient-0);"
+				   cx="89.223" cy="88.99" rx="83.802" ry="83.802" />
+
+  <!-- Orange shape -->
+  <path class="st0"
+				d="M 59.177 48.077 C 67.697 48.077 77.297 52.304 87.134 61.299 C 87.588 61.712 105.78 76.821 106.885 77.789 
+				   L 92.309 83.275 C 88.57 79.893 82.336 74.792 77.695 71.13 C 68.382 63.782 62.5 63.051 59.22 63.051 
+				   C 46.955 63.051 36.99 73.173 36.99 85.679 C 36.99 98.06 49.49 109.172 61.755 109.298 
+				   C 62.352 109.298 62.619 109.709 63.472 109.544 
+				   C 59.896 111.173 53.897 110.859 50.278 110.859 
+				   C 27.79 110.859 25.895 96.582 25.639 95.494 
+				   C 25.001 92.691 23.982 86.156 23.982 83.145 
+				   C 24.025 62.358 38.735 48.077 59.177 48.077 Z"
+				style="transform-box: fill-box; transform-origin: 50% 50%; stroke-width:0px;"
+				transform="matrix(0.768753, -0.639546, 0.639546, 0.768753, 0,0)" />
+  
+  <!-- Blue shape -->
+  <path class="st2"
+				d="M 71.866 127.93 C 50.396 127.824 32.33 112.429 27.564 91.744 C 27.931 93.21 35.105 112.585 61.027 111.853 
+				   C 69.546 111.601 78.276 107.203 84.532 103.106 L 84.532 125.172 
+				   C 80.343 126.921 76.099 127.93 71.866 127.93 Z"
+				style="fill: url(#gradient-3); stroke-width:0px;" />
+
+  <!-- Black triangle - separate animation for fill color -->
+  <path class="black-triangle"
+				d="M 69.204 127.417 L 149.668 127.417 L 109.436 52.775 L 69.204 127.417 Z 
+				   M 107.639 77.829 L 126.158 112.187 L 89.12 112.187 L 107.639 77.829 Z"
+				style="stroke:rgb(255,255,255); stroke-width:0px; fill:#000;" />
+
+  <!-- Optional text -->
+  <text style="white-space: pre; fill: #333; font-family: Arial, sans-serif; font-size: 28px;"
+				x="42.056" y="44.224">
+  </text>
+</svg>
