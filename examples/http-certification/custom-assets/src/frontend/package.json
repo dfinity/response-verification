@@ -1,7 +1,0 @@
-{
-  "name": "http-certification-custom-assets-frontend",
-  "scripts": {
-    "start": "vite",
-    "build": "vite build"
-  }
-}
