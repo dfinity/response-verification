@@ -60,7 +60,7 @@ thread_local! {
     static ASSET_ROUTER: RefCell<AssetRouter<'static>> = RefCell::new(AssetRouter::with_tree(HTTP_TREE.with(|tree| tree.clone())));
 }
 
-static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend/dist");
+static ASSETS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/../frontend");
 const IMMUTABLE_ASSET_CACHE_CONTROL: &str = "public, max-age=31536000, immutable";
 const NO_CACHE_ASSET_CACHE_CONTROL: &str = "public, no-cache, no-store";
 
@@ -106,7 +106,8 @@ fn certify_all_assets() {
             content_type: Some("text/javascript".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
-                IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
+                "public, no-cache".to_string(),// TODO content aware filenames so we can cache without serving stale content
+                //IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
             encodings: encodings.clone(),
         },
@@ -115,7 +116,8 @@ fn certify_all_assets() {
             content_type: Some("text/css".to_string()),
             headers: get_asset_headers(vec![(
                 "cache-control".to_string(),
-                IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
+                "public, no-cache".to_string(),// TODO content aware filenames so we can cache without serving stale content
+                //IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
             )]),
             encodings,
         },
@@ -140,6 +142,25 @@ fn certify_all_assets() {
                 ),
             ]),
         },
+        AssetConfig::Pattern {
+          pattern: "**/*.{png,jpg,jpeg}".into(),
+          content_type: None,
+          headers: get_asset_headers(vec![(
+            "cache-control".into(),
+            "public, max-age=31536000, immutable".into()
+          )]),
+          encodings: vec![], // images are already compressed
+        },
+        AssetConfig::Pattern {
+          pattern: "**/*.svg".to_string(),
+          content_type: Some("image/svg+xml".to_string()),
+          headers: get_asset_headers(vec![(
+            "cache-control".to_string(),
+            "public, no-cache".to_string(),// TODO content aware filenames so we can cache without serving stale content
+            //IMMUTABLE_ASSET_CACHE_CONTROL.to_string(),
+          )]),
+          encodings: vec![],
+        }
     ];
 
     // 2. Collect all assets from the frontend build directory.
@@ -235,7 +256,7 @@ fn get_asset_headers(additional_headers: Vec<HeaderField>) -> Vec<HeaderField> {
         ("x-content-type-options".to_string(), "nosniff".to_string()),
         ("content-security-policy".to_string(), "default-src 'self'; img-src 'self' data:; form-action 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content".to_string()),
         ("referrer-policy".to_string(), "no-referrer".to_string()),
-        ("permissions-policy".to_string(), "accelerometer=(),ambient-light-sensor=(),autoplay=(),battery=(),camera=(),display-capture=(),document-domain=(),encrypted-media=(),fullscreen=(),gamepad=(),geolocation=(),gyroscope=(),layout-animations=(self),legacy-image-formats=(self),magnetometer=(),microphone=(),midi=(),oversized-images=(self),payment=(),picture-in-picture=(),publickey-credentials-get=(),speaker-selection=(),sync-xhr=(self),unoptimized-images=(self),unsized-media=(self),usb=(),screen-wake-lock=(),web-share=(),xr-spatial-tracking=()".to_string()),
+        ("permissions-policy".to_string(), "accelerometer=(),autoplay=(),camera=(),display-capture=(),geolocation=(),gyroscope=(),magnetometer=(),microphone=(),midi=(),payment=(),picture-in-picture=(),publickey-credentials-get=(),screen-wake-lock=(),usb=(),web-share=(),xr-spatial-tracking=()".to_string()),
         ("cross-origin-embedder-policy".to_string(), "require-corp".to_string()),
         ("cross-origin-opener-policy".to_string(), "same-origin".to_string()),
     ];
