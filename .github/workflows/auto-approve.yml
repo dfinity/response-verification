@@ -1,0 +1,28 @@
+name: auto_approve_pr
+
+on:
+  pull_request_target:
+    paths:
+      - 'CHANGELOG.md'
+      - 'mainnet-icos-revisions.json'
+
+jobs:
+  auto-approve-changelog:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    if: github.actor == 'pr-creation-bot-dfinity-ic[bot]'
+    steps:
+      - name: Check file
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3
+        id: filter
+        with:
+          filters: |
+            changelog:
+              - "CHANGELOG.md"
+
+      - name: Auto-approve
+        uses: hmarr/auto-approve-action@93c80b3919aae15c0da0d3ca49c70f57e3c4a58f #v4.0.0
+        if: steps.filter.outputs.changelog == 'true'
+        with:
+          review-message: 'Auto approving CHANGELOG.md changes.'

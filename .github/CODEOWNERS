@@ -1,1 +1,10 @@
 * @dfinity/trust
+
+# The following files are maintained by GitHub actions, therefore we remove codeowners.
+.cz.yaml
+CHANGELOG.md
+Cargo.lock
+Cargo.toml
+packages/certificate-verification-js/package.json
+packages/ic-certification-testing-wasm/package.json
+packages/ic-response-verification-wasm/package.json
