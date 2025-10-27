@@ -2,11 +2,11 @@
   "name": "response-verification",
   "private": true,
   "engines": {
-    "node": "^22",
-    "pnpm": "^9",
+    "node": "^24",
+    "pnpm": "^10",
     "npm": "please use pnpm"
   },
-  "packageManager": "pnpm@9.15.0+sha512.76e2379760a4328ec4415815bcd6628dee727af3779aaa4c914e3944156c4299921a89f976381ee107d41f12cfa4b66681ca9c718f0668fa0831ed4c6d8ba56c",
+  "packageManager": "pnpm@10.19.0+sha512.c9fc7236e92adf5c8af42fd5bf1612df99c2ceb62f27047032f4720b33f8eacdde311865e91c411f2774f618d82f320808ecb51718bfa82c060c4ba7c76a32b8",
   "scripts": {
     "build": "pnpm run -r build",
     "format": "prettier --write .",
