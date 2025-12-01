@@ -82,6 +82,7 @@ ic-agent = "0.39"
 ic-utils = "0.39"
 ic-cdk = "0.17"
 ic-cdk-macros = "0.17"
+ic-verify-bls-signature = "0.6"
 
 wasm-bindgen = "0.2"
 wasm-bindgen-test = "0.3"
@@ -131,8 +132,3 @@ rev = "1290256484f59c3d950c5e9a098e97383b248ad6"
 [workspace.dependencies.serde]
 version = "1"
 features = ["derive"]
-
-[workspace.dependencies.miracl_core_bls12381]
-version = "4"
-default-features = false
-features = ["std", "allow_alt_compress"]
