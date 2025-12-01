@@ -1243,7 +1243,7 @@ dependencies = [
  "http-body",
  "ic-certification 2.6.0",
  "ic-transport-types",
- "ic-verify-bls-signature",
+ "ic-verify-bls-signature 0.5.0",
  "k256",
  "leb128",
  "p256",
@@ -1378,9 +1378,9 @@ dependencies = [
  "ic-certification-testing",
  "ic-response-verification-test-utils",
  "ic-types",
+ "ic-verify-bls-signature 0.6.0",
  "lazy_static",
  "leb128",
- "miracl_core_bls12381",
  "nom",
  "parking_lot",
  "rand",
@@ -1884,6 +1884,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ic-verify-bls-signature"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd6c4261586eb473fe1219de63186a98e554985d5fd6f3488036c8fb82452e27"
+dependencies = [
+ "hex",
+ "ic_bls12_381 0.10.0",
+ "lazy_static",
+ "pairing 0.23.0",
+ "rand",
+ "sha2 0.10.8",
+]
+
+[[package]]
 name = "ic0"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2131,12 +2145,6 @@ dependencies = [
  "wasi",
  "windows-sys 0.48.0",
 ]
-
-[[package]]
-name = "miracl_core_bls12381"
-version = "4.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d07cbe42e2a8dd41df582fb8e00fc24d920b5561cc301fcb6d14e2e0434b500f"
 
 [[package]]
 name = "nix"

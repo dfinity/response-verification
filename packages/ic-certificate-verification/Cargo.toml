@@ -23,7 +23,6 @@ homepage.workspace = true
 [dependencies]
 candid.workspace = true
 nom.workspace = true
-miracl_core_bls12381.workspace = true
 thiserror.workspace = true
 leb128.workspace = true
 cached.workspace = true
@@ -33,6 +32,7 @@ parking_lot.workspace = true
 
 ic-certification = { workspace = true }
 ic-cbor.workspace = true
+ic-verify-bls-signature = { workspace = true }
 
 [dev-dependencies]
 ic-response-verification-test-utils.workspace = true
