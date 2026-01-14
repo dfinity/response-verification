@@ -36,3 +36,4 @@ ic-crypto-tree-hash.workspace = true
 ic-crypto-internal-threshold-sig-bls12381.workspace = true
 ic-crypto-internal-seed.workspace = true
 ic-crypto-internal-types.workspace = true
+ic-crypto-utils-threshold-sig-der = { git = "https://github.com/dfinity/ic", rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12" }
