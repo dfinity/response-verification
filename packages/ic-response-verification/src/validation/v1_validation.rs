@@ -35,7 +35,7 @@ mod tests {
     fn validate_body_with_matching_sha() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
         let body_sha = hash(body);
-        let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
+        let uri = format!("https://ic0.dev/app.js?canisterId={CANISTER_ID}")
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
@@ -57,7 +57,7 @@ mod tests {
     fn validate_body_with_index_fallback() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
         let body_sha = hash(body);
-        let uri = format!("https://ic0.dev/garbage.js?canisterId={}", CANISTER_ID)
+        let uri = format!("https://ic0.dev/garbage.js?canisterId={CANISTER_ID}")
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
@@ -75,7 +75,7 @@ mod tests {
     fn validate_body_without_index_fallback() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
         let body_sha = hash(body);
-        let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
+        let uri = format!("https://ic0.dev/app.js?canisterId={CANISTER_ID}")
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
@@ -93,7 +93,7 @@ mod tests {
     fn validate_body_without_matching_sha() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
         let body_sha = hash(body);
-        let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
+        let uri = format!("https://ic0.dev/app.js?canisterId={CANISTER_ID}")
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {
@@ -111,7 +111,7 @@ mod tests {
     fn validate_body_without_any_matching_path() {
         let body: &[u8] = &[1, 2, 3, 4, 5, 6];
         let body_sha = hash(body);
-        let uri = format!("https://ic0.dev/app.js?canisterId={}", CANISTER_ID)
+        let uri = format!("https://ic0.dev/app.js?canisterId={CANISTER_ID}")
             .parse::<Uri>()
             .unwrap();
         let tree_options = CreateTreeOptions {

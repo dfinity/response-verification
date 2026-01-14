@@ -1,13 +1,12 @@
 use crate::error::{CertificationTestError, CertificationTestResult};
 use ic_crypto_internal_seed::Seed;
 use ic_crypto_internal_threshold_sig_bls12381::{
-    api::{combined_public_key, generate_threshold_key, public_key_to_der, sign_message},
+    api::{combined_public_key, generate_threshold_key, sign_message},
     types::SecretKeyBytes,
 };
-use ic_crypto_internal_types::sign::threshold_sig::public_key::{
-    bls12_381::PublicKeyBytes, CspThresholdSigPublicKey,
-};
+use ic_crypto_internal_types::sign::threshold_sig::public_key::CspThresholdSigPublicKey;
 use ic_crypto_tree_hash::MixedHashTree;
+use ic_crypto_utils_threshold_sig_der::public_key_to_der;
 use ic_types::{
     consensus::certification::CertificationContent,
     crypto::{
@@ -41,7 +40,7 @@ pub(crate) fn generate_keypair() -> CertificationTestResult<KeyPair> {
         combined_public_key(&public_coefficients).unwrap(),
     ));
 
-    let public_key = public_key_to_der(PublicKeyBytes(public_key.into_bytes()))
+    let public_key = public_key_to_der(&public_key.into_bytes())
         .map_err(|_| CertificationTestError::PublicKeyEncodingFailed)?;
 
     Ok(KeyPair {

@@ -10,19 +10,19 @@ use serde::Serialize;
 /// # Arguments
 ///
 /// * `data_certificate` - A certificate used by the HTTP Gateway to verify a response.
-///     Retrieved using `ic_cdk::api::data_certificate`. This value is not validated by this function
-///     and is expected to be a valid certificate. The function will not fail if the certificate is invalid,
-///     but verification of the certificate by the HTTP Gateway will fail.
+///   Retrieved using `ic_cdk::api::data_certificate`. This value is not validated by this function
+///   and is expected to be a valid certificate. The function will not fail if the certificate is invalid,
+///   but verification of the certificate by the HTTP Gateway will fail.
 /// * `response` - The [`HttpResponse`] to add the certificate header to.
-///     Created using [`HttpResponse::builder()`](crate::HttpResponse::builder).
+///   Created using [`HttpResponse::builder()`](crate::HttpResponse::builder).
 /// * `witness` - A pruned merkle tree revealing the relevant certification for the current response.
-///     Created using [`HttpCertificationTree::witness()`](crate::HttpCertificationTree::witness).
-///     The witness is not validated to be correct for the given response, and the function will not fail
-///     if the witness is invalid. The HTTP Gateway will fail to verify the response if the witness is invalid.
+///   Created using [`HttpCertificationTree::witness()`](crate::HttpCertificationTree::witness).
+///   The witness is not validated to be correct for the given response, and the function will not fail
+///   if the witness is invalid. The HTTP Gateway will fail to verify the response if the witness is invalid.
 /// * `expr_path` - An expression path for the current response informing the HTTP Gateway where the
-///     relevant certification is present in the merkle tree. Created using
-///     [`HttpCertificationPath::to_expr_path()`](crate::HttpCertificationPath::to_expr_path). The expression path
-///     is not validated to be correct for the given response, and the function will not fail if the expression path is invalid.
+///   relevant certification is present in the merkle tree. Created using
+///   [`HttpCertificationPath::to_expr_path()`](crate::HttpCertificationPath::to_expr_path). The expression path
+///   is not validated to be correct for the given response, and the function will not fail if the expression path is invalid.
 ///
 /// # Examples
 ///

@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate::hash_tree::{
     empty, fork, label, leaf, pruned, pruned_from_hex, HashTree, LookupResult, SubtreeLookupResult,
 };

@@ -69,7 +69,7 @@ mod tests {
     fn certificate_header_field_parses_valid_field_without_delimiters() {
         let name = "version";
         let value = 2.to_string();
-        let header_field = format!("{}={}", name, value);
+        let header_field = format!("{name}={value}");
 
         let CertificateHeaderField(result_name, result_value) =
             CertificateHeaderField::from(header_field.as_str()).unwrap();
@@ -100,7 +100,7 @@ mod tests {
         let value = cbor_encode(&create_certificate(None));
         let value = base64_encode(&value);
 
-        let header_field = format!("{}:{}", name, value);
+        let header_field = format!("{name}:{value}");
 
         let result = CertificateHeaderField::from(header_field.as_str());
 

@@ -28,14 +28,14 @@ enum HttpCertificationType {
 /// It supports three types of certification via associated functions:
 ///
 /// - [skip()](HttpCertification::skip()) excludes both an [HttpRequest] and the
-/// corresponding [HttpResponse] from certification.
+///   corresponding [HttpResponse] from certification.
 ///
 /// - [response_only()](HttpCertification::response_only()) includes an
-/// [HttpResponse] but excludes the corresponding [HttpRequest]
-/// from certification.
+///   [HttpResponse] but excludes the corresponding [HttpRequest]
+///   from certification.
 ///
 /// - [full()](HttpCertification::full()) includes both an [HttpResponse] and
-/// the corresponding [HttpRequest] in certification.
+///   the corresponding [HttpRequest] in certification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HttpCertification(HttpCertificationType);
 
