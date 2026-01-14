@@ -19,11 +19,11 @@ pub(super) enum HttpCertificationPathType<'a> {
 /// Two variants are supported:
 ///
 /// - The [Exact](HttpCertificationPath::exact()) variant is used for paths that match a full URL path.
-/// For example, `HttpCertificationPath::exact('/foo')` will match the URL path `/foo` but not `/foo/bar`
-/// or `/foo/baz`.
+///   For example, `HttpCertificationPath::exact('/foo')` will match the URL path `/foo` but not `/foo/bar`
+///   or `/foo/baz`.
 ///
 /// - The [Wildcard](HttpCertificationPath::wildcard()) variant is used for paths that match a URL path prefix.
-/// For example, `HttpCertificationPath::wildcard('/foo')` will match the URL paths `/foo/bar` and `/foo/baz`.
+///   For example, `HttpCertificationPath::wildcard('/foo')` will match the URL paths `/foo/bar` and `/foo/baz`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpCertificationPath<'a>(HttpCertificationPathType<'a>);
 

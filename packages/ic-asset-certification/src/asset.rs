@@ -52,7 +52,7 @@ impl<'content, 'path> Asset<'content, 'path> {
 
 fn path_to_url(path: &str) -> String {
     if !path.starts_with('/') {
-        format!("/{}", path)
+        format!("/{path}")
     } else {
         path.to_string()
     }

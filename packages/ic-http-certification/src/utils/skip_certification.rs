@@ -15,7 +15,7 @@ use ic_representation_independent_hash::hash;
 /// # Arguments
 ///
 /// * `data_certificate` - A certificate used by the HTTP Gateway to verify a response.
-///    Retrieved using `ic_cdk::api::data_certificate`.
+///   Retrieved using `ic_cdk::api::data_certificate`.
 /// * `response` - The [`HttpResponse`] to add the certificate header to.
 ///   Created using [`HttpResponse::builder()`](crate::HttpResponse::builder).
 ///

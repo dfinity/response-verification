@@ -11,7 +11,7 @@ pub fn create_certificate_header(certificate: &[u8], tree: &[u8]) -> String {
     let certificate = base64_encode(certificate);
     let tree = base64_encode(tree);
 
-    format!("certificate=:{}:, tree=:{}:", certificate, tree)
+    format!("certificate=:{certificate}:, tree=:{tree}:")
 }
 
 pub fn create_versioned_certificate_header(
@@ -25,8 +25,7 @@ pub fn create_versioned_certificate_header(
     let expr_path = base64_encode(expr_path);
 
     format!(
-        "certificate=:{}:, tree=:{}:, expr_path=:{}:, version={}",
-        certificate, tree, expr_path, version
+        "certificate=:{certificate}:, tree=:{tree}:, expr_path=:{expr_path}:, version={version}"
     )
 }
 

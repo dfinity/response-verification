@@ -24,9 +24,9 @@ impl<K: NestedTreeKeyRequirements, V: NestedTreeValueRequirements> Debug for Nes
             NestedTree::Leaf(leaf) => {
                 format!("NestedTree::Leaf({})", hex::encode(leaf.root_hash()))
             }
-            NestedTree::Nested(rb_tree) => format!("NestedTree({:#?})", rb_tree),
+            NestedTree::Nested(rb_tree) => format!("NestedTree({rb_tree:#?})"),
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }
 
@@ -473,7 +473,7 @@ mod tests {
         tree.insert(&[label_1, label_2], value_1.to_vec());
         tree.insert(&[label_2, label_1], value_2.to_vec());
 
-        let s = format!("{:?}", tree);
+        let s = format!("{tree:?}");
         assert!(s.contains(label_1));
         assert!(s.contains(label_2));
         assert!(s.contains(&format!("0x{}", hex::encode(value_1))));

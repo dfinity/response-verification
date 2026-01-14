@@ -43,7 +43,7 @@ impl<Storage: AsRef<[u8]>> Label<Storage> {
     fn write_hex(&self, f: &mut impl fmt::Write) -> fmt::Result {
         self.as_bytes()
             .iter()
-            .try_for_each(|b| write!(f, "{:02X}", b))
+            .try_for_each(|b| write!(f, "{b:02X}"))
     }
 }
 
@@ -714,8 +714,7 @@ mod serde_impl {
                     Ok(HashTreeNode::Pruned(digest))
                 }
                 _ => Err(de::Error::custom(format!(
-                    "Unknown tag: {}, expected the tag to be one of {{0, 1, 2, 3, 4}}",
-                    tag
+                    "Unknown tag: {tag}, expected the tag to be one of {{0, 1, 2, 3, 4}}"
                 ))),
             }
         }

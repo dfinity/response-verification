@@ -263,11 +263,11 @@
 //! - Using `**` anywhere else is illegal.
 //! - The glob `**` is allowed and means "match everything".
 //! - `{a,b}` matches `a` or `b` where `a` and `b` are arbitrary glob
-//! patterns. (N.B. Nesting {...} is not currently allowed.)
+//!   patterns. (N.B. Nesting {...} is not currently allowed.)
 //! - `[ab]` matches `a` or `b` where `a` and `b` are characters.
 //! - `[!ab]` to match any character except for `a` and `b`.
 //! - Metacharacters such as `*` and `?` can be escaped with character
-//! class notation, e.g., `[*]` matches `*`.
+//!   class notation, e.g., `[*]` matches `*`.
 //!
 //! For example, the following pattern will match all `.js` files in the `js`
 //! directory:
@@ -525,12 +525,12 @@
 //! one of two things can happen:
 //!
 //! 1. If the configuration includes a file that was not certified in the first place, it will be silently ignored.
-//! For example, if the configuration provided to `certify_assets` includes the Brotli and Gzip encodings, but the
-//! configuration provided to `delete_assets` includes Brotli, Gzip, and Deflate. the Brotli and Gzip encoded files will be deleted, while the Deflate file is ignored, since it doesn't exist.
+//!    For example, if the configuration provided to `certify_assets` includes the Brotli and Gzip encodings, but the
+//!    configuration provided to `delete_assets` includes Brotli, Gzip, and Deflate. the Brotli and Gzip encoded files will be deleted, while the Deflate file is ignored, since it doesn't exist.
 //!
 //! 2. If the configuration excludes a file that was certified, it will not be deleted. For example, if the configuration,
-//! provided to `certify_assets` includes the Brotli and Gzip encodings, but the configuration provided to `delete_assets`
-//! only includes Brotli, then the Gzip file will not be deleted.
+//!    provided to `certify_assets` includes the Brotli and Gzip encodings, but the configuration provided to `delete_assets`
+//!    only includes Brotli, then the Gzip file will not be deleted.
 //!
 //! Assuming the same base example used above to demonstrate certifying assets:
 //!
