@@ -32,17 +32,17 @@ impl Display for CelExpression<'_> {
 /// This enum has three variants:
 ///
 /// - The [Full](DefaultCelExpression::Full) variant includes both the [HttpRequest](crate::HttpRequest) and the
-/// corresponding [HttpResponse](crate::HttpResponse) in certification. See the [DefaultFullCelExpression] struct
-/// for details on how to configure this variant.
+///   corresponding [HttpResponse](crate::HttpResponse) in certification. See the [DefaultFullCelExpression] struct
+///   for details on how to configure this variant.
 ///
 /// - The [ResponseOnly](DefaultCelExpression::ResponseOnly) variant includes the
-/// [HttpResponse](crate::HttpResponse) in certification, but excludes the corresponding
-/// [HttpRequest](crate::HttpRequest) from certification. See the [DefaultResponseOnlyCelExpression] struct for
-/// details on how to configure this variant.
+///   [HttpResponse](crate::HttpResponse) in certification, but excludes the corresponding
+///   [HttpRequest](crate::HttpRequest) from certification. See the [DefaultResponseOnlyCelExpression] struct for
+///   details on how to configure this variant.
 ///
 /// - The [Skip](DefaultCelExpression::Skip) variant excludes both the [HttpRequest](crate::HttpRequest) and the
-/// corresponding [HttpResponse](crate::HttpResponse) from certification. This variant does not require any
-/// configuration.
+///   corresponding [HttpResponse](crate::HttpResponse) from certification. This variant does not require any
+///   configuration.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DefaultCelExpression<'a> {
     /// Includes both the [HttpRequest](crate::HttpRequest) and the corresponding

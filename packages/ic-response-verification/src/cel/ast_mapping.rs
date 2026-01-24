@@ -91,7 +91,7 @@ fn validate_request_certification<'a>(
     let no_request_certification = certification.get("no_request_certification");
     let request_certification = certification.get("request_certification");
 
-    return match (no_request_certification, request_certification) {
+    match (no_request_certification, request_certification) {
         (Some(_), Some(_)) => Err(CelParserError::ExtraneousRequestCertificationProperty),
         (None, None) => Err(CelParserError::MissingRequestCertificationProperty),
         (Some(_), None) => Ok(None),
@@ -126,7 +126,7 @@ fn validate_request_certification<'a>(
                 certified_query_parameters,
             )))
         }
-    };
+    }
 }
 
 fn validate_response_certification<'a>(

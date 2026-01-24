@@ -527,7 +527,7 @@ impl Display for AssetEncoding {
             AssetEncoding::Deflate => "deflate".to_string(),
         };
 
-        write!(f, "{}", str)
+        write!(f, "{str}")
     }
 }
 

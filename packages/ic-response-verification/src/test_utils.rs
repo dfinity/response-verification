@@ -53,7 +53,7 @@ pub fn create_encoded_header_field<T: AsRef<[u8]>>(name: &str, value: T) -> Stri
 }
 
 pub fn create_header_field(name: &str, value: &str) -> String {
-    format!("{}=:{}:", name, value)
+    format!("{name}=:{value}:")
 }
 
 pub fn remove_whitespace(s: &str) -> String {

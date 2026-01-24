@@ -7,12 +7,12 @@ use std::borrow::Cow;
 /// It requires two properties:
 ///
 /// - [path](HttpCertificationTreeEntry::path) specifies the path of an
-/// [HttpCertification] definition within the tree. This path will define
-/// what [HttpRequest](crate::HttpRequest) URLs the
-/// [certification](HttpCertificationTreeEntry::certification) will be valid for.
+///   [HttpCertification] definition within the tree. This path will define
+///   what [HttpRequest](crate::HttpRequest) URLs the
+///   [certification](HttpCertificationTreeEntry::certification) will be valid for.
 ///
 /// - [certification](HttpCertificationTreeEntry::certification) that specifies the
-/// [HttpCertification] definition itself.
+///   [HttpCertification] definition itself.
 ///
 /// Use the [new](HttpCertificationTreeEntry::new) associated function to create a new `HttpCertificationTreeEntry`.
 #[derive(Debug, Clone, PartialEq, Eq)]

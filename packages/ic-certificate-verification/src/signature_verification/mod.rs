@@ -1,6 +1,6 @@
 use self::signature_cache::{SignatureCache, SignatureCacheEntry};
 use crate::CertificateVerificationError;
-use miracl_core_bls12381::bls12381::bls::{core_verify, BLS_OK};
+use ic_verify_bls_signature::verify_bls_signature;
 
 mod signature_cache;
 
@@ -21,9 +21,7 @@ pub fn verify_signature(
         return Ok(());
     }
 
-    let result = core_verify(sig, msg, pk);
-
-    if !matches!(result, BLS_OK) {
+    if verify_bls_signature(sig, msg, pk).is_err() {
         return Err(CertificateVerificationError::SignatureVerificationFailed);
     }
 

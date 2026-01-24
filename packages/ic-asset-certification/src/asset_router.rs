@@ -144,30 +144,28 @@ fn parse_range_header_str(range_str: &str) -> Result<RangeRequestValues, String>
     // expected format: `bytes=<range-begin>-[<range-end>]`
     let str_value = range_str.trim();
     if !str_value.starts_with("bytes=") {
-        return Err(format!("Invalid Range header '{}'", range_str).to_string());
+        return Err(format!("Invalid Range header '{range_str}'").to_string());
     }
     let str_value = str_value.trim_start_matches("bytes=");
     let range_header_parts = str_value.split('-').collect::<Vec<_>>();
     if range_header_parts.is_empty() || range_header_parts.len() != 2 {
-        return Err(format!("Invalid Range header '{}'", range_str).to_string());
+        return Err(format!("Invalid Range header '{range_str}'").to_string());
     }
 
-    let range_begin = range_header_parts[0].parse::<usize>().map_err(|e| {
-        format!(
-            "Malformed range_begin in Range header '{}': {}",
-            range_str, e
-        )
-    })?;
-    let range_end =
-        match range_header_parts[1] {
-            "" => None,
-            _ => Some(range_header_parts[1].parse::<usize>().map_err(|e| {
-                format!("Malformed range_end in Range header '{}': {}", range_str, e)
-            })?),
-        };
+    let range_begin = range_header_parts[0]
+        .parse::<usize>()
+        .map_err(|e| format!("Malformed range_begin in Range header '{range_str}': {e}"))?;
+    let range_end = match range_header_parts[1] {
+        "" => None,
+        _ => Some(
+            range_header_parts[1]
+                .parse::<usize>()
+                .map_err(|e| format!("Malformed range_end in Range header '{range_str}': {e}"))?,
+        ),
+    };
 
     if range_begin > range_end.unwrap_or(usize::MAX) {
-        return Err(format!("Invalid values in Range header '{}'", range_str).to_string());
+        return Err(format!("Invalid values in Range header '{range_str}'").to_string());
     }
     Ok(RangeRequestValues {
         range_begin,
@@ -214,7 +212,7 @@ impl<'content> AssetRouter<'content> {
     /// # Arguments
     ///
     /// * `data_certificate` - A byte slice representing the data certificate used for asset certification.
-    ///     This should be retrieved using `ic_cdk::api::data_certificate()`.
+    ///   This should be retrieved using `ic_cdk::api::data_certificate()`.
     /// * `request` - A reference to an [HttpRequest](ic_http_certification::HttpRequest) object representing the incoming HTTP request.
     ///
     /// If an exact match is not found, then a fallback will
@@ -1125,12 +1123,12 @@ mod tests {
     #[case(ASSET_CHUNK_SIZE, Some(2 * ASSET_CHUNK_SIZE - 1))]
     fn should_parse_range_header_str(#[case] range_begin: usize, #[case] range_end: Option<usize>) {
         let input = if let Some(range_end) = range_end {
-            format!("bytes={}-{}", range_begin, range_end)
+            format!("bytes={range_begin}-{range_end}")
         } else {
-            format!("bytes={}-", range_begin)
+            format!("bytes={range_begin}-")
         };
         let result = parse_range_header_str(&input);
-        let output = result.unwrap_or_else(|e| panic!("failed parsing '{input}': {:?}", e));
+        let output = result.unwrap_or_else(|e| panic!("failed parsing '{input}': {e:?}"));
         assert_eq!(
             RangeRequestValues {
                 range_begin,
@@ -1306,7 +1304,7 @@ mod tests {
             let chunk_request = HttpRequest::get(&req_url)
                 .with_headers(vec![(
                     "range".to_string(),
-                    format!("bytes={}-", asset_len_so_far),
+                    format!("bytes={asset_len_so_far}-"),
                 )])
                 .build();
             let expected_range_end = cmp::min(asset_len_so_far + ASSET_CHUNK_SIZE, asset_len) - 1;
@@ -1321,10 +1319,7 @@ mod tests {
                     ("content-type".to_string(), "text/html".to_string()),
                     (
                         "content-range".to_string(),
-                        format!(
-                            "bytes {}-{}/{}",
-                            asset_len_so_far, expected_range_end, asset_len
-                        ),
+                        format!("bytes {asset_len_so_far}-{expected_range_end}/{asset_len}"),
                     ),
                 ],
             );
@@ -1385,7 +1380,7 @@ mod tests {
             let chunk_request = HttpRequest::get(&req_url)
                 .with_headers(vec![(
                     "range".to_string(),
-                    format!("bytes={}-", asset_len_so_far),
+                    format!("bytes={asset_len_so_far}-"),
                 )])
                 .build();
             let response = long_asset_router
@@ -1511,7 +1506,7 @@ mod tests {
         while asset_len_so_far < asset_len {
             let chunk_request = HttpRequest::get(&req_url)
                 .with_headers(vec![
-                    ("range".to_string(), format!("bytes={}-", asset_len_so_far)),
+                    ("range".to_string(), format!("bytes={asset_len_so_far}-")),
                     ("accept-encoding".to_string(), accept_encoding.to_string()),
                 ])
                 .build();
@@ -1531,10 +1526,7 @@ mod tests {
                     ),
                     (
                         "content-range".to_string(),
-                        format!(
-                            "bytes {}-{}/{}",
-                            asset_len_so_far, expected_range_end, asset_len
-                        ),
+                        format!("bytes {asset_len_so_far}-{expected_range_end}/{asset_len}"),
                     ),
                 ],
             );
@@ -1626,7 +1618,7 @@ mod tests {
             .delete_assets(
                 vec![
                     Asset::new(&req_url, long_asset_body(asset_name)),
-                    Asset::new(&format!("/{encoded_asset_name}"), encoded_asset_body),
+                    Asset::new(format!("/{encoded_asset_name}"), encoded_asset_body),
                 ],
                 vec![long_asset_config(&req_url)],
             )
@@ -3081,13 +3073,13 @@ mod tests {
 
         let full_body = long_asset_body(TWO_CHUNKS_ASSET_NAME);
         let (_, gzip_suffix) = AssetEncoding::Gzip.default_config();
-        let full_gz_body = long_asset_body(&format!("{}{}", TWO_CHUNKS_ASSET_NAME, gzip_suffix));
+        let full_gz_body = long_asset_body(&format!("{TWO_CHUNKS_ASSET_NAME}{gzip_suffix}"));
 
         let first_chunk_body = &full_body[0..ASSET_CHUNK_SIZE];
         let first_chunk_response =
             asset_router
                 .get_assets()
-                .get(format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0));
+                .get(format!("/{TWO_CHUNKS_ASSET_NAME}"), None, Some(0));
         let expected_first_chunk_response = build_206_response(
             first_chunk_body.to_vec(),
             asset_cel_expr(),
@@ -3110,7 +3102,7 @@ mod tests {
 
         let first_chunk_gzip_body = &full_gz_body[0..ASSET_CHUNK_SIZE];
         let first_chunk_gzip_response = asset_router.get_assets().get(
-            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            format!("/{TWO_CHUNKS_ASSET_NAME}"),
             Some(AssetEncoding::Gzip),
             Some(0),
         );
@@ -3141,7 +3133,7 @@ mod tests {
 
         let second_chunk_body = &full_body[ASSET_CHUNK_SIZE..full_body.len()];
         let second_chunk_response = asset_router.get_assets().get(
-            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            format!("/{TWO_CHUNKS_ASSET_NAME}"),
             None,
             Some(ASSET_CHUNK_SIZE),
         );
@@ -3172,7 +3164,7 @@ mod tests {
 
         let second_chunk_gzip_body = &full_gz_body[ASSET_CHUNK_SIZE..full_gz_body.len()];
         let second_chunk_gzip_response = asset_router.get_assets().get(
-            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            format!("/{TWO_CHUNKS_ASSET_NAME}"),
             Some(AssetEncoding::Gzip),
             Some(ASSET_CHUNK_SIZE),
         );
@@ -3207,11 +3199,11 @@ mod tests {
             .delete_assets(
                 vec![
                     long_asset(TWO_CHUNKS_ASSET_NAME.to_string()),
-                    long_asset(format!("{}{}", TWO_CHUNKS_ASSET_NAME, gzip_suffix)),
+                    long_asset(format!("{TWO_CHUNKS_ASSET_NAME}{gzip_suffix}")),
                 ],
                 vec![
                     long_asset_config(TWO_CHUNKS_ASSET_NAME),
-                    long_asset_config(&format!("{}{}", TWO_CHUNKS_ASSET_NAME, gzip_suffix)),
+                    long_asset_config(&format!("{TWO_CHUNKS_ASSET_NAME}{gzip_suffix}")),
                 ],
             )
             .unwrap();
@@ -3219,25 +3211,25 @@ mod tests {
         let first_chunk_response =
             asset_router
                 .get_assets()
-                .get(format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0));
+                .get(format!("/{TWO_CHUNKS_ASSET_NAME}"), None, Some(0));
         assert_matches!(first_chunk_response, None);
 
         let first_chunk_gzip_response = asset_router.get_assets().get(
-            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            format!("/{TWO_CHUNKS_ASSET_NAME}"),
             Some(AssetEncoding::Gzip),
             Some(0),
         );
         assert_matches!(first_chunk_gzip_response, None);
 
         let second_chunk_response = asset_router.get_assets().get(
-            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            format!("/{TWO_CHUNKS_ASSET_NAME}"),
             None,
             Some(ASSET_CHUNK_SIZE),
         );
         assert_matches!(second_chunk_response, None);
 
         let second_chunk_gzip_response = asset_router.get_assets().get(
-            format!("/{}", TWO_CHUNKS_ASSET_NAME),
+            format!("/{TWO_CHUNKS_ASSET_NAME}"),
             Some(AssetEncoding::Gzip),
             Some(ASSET_CHUNK_SIZE),
         );
@@ -3271,7 +3263,7 @@ mod tests {
         );
 
         assert!(assets.contains(&(
-            (&format!("/{}", TWO_CHUNKS_ASSET_NAME), None, Some(0)),
+            (&format!("/{TWO_CHUNKS_ASSET_NAME}"), None, Some(0)),
             &expected_first_chunk_response
         )));
 
@@ -3298,7 +3290,7 @@ mod tests {
         );
         assert!(assets.contains(&(
             (
-                &format!("/{}", TWO_CHUNKS_ASSET_NAME),
+                &format!("/{TWO_CHUNKS_ASSET_NAME}"),
                 None,
                 Some(ASSET_CHUNK_SIZE)
             ),
@@ -3317,7 +3309,7 @@ mod tests {
             ],
         );
         assert!(assets.contains(&(
-            (&format!("/{}", TWO_CHUNKS_ASSET_NAME), None, None),
+            (&format!("/{TWO_CHUNKS_ASSET_NAME}"), None, None),
             &expected_full_response
         )));
     }

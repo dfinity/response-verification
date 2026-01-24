@@ -141,7 +141,7 @@ fn parser(i: &[u8]) -> IResult<&[u8], CborValue> {
     let (i, cbor_type) = peek_cbor_type(i)?;
     let (i, cbor_value) = extract_cbor_value(i)?;
 
-    return match cbor_type {
+    match cbor_type {
         0 => {
             // Hash Tree nodes are encoded as unsigned int instead of tagged data items,
             // if we ever need to decode an actual unsigned int with a value 0-4 then this will break
@@ -195,7 +195,7 @@ fn parser(i: &[u8]) -> IResult<&[u8], CborValue> {
         7 => parser(i),
 
         _ => Err(Err::Error(Error::new(i, ErrorKind::Alt))),
-    };
+    }
 }
 
 pub fn parse_cbor(i: &[u8]) -> Result<CborValue, nom::Err<Error<&[u8]>>> {

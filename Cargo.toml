@@ -82,6 +82,7 @@ ic-agent = "0.39"
 ic-utils = "0.39"
 ic-cdk = "0.17"
 ic-cdk-macros = "0.17"
+ic-verify-bls-signature = "0.6"
 
 wasm-bindgen = "0.2"
 wasm-bindgen-test = "0.3"
@@ -109,30 +110,25 @@ ic-cbor = { path = "./packages/ic-cbor", version = "3.0.3" }
 
 [workspace.dependencies.ic-types]
 git = "https://github.com/dfinity/ic"
-rev = "1290256484f59c3d950c5e9a098e97383b248ad6"
+rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
 
 [workspace.dependencies.ic-crypto-tree-hash]
 git = "https://github.com/dfinity/ic"
-rev = "1290256484f59c3d950c5e9a098e97383b248ad6"
+rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
 
 [workspace.dependencies.ic-crypto-internal-threshold-sig-bls12381]
 git = "https://github.com/dfinity/ic"
-rev = "1290256484f59c3d950c5e9a098e97383b248ad6"
+rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
 
 [workspace.dependencies.ic-crypto-internal-seed]
 git = "https://github.com/dfinity/ic"
-rev = "1290256484f59c3d950c5e9a098e97383b248ad6"
+rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
 
 [workspace.dependencies.ic-crypto-internal-types]
 git = "https://github.com/dfinity/ic"
-rev = "1290256484f59c3d950c5e9a098e97383b248ad6"
+rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
 
 
 [workspace.dependencies.serde]
 version = "1"
 features = ["derive"]
-
-[workspace.dependencies.miracl_core_bls12381]
-version = "4"
-default-features = false
-features = ["std", "allow_alt_compress"]
