@@ -10,9 +10,9 @@ export default defineConfig({
 
     // setup Gzip compression
     compression({
-      algorithm: 'gzip',
+      algorithms: ['gzip'],
       // this extension will be referenced later in the canister code
-      ext: '.gzip',
+      filename: '[path][base].gzip',
       // ensure to not delete the original files
       deleteOriginalAssets: false,
       threshold: 0,
@@ -20,9 +20,9 @@ export default defineConfig({
 
     // setup Brotli compression
     compression({
-      algorithm: 'brotliCompress',
+      algorithms: ['brotliCompress'],
       // this extension will be referenced later in the canister code
-      ext: '.br',
+      filename: '[path][base].br',
       // ensure to not delete the original files
       deleteOriginalAssets: false,
       threshold: 0,
