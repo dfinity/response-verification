@@ -10,36 +10,36 @@ If more flexibility than what this crate provides is needed, the lower-level [`i
 
 ## The frontend assets
 
-The frontend project used for this example is a simple starter project generated with `npx degit solidjs/templates/ts my-app`. The only changes that have been made are in the `vite.config.ts` file. The `vite-plugin-compression` plugin was added and configured to generate Gzip and Brotli encoded assets, alongside the original assets. The `ext` configuration affects the file extension and it's important to keep this consistent with the backend canister code that will be seen later in this guide.
+The frontend project used for this example is a simple starter project generated with `npx degit solidjs/templates/ts my-app`. The only changes that have been made are in the `vite.config.ts` file. The `vite-plugin-compression2` plugin was added and configured to generate Gzip and Brotli encoded assets, alongside the original assets. The `ext` configuration affects the file extension and it's important to keep this consistent with the backend canister code that will be seen later in this guide.
 
 ```ts
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 // import the compression plugin
-import viteCompressionPlugin from 'vite-plugin-compression';
+import { compression } from 'vite-plugin-compression2';
 
 export default defineConfig({
   plugins: [
     solidPlugin(),
 
     // setup Gzip compression
-    viteCompressionPlugin({
+    compression({
       algorithm: 'gzip',
       // this extension will be referenced later in the canister code
       ext: '.gz',
       // ensure to not delete the original files
-      deleteOriginFile: false,
+      deleteOriginalAssets: false,
       threshold: 0,
     }),
 
     // setup Brotli compression
-    viteCompressionPlugin({
+    compression({
       algorithm: 'brotliCompress',
       // this extension will be referenced later in the canister code
       ext: '.br',
       // ensure to not delete the original files
-      deleteOriginFile: false,
+      deleteOriginalAssets: false,
       threshold: 0,
     }),
   ],
