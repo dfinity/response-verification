@@ -2,29 +2,29 @@ import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 // import the compression plugin
-import viteCompressionPlugin from 'vite-plugin-compression';
+import { compression } from 'vite-plugin-compression2';
 
 export default defineConfig({
   plugins: [
     solidPlugin(),
 
     // setup Gzip compression
-    viteCompressionPlugin({
+    compression({
       algorithm: 'gzip',
       // this extension will be referenced later in the canister code
       ext: '.gz',
       // ensure to not delete the original files
-      deleteOriginFile: false,
+      deleteOriginalAssets: false,
       threshold: 0,
     }),
 
     // setup Brotli compression
-    viteCompressionPlugin({
+    compression({
       algorithm: 'brotliCompress',
       // this extension will be referenced later in the canister code
       ext: '.br',
       // ensure to not delete the original files
-      deleteOriginFile: false,
+      deleteOriginalAssets: false,
       threshold: 0,
     }),
   ],
