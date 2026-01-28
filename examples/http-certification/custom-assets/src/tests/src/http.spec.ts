@@ -209,22 +209,22 @@ describe('Assets', () => {
     },
     // js file
     {
-      url: '/assets/index-Be5RuxN-.js',
-      asset: 'assets/index-Be5RuxN-.js',
+      url: '/assets/index-Lsq-0Bcw.js',
+      asset: 'assets/index-Lsq-0Bcw.js',
       encoding: 'identity',
       contentType: 'text/javascript',
       cacheControl: 'public, max-age=31536000, immutable',
     },
     {
-      url: '/assets/index-Be5RuxN-.js',
-      asset: 'assets/index-Be5RuxN-.js.br',
+      url: '/assets/index-Lsq-0Bcw.js',
+      asset: 'assets/index-Lsq-0Bcw.js.br',
       encoding: 'identity, gzip, br',
       contentType: 'text/javascript',
       cacheControl: 'public, max-age=31536000, immutable',
     },
     {
-      url: '/assets/index-Be5RuxN-.js',
-      asset: 'assets/index-Be5RuxN-.js.gzip',
+      url: '/assets/index-Lsq-0Bcw.js',
+      asset: 'assets/index-Lsq-0Bcw.js.gzip',
       encoding: 'identity, gzip',
       contentType: 'text/javascript',
       cacheControl: 'public, max-age=31536000, immutable',
