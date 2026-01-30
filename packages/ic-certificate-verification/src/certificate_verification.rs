@@ -87,7 +87,11 @@ fn verify_delegation(
     //    delegation.subnet_id.as_ref(),
     //    "canister_ranges".as_bytes(),
     //];
-    let canister_range_path = ["canister_ranges".as_bytes(), delegation.subnet_id.as_ref()];
+    let canister_range_path = [
+        "canister_ranges".as_bytes(),
+        delegation.subnet_id.as_ref(),
+        [255, 255, 255, 255, 255, 144, 0, 0, 1, 1].as_ref(),
+    ];
     let LookupResult::Found(canister_range) = cert.tree.lookup_path(&canister_range_path) else {
         return Err(
             CertificateVerificationError::SubnetCanisterIdRangesNotFound {

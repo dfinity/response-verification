@@ -125,8 +125,10 @@ run_e2e_tests() {
     clean_exit
   fi
 
+  echo "Run Rust e2e tests..."
   DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_CANISTER_ID" || clean_exit
 
+  echo "Run JS e2e tests..."
   pnpm run -F @dfinity/response-verification build || clean_exit
   DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS pnpm run -F response-verification-tests e2e-test -- "$DFX_CANISTER_ID" || clean_exit
 }
