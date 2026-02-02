@@ -9,17 +9,17 @@ importers:
   .:
     devDependencies:
       '@dfinity/agent':
-        specifier: ^1.0.1
-        version: 1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)
+        specifier: ^3.4.3
+        version: 3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0)
       '@dfinity/candid':
-        specifier: ^1.0.1
-        version: 1.0.1(@dfinity/principal@1.0.1)
+        specifier: ^3.4.3
+        version: 3.4.3(@dfinity/principal@3.4.3)
       '@dfinity/pic':
         specifier: 0.12.0
-        version: 0.12.0(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/identity@1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@1.0.1)
+        version: 0.12.0(@dfinity/agent@3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0))(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/identity@1.0.1(@dfinity/agent@3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0))(@dfinity/principal@3.4.3)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@3.4.3)
       '@dfinity/principal':
-        specifier: ^1.0.1
-        version: 1.0.1
+        specifier: ^3.4.3
+        version: 3.4.3
       '@types/jest':
         specifier: ^29.5.13
         version: 29.5.13
@@ -99,14 +99,14 @@ importers:
   packages/certificate-verification-js:
     dependencies:
       '@dfinity/agent':
-        specifier: ^1.0.1
-        version: 1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)
+        specifier: ^3.4.3
+        version: 3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0)
       '@dfinity/candid':
-        specifier: ^1.0.1
-        version: 1.0.1(@dfinity/principal@1.0.1)
+        specifier: ^3.4.3
+        version: 3.4.3(@dfinity/principal@3.4.3)
       '@dfinity/principal':
-        specifier: ^1.0.1
-        version: 1.0.1
+        specifier: ^3.4.3
+        version: 3.4.3
     devDependencies:
       '@dfinity/certification-testing':
         specifier: workspace:*
@@ -317,16 +317,20 @@ packages:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
 
-  '@dfinity/agent@1.0.1':
-    resolution: {integrity: sha512-QoCiKIWEgsXoaiHpb76M2qLXYDS9IdfvC81dLJYvX9KVXRq8Ojo4S82tBqBFGtM0j0EKEC6mIAJV/bqhOJTtjQ==}
+  '@dfinity/agent@3.4.3':
+    resolution: {integrity: sha512-qOJqvZdMzncbbYX3eUjlAqvP66DQuOQgBFQE06yzI3m/lVXnefxvY7wE9Y1Sb2wjVIQs6W2rfjixnn4EEjHAZg==}
     peerDependencies:
-      '@dfinity/candid': ^1.0.1
-      '@dfinity/principal': ^1.0.1
+      '@dfinity/candid': 3.4.3
+      '@dfinity/principal': 3.4.3
+      '@noble/hashes': ^1.8.0
 
-  '@dfinity/candid@1.0.1':
-    resolution: {integrity: sha512-PfZNV1fTOWtl+NhLOw71ACLYGugKF9HdEJKtkyBJqbj+6pqshvK6rllCUkGwMsmXfP8YopLzmoNVdy1rp/eOgg==}
+  '@dfinity/candid@3.4.3':
+    resolution: {integrity: sha512-M2MuNariyCZHvxT0IXvMWmg8jvG19EORDveoFm7PCIVXLgYfWSy0P59t6tQ24D72yRGu40CRLm85aqpt3cRvxw==}
     peerDependencies:
-      '@dfinity/principal': ^1.0.1
+      '@dfinity/principal': 3.4.3
+
+  '@dfinity/cbor@0.2.2':
+    resolution: {integrity: sha512-GPJpH73kDEKbUBdUjY80lz7cq9l0vm1h/7ppejPV6O0ZTqCLrYspssYvqjRmK4aNnJ/SKXsP0rg9LYX7zpegaA==}
 
   '@dfinity/identity@1.0.1':
     resolution: {integrity: sha512-ArajyKSkiA4LjOq/ocGLMd66svgMVntF9j9P7irZScrzTCPcEXk5c7VteAqRGMwHCpI4LRipjmuZA1agwmUzRw==}
@@ -343,8 +347,8 @@ packages:
       '@dfinity/identity': ^2.3.0
       '@dfinity/principal': ^2.3.0
 
-  '@dfinity/principal@1.0.1':
-    resolution: {integrity: sha512-pCAuTLcvZEZ8fYgVzTVhfUfFGadxeWN4v2z8Q0rizeiqcHKhbJVfWUiXXjzPGG5lNz2DxKyUHQ/WS4UTbTaxvg==}
+  '@dfinity/principal@3.4.3':
+    resolution: {integrity: sha512-KTWIRqj/0clwsxcXnjgMVpnvxis6ji8vddRbBnYLsPjRFaVXHeBwVN1rziA1w3u7AtlP3kuovB4czd2F5ORxDw==}
 
   '@esbuild/aix-ppc64@0.27.2':
     resolution: {integrity: sha512-GZMB+a0mOMZs4MpDbj8RJp4cw+w1WV5NYD6xzgvzUJ5Ek2jerwfO2eADyI6ExDSUED+1X8aMbegahsJi+8mgpw==}
@@ -607,8 +611,16 @@ packages:
     resolution: {integrity: sha512-TlaHRXDehJuRNR9TfZDNQ45mMEd5dwUwmicsafcIX4SsNiqnCHKjE/1alYPd/lDRVhxdhUAlv8uEhMCI5zjIJQ==}
     engines: {node: ^14.21.3 || >=16}
 
+  '@noble/curves@1.9.7':
+    resolution: {integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==}
+    engines: {node: ^14.21.3 || >=16}
+
   '@noble/hashes@1.5.0':
     resolution: {integrity: sha512-1j6kQFb7QRru7eKN3ZDvRcP13rugwdxZqCjbiAVZfIJwgj2A65UmT4TgARXGlXgnRkORLTDTrO19ZErt7+QXgA==}
+    engines: {node: ^14.21.3 || >=16}
+
+  '@noble/hashes@1.8.0':
+    resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
 
   '@peculiar/asn1-schema@2.3.8':
@@ -948,10 +960,6 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
-  base64-arraybuffer@0.2.0:
-    resolution: {integrity: sha512-7emyCsu1/xiBXgQZrscw/8KPRT44I4Yq9Pe6EGs3aPRTsWuggML1/1DTuZUuIaJPIm1FTDUVXl4x/yW8s0kQDQ==}
-    engines: {node: '>= 0.6.0'}
-
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
 
@@ -996,9 +1004,6 @@ packages:
 
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
-
-  buffer@6.0.3:
-    resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
   callsites@3.1.0:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
@@ -1796,9 +1801,6 @@ packages:
   signal-exit@3.0.7:
     resolution: {integrity: sha512-wnD2ZE+l+SPC/uoS0vXeE9L1+0wuaMqKlfz9AMUo38JsyLSBWSFcHR1Rri62LZc12vLr1gb3jl7iwQhgwpAbGQ==}
 
-  simple-cbor@0.4.1:
-    resolution: {integrity: sha512-rijcxtwx2b4Bje3sqeIqw5EeW7UlOIC4YfOdwqIKacpvRQ/D78bWg/4/0m5e0U91oKvlGh7LlJuZCu07ISCC7w==}
-
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
@@ -2419,41 +2421,40 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)':
+  '@dfinity/agent@3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0)':
     dependencies:
-      '@dfinity/candid': 1.0.1(@dfinity/principal@1.0.1)
-      '@dfinity/principal': 1.0.1
-      '@noble/curves': 1.6.0
-      '@noble/hashes': 1.5.0
-      base64-arraybuffer: 0.2.0
-      borc: 2.1.2
-      buffer: 6.0.3
-      simple-cbor: 0.4.1
+      '@dfinity/candid': 3.4.3(@dfinity/principal@3.4.3)
+      '@dfinity/cbor': 0.2.2
+      '@dfinity/principal': 3.4.3
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
 
-  '@dfinity/candid@1.0.1(@dfinity/principal@1.0.1)':
+  '@dfinity/candid@3.4.3(@dfinity/principal@3.4.3)':
     dependencies:
-      '@dfinity/principal': 1.0.1
+      '@dfinity/principal': 3.4.3
 
-  '@dfinity/identity@1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5)':
+  '@dfinity/cbor@0.2.2': {}
+
+  '@dfinity/identity@1.0.1(@dfinity/agent@3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0))(@dfinity/principal@3.4.3)(@peculiar/webcrypto@1.4.5)':
     dependencies:
-      '@dfinity/agent': 1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)
-      '@dfinity/principal': 1.0.1
+      '@dfinity/agent': 3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0)
+      '@dfinity/principal': 3.4.3
       '@noble/curves': 1.6.0
-      '@noble/hashes': 1.5.0
+      '@noble/hashes': 1.8.0
       '@peculiar/webcrypto': 1.4.5
       borc: 2.1.2
 
-  '@dfinity/pic@0.12.0(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/identity@1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@1.0.1)':
+  '@dfinity/pic@0.12.0(@dfinity/agent@3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0))(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/identity@1.0.1(@dfinity/agent@3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0))(@dfinity/principal@3.4.3)(@peculiar/webcrypto@1.4.5))(@dfinity/principal@3.4.3)':
     dependencies:
-      '@dfinity/agent': 1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)
-      '@dfinity/candid': 1.0.1(@dfinity/principal@1.0.1)
-      '@dfinity/identity': 1.0.1(@dfinity/agent@1.0.1(@dfinity/candid@1.0.1(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1))(@dfinity/principal@1.0.1)(@peculiar/webcrypto@1.4.5)
-      '@dfinity/principal': 1.0.1
+      '@dfinity/agent': 3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0)
+      '@dfinity/candid': 3.4.3(@dfinity/principal@3.4.3)
+      '@dfinity/identity': 1.0.1(@dfinity/agent@3.4.3(@dfinity/candid@3.4.3(@dfinity/principal@3.4.3))(@dfinity/principal@3.4.3)(@noble/hashes@1.8.0))(@dfinity/principal@3.4.3)(@peculiar/webcrypto@1.4.5)
+      '@dfinity/principal': 3.4.3
       bip39: 3.1.0
 
-  '@dfinity/principal@1.0.1':
+  '@dfinity/principal@3.4.3':
     dependencies:
-      '@noble/hashes': 1.5.0
+      '@noble/hashes': 1.8.0
 
   '@esbuild/aix-ppc64@0.27.2':
     optional: true
@@ -2739,7 +2740,13 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.5.0
 
+  '@noble/curves@1.9.7':
+    dependencies:
+      '@noble/hashes': 1.8.0
+
   '@noble/hashes@1.5.0': {}
+
+  '@noble/hashes@1.8.0': {}
 
   '@peculiar/asn1-schema@2.3.8':
     dependencies:
@@ -3073,8 +3080,6 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
-  base64-arraybuffer@0.2.0: {}
-
   base64-js@1.5.1: {}
 
   bignumber.js@9.1.1: {}
@@ -3126,11 +3131,6 @@ snapshots:
   buffer-from@1.1.2: {}
 
   buffer@5.7.1:
-    dependencies:
-      base64-js: 1.5.1
-      ieee754: 1.2.1
-
-  buffer@6.0.3:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
@@ -4059,8 +4059,6 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@3.0.7: {}
-
-  simple-cbor@0.4.1: {}
 
   sisteransi@1.0.5: {}
 
