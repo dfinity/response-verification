@@ -85,43 +85,32 @@ fn verify_delegation(
     let canister_id = Principal::from_slice(canister_id);
 
     // Look up canister ranges in the new structure at /canister_ranges/<subnet_id>/<range_key>
-    // The certificate MUST have a /canister_ranges root (strict requirement)
-    let canister_ranges_path = ["canister_ranges".as_bytes()];
+    let canister_ranges_path = [
+        "canister_ranges".as_bytes(),
+        delegation.subnet_id.as_ref(),
+    ];
     let canister_ranges: Vec<(Principal, Principal)> =
         match cert.tree.lookup_subtree(&canister_ranges_path) {
-            SubtreeLookupResult::Found(canister_ranges_tree) => {
-                // Collect all ranges from all subnet IDs (used as shards)
+            SubtreeLookupResult::Found(subnet_tree) => {
+                // Collect all ranges from all range keys under this subnet
                 let mut ranges = Vec::new();
-                let subnet_ids = canister_ranges_tree.list_paths();
-
-                for subnet_id_path in subnet_ids {
-                    if !subnet_id_path.is_empty() {
-                        // Look up the subtree for this subnet ID
-                        // Note: Individual shards may be Unknown in partial certificate views
-                        if let SubtreeLookupResult::Found(subnet_tree) =
-                            canister_ranges_tree.lookup_subtree(&[subnet_id_path[0].as_bytes()])
+                let range_keys = subnet_tree.list_paths();
+                
+                for range_key_path in range_keys {
+                    if !range_key_path.is_empty() {
+                        if let LookupResult::Found(range_data) =
+                            subnet_tree.lookup_path([range_key_path[0].as_bytes()])
                         {
-                            // Now iterate through the range keys under this subnet
-                            let range_keys = subnet_tree.list_paths();
-
-                            for range_key_path in range_keys {
-                                if !range_key_path.is_empty() {
-                                    if let LookupResult::Found(range_data) =
-                                        subnet_tree.lookup_path([range_key_path[0].as_bytes()])
-                                    {
-                                        let subnet_ranges: Vec<(Principal, Principal)> =
-                                            parse_cbor_principals_array(range_data)?;
-                                        ranges.extend(subnet_ranges);
-                                    }
-                                }
-                            }
+                            let subnet_ranges: Vec<(Principal, Principal)> =
+                                parse_cbor_principals_array(range_data)?;
+                            ranges.extend(subnet_ranges);
                         }
                     }
                 }
                 ranges
             }
             SubtreeLookupResult::Absent => {
-                // Missing /canister_ranges root is an error
+                // Missing canister ranges for this subnet is an error
                 return Err(CertificateVerificationError::CanisterRangesNotFound {
                     path: canister_ranges_path.iter().map(|p| p.to_vec()).collect(),
                 });
