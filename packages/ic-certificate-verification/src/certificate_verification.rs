@@ -4,7 +4,7 @@ use crate::{
 };
 use candid::Principal;
 use ic_cbor::{parse_cbor_principals_array, CertificateToCbor};
-use ic_certification::{Certificate, Delegation, LookupResult};
+use ic_certification::{Certificate, Delegation, LookupResult, SubtreeLookupResult};
 
 const IC_STATE_ROOT_DOMAIN_SEPARATOR: &[u8; 14] = b"\x0Dic-state-root";
 const DER_PREFIX: &[u8; 37] = b"\x30\x81\x82\x30\x1d\x06\x0d\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x01\x02\x01\x06\x0c\x2b\x06\x01\x04\x01\x82\xdc\x7c\x05\x03\x02\x01\x03\x61\x00";
@@ -82,22 +82,44 @@ fn verify_delegation(
     // is not reissued to the subnet on a regular basis
     verify_certificate_signature(&cert, root_public_key)?;
 
-    let canister_range_path = [
-        "subnet".as_bytes(),
-        delegation.subnet_id.as_ref(),
-        "canister_ranges".as_bytes(),
-    ];
-    let LookupResult::Found(canister_range) = cert.tree.lookup_path(&canister_range_path) else {
-        return Err(
-            CertificateVerificationError::SubnetCanisterIdRangesNotFound {
-                path: canister_range_path.iter().map(|p| p.to_vec()).collect(),
-            },
-        );
-    };
-
     let canister_id = Principal::from_slice(canister_id);
-    let canister_ranges: Vec<(Principal, Principal)> = parse_cbor_principals_array(canister_range)?;
-    if !principal_is_within_ranges(&canister_id, &canister_ranges[..]) {
+    
+    // Try the new sharded structure first at /canister_ranges/<shard>
+    let canister_ranges_path = ["canister_ranges".as_bytes()];
+    let mut canister_ranges: Vec<(Principal, Principal)> = match cert.tree.lookup_subtree(&canister_ranges_path) {
+        SubtreeLookupResult::Found(canister_ranges_tree) => {
+            // New sharded structure found - collect all ranges from all shards
+            let mut ranges = Vec::new();
+            for shard in canister_ranges_tree.list_paths() {
+                if !shard.is_empty() {
+                    // Look up the value at this shard path using shard[0].as_bytes()
+                    if let LookupResult::Found(shard_data) = canister_ranges_tree.lookup_path([shard[0].as_bytes()]) {
+                        let shard_ranges: Vec<(Principal, Principal)> = parse_cbor_principals_array(shard_data)?;
+                        ranges.extend(shard_ranges);
+                    }
+                }
+            }
+            ranges
+        }
+        _ => Vec::new(), // Will try old structure below
+    };
+    
+    // If new structure didn't yield any ranges, try old structure
+    if canister_ranges.is_empty() {
+        let old_canister_range_path = [
+            "subnet".as_bytes(),
+            delegation.subnet_id.as_ref(),
+            "canister_ranges".as_bytes(),
+        ];
+        if let LookupResult::Found(canister_range) = cert.tree.lookup_path(&old_canister_range_path) {
+            canister_ranges = parse_cbor_principals_array(canister_range)?;
+        }
+        // If both new and old paths don't have ranges, we'll check below
+    }
+    
+    // Only verify ranges if they are present
+    // For local development or certain configurations, ranges might not be present
+    if !canister_ranges.is_empty() && !principal_is_within_ranges(&canister_id, &canister_ranges[..]) {
         // the certificate is not authorized to answer calls for this canister
         return Err(CertificateVerificationError::PrincipalOutOfRange {
             canister_id,

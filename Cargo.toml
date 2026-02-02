@@ -40,7 +40,7 @@ default-members = [
 ]
 
 [workspace.package]
-version = "3.0.3"
+version = "3.0.4"
 authors = ["DFINITY Stiftung"]
 edition = "2021"
 repository = "https://github.com/dfinity/response-verification"
@@ -78,10 +78,10 @@ thiserror = "1"
 anyhow = "1"
 
 candid = "0.10"
-ic-agent = "0.39"
-ic-utils = "0.39"
-ic-cdk = "0.17"
-ic-cdk-macros = "0.17"
+ic-agent = "0.45"
+ic-utils = "0.45"
+ic-cdk = "0.19"
+ic-cdk-macros = "0.19"
 ic-verify-bls-signature = "0.6"
 
 wasm-bindgen = "0.2"
@@ -110,23 +110,23 @@ ic-cbor = { path = "./packages/ic-cbor", version = "3.0.3" }
 
 [workspace.dependencies.ic-types]
 git = "https://github.com/dfinity/ic"
-rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
+rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 
 [workspace.dependencies.ic-crypto-tree-hash]
 git = "https://github.com/dfinity/ic"
-rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
+rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 
 [workspace.dependencies.ic-crypto-internal-threshold-sig-bls12381]
 git = "https://github.com/dfinity/ic"
-rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
+rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 
 [workspace.dependencies.ic-crypto-internal-seed]
 git = "https://github.com/dfinity/ic"
-rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
+rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 
 [workspace.dependencies.ic-crypto-internal-types]
 git = "https://github.com/dfinity/ic"
-rev = "724ae4101bfdd8d4443126a6a8b1ec5ca9b68a12"
+rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 
 
 [workspace.dependencies.serde]
