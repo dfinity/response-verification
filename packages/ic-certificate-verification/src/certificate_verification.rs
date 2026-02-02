@@ -84,40 +84,54 @@ fn verify_delegation(
 
     let canister_id = Principal::from_slice(canister_id);
 
-    // Look up canister ranges in the new structure at /canister_ranges/<subnet_id>/<range_key>
+    // Try new structure first: /canister_ranges/<subnet_id>/<range_key>
     let canister_ranges_path = ["canister_ranges".as_bytes(), delegation.subnet_id.as_ref()];
-    let canister_ranges: Vec<(Principal, Principal)> =
-        match cert.tree.lookup_subtree(&canister_ranges_path) {
-            SubtreeLookupResult::Found(subnet_tree) => {
-                // Collect all ranges from all range keys under this subnet
-                let mut ranges = Vec::new();
-                let range_keys = subnet_tree.list_paths();
+    let canister_ranges: Vec<(Principal, Principal)> = match cert
+        .tree
+        .lookup_subtree(&canister_ranges_path)
+    {
+        SubtreeLookupResult::Found(subnet_tree) => {
+            // Collect all ranges from all range keys under this subnet
+            let mut ranges = Vec::new();
+            let range_keys = subnet_tree.list_paths();
 
-                for range_key_path in range_keys {
-                    if !range_key_path.is_empty() {
-                        if let LookupResult::Found(range_data) =
-                            subnet_tree.lookup_path([range_key_path[0].as_bytes()])
-                        {
-                            let subnet_ranges: Vec<(Principal, Principal)> =
-                                parse_cbor_principals_array(range_data)?;
-                            ranges.extend(subnet_ranges);
-                        }
+            for range_key_path in range_keys {
+                if !range_key_path.is_empty() {
+                    if let LookupResult::Found(range_data) =
+                        subnet_tree.lookup_path([range_key_path[0].as_bytes()])
+                    {
+                        let subnet_ranges: Vec<(Principal, Principal)> =
+                            parse_cbor_principals_array(range_data)?;
+                        ranges.extend(subnet_ranges);
                     }
                 }
-                ranges
             }
-            SubtreeLookupResult::Absent => {
-                // Missing canister ranges for this subnet is an error
-                return Err(CertificateVerificationError::CanisterRangesNotFound {
-                    path: canister_ranges_path.iter().map(|p| p.to_vec()).collect(),
-                });
+            ranges
+        }
+        SubtreeLookupResult::Absent => {
+            // New structure not found, try old structure: /subnet/<subnet_id>/canister_ranges
+            let old_canister_ranges_path = [
+                "subnet".as_bytes(),
+                delegation.subnet_id.as_ref(),
+                "canister_ranges".as_bytes(),
+            ];
+            match cert.tree.lookup_path(&old_canister_ranges_path) {
+                LookupResult::Found(old_range_data) => parse_cbor_principals_array(old_range_data)?,
+                LookupResult::Absent => {
+                    // Neither format found - this is an error
+                    return Err(CertificateVerificationError::CanisterRangesNotFound {
+                        path: canister_ranges_path.iter().map(|p| p.to_vec()).collect(),
+                    });
+                }
+                LookupResult::Unknown => Vec::new(),
             }
-            SubtreeLookupResult::Unknown => {
-                // Unknown means the data exists but wasn't included in this partial certificate view
-                // This can happen in WASM/JS contexts where certificates are pruned for size
-                Vec::new()
-            }
-        };
+        }
+        SubtreeLookupResult::Unknown => {
+            // Unknown means the data exists but wasn't included in this partial certificate view
+            // This can happen in WASM/JS contexts where certificates are pruned for size
+            Vec::new()
+        }
+    };
 
     // Only verify canister ranges if they are present in the certificate
     if !canister_ranges.is_empty()
