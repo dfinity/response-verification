@@ -24,18 +24,13 @@ pub(crate) fn create_delegation_tree(
 ) -> CertificationTestResult<LabeledTree<Vec<u8>>> {
     let canister_ranges_cbor = serialize_to_cbor(&canister_ranges.to_vec());
 
-    // Use the actual dfx structure: /canister_ranges/<subnet_id>/<range_key>
-    // The range_key is a placeholder - in real certificates it's derived from the canister range
-    let range_key = vec![0xFF; 10]; // Placeholder range key
-
+    // Use the old certificate structure for backward compatibility with @dfinity/agent@1.0.1
+    // Real IC certificates use the new structure /canister_ranges/<subnet_id>/<range_key>
+    // but our Rust code supports both via fallback
     Ok(LabeledTree::SubTree(flatmap![
-        Label::from("canister_ranges") => LabeledTree::SubTree(flatmap![
-            Label::from(subnet_id.get_ref().to_vec()) => LabeledTree::SubTree(flatmap![
-                Label::from(range_key) => LabeledTree::Leaf(canister_ranges_cbor),
-            ]),
-        ]),
         Label::from("subnet") => LabeledTree::SubTree(flatmap![
             Label::from(subnet_id.get_ref().to_vec()) => LabeledTree::SubTree(flatmap![
+                Label::from("canister_ranges") => LabeledTree::Leaf(canister_ranges_cbor),
                 Label::from("public_key") => LabeledTree::Leaf(delegatee_public_key.to_vec()),
             ])
         ]),
