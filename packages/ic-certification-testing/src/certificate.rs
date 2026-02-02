@@ -27,7 +27,7 @@ pub(crate) fn create_delegation_tree(
     // Use the actual dfx structure: /canister_ranges/<subnet_id>/<range_key>
     // The range_key is a placeholder - in real certificates it's derived from the canister range
     let range_key = vec![0xFF; 10]; // Placeholder range key
-    
+
     Ok(LabeledTree::SubTree(flatmap![
         Label::from("canister_ranges") => LabeledTree::SubTree(flatmap![
             Label::from(subnet_id.get_ref().to_vec()) => LabeledTree::SubTree(flatmap![
