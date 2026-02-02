@@ -117,7 +117,7 @@ fn verify_delegation(
             ];
             match cert.tree.lookup_path(&old_canister_ranges_path) {
                 LookupResult::Found(old_range_data) => parse_cbor_principals_array(old_range_data)?,
-                LookupResult::Absent => {
+                LookupResult::Absent | LookupResult::Error => {
                     // Neither format found - this is an error
                     return Err(CertificateVerificationError::CanisterRangesNotFound {
                         path: canister_ranges_path.iter().map(|p| p.to_vec()).collect(),
