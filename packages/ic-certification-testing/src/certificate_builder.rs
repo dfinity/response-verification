@@ -53,7 +53,7 @@ pub struct CertificateBuilder {
     nested_subnet: Option<SubnetData>,
     signature: Option<Blob>,
     custom_tree: Option<LabeledTree<Vec<u8>>>,
-    use_new_certificate_format: bool,
+    use_old_certificate_format: bool,
 }
 
 impl CertificateBuilder {
@@ -74,7 +74,7 @@ impl CertificateBuilder {
             nested_subnet: None,
             signature: None,
             custom_tree: None,
-            use_new_certificate_format: true,
+            use_old_certificate_format: false,
         })
     }
 
@@ -86,12 +86,12 @@ impl CertificateBuilder {
             nested_subnet: None,
             signature: None,
             custom_tree: Some(custom_tree),
-            use_new_certificate_format: true,
+            use_old_certificate_format: false,
         }
     }
 
     pub fn with_old_certificate_format(&mut self) -> &mut Self {
-        self.use_new_certificate_format = false;
+        self.use_old_certificate_format = true;
         self
     }
 
@@ -207,7 +207,7 @@ impl CertificateBuilder {
                 encoded_time,
                 subnet_data,
                 None,
-                self.use_new_certificate_format,
+                self.use_old_certificate_format,
             )?;
 
             return Ok(Some(delegation_data));
@@ -228,7 +228,7 @@ impl CertificateBuilder {
                     encoded_time,
                     nested_subnet_data,
                     None,
-                    self.use_new_certificate_format,
+                    self.use_old_certificate_format,
                 )?;
 
                 let (delegation, _keypair) = create_delegation_data(
@@ -236,7 +236,7 @@ impl CertificateBuilder {
                     encoded_time,
                     subnet_data,
                     Some(nested_delegation),
-                    self.use_new_certificate_format,
+                    self.use_old_certificate_format,
                 )?;
 
                 Ok(Some((delegation, nested_keypair)))
@@ -251,17 +251,17 @@ fn create_delegation_data(
     encoded_time: &[u8],
     subnet_data: &SubnetData,
     nested_delegation: Option<CertificateDelegation>,
-    use_new_format: bool,
+    use_old_format: bool,
 ) -> CertificationTestResult<(CertificateDelegation, KeyPair)> {
-    let tree = if use_new_format {
-        create_delegation_tree(
+    let tree = if use_old_format {
+        create_delegation_tree_old_format(
             &delegatee_keypair.public_key,
             encoded_time,
             &subnet_data.subnet_id,
             &subnet_data.canister_id_ranges,
         )?
     } else {
-        create_delegation_tree_old_format(
+        create_delegation_tree(
             &delegatee_keypair.public_key,
             encoded_time,
             &subnet_data.subnet_id,
