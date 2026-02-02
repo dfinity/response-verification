@@ -85,17 +85,14 @@ fn verify_delegation(
     let canister_id = Principal::from_slice(canister_id);
 
     // Look up canister ranges in the new structure at /canister_ranges/<subnet_id>/<range_key>
-    let canister_ranges_path = [
-        "canister_ranges".as_bytes(),
-        delegation.subnet_id.as_ref(),
-    ];
+    let canister_ranges_path = ["canister_ranges".as_bytes(), delegation.subnet_id.as_ref()];
     let canister_ranges: Vec<(Principal, Principal)> =
         match cert.tree.lookup_subtree(&canister_ranges_path) {
             SubtreeLookupResult::Found(subnet_tree) => {
                 // Collect all ranges from all range keys under this subnet
                 let mut ranges = Vec::new();
                 let range_keys = subnet_tree.list_paths();
-                
+
                 for range_key_path in range_keys {
                     if !range_key_path.is_empty() {
                         if let LookupResult::Found(range_data) =
