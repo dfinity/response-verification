@@ -1,5 +1,4 @@
 import { type CanisterFixture, type PocketIc } from '@dfinity/pic';
-import { IDL } from '@icp-sdk/core';
 import { resolve } from 'node:path';
 import {
   type _SERVICE as RUST_SERVICE,
@@ -44,7 +43,7 @@ export async function setupRustBackendCanister(
   pic: PocketIc,
 ): Promise<CanisterFixture<RUST_SERVICE>> {
   return await pic.setupCanister<RUST_SERVICE>({
-    idlFactory: rustIdlFactory as unknown as IDL.InterfaceFactory,
+    idlFactory: rustIdlFactory as any,
     wasm: RUST_BACKEND_WASM_PATH,
   });
 }
@@ -53,7 +52,7 @@ export async function setupMotokoBackendCanister(
   pic: PocketIc,
 ): Promise<CanisterFixture<MOTOKO_SERVICE>> {
   return await pic.setupCanister<MOTOKO_SERVICE>({
-    idlFactory: motokoIdlFactory as unknown as IDL.InterfaceFactory,
+    idlFactory: motokoIdlFactory as any,
     wasm: Motoko_BACKEND_WASM_PATH,
   });
 }
