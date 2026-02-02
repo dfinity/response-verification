@@ -1,4 +1,0 @@
-Feb 02 15:28:52.981 INFO Running dfx start for version 0.30.2, version: 0.30.2
-Feb 02 15:28:52.981 INFO Using project-specific network 'local' defined in /home/shiling-wang/response-verification/dfx.json, version: 0.30.2
-Feb 02 15:28:53.633 INFO Replica API running in the background on 127.0.0.1:8000, version: 0.30.2
-Feb 02 15:29:35.092 INFO All local network processes stopped, version: 0.30.2
