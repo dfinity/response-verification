@@ -108,7 +108,7 @@ fn verify_delegation(
             }
             ranges
         }
-        SubtreeLookupResult::Absent => {
+        SubtreeLookupResult::Absent | SubtreeLookupResult::Unknown => {
             // New structure not found, try old structure: /subnet/<subnet_id>/canister_ranges
             let old_canister_ranges_path = [
                 "subnet".as_bytes(),
@@ -125,11 +125,6 @@ fn verify_delegation(
                 }
                 LookupResult::Unknown => Vec::new(),
             }
-        }
-        SubtreeLookupResult::Unknown => {
-            // Unknown means the data exists but wasn't included in this partial certificate view
-            // This can happen in WASM/JS contexts where certificates are pruned for size
-            Vec::new()
         }
     };
 
