@@ -1,5 +1,5 @@
 import { verifyCertification } from '@dfinity/certificate-verification';
-import { Actor, HttpAgent, lookup_path, lookupResultToBuffer } from '@dfinity/agent';
+import { Actor, HttpAgent, compare, lookup_path } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import {
   idlFactory,
@@ -40,20 +40,11 @@ if (!countElement) {
 async function hashUInt32(
   value: number,
   littleEndian = false,
-): Promise<Uint8Array> {
+): Promise<ArrayBuffer> {
   const buffer = new ArrayBuffer(4);
   const view = new DataView(buffer);
   view.setUint32(0, value, littleEndian);
-  const hash = await crypto.subtle.digest('SHA-256', view);
-  return new Uint8Array(hash);
-}
-
-function uint8Equals(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
+  return await crypto.subtle.digest('SHA-256', view);
 }
 
 buttonElement.addEventListener('click', async event => {
@@ -66,28 +57,21 @@ buttonElement.addEventListener('click', async event => {
 
   const agent = new HttpAgent();
   await agent.fetchRootKey();
-  
-  if (!agent.rootKey) {
-    throw new Error('Root key not available');
-  }
-  
   const tree = await verifyCertification({
     canisterId: Principal.fromText(canisterId),
     encodedCertificate: new Uint8Array(certificate).buffer,
     encodedTree: new Uint8Array(witness).buffer,
-    rootKey: agent.rootKey.buffer,
+    rootKey: agent.rootKey,
     maxCertificateTimeOffsetMs: 50000,
   });
 
-  const treeHashResult = lookup_path(['count'], tree);
-  const treeHash = lookupResultToBuffer(treeHashResult);
-  
+  const treeHash = lookup_path(['count'], tree);
   if (!treeHash) {
     throw new Error('Count not found in tree');
   }
 
   const responseHash = await hashUInt32(count);
-  if (!uint8Equals(responseHash, treeHash)) {
+  if (!(treeHash instanceof ArrayBuffer) || !equal(responseHash, treeHash)) {
     throw new Error('Count hash does not match');
   }
 
@@ -95,3 +79,7 @@ buttonElement.addEventListener('click', async event => {
 
   return false;
 });
+
+function equal(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  return compare(a, b) === 0;
+}

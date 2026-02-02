@@ -27,9 +27,9 @@
     "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^3.4.3",
-    "@dfinity/candid": "^3.4.3",
-    "@dfinity/principal": "^3.4.3"
+    "@dfinity/agent": "^1.0.1",
+    "@dfinity/candid": "^1.0.1",
+    "@dfinity/principal": "^1.0.1"
   },
   "devDependencies": {
     "@dfinity/certification-testing": "workspace:*"

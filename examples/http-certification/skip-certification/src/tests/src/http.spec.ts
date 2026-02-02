@@ -44,7 +44,7 @@ describe('HTTP', () => {
     pic = await PocketIc.create(picServer.getUrl());
     const fixture = await setupBackendCanister(pic, currentDate);
     actor = fixture.actor;
-    canisterId = fixture.canisterId as any as Principal;
+    canisterId = fixture.canisterId;
 
     const subnets = await pic.getApplicationSubnets();
     rootKey = await pic.getPubKey(subnets[0].id);
@@ -66,7 +66,7 @@ describe('HTTP', () => {
     const response = await actor.http_request(request);
     const textBody = new TextDecoder().decode(Uint8Array.from(response.body));
     const jsonBody = JSON.parse(textBody) as Metrics;
-    const currentCycles = await pic.getCyclesBalance(canisterId as any);
+    const currentCycles = await pic.getCyclesBalance(canisterId);
 
     expect(response.status_code).toBe(200);
     expect(jsonBody).toEqual({

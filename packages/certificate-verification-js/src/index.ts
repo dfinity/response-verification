@@ -3,25 +3,11 @@ import {
   Certificate,
   HashTree,
   reconstruct,
-  lookup_path,
-  lookupResultToBuffer,
+  compare,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { PipeArrayBuffer, lebDecode } from '@dfinity/candid';
 import { CertificateTimeError, CertificateVerificationError } from './error';
-
-// Helper functions for buffer operations
-function uint8Equals(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
-}
-
-function uint8FromBufLike(buf: ArrayBuffer | Uint8Array): Uint8Array {
-  return buf instanceof Uint8Array ? buf : new Uint8Array(buf);
-}
 
 export interface VerifyCertificationParams {
   canisterId: Principal;
@@ -40,11 +26,11 @@ export async function verifyCertification({
 }: VerifyCertificationParams): Promise<HashTree> {
   const nowMs = Date.now();
   const certificate = await Certificate.create({
-    certificate: uint8FromBufLike(encodedCertificate),
+    certificate: encodedCertificate,
     canisterId,
-    rootKey: uint8FromBufLike(rootKey),
+    rootKey,
   });
-  const tree = Cbor.decode<HashTree>(uint8FromBufLike(encodedTree));
+  const tree = Cbor.decode<HashTree>(encodedTree);
 
   validateCertificateTime(certificate, maxCertificateTimeOffsetMs, nowMs);
   await validateTree(tree, certificate, canisterId);
@@ -57,14 +43,9 @@ function validateCertificateTime(
   maxCertificateTimeOffsetMs: number,
   nowMs: number,
 ): void {
-  const timeResult = lookup_path(['time'], certificate.cert.tree);
-  const timeValue = lookupResultToBuffer(timeResult);
-  
-  if (!timeValue) {
-    throw new CertificateTimeError('Could not find time in certificate');
-  }
-  
-  const certificateTimeNs = lebDecode(new PipeArrayBuffer(timeValue));
+  const certificateTimeNs = lebDecode(
+    new PipeArrayBuffer(certificate.lookup(['time'])),
+  );
   const certificateTimeMs = Number(certificateTimeNs / BigInt(1_000_000));
 
   if (certificateTimeMs - maxCertificateTimeOffsetMs > nowMs) {
@@ -86,11 +67,11 @@ async function validateTree(
   canisterId: Principal,
 ): Promise<void> {
   const treeRootHash = await reconstruct(tree);
-  const certifiedDataResult = lookup_path(
-    ['canister', canisterId.toUint8Array(), 'certified_data'],
-    certificate.cert.tree,
-  );
-  const certifiedData = lookupResultToBuffer(certifiedDataResult);
+  const certifiedData = certificate.lookup([
+    'canister',
+    canisterId.toUint8Array(),
+    'certified_data',
+  ]);
 
   if (!certifiedData) {
     throw new CertificateVerificationError(
@@ -98,9 +79,13 @@ async function validateTree(
     );
   }
 
-  if (!uint8Equals(certifiedData, treeRootHash)) {
+  if (!equal(certifiedData, treeRootHash)) {
     throw new CertificateVerificationError(
       'Tree root hash did not match the certified data in the certificate.',
     );
   }
+}
+
+function equal(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  return compare(a, b) === 0;
 }

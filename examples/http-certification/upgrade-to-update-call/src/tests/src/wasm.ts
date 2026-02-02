@@ -43,7 +43,7 @@ export async function setupRustBackendCanister(
   pic: PocketIc,
 ): Promise<CanisterFixture<RUST_SERVICE>> {
   return await pic.setupCanister<RUST_SERVICE>({
-    idlFactory: rustIdlFactory as any,
+    idlFactory: rustIdlFactory,
     wasm: RUST_BACKEND_WASM_PATH,
   });
 }
@@ -52,7 +52,7 @@ export async function setupMotokoBackendCanister(
   pic: PocketIc,
 ): Promise<CanisterFixture<MOTOKO_SERVICE>> {
   return await pic.setupCanister<MOTOKO_SERVICE>({
-    idlFactory: motokoIdlFactory as any,
+    idlFactory: motokoIdlFactory,
     wasm: Motoko_BACKEND_WASM_PATH,
   });
 }
