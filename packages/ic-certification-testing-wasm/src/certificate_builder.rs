@@ -28,8 +28,11 @@ impl CertificateBuilder {
         canister_id: &str,
         certified_data: &[u8],
     ) -> CertificationTestResult<CertificateBuilder> {
-        CertificateBuilderImpl::new(canister_id, certified_data)
-            .map(|builder| CertificateBuilder { builder })
+        CertificateBuilderImpl::new(canister_id, certified_data).map(|mut builder| {
+            // Default to old format for backward compatibility with @dfinity/agent@1.0.1
+            builder.with_old_certificate_format();
+            CertificateBuilder { builder }
+        })
     }
 
     #[wasm_bindgen(js_name = withDelegation)]
