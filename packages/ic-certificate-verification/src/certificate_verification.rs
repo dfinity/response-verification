@@ -84,46 +84,56 @@ fn verify_delegation(
 
     let canister_id = Principal::from_slice(canister_id);
 
-    // Try the new sharded structure first at /canister_ranges/<shard>
+    // Look up canister ranges in the new structure at /canister_ranges/<subnet_id>/<range_key>
+    // The certificate MUST have a /canister_ranges root (strict requirement)
     let canister_ranges_path = ["canister_ranges".as_bytes()];
-    let mut canister_ranges: Vec<(Principal, Principal)> =
+    let canister_ranges: Vec<(Principal, Principal)> =
         match cert.tree.lookup_subtree(&canister_ranges_path) {
             SubtreeLookupResult::Found(canister_ranges_tree) => {
-                // New sharded structure found - collect all ranges from all shards
+                // Collect all ranges from all subnet IDs (used as shards)
                 let mut ranges = Vec::new();
-                for shard in canister_ranges_tree.list_paths() {
-                    if !shard.is_empty() {
-                        // Look up the value at this shard path using shard[0].as_bytes()
-                        if let LookupResult::Found(shard_data) =
-                            canister_ranges_tree.lookup_path([shard[0].as_bytes()])
+                let subnet_ids = canister_ranges_tree.list_paths();
+
+                for subnet_id_path in subnet_ids {
+                    if !subnet_id_path.is_empty() {
+                        // Look up the subtree for this subnet ID
+                        // Note: Individual shards may be Unknown in partial certificate views
+                        if let SubtreeLookupResult::Found(subnet_tree) =
+                            canister_ranges_tree.lookup_subtree(&[subnet_id_path[0].as_bytes()])
                         {
-                            let shard_ranges: Vec<(Principal, Principal)> =
-                                parse_cbor_principals_array(shard_data)?;
-                            ranges.extend(shard_ranges);
+                            // Now iterate through the range keys under this subnet
+                            let range_keys = subnet_tree.list_paths();
+
+                            for range_key_path in range_keys {
+                                if !range_key_path.is_empty() {
+                                    if let LookupResult::Found(range_data) =
+                                        subnet_tree.lookup_path([range_key_path[0].as_bytes()])
+                                    {
+                                        let subnet_ranges: Vec<(Principal, Principal)> =
+                                            parse_cbor_principals_array(range_data)?;
+                                        ranges.extend(subnet_ranges);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
                 ranges
             }
-            _ => Vec::new(), // Will try old structure below
+            SubtreeLookupResult::Absent => {
+                // Missing /canister_ranges root is an error
+                return Err(CertificateVerificationError::CanisterRangesNotFound {
+                    path: canister_ranges_path.iter().map(|p| p.to_vec()).collect(),
+                });
+            }
+            SubtreeLookupResult::Unknown => {
+                // Unknown means the data exists but wasn't included in this partial certificate view
+                // This can happen in WASM/JS contexts where certificates are pruned for size
+                Vec::new()
+            }
         };
 
-    // If new structure didn't yield any ranges, try old structure
-    if canister_ranges.is_empty() {
-        let old_canister_range_path = [
-            "subnet".as_bytes(),
-            delegation.subnet_id.as_ref(),
-            "canister_ranges".as_bytes(),
-        ];
-        if let LookupResult::Found(canister_range) = cert.tree.lookup_path(&old_canister_range_path)
-        {
-            canister_ranges = parse_cbor_principals_array(canister_range)?;
-        }
-        // If both new and old paths don't have ranges, we'll check below
-    }
-
-    // Only verify ranges if they are present
-    // For local development or certain configurations, ranges might not be present
+    // Only verify canister ranges if they are present in the certificate
     if !canister_ranges.is_empty()
         && !principal_is_within_ranges(&canister_id, &canister_ranges[..])
     {

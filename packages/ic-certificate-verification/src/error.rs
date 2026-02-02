@@ -61,6 +61,13 @@ pub enum CertificateVerificationError {
         path: Vec<Vec<u8>>,
     },
 
+    /// Canister ranges not found in certificate
+    #[error("Canister ranges not found in certificate at path: {path:?}")]
+    CanisterRangesNotFound {
+        /// The path that was used to look up the canister ranges in the certificate
+        path: Vec<Vec<u8>>,
+    },
+
     /// Certificate delegation is missing the required public key
     #[error("Subnet public key not found in certificate at path: {path:?}")]
     SubnetPublicKeyNotFound {

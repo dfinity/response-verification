@@ -22,14 +22,20 @@ pub(crate) fn create_delegation_tree(
     subnet_id: &SubnetId,
     canister_ranges: &[(CanisterId, CanisterId)],
 ) -> CertificationTestResult<LabeledTree<Vec<u8>>> {
-    let canister_ranges = serialize_to_cbor(&canister_ranges.to_vec());
+    let canister_ranges_cbor = serialize_to_cbor(&canister_ranges.to_vec());
 
-    // Use old structure for tests until @dfinity/agent supports the new sharded format
-    // The Rust verification code supports both old and new formats
+    // Use the actual dfx structure: /canister_ranges/<subnet_id>/<range_key>
+    // The range_key is a placeholder - in real certificates it's derived from the canister range
+    let range_key = vec![0xFF; 10]; // Placeholder range key
+
     Ok(LabeledTree::SubTree(flatmap![
+        Label::from("canister_ranges") => LabeledTree::SubTree(flatmap![
+            Label::from(subnet_id.get_ref().to_vec()) => LabeledTree::SubTree(flatmap![
+                Label::from(range_key) => LabeledTree::Leaf(canister_ranges_cbor),
+            ]),
+        ]),
         Label::from("subnet") => LabeledTree::SubTree(flatmap![
             Label::from(subnet_id.get_ref().to_vec()) => LabeledTree::SubTree(flatmap![
-                Label::from("canister_ranges") => LabeledTree::Leaf(canister_ranges),
                 Label::from("public_key") => LabeledTree::Leaf(delegatee_public_key.to_vec()),
             ])
         ]),
