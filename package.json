@@ -18,6 +18,7 @@
     "@dfinity/candid": "^3.4.3",
     "@dfinity/principal": "^3.4.3",
     "@dfinity/pic": "0.18.0",
+    "@icp-sdk/core": "^5.0.0",
     "@types/jest": "^29.5.13",
     "@types/node": "~22.10.2",
     "jest": "^29.7.0",
