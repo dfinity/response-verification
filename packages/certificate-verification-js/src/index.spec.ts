@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HashTree, reconstruct, Cbor } from '@dfinity/agent';
+import { HashTree, reconstruct, Cbor, NodeLabel, NodeValue } from '@dfinity/agent';
 import { CertificateBuilder } from '@dfinity/certification-testing';
 import { Principal } from '@dfinity/principal';
 import { createHash } from 'node:crypto';
@@ -15,8 +15,8 @@ describe('verifyCertification', async () => {
 
   const hashTree: HashTree = [
     2,
-    new Uint8Array(Buffer.from(userId)),
-    [3, usernameHash],
+    new Uint8Array(Buffer.from(userId)) as NodeLabel,
+    [3, usernameHash as NodeValue],
   ];
   const rootHash = await reconstruct(hashTree);
   const cborEncodedTree = Cbor.encode(hashTree);
