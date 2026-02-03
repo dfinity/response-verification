@@ -61,9 +61,9 @@ dependencies = [
 
 [[package]]
 name = "arc-swap"
-version = "1.8.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51d03449bb8ca2cc2ef70869af31463d1ae5ccc8fa3e334b307203fbf815207e"
+checksum = "9ded5f9a03ac8f24d1b8a25101ee812cd32cdc8c50a4c50237de2c4915850e73"
 dependencies = [
  "rustversion",
 ]
@@ -277,9 +277,9 @@ checksum = "1fd0f2584146f6f2ef48085050886acf353beff7305ebd1ae69500e27c67f64b"
 
 [[package]]
 name = "bytes"
-version = "1.11.0"
+version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b35204fbdc0b3f4446b89fc1ac2cf84a8a68971995d0bf2e925ec7cd960f9cb3"
+checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
 
 [[package]]
 name = "cached"
@@ -397,7 +397,7 @@ dependencies = [
  "anyhow",
  "candid",
  "ic-cdk",
- "ic-certification 3.0.4",
+ "ic-certification 3.1.0",
  "serde",
  "serde_cbor",
  "sha2 0.10.9",
@@ -915,9 +915,9 @@ checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "flate2"
-version = "1.1.8"
+version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b375d6465b98090a5f25b1c7703f3859783755aa9a80433b36e0379a3ec2f369"
+checksum = "843fba2746e448b37e26a819579957415c8cef339bf08564fe8b7ddbd959573c"
 dependencies = [
  "crc32fast",
  "miniz_oxide",
@@ -1317,14 +1317,13 @@ dependencies = [
 
 [[package]]
 name = "hyper-util"
-version = "0.1.19"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "727805d60e7938b76b826a6ef209eb70eaa1812794f9424d4a4e2d740662df5f"
+checksum = "96547c2556ec9d12fb1578c4eaf448b04993e7fb79cbaad930a656880a6bdfa0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
  "futures-channel",
- "futures-core",
  "futures-util",
  "http",
  "http-body",
@@ -1415,12 +1414,12 @@ dependencies = [
 
 [[package]]
 name = "ic-asset-certification"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "assert_matches",
  "globset",
  "http",
- "ic-certification 3.0.4",
+ "ic-certification 3.1.0",
  "ic-certification-testing",
  "ic-http-certification",
  "ic-response-verification",
@@ -1513,10 +1512,10 @@ dependencies = [
 
 [[package]]
 name = "ic-cbor"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "candid",
- "ic-certification 3.0.4",
+ "ic-certification 3.1.0",
  "ic-response-verification-test-utils",
  "leb128",
  "nom",
@@ -1568,12 +1567,12 @@ dependencies = [
 
 [[package]]
 name = "ic-certificate-verification"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "cached 0.54.0",
  "candid",
  "ic-cbor",
- "ic-certification 3.0.4",
+ "ic-certification 3.1.0",
  "ic-certification-testing",
  "ic-response-verification-test-utils",
  "ic-types 0.9.0 (git+https://github.com/dfinity/ic?rev=6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e)",
@@ -1602,7 +1601,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "hex",
  "rstest",
@@ -1614,7 +1613,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "console_error_panic_hook",
  "getrandom 0.2.17",
@@ -1638,7 +1637,7 @@ dependencies = [
 
 [[package]]
 name = "ic-certification-testing-wasm"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "console_error_panic_hook",
  "ic-certification-testing",
@@ -1908,14 +1907,14 @@ dependencies = [
 
 [[package]]
 name = "ic-http-certification"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "assert_matches",
  "base64 0.22.1",
  "candid",
  "hex",
  "http",
- "ic-certification 3.0.4",
+ "ic-certification 3.1.0",
  "ic-representation-independent-hash",
  "rstest",
  "rstest_reuse",
@@ -1927,7 +1926,7 @@ dependencies = [
 
 [[package]]
 name = "ic-http-certification-tests"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "assert_matches",
  "candid",
@@ -2055,7 +2054,7 @@ dependencies = [
 
 [[package]]
 name = "ic-representation-independent-hash"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "hex",
  "leb128",
@@ -2064,7 +2063,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "assert_matches",
  "base64 0.22.1",
@@ -2074,7 +2073,7 @@ dependencies = [
  "http",
  "ic-cbor",
  "ic-certificate-verification",
- "ic-certification 3.0.4",
+ "ic-certification 3.1.0",
  "ic-certification-testing",
  "ic-crypto-tree-hash 0.9.0 (git+https://github.com/dfinity/ic?rev=6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e)",
  "ic-http-certification",
@@ -2097,12 +2096,12 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-test-utils"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "base64 0.22.1",
  "flate2",
  "hex",
- "ic-certification 3.0.4",
+ "ic-certification 3.1.0",
  "ic-certification-testing",
  "ic-http-certification",
  "ic-types 0.9.0 (git+https://github.com/dfinity/ic?rev=6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e)",
@@ -2114,7 +2113,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-tests"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -2128,7 +2127,7 @@ dependencies = [
 
 [[package]]
 name = "ic-response-verification-wasm"
-version = "3.0.4"
+version = "3.1.0"
 dependencies = [
  "base64 0.22.1",
  "console_error_panic_hook",
@@ -3280,9 +3279,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.12.2"
+version = "1.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "843bc0191f75f3e22651ae5f1e72939ab2f72a4bc30fa80a066bd66edefc24d4"
+checksum = "e10754a14b9137dd7b1e3e5b0493cc9171fdd105e0ab477f51b72e7f3ac0e276"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -3292,9 +3291,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.13"
+version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5276caf25ac86c8d810222b3dbb938e512c55c6831a10f3e6ed1c93b84041f1c"
+checksum = "6e1dd4122fc1595e8162618945476892eefca7b88c52820e74af6262213cae8f"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -3303,15 +3302,15 @@ dependencies = [
 
 [[package]]
 name = "regex-lite"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d942b98df5e658f56f20d592c7f868833fe38115e65c33003d8cd224b0155da"
+checksum = "cab834c73d247e67f4fae452806d17d3c7501756d98c8808d7c9c7aa7d18f973"
 
 [[package]]
 name = "regex-syntax"
-version = "0.8.8"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a2d987857b319362043e95f5353c0535c1f58eec5336fdfcf626430af7def58"
+checksum = "a96887878f22d7bad8a3b6dc5b7440e0ada9a245242924394987b21cf2210a4c"
 
 [[package]]
 name = "relative-path"
