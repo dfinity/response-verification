@@ -1,7 +1,7 @@
 {
   "name": "@dfinity/certificate-verification",
   "description": "Client side certificate verification for the Internet Computer",
-  "version": "3.0.3",
+  "version": "3.1.0",
   "author": "DFINITY Stiftung",
   "license": "Apache-2.0",
   "repository": "github:dfinity/response-verification",

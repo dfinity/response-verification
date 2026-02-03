@@ -97,15 +97,15 @@ getrandom = { version = "0.2", features = ["js"] }
 rand_chacha = "0.3"
 once_cell = "1"
 
-ic-asset-certification = { path = "./packages/ic-asset-certification", version = "3.0.3" }
-ic-certification = { path = "./packages/ic-certification", default-features = false, version = "3.0.3" }
-ic-http-certification = { path = "./packages/ic-http-certification", version = "3.0.3" }
+ic-asset-certification = { path = "./packages/ic-asset-certification", version = "3.1.0" }
+ic-certification = { path = "./packages/ic-certification", default-features = false, version = "3.1.0" }
+ic-http-certification = { path = "./packages/ic-http-certification", version = "3.1.0" }
 ic-certification-testing = { path = "./packages/ic-certification-testing" }
-ic-representation-independent-hash = { path = "./packages/ic-representation-independent-hash", version = "3.0.3" }
-ic-certificate-verification = { path = "./packages/ic-certificate-verification", version = "3.0.3" }
-ic-response-verification = { path = "./packages/ic-response-verification", version = "3.0.3" }
+ic-representation-independent-hash = { path = "./packages/ic-representation-independent-hash", version = "3.1.0" }
+ic-certificate-verification = { path = "./packages/ic-certificate-verification", version = "3.1.0" }
+ic-response-verification = { path = "./packages/ic-response-verification", version = "3.1.0" }
 ic-response-verification-test-utils = { path = "./packages/ic-response-verification-test-utils" }
-ic-cbor = { path = "./packages/ic-cbor", version = "3.0.3" }
+ic-cbor = { path = "./packages/ic-cbor", version = "3.1.0" }
 
 
 [workspace.dependencies.ic-types]
