@@ -108,7 +108,8 @@ fn verify_delegation(
                 })?
         }
         SubtreeLookupResult::Absent | SubtreeLookupResult::Unknown => {
-            // New structure not found, try old structure: /subnet/<subnet_id>/canister_ranges
+            // New structure not found, try old structure: /subnet/<subnet_id>/canister_ranges. This is only for JS.
+            // TODO: Remove this once JS supports the new structure.
             let old_canister_ranges_path = [
                 "subnet".as_bytes(),
                 delegation.subnet_id.as_ref(),
