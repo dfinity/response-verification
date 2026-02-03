@@ -2,7 +2,7 @@
 commitizen:
   name: cz_conventional_commits
   tag_format: $version
-  version: 3.0.3
+  version: 3.1.0
   version_files:
   - Cargo.toml
   - packages/certificate-verification-js/package.json:version

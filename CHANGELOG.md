@@ -1,4 +1,8 @@
-## Unreleased
+## 3.1.0 (2026-02-03)
+
+### Feat
+
+- support sharded canister ranges certificate structure (#461)
 
 ## 3.0.3 (2025-02-04)
 
