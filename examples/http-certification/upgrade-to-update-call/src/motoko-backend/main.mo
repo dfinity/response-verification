@@ -1,6 +1,6 @@
 import Text "mo:base/Text";
 
-actor Http {
+persistent actor Http {
   type HeaderField = (Text, Text);
 
   type HttpRequest = {
