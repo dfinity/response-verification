@@ -92,21 +92,20 @@ fn verify_delegation(
     {
         SubtreeLookupResult::Found(subnet_tree) => {
             // Collect all ranges from all range keys under this subnet
-            let mut ranges = Vec::new();
-            let range_keys = subnet_tree.list_paths();
-
-            for range_key_path in range_keys {
-                if !range_key_path.is_empty() {
+            subnet_tree
+                .list_paths()
+                .iter()
+                .filter(|path| !path.is_empty())
+                .try_fold(Vec::new(), |mut acc, range_key_path| -> CertificateVerificationResult<Vec<(Principal, Principal)>> {
                     if let LookupResult::Found(range_data) =
                         subnet_tree.lookup_path([range_key_path[0].as_bytes()])
                     {
                         let subnet_ranges: Vec<(Principal, Principal)> =
                             parse_cbor_principals_array(range_data)?;
-                        ranges.extend(subnet_ranges);
+                        acc.extend(subnet_ranges);
                     }
-                }
-            }
-            ranges
+                    Ok(acc)
+                })?
         }
         SubtreeLookupResult::Absent | SubtreeLookupResult::Unknown => {
             // New structure not found, try old structure: /subnet/<subnet_id>/canister_ranges
@@ -119,9 +118,11 @@ fn verify_delegation(
                 LookupResult::Found(old_range_data) => parse_cbor_principals_array(old_range_data)?,
                 _ => {
                     // Neither format found - this is an error
-                    return Err(CertificateVerificationError::CanisterRangesNotFound {
-                        path: canister_ranges_path.iter().map(|p| p.to_vec()).collect(),
-                    });
+                    return Err(
+                        CertificateVerificationError::SubnetCanisterIdRangesNotFound {
+                            path: canister_ranges_path.iter().map(|p| p.to_vec()).collect(),
+                        },
+                    );
                 }
             }
         }
