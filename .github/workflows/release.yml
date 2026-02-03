@@ -23,6 +23,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Acquire short-lived crates.io token
+        uses: rust-lang/crates-io-auth-action@v1
+        id: auth
+
       - name: Setup Python
         uses: dfinity/ci-tools/actions/setup-python@main
 
@@ -56,14 +60,14 @@ jobs:
         uses: dfinity/ci-tools/actions/generate-release-notes@main
 
       - name: Release ic-representation-independent-hash Cargo crate
-        run: cargo publish -p ic-representation-independent-hash --token ${CRATES_TOKEN}
+        run: cargo publish -p ic-representation-independent-hash
         env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Release ic-certification Cargo crate
-        run: cargo publish -p ic-certification --token ${CRATES_TOKEN}
+        run: cargo publish -p ic-certification
         env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       # `ic-certification-testing` cannot be published since it relies on unpublished crates
       # from the `ic` repository. Namely:
@@ -79,9 +83,9 @@ jobs:
       #     CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
       - name: Release ic-http-certification Cargo crate
-        run: cargo publish -p ic-http-certification --token ${CRATES_TOKEN}
+        run: cargo publish -p ic-http-certification
         env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Pack @dfinity/certification-testing NPM package
         working-directory: packages/ic-certification-testing-wasm
@@ -94,14 +98,14 @@ jobs:
           NPM_CONFIG_PROVENANCE: 'true'
 
       - name: Release ic-cbor Cargo crate
-        run: cargo publish -p ic-cbor --token ${CRATES_TOKEN}
+        run: cargo publish -p ic-cbor
         env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Release ic-certificate-verification Cargo crate
-        run: cargo publish -p ic-certificate-verification --token ${CRATES_TOKEN}
+        run: cargo publish -p ic-certificate-verification
         env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Pack @dfinity/certificate-verification NPM package
         working-directory: packages/certificate-verification-js
@@ -114,9 +118,9 @@ jobs:
           NPM_CONFIG_PROVENANCE: 'true'
 
       - name: Release ic-response-verification Cargo crate
-        run: cargo publish -p ic-response-verification --token ${CRATES_TOKEN}
+        run: cargo publish -p ic-response-verification
         env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Pack @dfinity/response-verification NPM package
         working-directory: packages/ic-response-verification-wasm
@@ -129,9 +133,9 @@ jobs:
           NPM_CONFIG_PROVENANCE: 'true'
 
       - name: Release ic-asset-certification Cargo crate
-        run: cargo publish -p ic-asset-certification --token ${CRATES_TOKEN}
+        run: cargo publish -p ic-asset-certification
         env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
 
       - name: Create Github release
         uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b # v1.20.0
