@@ -128,6 +128,9 @@ rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 git = "https://github.com/dfinity/ic"
 rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 
+[workspace.dependencies.ic-crypto-utils-threshold-sig-der]
+git = "https://github.com/dfinity/ic"
+rev = "6f1ce3bb4c253f1bc4c5f432c7c47b06dccdba7e"
 
 [workspace.dependencies.serde]
 version = "1"
