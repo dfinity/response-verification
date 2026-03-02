@@ -4,6 +4,7 @@ import {
   HashTree,
   reconstruct,
   compare,
+  lookupResultToBuffer,
 } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { PipeArrayBuffer, lebDecode } from '@dfinity/candid';
@@ -43,9 +44,11 @@ function validateCertificateTime(
   maxCertificateTimeOffsetMs: number,
   nowMs: number,
 ): void {
-  const certificateTimeNs = lebDecode(
-    new PipeArrayBuffer(certificate.lookup(['time'])),
-  );
+  const timeBuf = lookupResultToBuffer(certificate.lookup(['time']));
+  if (!timeBuf) {
+    throw new CertificateTimeError('Could not find time in the certificate.');
+  }
+  const certificateTimeNs = lebDecode(new PipeArrayBuffer(timeBuf));
   const certificateTimeMs = Number(certificateTimeNs / BigInt(1_000_000));
 
   if (certificateTimeMs - maxCertificateTimeOffsetMs > nowMs) {
@@ -67,11 +70,13 @@ async function validateTree(
   canisterId: Principal,
 ): Promise<void> {
   const treeRootHash = await reconstruct(tree);
-  const certifiedData = certificate.lookup([
-    'canister',
-    canisterId.toUint8Array(),
-    'certified_data',
-  ]);
+  const certifiedData = lookupResultToBuffer(
+    certificate.lookup([
+      'canister',
+      canisterId.toUint8Array(),
+      'certified_data',
+    ]),
+  );
 
   if (!certifiedData) {
     throw new CertificateVerificationError(

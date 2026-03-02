@@ -1,5 +1,11 @@
 import { verifyCertification } from '@dfinity/certificate-verification';
-import { Actor, HttpAgent, compare, lookup_path } from '@dfinity/agent';
+import {
+  Actor,
+  HttpAgent,
+  compare,
+  lookup_path,
+  lookupResultToBuffer,
+} from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import {
   idlFactory,
@@ -65,13 +71,13 @@ buttonElement.addEventListener('click', async event => {
     maxCertificateTimeOffsetMs: 50000,
   });
 
-  const treeHash = lookup_path(['count'], tree);
+  const treeHash = lookupResultToBuffer(lookup_path(['count'], tree));
   if (!treeHash) {
     throw new Error('Count not found in tree');
   }
 
   const responseHash = await hashUInt32(count);
-  if (!(treeHash instanceof ArrayBuffer) || !equal(responseHash, treeHash)) {
+  if (!equal(responseHash, treeHash)) {
     throw new Error('Count hash does not match');
   }
 
