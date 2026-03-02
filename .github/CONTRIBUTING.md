@@ -63,10 +63,13 @@ If you want to submit a pull request to fix an issue or add a feature, here's a 
    git add path-to-changed-file
    ```
 8. Commit your changes to store the contents you added to the index along with a descriptive message by running a command similar to the following:
+
    ```shell
    cz commit
    ```
+
    - See [Conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) for more information on the commit message formats.
+
 9. Push the changes to the remote repository by running a command similar to the following:
    ```shell
    git push origin my-branch-name-here
