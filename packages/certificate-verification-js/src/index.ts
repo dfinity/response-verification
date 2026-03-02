@@ -46,9 +46,7 @@ function validateCertificateTime(
 ): void {
   const timeBuf = lookupResultToBuffer(certificate.lookup(['time']));
   if (!timeBuf) {
-    throw new CertificateTimeError(
-      'Could not find time in the certificate.',
-    );
+    throw new CertificateTimeError('Could not find time in the certificate.');
   }
   const certificateTimeNs = lebDecode(new PipeArrayBuffer(timeBuf));
   const certificateTimeMs = Number(certificateTimeNs / BigInt(1_000_000));
