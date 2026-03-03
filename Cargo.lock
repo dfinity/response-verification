@@ -1539,7 +1539,6 @@ dependencies = [
  "ic-verify-bls-signature",
  "lazy_static",
  "leb128",
- "nom",
  "parking_lot",
  "rand 0.8.5",
  "rand_chacha 0.3.1",

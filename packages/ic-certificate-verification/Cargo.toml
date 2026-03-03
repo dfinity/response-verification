@@ -22,13 +22,12 @@ homepage.workspace = true
 
 [dependencies]
 candid.workspace = true
-nom.workspace = true
 thiserror.workspace = true
 leb128.workspace = true
-cached.workspace = true
+cached = { workspace = true, optional = true }
 sha2.workspace = true
-lazy_static.workspace = true
-parking_lot.workspace = true
+lazy_static = { workspace = true, optional = true }
+parking_lot = { workspace = true, optional = true }
 
 ic-certification = { workspace = true }
 ic-cbor.workspace = true
@@ -41,3 +40,7 @@ rand.workspace = true
 rand_chacha.workspace = true
 
 ic-types.workspace = true
+
+[features]
+default = ["signature_cache"]
+signature_cache = ["cached", "lazy_static", "parking_lot"]
