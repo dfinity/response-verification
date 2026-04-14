@@ -13,6 +13,8 @@ packages:
   - packages/ic-response-verification-tests/src/frontend
   - packages/ic-response-verification-tests/src/wasm-tests
 
+minimumReleaseAge: 10080 # ignore dependency updates released less than 7 days ago
+
 onlyBuiltDependencies:
   - '@dfinity/pic'
   - esbuild
