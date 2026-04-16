@@ -115,6 +115,12 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
 /// [`representation_independent_hash`]). It appends the `:ic-cert-status` pseudo-header
 /// internally.
 ///
+/// # Panics (debug builds)
+///
+/// Debug-asserts that `certified_headers` does not already contain
+/// [`RESPONSE_STATUS_PSEUDO_HEADER_NAME`]. Passing it would produce duplicate keys
+/// and a hash that does not match [`response_hash`].
+///
 /// The result is `SHA-256(header_hash || body_hash)` where `header_hash` is the
 /// representation-independent hash of the headers including the status pseudo-header.
 pub fn response_hash_from_headers(
@@ -122,6 +128,12 @@ pub fn response_hash_from_headers(
     status_code: u16,
     body_hash: &Hash,
 ) -> Hash {
+    debug_assert!(
+        !certified_headers
+            .iter()
+            .any(|(k, _)| k == RESPONSE_STATUS_PSEUDO_HEADER_NAME),
+        "certified_headers must not contain the status pseudo-header; it is added internally"
+    );
     let mut headers = Vec::from(certified_headers);
     headers.push((
         RESPONSE_STATUS_PSEUDO_HEADER_NAME.into(),
