@@ -1,3 +1,10 @@
+## Unreleased
+
+### Feat
+
+- **ic-http-certification**: add `HttpCertification::response_only_prehashed` for creating certifications from pre-computed hashes
+- **ic-http-certification**: add `HttpCertificationTree::as_hash_tree` for serializing the full certification tree
+
 ## 3.1.0 (2026-02-03)
 
 ### Feat

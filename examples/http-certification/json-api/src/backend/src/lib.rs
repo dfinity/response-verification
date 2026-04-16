@@ -1,5 +1,5 @@
 use ic_cdk::{
-    api::{data_certificate, set_certified_data},
+    api::{certified_data_set, data_certificate},
     *,
 };
 use ic_http_certification::{
@@ -210,7 +210,7 @@ fn certify_not_found_response() {
         http_tree.insert(&HttpCertificationTreeEntry::new(tree_path, &certification));
 
         // set the canister's certified data
-        set_certified_data(&http_tree.root_hash());
+        certified_data_set(&http_tree.root_hash());
     });
 }
 
@@ -262,7 +262,7 @@ fn certify_response(
         http_tree.insert(&HttpCertificationTreeEntry::new(tree_path, &certification));
 
         // set the canister's certified data
-        set_certified_data(&http_tree.root_hash());
+        certified_data_set(&http_tree.root_hash());
     });
 }
 

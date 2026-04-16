@@ -1,6 +1,6 @@
-use api::canister_balance;
+use api::canister_cycle_balance;
 use ic_cdk::{
-    api::{data_certificate, set_certified_data},
+    api::{certified_data_set, data_certificate},
     *,
 };
 use ic_http_certification::{
@@ -260,7 +260,7 @@ fn certify_asset_response(
 
 fn update_certified_data() {
     HTTP_TREE.with_borrow(|http_tree| {
-        set_certified_data(&http_tree.root_hash());
+        certified_data_set(&http_tree.root_hash());
     });
 }
 
@@ -358,7 +358,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
 
 fn create_metrics_response() -> HttpResponse<'static> {
     let metrics = Metrics {
-        cycle_balance: canister_balance(),
+        cycle_balance: canister_cycle_balance(),
     };
     let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
     let additional_headers = vec![

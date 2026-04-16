@@ -1,6 +1,6 @@
-use api::canister_balance;
+use api::canister_cycle_balance;
 use ic_cdk::{
-    api::{data_certificate, set_certified_data},
+    api::{certified_data_set, data_certificate},
     *,
 };
 use ic_http_certification::{
@@ -16,7 +16,7 @@ pub struct Metrics {
 
 #[init]
 fn init() {
-    set_certified_data(&skip_certification_certified_data());
+    certified_data_set(&skip_certification_certified_data());
 }
 
 #[query]
@@ -30,7 +30,7 @@ fn http_request() -> HttpResponse<'static> {
 
 fn create_response() -> HttpResponse<'static> {
     let metrics = Metrics {
-        cycle_balance: canister_balance(),
+        cycle_balance: canister_cycle_balance() as u64,
     };
     let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
     let headers = vec![

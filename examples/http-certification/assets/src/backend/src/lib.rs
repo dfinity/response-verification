@@ -1,10 +1,10 @@
-use api::canister_balance;
+use api::canister_cycle_balance;
 use ic_asset_certification::{
     Asset, AssetConfig, AssetEncoding, AssetFallbackConfig, AssetMap, AssetRedirectKind,
     AssetRouter,
 };
 use ic_cdk::{
-    api::{data_certificate, set_certified_data},
+    api::{certified_data_set, data_certificate},
     *,
 };
 use ic_http_certification::{
@@ -161,11 +161,11 @@ fn certify_all_assets() {
     ASSET_ROUTER.with_borrow_mut(|asset_router| {
         // 4. Certify the assets using the `certify_assets` function from the `ic-asset-certification` crate.
         if let Err(err) = asset_router.certify_assets(assets, asset_configs) {
-            ic_cdk::trap(&format!("Failed to certify assets: {}", err));
+            ic_cdk::trap(&format!("Failed to certify assets: {err}"));
         }
 
         // 5. Set the canister's certified data.
-        set_certified_data(&asset_router.root_hash());
+        certified_data_set(&asset_router.root_hash());
     });
 }
 
@@ -175,7 +175,7 @@ fn serve_metrics() -> HttpResponse<'static> {
         let metrics = Metrics {
             num_assets: asset_router.get_assets().len(),
             num_fallback_assets: asset_router.get_fallback_assets().len(),
-            cycle_balance: canister_balance(),
+            cycle_balance: canister_cycle_balance() as u64,
         };
         let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
         let headers = get_asset_headers(vec![
