@@ -358,7 +358,7 @@ fn asset_handler(req: &HttpRequest) -> HttpResponse<'static> {
 
 fn create_metrics_response() -> HttpResponse<'static> {
     let metrics = Metrics {
-        cycle_balance: canister_cycle_balance(),
+        cycle_balance: canister_cycle_balance() as u64,
     };
     let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
     let additional_headers = vec![
