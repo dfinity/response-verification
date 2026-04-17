@@ -20,7 +20,7 @@ use std::{cell::RefCell, rc::Rc};
 pub struct Metrics {
     pub num_assets: usize,
     pub num_fallback_assets: usize,
-    pub cycle_balance: u64,
+    pub cycle_balance: u128,
 }
 
 // Public methods
@@ -175,7 +175,7 @@ fn serve_metrics() -> HttpResponse<'static> {
         let metrics = Metrics {
             num_assets: asset_router.get_assets().len(),
             num_fallback_assets: asset_router.get_fallback_assets().len(),
-            cycle_balance: canister_cycle_balance() as u64,
+            cycle_balance: canister_cycle_balance(),
         };
         let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
         let headers = get_asset_headers(vec![

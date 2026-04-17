@@ -115,14 +115,31 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
 /// [`representation_independent_hash`]). It appends the `:ic-cert-status` pseudo-header
 /// internally.
 ///
+/// The result is `SHA-256(header_hash || body_hash)` where `header_hash` is the
+/// representation-independent hash of the headers including the status pseudo-header.
+///
+/// # Expected input shape
+///
+/// To produce a hash that matches [`response_hash`], `certified_headers` must follow the
+/// same normalization that [`filter_response_headers`] applies:
+///
+/// - Header names must be ASCII-lowercased.
+/// - The `IC-Certificate` header must be excluded.
+/// - The `IC-CertificateExpression` header must be included (if present on the response).
+/// - The CEL `DefaultResponseCertification` filter (certified list or exclusion list)
+///   must already have been applied.
+/// - Values must be [`Value::String`] (no other [`Value`] variants are produced by
+///   [`response_headers_hash`] for header entries).
+///
+/// Callers that start from an [`HttpResponse`] and a [`DefaultResponseCertification`]
+/// should prefer [`response_hash`], which performs all of the above.
+///
 /// # Panics (debug builds)
 ///
 /// Debug-asserts that `certified_headers` does not already contain
 /// [`RESPONSE_STATUS_PSEUDO_HEADER_NAME`]. Passing it would produce duplicate keys
-/// and a hash that does not match [`response_hash`].
-///
-/// The result is `SHA-256(header_hash || body_hash)` where `header_hash` is the
-/// representation-independent hash of the headers including the status pseudo-header.
+/// and a hash that does not match [`response_hash`]. In release builds this check is
+/// skipped; callers must uphold the precondition themselves.
 pub fn response_hash_from_headers(
     certified_headers: &[(String, Value)],
     status_code: u16,
@@ -134,7 +151,8 @@ pub fn response_hash_from_headers(
             .any(|(k, _)| k == RESPONSE_STATUS_PSEUDO_HEADER_NAME),
         "certified_headers must not contain the status pseudo-header; it is added internally"
     );
-    let mut headers = Vec::from(certified_headers);
+    let mut headers = Vec::with_capacity(certified_headers.len() + 1);
+    headers.extend_from_slice(certified_headers);
     headers.push((
         RESPONSE_STATUS_PSEUDO_HEADER_NAME.into(),
         Value::Number(status_code.into()),

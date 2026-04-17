@@ -11,7 +11,7 @@ use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Metrics {
-    pub cycle_balance: u64,
+    pub cycle_balance: u128,
 }
 
 #[init]
@@ -30,7 +30,7 @@ fn http_request() -> HttpResponse<'static> {
 
 fn create_response() -> HttpResponse<'static> {
     let metrics = Metrics {
-        cycle_balance: canister_cycle_balance() as u64,
+        cycle_balance: canister_cycle_balance(),
     };
     let body = serde_json::to_vec(&metrics).expect("Failed to serialize metrics");
     let headers = vec![
