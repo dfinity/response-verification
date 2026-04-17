@@ -43,7 +43,7 @@ impl CertificateBuilder {
     ) -> CertificationTestResult<CertificateBuilder> {
         let canister_id_ranges = canister_id_ranges
             .into_iter()
-            .map(|v| serde_wasm_bindgen::from_value::<CanisterIdRange>(v))
+            .map(serde_wasm_bindgen::from_value::<CanisterIdRange>)
             .map(|v| v.map(|v| (v.low, v.high)))
             .collect::<Result<_, _>>()?;
 

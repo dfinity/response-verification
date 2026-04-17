@@ -1,3 +1,14 @@
+## Unreleased
+
+### Feat
+
+- **ic-http-certification**: add `HttpCertification::response_only_prehashed` for creating certifications from pre-computed hashes
+- **ic-http-certification**: add `HttpCertificationTree::as_hash_tree` for serializing the full certification tree
+- **ic-http-certification**: add `response_hash_from_headers` for computing response hashes from pre-built header pairs
+- **ic-http-certification**: add `build_v2_certificate_header_value` for building the `IC-Certificate` header value as a `String`
+- **ic-http-certification**: add `cbor_encode_to_base64` utility for encoding values as base64(CBOR)
+- **ic-http-certification**: make `RESPONSE_STATUS_PSEUDO_HEADER_NAME` public
+
 ## 3.1.0 (2026-02-03)
 
 ### Feat

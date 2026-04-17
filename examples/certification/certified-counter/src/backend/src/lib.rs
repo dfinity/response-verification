@@ -28,7 +28,7 @@ fn inc_count() {
         let mut tree = tree.borrow_mut();
         tree.insert("count", hash(&count.to_be_bytes()).to_vec());
 
-        ic_cdk::api::set_certified_data(&tree.root_hash());
+        ic_cdk::api::certified_data_set(&tree.root_hash());
     })
 }
 
@@ -62,7 +62,7 @@ fn get_count() -> CertifiedCounter {
     let witness = match get_count_witness() {
         Ok(tree) => tree,
         Err(err) => {
-            ic_cdk::trap(&format!("Error getting count witness: {:?}", err));
+            ic_cdk::trap(&format!("Error getting count witness: {err:?}"));
         }
     };
 
