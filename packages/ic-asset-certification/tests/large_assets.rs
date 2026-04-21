@@ -26,7 +26,7 @@ fn should_certify_long_asset_chunkwise(
 ) {
     let current_time = get_current_timestamp();
     let canister_id = create_canister_id("rdmx6-jaaaa-aaaaa-aaadq-cai");
-    let req_url = format!("/{}", ASSET_ONE_NAME);
+    let req_url = format!("/{ASSET_ONE_NAME}");
 
     let mut asset_router = AssetRouter::default();
     let assets = [Asset::new(ASSET_ONE_NAME, asset_one_body)];
@@ -107,7 +107,7 @@ fn should_certify_long_asset_chunkwise(
     let chunk_two_req = HttpRequest::get(&req_url)
         .with_headers(vec![(
             "range".to_string(),
-            format!("bytes={}-", ASSET_CHUNK_SIZE),
+            format!("bytes={ASSET_CHUNK_SIZE}-"),
         )])
         .build();
     let chunk_two_res = asset_router
