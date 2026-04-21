@@ -38,5 +38,6 @@ pub fn verify_signature(
     sig: &[u8],
     msg: &[u8],
 ) -> Result<(), CertificateVerificationError> {
-    verify_bls_signature(sig, msg, pk).map_err(|_| CertificateVerificationError::SignatureVerificationFailed)
+    verify_bls_signature(sig, msg, pk)
+        .map_err(|_| CertificateVerificationError::SignatureVerificationFailed)
 }
