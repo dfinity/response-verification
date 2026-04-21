@@ -99,3 +99,32 @@ fn cbor_encode(value: &impl Serialize) -> Vec<u8> {
         .expect("Failed to serialize value");
     serializer.into_inner()
 }
+
+/// Serializes a value as self-describing CBOR and returns its base64 (standard alphabet) encoding.
+///
+/// This is useful for encoding `expr_path` and witness trees in the IC-Certificate header format.
+pub fn cbor_encode_to_base64(value: &impl Serialize) -> String {
+    BASE64.encode(cbor_encode(value))
+}
+
+/// Builds the value portion of the `IC-Certificate` response header.
+///
+/// Returns the full header value string in the format:
+/// `certificate=:…:, tree=:…:, expr_path=:…:, version=2`
+///
+/// Unlike [`add_v2_certificate_header`], this function returns the header value as a [`String`]
+/// rather than mutating an [`HttpResponse`]. The `expr_path_b64` argument is expected to already
+/// be a base64-encoded self-describing CBOR value (e.g. produced by [`cbor_encode_to_base64`]).
+pub fn build_v2_certificate_header_value(
+    data_certificate: &[u8],
+    witness: &HashTree,
+    expr_path_b64: &str,
+) -> String {
+    let witness = cbor_encode(witness);
+    format!(
+        "certificate=:{}:, tree=:{}:, expr_path=:{}:, version=2",
+        BASE64.encode(data_certificate),
+        BASE64.encode(witness),
+        expr_path_b64,
+    )
+}

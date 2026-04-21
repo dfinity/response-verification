@@ -75,6 +75,13 @@ impl HttpCertificationTree {
         self.tree.clear();
     }
 
+    /// Returns the full [HashTree] for this certification tree, wrapped under the `http_expr` label.
+    ///
+    /// This is useful for serializing the tree (e.g. CBOR) in response to a `certified_tree` query.
+    pub fn as_hash_tree(&self) -> HashTree {
+        labeled(PATH_PREFIX_BYTES, self.tree.as_hash_tree())
+    }
+
     /// Returns a pruned [HashTree] that will prove the presence of a given [HttpCertificationTreeEntry]
     /// in the full [HttpCertificationTree], without needing to return the full tree.
     ///
@@ -779,6 +786,41 @@ mod tests {
         path.insert(0, b"http_expr".to_vec());
 
         assert_matches!(witness.lookup_subtree(&path), SubtreeLookupResult::Found(_));
+    }
+
+    #[rstest]
+    fn test_as_hash_tree_contains_http_expr_label() {
+        let mut tree = HttpCertificationTree::default();
+
+        let cel_expr = DefaultCelBuilder::full_certification()
+            .with_response_certification(DefaultResponseCertification::response_header_exclusions(
+                vec![],
+            ))
+            .build();
+
+        let request = HttpRequest::get("/index.html").build();
+        let response = HttpResponse::ok(
+            b"hello",
+            vec![(
+                CERTIFICATE_EXPRESSION_HEADER_NAME.into(),
+                cel_expr.to_string(),
+            )],
+        )
+        .build();
+
+        let certification = HttpCertification::full(&cel_expr, &request, &response, None).unwrap();
+        let entry = HttpCertificationTreeEntry::new(
+            HttpCertificationPath::exact("/index.html"),
+            certification,
+        );
+        tree.insert(&entry);
+
+        let full_tree = tree.as_hash_tree();
+
+        assert_matches!(
+            full_tree.lookup_subtree(["http_expr", "index.html", "<$>"]),
+            SubtreeLookupResult::Found(_)
+        );
     }
 
     fn lookup_path_from_entry(entry: &HttpCertificationTreeEntry) -> Vec<Vec<u8>> {

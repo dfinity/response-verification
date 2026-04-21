@@ -622,5 +622,5 @@ pub mod utils;
 
 // https://github.com/la10736/rstest/tree/master/rstest_reuse#cavelets
 #[cfg(test)]
-#[allow(clippy::single_component_path_imports)]
+#[allow(clippy::single_component_path_imports, unused_imports)]
 use rstest_reuse;

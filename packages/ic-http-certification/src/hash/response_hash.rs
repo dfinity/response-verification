@@ -8,7 +8,9 @@ pub const CERTIFICATE_HEADER_NAME: &str = "IC-Certificate";
 /// The name of the IC-CertificateExpression header.
 pub const CERTIFICATE_EXPRESSION_HEADER_NAME: &str = "IC-CertificateExpression";
 
-const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
+/// The pseudo-header name used for encoding the response status code in the
+/// [Representation Independent Hash](https://internetcomputer.org/docs/references/ic-interface-spec/#hash-of-map).
+pub const RESPONSE_STATUS_PSEUDO_HEADER_NAME: &str = ":ic-cert-status";
 
 /// Representation of response headers filtered by [filter_response_headers].
 #[derive(Debug)]
@@ -104,6 +106,63 @@ pub fn response_headers_hash(status_code: &u64, response_headers: &ResponseHeade
     ));
 
     representation_independent_hash(&headers_to_verify)
+}
+
+/// Computes the v2 response hash from pre-built header pairs, a status code, and a body hash.
+///
+/// This is a lower-level variant of [`response_hash`] that operates on headers already
+/// represented as `(String, Value)` pairs (the format used by
+/// [`representation_independent_hash`]). It appends the `:ic-cert-status` pseudo-header
+/// internally.
+///
+/// The result is `SHA-256(header_hash || body_hash)` where `header_hash` is the
+/// representation-independent hash of the headers including the status pseudo-header.
+///
+/// # Expected input shape
+///
+/// To produce a hash that matches [`response_hash`], `certified_headers` must follow the
+/// same normalization that [`filter_response_headers`] applies:
+///
+/// - Header names must be ASCII-lowercased.
+/// - The `IC-Certificate` header must be excluded.
+/// - The `IC-CertificateExpression` header must be included (if present on the response).
+/// - The CEL `DefaultResponseCertification` filter (certified list or exclusion list)
+///   must already have been applied.
+/// - Values must be [`Value::String`] (no other [`Value`] variants are produced by
+///   [`response_headers_hash`] for header entries).
+///
+/// Callers that start from an [`HttpResponse`] and a [`DefaultResponseCertification`]
+/// should prefer [`response_hash`], which performs all of the above.
+///
+/// # Panics (debug builds)
+///
+/// Debug-asserts that `certified_headers` does not already contain
+/// [`RESPONSE_STATUS_PSEUDO_HEADER_NAME`]. Passing it would produce duplicate keys
+/// and a hash that does not match [`response_hash`]. In release builds this check is
+/// skipped; callers must uphold the precondition themselves.
+pub fn response_hash_from_headers(
+    certified_headers: &[(String, Value)],
+    status_code: u16,
+    body_hash: &Hash,
+) -> Hash {
+    debug_assert!(
+        !certified_headers
+            .iter()
+            .any(|(k, _)| k == RESPONSE_STATUS_PSEUDO_HEADER_NAME),
+        "certified_headers must not contain the status pseudo-header; it is added internally"
+    );
+    let mut headers = Vec::with_capacity(certified_headers.len() + 1);
+    headers.extend_from_slice(certified_headers);
+    headers.push((
+        RESPONSE_STATUS_PSEUDO_HEADER_NAME.into(),
+        Value::Number(status_code.into()),
+    ));
+    let header_hash = representation_independent_hash(&headers);
+    hash(
+        [header_hash.as_ref(), body_hash.as_ref()]
+            .concat()
+            .as_slice(),
+    )
 }
 
 /// Calculates the
@@ -430,6 +489,29 @@ mod tests {
         let result = response_hash(&response, &response_certification, Some(response_body_hash));
 
         assert_eq!(result, expected_hash.as_slice());
+    }
+
+    #[test]
+    fn response_hash_from_headers_matches_response_hash() {
+        let response_certification =
+            DefaultResponseCertification::certified_response_headers(vec![
+                "Accept-Encoding",
+                "Cache-Control",
+            ]);
+        let response = create_response(CERTIFIED_HEADERS_CEL_EXPRESSION);
+        let expected = response_hash(&response, &response_certification, None);
+
+        let filtered = filter_response_headers(&response, &response_certification);
+        let header_pairs: Vec<(String, Value)> = filtered
+            .headers
+            .iter()
+            .map(|(k, v)| (k.clone(), Value::String(v.clone())))
+            .collect();
+        let body_hash = hash(response.body());
+        let result =
+            response_hash_from_headers(&header_pairs, response.status_code().as_u16(), &body_hash);
+
+        assert_eq!(result, expected);
     }
 
     fn create_response(cel_expression: &str) -> HttpResponse {

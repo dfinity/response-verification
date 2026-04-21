@@ -90,6 +90,19 @@ impl HttpCertification {
         }))
     }
 
+    /// Creates a response-only certification from pre-computed hashes.
+    ///
+    /// Unlike [`response_only`](HttpCertification::response_only), this constructor does not
+    /// require an [`HttpResponse`] and performs no validation. Use it when the CEL expression
+    /// hash and response hash have already been computed externally (e.g. via
+    /// [`response_hash_from_headers`](crate::response_hash_from_headers)).
+    pub fn response_only_prehashed(cel_expr_hash: Hash, response_hash: Hash) -> Self {
+        Self(HttpCertificationType::ResponseOnly {
+            cel_expr_hash,
+            response_hash,
+        })
+    }
+
     pub(crate) fn to_tree_path(self) -> Vec<Vec<u8>> {
         match self.0 {
             HttpCertificationType::Skip { cel_expr_hash } => vec![cel_expr_hash.to_vec()],
@@ -296,6 +309,32 @@ mod tests {
             result,
             HttpCertificationError::MultipleCertificateExpressionHeaders { expected } if expected == cel_expr.to_string()
         ));
+    }
+
+    #[rstest]
+    fn response_only_prehashed_matches_response_only() {
+        let cel_expr = DefaultCelBuilder::response_only_certification()
+            .with_response_certification(DefaultResponseCertification::certified_response_headers(
+                vec!["ETag", "Cache-Control"],
+            ))
+            .build();
+
+        let response = &HttpResponse::builder()
+            .with_status_code(StatusCode::OK)
+            .with_headers(vec![(
+                CERTIFICATE_EXPRESSION_HEADER_NAME.to_string(),
+                cel_expr.to_string(),
+            )])
+            .build();
+
+        let from_response = HttpCertification::response_only(&cel_expr, response, None).unwrap();
+
+        let cel_expr_hash = hash(cel_expr.to_string().as_bytes());
+        let resp_hash = response_hash(response, &cel_expr.response, None);
+        let from_prehashed = HttpCertification::response_only_prehashed(cel_expr_hash, resp_hash);
+
+        assert_eq!(from_prehashed, from_response);
+        assert_eq!(from_prehashed.to_tree_path(), from_response.to_tree_path());
     }
 
     #[rstest]
