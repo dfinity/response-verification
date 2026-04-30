@@ -24,9 +24,7 @@ fn get_current_time() -> u128 {
 }
 
 fn read_file(file_path: &str) -> Result<Vec<u8>> {
-    let path = format!(
-        "packages/ic-response-verification-tests/src/frontend/{file_path}"
-    );
+    let path = format!("packages/ic-response-verification-tests/src/frontend/{file_path}");
     match fs::read(path.clone()) {
         Ok(file) => {
             println!("Read file: {path}");
