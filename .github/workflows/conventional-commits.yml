@@ -1,0 +1,9 @@
+name: Check PR title
+
+on:
+  pull_request:
+
+jobs:
+  check_pr_title:
+    name: check_pr_title:required
+    uses: dfinity/ci-tools/.github/workflows/check-pr-title.yaml@afeee4fbdc0683a88ec5a74ed7f59a2ce0e833ad # main
