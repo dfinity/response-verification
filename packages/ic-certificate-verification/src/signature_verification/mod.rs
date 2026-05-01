@@ -1,16 +1,16 @@
 use crate::CertificateVerificationError;
 use ic_verify_bls_signature::verify_bls_signature;
 
-#[cfg(feature = "cached")]
+#[cfg(feature = "signature_cache")]
 mod signature_cache;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "signature_cache"))]
 mod reproducible_rng;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "signature_cache"))]
 mod tests;
 
-#[cfg(feature = "cached")]
+#[cfg(feature = "signature_cache")]
 pub fn verify_signature(
     pk: &[u8],
     sig: &[u8],
@@ -32,7 +32,7 @@ pub fn verify_signature(
     Ok(())
 }
 
-#[cfg(not(feature = "cached"))]
+#[cfg(not(feature = "signature_cache"))]
 pub fn verify_signature(
     pk: &[u8],
     sig: &[u8],

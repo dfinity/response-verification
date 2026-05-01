@@ -43,4 +43,4 @@ ic-types.workspace = true
 
 [features]
 default = ["signature_cache"]
-signature_cache = ["cached", "lazy_static", "parking_lot"]
+signature_cache = ["dep:cached", "dep:lazy_static", "dep:parking_lot"]

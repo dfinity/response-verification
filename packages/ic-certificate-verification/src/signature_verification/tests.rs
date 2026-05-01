@@ -2,6 +2,7 @@ use super::signature_cache::SignatureCacheEntry;
 use crate::signature_verification::{
     reproducible_rng::reproducible_rng,
     signature_cache::{SignatureCache, SignatureCacheStatistics},
+    verify_signature,
 };
 use rand::RngCore;
 
@@ -81,6 +82,21 @@ fn should_have_signature_cache_behave_like_a_lru_cache() {
     for entry in &entries {
         assert!(!cache.contains(entry));
     }
+}
+
+#[test]
+fn verify_signature_uses_cache_for_known_entries() {
+    // Pre-populate the global cache with inputs that are not valid BLS signatures.
+    // If the signature_cache feature gate is correctly applied, verify_signature
+    // returns Ok() on a cache hit without ever calling the BLS verifier.
+    // If the cfg gates are wrong and the uncached path is compiled instead,
+    // this test will fail with SignatureVerificationFailed.
+    let pk = [1u8; 96];
+    let sig = [2u8; 48];
+    let msg = [3u8; 32];
+
+    SignatureCache::global().insert(&SignatureCacheEntry::new(&pk, &sig, &msg));
+    assert!(verify_signature(&pk, &sig, &msg).is_ok());
 }
 
 #[test]
