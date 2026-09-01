@@ -65,7 +65,7 @@ urlencoding = "2"
 rstest = "0.23"
 rstest_reuse = "0.7"
 tokio = { version = "1", features = ["full"] }
-cached = "0.54"
+cached = "0.56"
 lazy_static = "1"
 parking_lot = "0.12"
 assert_matches = "1.5"
