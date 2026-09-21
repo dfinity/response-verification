@@ -1,20 +1,20 @@
 import {
   Cbor,
   Certificate,
-  HashTree,
+  type HashTree,
   reconstruct,
-  compare,
+  uint8Equals,
   lookupResultToBuffer,
-} from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
-import { PipeArrayBuffer, lebDecode } from '@dfinity/candid';
+} from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
+import { PipeArrayBuffer, lebDecode } from '@icp-sdk/core/candid';
 import { CertificateTimeError, CertificateVerificationError } from './error';
 
 export interface VerifyCertificationParams {
   canisterId: Principal;
-  encodedCertificate: ArrayBuffer;
-  encodedTree: ArrayBuffer;
-  rootKey: ArrayBuffer;
+  encodedCertificate: Uint8Array;
+  encodedTree: Uint8Array;
+  rootKey: Uint8Array;
   maxCertificateTimeOffsetMs: number;
 }
 
@@ -28,8 +28,12 @@ export async function verifyCertification({
   const nowMs = Date.now();
   const certificate = await Certificate.create({
     certificate: encodedCertificate,
-    canisterId,
+    principal: { canisterId },
     rootKey,
+    // The built-in check bounds certificate time in the future by a hardcoded
+    // 5 minutes, which would override a wider `maxCertificateTimeOffsetMs`.
+    // `validateCertificateTime` below is the authority instead.
+    disableTimeVerification: true,
   });
   const tree = Cbor.decode<HashTree>(encodedTree);
 
@@ -44,7 +48,7 @@ function validateCertificateTime(
   maxCertificateTimeOffsetMs: number,
   nowMs: number,
 ): void {
-  const timeBuf = lookupResultToBuffer(certificate.lookup(['time']));
+  const timeBuf = lookupResultToBuffer(certificate.lookup_path(['time']));
   if (!timeBuf) {
     throw new CertificateTimeError('Could not find time in the certificate.');
   }
@@ -71,7 +75,7 @@ async function validateTree(
 ): Promise<void> {
   const treeRootHash = await reconstruct(tree);
   const certifiedData = lookupResultToBuffer(
-    certificate.lookup([
+    certificate.lookup_path([
       'canister',
       canisterId.toUint8Array(),
       'certified_data',
@@ -84,13 +88,9 @@ async function validateTree(
     );
   }
 
-  if (!equal(certifiedData, treeRootHash)) {
+  if (!uint8Equals(certifiedData, treeRootHash)) {
     throw new CertificateVerificationError(
       'Tree root hash did not match the certified data in the certificate.',
     );
   }
-}
-
-function equal(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  return compare(a, b) === 0;
 }

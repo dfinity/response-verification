@@ -1,5 +1,5 @@
 import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
-import { Principal } from '@dfinity/principal';
+import { Principal } from '@icp-sdk/core/principal';
 import {
   verifyRequestResponsePair,
   Request,
@@ -33,7 +33,7 @@ describe('Todos', () => {
   let actor: Actor<_SERVICE>;
   let canisterId: Principal;
 
-  let rootKey: ArrayBufferLike;
+  let rootKey: Uint8Array;
 
   const currentDate = new Date(2021, 6, 10, 0, 0, 0, 0);
   const currentTimeNs = BigInt(currentDate.getTime() * NS_PER_MS);
@@ -83,7 +83,7 @@ describe('Todos', () => {
       canisterId.toUint8Array(),
       currentTimeNs,
       maxCertTimeOffsetNs,
-      new Uint8Array(rootKey),
+      rootKey,
       CERTIFICATE_VERSION,
     );
     const verificationResultBody = extractOkResponse<Ok<ListTodoItemsResponse>>(
@@ -142,7 +142,7 @@ describe('Todos', () => {
       canisterId.toUint8Array(),
       currentTimeNs,
       maxCertTimeOffsetNs,
-      new Uint8Array(rootKey),
+      rootKey,
       CERTIFICATE_VERSION,
     );
     const verificationResultBody = jsonDecode<ListTodoItemsResponse>(
@@ -194,7 +194,7 @@ describe('Todos', () => {
       canisterId.toUint8Array(),
       currentTimeNs,
       maxCertTimeOffsetNs,
-      new Uint8Array(rootKey),
+      rootKey,
       CERTIFICATE_VERSION,
     );
     const afterUpdateVerificationResultBody = jsonDecode<ListTodoItemsResponse>(
@@ -249,7 +249,7 @@ describe('Todos', () => {
       canisterId.toUint8Array(),
       currentTimeNs,
       maxCertTimeOffsetNs,
-      new Uint8Array(rootKey),
+      rootKey,
       CERTIFICATE_VERSION,
     );
     const afterDeleteVerificationResultBody = jsonDecode<ListTodoItemsResponse>(
@@ -289,7 +289,7 @@ describe('Todos', () => {
         canisterId.toUint8Array(),
         currentTimeNs,
         maxCertTimeOffsetNs,
-        new Uint8Array(rootKey),
+        rootKey,
         CERTIFICATE_VERSION,
       );
       let verificationResultBody = extractErrResponse(
@@ -327,7 +327,7 @@ describe('Todos', () => {
       canisterId.toUint8Array(),
       currentTimeNs,
       maxCertTimeOffsetNs,
-      new Uint8Array(rootKey),
+      rootKey,
       CERTIFICATE_VERSION,
     );
     let verificationResultBody = extractErrResponse(

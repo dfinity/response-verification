@@ -12,7 +12,7 @@ This package partially encapsulates the protocol for such verification. It perfo
 
 ## Usage
 
-In the following example, `canister` is an actor created with `@dfinity/agent-js` for a canister with the following candid:
+In the following example, `canister` is an actor created with [@icp-sdk/core](https://www.npmjs.com/package/@icp-sdk/core) for a canister with the following candid:
 
 ```candid
 type certified_response = record {
@@ -31,20 +31,27 @@ Check [ic-certification](https://docs.rs/ic_certification/latest/ic_certificatio
 `calculateDataHash` is a userland provided function that can calculate the hash of the data returned from the canister. This must be calculated in the same way on the canister and the frontend.
 
 ```javascript
+import {
+  lookup_path,
+  lookupResultToBuffer,
+  uint8Equals,
+} from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
+
 const { data, certificate, witness } = await canister.get_data();
 
 const tree = await verifyCertification({
   canisterId: Principal.fromText(canisterId),
-  encodedCertificate: new Uint8Array(certificate).buffer,
-  encodedTree: new Uint8Array(witness).buffer,
-  rootKey: agent.rootKey,
+  encodedCertificate: new Uint8Array(certificate),
+  encodedTree: new Uint8Array(witness),
+  rootKey: await agent.fetchRootKey(),
   maxCertificateTimeOffsetMs: 50000,
 });
 
-const treeDataHash = lookup_path(['count'], tree);
+const treeDataHash = lookupResultToBuffer(lookup_path(['count'], tree));
 const responseDataHash = calculateDataHash(data);
 
-if (treeDataHash !== responseDataHash) {
+if (!treeDataHash || !uint8Equals(treeDataHash, responseDataHash)) {
   // The data returned from the canister does not match the certified data.
 }
 ```

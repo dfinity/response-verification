@@ -12,12 +12,16 @@ export default defineConfig({
     },
     sourcemap: true,
     rollupOptions: {
-      external: ['@dfinity/agent', '@dfinity/principal', '@dfinity/candid'],
+      external: [
+        '@icp-sdk/core/agent',
+        '@icp-sdk/core/principal',
+        '@icp-sdk/core/candid',
+      ],
       output: {
         globals: {
-          '@dfinity/agent': 'dfinity-agent',
-          '@dfinity/principal': 'dfinity-principal',
-          '@dfinity/candid': 'dfinity-candid',
+          '@icp-sdk/core/agent': 'icp-core-agent',
+          '@icp-sdk/core/principal': 'icp-core-principal',
+          '@icp-sdk/core/candid': 'icp-core-candid',
         },
       },
     },

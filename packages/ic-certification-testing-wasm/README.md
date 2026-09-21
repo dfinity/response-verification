@@ -6,16 +6,23 @@ This package provides a set of utilities to create these certificates for the pu
 
 ## Usage
 
-First, a hash tree must be created containing the data that needs to be certified. This can be done using the [@dfinity/agent](https://www.npmjs.com/package/@dfinity/agent) library. The root hash of this tree is then used to create the certificate.
+First, a hash tree must be created containing the data that needs to be certified. This can be done using the [@icp-sdk/core](https://www.npmjs.com/package/@icp-sdk/core) library. The root hash of this tree is then used to create the certificate.
 
 The [@dfinity/certificate-verification](https://www.npmjs.com/package/@dfinity/certificate-verification) library can then be used to decode the certificate and verify it.
 
 ```typescript
 import { describe, expect, it } from 'vitest';
-import { HashTree, reconstruct, Cbor } from '@dfinity/agent';
+import {
+  type HashTree,
+  type NodeLabel,
+  type NodeValue,
+  NodeType,
+  reconstruct,
+  Cbor,
+} from '@icp-sdk/core/agent';
 import { CertificateBuilder } from '@dfinity/certification-testing';
 import { verifyCertification } from '@dfinity/certificate-verification';
-import { Principal } from '@dfinity/principal';
+import { Principal } from '@icp-sdk/core/principal';
 import { createHash } from 'node:crypto';
 
 const userId = '1234';
@@ -26,9 +33,9 @@ const usernameHash = new Uint8Array(
 );
 
 const hashTree: HashTree = [
-  2,
-  new Uint8Array(Buffer.from(userId)),
-  [3, usernameHash],
+  NodeType.Labeled,
+  new Uint8Array(Buffer.from(userId)) as NodeLabel,
+  [NodeType.Leaf, usernameHash as NodeValue],
 ];
 const rootHash = await reconstruct(hashTree);
 const cborEncodedTree = Cbor.encode(hashTree);
@@ -39,10 +46,7 @@ const canisterId = Principal.fromUint8Array(
 const time = BigInt(Date.now());
 const MAX_CERT_TIME_OFFSET_MS = 300_000;
 
-let certificate = new CertificateBuilder(
-  canisterId.toString(),
-  new Uint8Array(rootHash),
-)
+let certificate = new CertificateBuilder(canisterId.toString(), rootHash)
   .withTime(time)
   .build();
 

@@ -1,6 +1,7 @@
 {
-  "include": ["./wasm-tests/**/*"],
+  "extends": "../../../../tsconfig.json",
+  "include": ["./src/**/*"],
   "compilerOptions": {
-    "esModuleInterop": true
+    "types": ["node"]
   }
 }

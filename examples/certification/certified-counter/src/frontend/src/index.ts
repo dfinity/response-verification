@@ -2,11 +2,11 @@ import { verifyCertification } from '@dfinity/certificate-verification';
 import {
   Actor,
   HttpAgent,
-  compare,
+  uint8Equals,
   lookup_path,
   lookupResultToBuffer,
-} from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
+} from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
 import {
   idlFactory,
   _SERVICE,
@@ -46,11 +46,11 @@ if (!countElement) {
 async function hashUInt32(
   value: number,
   littleEndian = false,
-): Promise<ArrayBuffer> {
+): Promise<Uint8Array> {
   const buffer = new ArrayBuffer(4);
   const view = new DataView(buffer);
   view.setUint32(0, value, littleEndian);
-  return await crypto.subtle.digest('SHA-256', view);
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', view));
 }
 
 buttonElement.addEventListener('click', async event => {
@@ -62,12 +62,12 @@ buttonElement.addEventListener('click', async event => {
   buttonElement.removeAttribute('disabled');
 
   const agent = new HttpAgent();
-  await agent.fetchRootKey();
+  const rootKey = await agent.fetchRootKey();
   const tree = await verifyCertification({
     canisterId: Principal.fromText(canisterId),
-    encodedCertificate: new Uint8Array(certificate).buffer,
-    encodedTree: new Uint8Array(witness).buffer,
-    rootKey: agent.rootKey,
+    encodedCertificate: new Uint8Array(certificate),
+    encodedTree: new Uint8Array(witness),
+    rootKey,
     maxCertificateTimeOffsetMs: 50000,
   });
 
@@ -77,7 +77,7 @@ buttonElement.addEventListener('click', async event => {
   }
 
   const responseHash = await hashUInt32(count);
-  if (!equal(responseHash, treeHash)) {
+  if (!uint8Equals(responseHash, treeHash)) {
     throw new Error('Count hash does not match');
   }
 
@@ -85,7 +85,3 @@ buttonElement.addEventListener('click', async event => {
 
   return false;
 });
-
-function equal(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  return compare(a, b) === 0;
-}

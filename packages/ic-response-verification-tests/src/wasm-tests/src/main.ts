@@ -1,7 +1,5 @@
 import {
   VerificationInfo,
-  Request,
-  Response,
   getMinVerificationVersion,
   verifyRequestResponsePair,
 } from '@dfinity/response-verification';
@@ -11,8 +9,8 @@ import {
   HttpRequest,
   _SERVICE,
 } from './http-interface/canister_http_interface_types';
-import { HttpAgent, ActorSubclass, Actor, Agent } from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
+import { HttpAgent, ActorSubclass, Actor, Agent } from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
 import assert from 'node:assert';
 import { exit } from 'process';
 
@@ -122,7 +120,7 @@ async function performTest(
     canisterId.toUint8Array(),
     currentTimeNs,
     maxCertTimeOffsetNs,
-    new Uint8Array(agent.rootKey),
+    agent.rootKey,
     certificateVersion ?? getMinVerificationVersion(),
   );
 }

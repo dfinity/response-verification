@@ -1,12 +1,12 @@
 {
   "name": "response-verification-tests",
   "scripts": {
-    "e2e-test": "ts-node ./src/main.ts"
+    "e2e-test": "tsc --noEmit && tsx ./src/main.ts"
   },
   "dependencies": {
     "@dfinity/response-verification": "workspace:*"
   },
   "devDependencies": {
-    "ts-node": "^10.9.1"
+    "tsx": "^4.20.0"
   }
 }

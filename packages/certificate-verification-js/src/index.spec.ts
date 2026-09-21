@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { HashTree, reconstruct, Cbor } from '@dfinity/agent';
+import {
+  type HashTree,
+  type NodeLabel,
+  type NodeValue,
+  NodeType,
+  reconstruct,
+  Cbor,
+} from '@icp-sdk/core/agent';
 import { CertificateBuilder } from '@dfinity/certification-testing';
-import { Principal } from '@dfinity/principal';
+import { Principal } from '@icp-sdk/core/principal';
 import { createHash } from 'node:crypto';
 import { verifyCertification } from './index';
 
@@ -14,9 +21,9 @@ describe('verifyCertification', async () => {
   );
 
   const hashTree: HashTree = [
-    2,
-    new Uint8Array(Buffer.from(userId)),
-    [3, usernameHash],
+    NodeType.Labeled,
+    new Uint8Array(Buffer.from(userId)) as NodeLabel,
+    [NodeType.Leaf, usernameHash as NodeValue],
   ];
   const rootHash = await reconstruct(hashTree);
   const cborEncodedTree = Cbor.encode(hashTree);
@@ -58,7 +65,7 @@ describe('verifyCertification', async () => {
     async ({ withDelegation, timeOverride }) => {
       let certificateBuilder = new CertificateBuilder(
         canisterId.toString(),
-        new Uint8Array(rootHash),
+        rootHash,
       ).withTime(timeOverride ?? time);
 
       if (withDelegation) {
@@ -109,7 +116,7 @@ describe('verifyCertification', async () => {
       scenario: 'with a delegation a time too far in the future',
     },
     {
-      rootHashOverride: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).buffer,
+      rootHashOverride: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
       scenario: 'with a root hash mismatch',
     },
   ])(
@@ -122,7 +129,7 @@ describe('verifyCertification', async () => {
     }) => {
       let certificateBuilder = new CertificateBuilder(
         canisterId.toString(),
-        new Uint8Array(rootHashOverride ?? rootHash),
+        rootHashOverride ?? rootHash,
       ).withTime(timeOverride ?? time);
 
       if (withDelegation) {
