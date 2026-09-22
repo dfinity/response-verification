@@ -17,6 +17,13 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/certificate-verification.js",
+      "require": "./dist/certificate-verification.umd.cjs"
+    }
+  },
   "main": "dist/certificate-verification.umd.cjs",
   "module": "dist/certificate-verification.js",
   "types": "dist/index.d.ts",
