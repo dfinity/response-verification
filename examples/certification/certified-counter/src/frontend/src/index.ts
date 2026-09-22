@@ -18,13 +18,18 @@ const dfxNetwork = process.env.DFX_NETWORK ?? '';
 
 const agent = new HttpAgent();
 
+// Only a local replica's root key has to be fetched. On the IC the agent
+// already holds the built-in root key, which must not be replaced by one
+// served over the network.
 if (dfxNetwork !== 'ic') {
-  agent.fetchRootKey().catch(err => {
+  try {
+    await agent.fetchRootKey();
+  } catch (err) {
     console.warn(
       'Unable to fetch root key. Check to ensure that your local replica is running',
     );
     console.error(err);
-  });
+  }
 }
 
 // Creates an actor with using the candid interface and the HttpAgent
@@ -61,13 +66,15 @@ buttonElement.addEventListener('click', async event => {
   const { count, certificate, witness } = await backend.get_count();
   buttonElement.removeAttribute('disabled');
 
-  const agent = new HttpAgent();
-  const rootKey = await agent.fetchRootKey();
+  if (!agent.rootKey) {
+    throw new Error('The agent is missing a root key');
+  }
+
   const tree = await verifyCertification({
     canisterId: Principal.fromText(canisterId),
     encodedCertificate: new Uint8Array(certificate),
     encodedTree: new Uint8Array(witness),
-    rootKey,
+    rootKey: agent.rootKey,
     maxCertificateTimeOffsetMs: 50000,
   });
 

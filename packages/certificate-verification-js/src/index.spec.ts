@@ -155,4 +155,36 @@ describe('verifyCertification', async () => {
       ).rejects.toThrowError();
     },
   );
+  // `maxCertificateTimeOffsetMs` is the only bound that applies. The wider
+  // allowance here exceeds the 5 minutes that `Certificate.create` enforces on
+  // its own, so these cases fail if `disableTimeVerification` is dropped.
+  it.each([
+    {
+      timeOverride: BigInt(Date.now() + 10 * 60_000),
+      scenario: 'further in the future than the built-in allowance',
+    },
+    {
+      timeOverride: BigInt(Date.now() - 10 * 60_000),
+      scenario: 'further in the past than the built-in allowance',
+    },
+  ])(
+    'should verify a certificate with a time $scenario',
+    async ({ timeOverride }) => {
+      const certificate = new CertificateBuilder(
+        canisterId.toString(),
+        rootHash,
+      )
+        .withTime(timeOverride)
+        .build();
+
+      const decodedHashTree = await verifyCertification({
+        canisterId,
+        encodedCertificate: certificate.cborEncodedCertificate,
+        encodedTree: cborEncodedTree,
+        maxCertificateTimeOffsetMs: 15 * 60_000,
+        rootKey: certificate.rootKey,
+      });
+      expect(decodedHashTree).toEqual(hashTree);
+    },
+  );
 });

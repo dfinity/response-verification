@@ -40,11 +40,18 @@ import { Principal } from '@icp-sdk/core/principal';
 
 const { data, certificate, witness } = await canister.get_data();
 
+// The agent holds the built-in IC root key. Only a local replica's key has to
+// be fetched, via `HttpAgent.create({ shouldFetchRootKey: true })`; fetching it
+// on the IC would let a malicious gateway supply its own trust anchor.
+if (!agent.rootKey) {
+  throw new Error('The agent is missing a root key');
+}
+
 const tree = await verifyCertification({
   canisterId: Principal.fromText(canisterId),
   encodedCertificate: new Uint8Array(certificate),
   encodedTree: new Uint8Array(witness),
-  rootKey: await agent.fetchRootKey(),
+  rootKey: agent.rootKey,
   maxCertificateTimeOffsetMs: 50000,
 });
 
