@@ -19,7 +19,7 @@ overrides:
   # `@dfinity/pic` still pins `@icp-sdk/core` to `^5`. A second copy makes its
   # `Principal` and `IDL` types incompatible with the root one, so it is forced
   # onto a single version. pic only uses `Principal` and `AnonymousIdentity`.
-  '@icp-sdk/core': ^6.1.0
+  '@icp-sdk/core': ^6.0.0
 
 onlyBuiltDependencies:
   - '@dfinity/pic'

@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "@dfinity/pic": "0.23.0",
-    "@icp-sdk/core": "^6.1.0",
+    "@icp-sdk/core": "^6.0.0",
     "@types/node": "~22.10.10",
     "prettier": "^3.8.1",
     "solid-js": "^1.9.12",

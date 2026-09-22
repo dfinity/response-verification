@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@icp-sdk/core': ^6.1.0
+  '@icp-sdk/core': ^6.0.0
 
 importers:
 
@@ -15,7 +15,7 @@ importers:
         specifier: 0.23.0
         version: 0.23.0
       '@icp-sdk/core':
-        specifier: ^6.1.0
+        specifier: ^6.0.0
         version: 6.1.0
       '@types/node':
         specifier: ~22.10.10
@@ -87,7 +87,7 @@ importers:
   packages/certificate-verification-js:
     dependencies:
       '@icp-sdk/core':
-        specifier: ^6.1.0
+        specifier: ^6.0.0
         version: 6.1.0
     devDependencies:
       '@dfinity/certification-testing':
