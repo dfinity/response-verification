@@ -17,6 +17,13 @@
   "files": [
     "dist"
   ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/certificate-verification.js",
+      "require": "./dist/certificate-verification.umd.cjs"
+    }
+  },
   "main": "dist/certificate-verification.umd.cjs",
   "module": "dist/certificate-verification.js",
   "types": "dist/index.d.ts",
@@ -27,9 +34,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "peerDependencies": {
-    "@dfinity/agent": "^1.4.0",
-    "@dfinity/candid": "^1.4.0",
-    "@dfinity/principal": "^1.4.0"
+    "@icp-sdk/core": "^6.0.0"
   },
   "devDependencies": {
     "@dfinity/certification-testing": "workspace:*"

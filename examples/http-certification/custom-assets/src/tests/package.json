@@ -2,7 +2,7 @@
   "name": "http-certification-custom-assets-tests",
   "private": true,
   "scripts": {
-    "test": "jest"
+    "test": "tsc --noEmit && vitest run"
   },
   "devDependencies": {
     "@dfinity/response-verification": "workspace:*"

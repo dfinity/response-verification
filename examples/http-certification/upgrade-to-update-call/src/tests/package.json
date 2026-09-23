@@ -2,6 +2,6 @@
   "name": "http-certification-upgrade-to-update-call-tests",
   "private": true,
   "scripts": {
-    "test": "jest"
+    "test": "tsc --noEmit && vitest run"
   }
 }

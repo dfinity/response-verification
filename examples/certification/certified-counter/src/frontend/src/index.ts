@@ -2,11 +2,11 @@ import { verifyCertification } from '@dfinity/certificate-verification';
 import {
   Actor,
   HttpAgent,
-  compare,
+  uint8Equals,
   lookup_path,
   lookupResultToBuffer,
-} from '@dfinity/agent';
-import { Principal } from '@dfinity/principal';
+} from '@icp-sdk/core/agent';
+import { Principal } from '@icp-sdk/core/principal';
 import {
   idlFactory,
   _SERVICE,
@@ -18,13 +18,18 @@ const dfxNetwork = process.env.DFX_NETWORK ?? '';
 
 const agent = new HttpAgent();
 
+// Only a local replica's root key has to be fetched. On the IC the agent
+// already holds the built-in root key, which must not be replaced by one
+// served over the network.
 if (dfxNetwork !== 'ic') {
-  agent.fetchRootKey().catch(err => {
+  try {
+    await agent.fetchRootKey();
+  } catch (err) {
     console.warn(
       'Unable to fetch root key. Check to ensure that your local replica is running',
     );
     console.error(err);
-  });
+  }
 }
 
 // Creates an actor with using the candid interface and the HttpAgent
@@ -46,11 +51,11 @@ if (!countElement) {
 async function hashUInt32(
   value: number,
   littleEndian = false,
-): Promise<ArrayBuffer> {
+): Promise<Uint8Array> {
   const buffer = new ArrayBuffer(4);
   const view = new DataView(buffer);
   view.setUint32(0, value, littleEndian);
-  return await crypto.subtle.digest('SHA-256', view);
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', view));
 }
 
 buttonElement.addEventListener('click', async event => {
@@ -61,12 +66,14 @@ buttonElement.addEventListener('click', async event => {
   const { count, certificate, witness } = await backend.get_count();
   buttonElement.removeAttribute('disabled');
 
-  const agent = new HttpAgent();
-  await agent.fetchRootKey();
+  if (!agent.rootKey) {
+    throw new Error('The agent is missing a root key');
+  }
+
   const tree = await verifyCertification({
     canisterId: Principal.fromText(canisterId),
-    encodedCertificate: new Uint8Array(certificate).buffer,
-    encodedTree: new Uint8Array(witness).buffer,
+    encodedCertificate: new Uint8Array(certificate),
+    encodedTree: new Uint8Array(witness),
     rootKey: agent.rootKey,
     maxCertificateTimeOffsetMs: 50000,
   });
@@ -77,7 +84,7 @@ buttonElement.addEventListener('click', async event => {
   }
 
   const responseHash = await hashUInt32(count);
-  if (!equal(responseHash, treeHash)) {
+  if (!uint8Equals(responseHash, treeHash)) {
     throw new Error('Count hash does not match');
   }
 
@@ -85,7 +92,3 @@ buttonElement.addEventListener('click', async event => {
 
   return false;
 });
-
-function equal(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  return compare(a, b) === 0;
-}

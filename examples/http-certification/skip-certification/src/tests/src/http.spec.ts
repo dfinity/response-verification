@@ -1,5 +1,5 @@
 import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
-import { Principal } from '@dfinity/principal';
+import { Principal } from '@icp-sdk/core/principal';
 import {
   verifyRequestResponsePair,
   Request,
@@ -26,7 +26,7 @@ describe('HTTP', () => {
   let actor: Actor<_SERVICE>;
   let canisterId: Principal;
 
-  let rootKey: ArrayBufferLike;
+  let rootKey: Uint8Array;
 
   const currentDate = new Date(2021, 6, 10, 0, 0, 0, 0);
   const currentTimeNs = BigInt(currentDate.getTime() * NS_PER_MS);
@@ -69,8 +69,10 @@ describe('HTTP', () => {
     const currentCycles = await pic.getCyclesBalance(canisterId);
 
     expect(response.status_code).toBe(200);
+    // The canister serializes its `u128` balance as a JSON number, so the
+    // bigint from PocketIC is narrowed to match what `JSON.parse` produces.
     expect(jsonBody).toEqual({
-      cycle_balance: currentCycles,
+      cycle_balance: Number(currentCycles),
     });
     expectSecurityHeaders(response.headers);
     expectHeader(response.headers, ['content-type', 'application/json']);
@@ -85,7 +87,7 @@ describe('HTTP', () => {
       canisterId.toUint8Array(),
       currentTimeNs,
       maxCertTimeOffsetNs,
-      new Uint8Array(rootKey),
+      rootKey,
       CERTIFICATE_VERSION,
     );
 
