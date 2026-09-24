@@ -20,6 +20,12 @@ overrides:
   # `Principal` and `IDL` types incompatible with the root one, so it is forced
   # onto a single version. pic only uses `Principal` and `AnonymousIdentity`.
   '@icp-sdk/core': ^6.0.0
+  # Advisory fixes for transitive build-time dependencies, to be dropped once
+  # `vite` and `vite-plugin-solid` depend on patched versions themselves.
+  baseline-browser-mapping: '>=2.11.0'
+  browserslist: '>=4.28.7'
+  postcss: '>=8.5.23'
+  '@babel/core': '>=7.29.6 <8'
 
 onlyBuiltDependencies:
   - '@dfinity/pic'
