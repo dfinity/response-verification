@@ -1,3 +1,25 @@
+## 4.0.0 (2026-09-24)
+
+### BREAKING CHANGE
+
+- `@dfinity/certificate-verification` now peer depends on
+`@icp-sdk/core` instead of `@dfinity/agent`, `@dfinity/candid` and
+`@dfinity/principal`. `verifyCertification` takes `Uint8Array` for
+`encodedCertificate`, `encodedTree` and `rootKey` instead of
+`ArrayBuffer`, and returns the `HashTree` type from
+`@icp-sdk/core/agent`.
+
+### Feat
+
+- migrate JS packages to @icp-sdk/core (#497)
+- put the signature cache behind a feature flag (enabled by default) (#481)
+
+### Fix
+
+- stop publishing the test type declaration (#498)
+- **deps**: resolve RUSTSEC-2026-0285 and related advisories
+- **deps**: resolve RustSec/OSV advisories (anyhow, event-listener, rand)
+
 ## 3.2.0 (2026-04-17)
 
 ### Feat
