@@ -3,11 +3,11 @@
 ### BREAKING CHANGE
 
 - `@dfinity/certificate-verification` now peer depends on
-`@icp-sdk/core` instead of `@dfinity/agent`, `@dfinity/candid` and
-`@dfinity/principal`. `verifyCertification` takes `Uint8Array` for
-`encodedCertificate`, `encodedTree` and `rootKey` instead of
-`ArrayBuffer`, and returns the `HashTree` type from
-`@icp-sdk/core/agent`.
+  `@icp-sdk/core` instead of `@dfinity/agent`, `@dfinity/candid` and
+  `@dfinity/principal`. `verifyCertification` takes `Uint8Array` for
+  `encodedCertificate`, `encodedTree` and `rootKey` instead of
+  `ArrayBuffer`, and returns the `HashTree` type from
+  `@icp-sdk/core/agent`.
 
 ### Feat
 
