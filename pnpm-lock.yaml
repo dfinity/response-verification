@@ -6,9 +6,9 @@ settings:
 
 overrides:
   '@icp-sdk/core': ^6.0.0
-  baseline-browser-mapping: '>=2.11.0'
-  browserslist: '>=4.28.7'
-  postcss: '>=8.5.23'
+  baseline-browser-mapping: '>=2.11.0 <3'
+  browserslist: '>=4.28.7 <5'
+  postcss: '>=8.5.23 <9'
   '@babel/core': '>=7.29.6 <8'
 
 importers:
@@ -1184,7 +1184,7 @@ packages:
     resolution: {integrity: sha512-pJ2sYawQS0R/WI928Gj5GlPhTGzbMelq0+4INtSYNDV9ErKJcX6xjGWkoG/VnB3dpUm00zALaqkrUD77pO5TDQ==}
     hasBin: true
     peerDependencies:
-      browserslist: '>=4.28.7'
+      browserslist: '>=4.28.7 <5'
 
   vite-plugin-checker@0.12.0:
     resolution: {integrity: sha512-CmdZdDOGss7kdQwv73UyVgLPv0FVYe5czAgnmRX2oKljgEvSrODGuClaV3PDR2+3ou7N/OKGauDDBjy2MB07Rg==}
