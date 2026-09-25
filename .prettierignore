@@ -1,6 +1,7 @@
 .idea
 .cargo
-.dfx
+.icp
+.mops
 target
 dist
 declarations
