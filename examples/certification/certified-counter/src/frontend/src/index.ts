@@ -6,28 +6,22 @@ import {
   lookup_path,
   lookupResultToBuffer,
 } from '@icp-sdk/core/agent';
+import { safeGetCanisterEnv } from '@icp-sdk/core/agent/canister-env';
 import { Principal } from '@icp-sdk/core/principal';
 import { idlFactory, _SERVICE } from '../../declarations/backend.did';
 
+// The frontend canister sets the `ic_env` cookie: the backend's canister ID
+// (injected by `icp deploy`) and the root key of the network serving the page.
+const canisterEnv = safeGetCanisterEnv();
 const canisterId =
-  process.env.CANISTER_ID_CERTIFICATION_CERTIFIED_COUNTER_BACKEND ?? '';
-const dfxNetwork = process.env.DFX_NETWORK ?? '';
-
-const agent = new HttpAgent();
-
-// Only a local replica's root key has to be fetched. On the IC the agent
-// already holds the built-in root key, which must not be replaced by one
-// served over the network.
-if (dfxNetwork !== 'ic') {
-  try {
-    await agent.fetchRootKey();
-  } catch (err) {
-    console.warn(
-      'Unable to fetch root key. Check to ensure that your local replica is running',
-    );
-    console.error(err);
-  }
+  canisterEnv?.['PUBLIC_CANISTER_ID:certification_certified_counter_backend'];
+if (!canisterId) {
+  throw new Error(
+    'Backend canister ID not found. Deploy with `icp deploy` and open the frontend canister URL.',
+  );
 }
+
+const agent = await HttpAgent.create({ rootKey: canisterEnv?.IC_ROOT_KEY });
 
 // Creates an actor with using the candid interface and the HttpAgent
 const backend = Actor.createActor<_SERVICE>(idlFactory, {

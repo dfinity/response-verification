@@ -342,28 +342,28 @@ fn serve_metrics() -> HttpResponse<'static> {
 
 This example uses a canister called `http_certification_assets_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
+To test the canister, you can use [icp-cli](https://cli.internetcomputer.org/1.5/guides/installation/) to start a local network:
 
 ```shell
-dfx start --background --clean
+icp network start -d
 ```
 
 Then, deploy the canister:
 
 ```shell
-dfx deploy http_certification_assets_backend
+icp deploy http_certification_assets_backend
 ```
 
 You can now access the canister's assets by navigating to the canister's URL in a web browser. The URL can also be found using the following command:
 
 ```shell
-echo "http://$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port)"
+echo "http://$(icp canister status http_certification_assets_backend --id-only).localhost:8000"
 ```
 
 Alternatively, to make a request with `curl`:
 
 ```shell
-curl "http://$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port)" --resolve "$(dfx canister id http_certification_assets_backend).localhost:$(dfx info webserver-port):127.0.0.1"
+curl "http://$(icp canister status http_certification_assets_backend --id-only).localhost:8000" --resolve "$(icp canister status http_certification_assets_backend --id-only).localhost:8000:127.0.0.1"
 ```
 
 ## Resources
