@@ -42,7 +42,9 @@ async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
     let Ok(replica_address) = env::var("REPLICA_ADDRESS") else {
-        return Err(anyhow!("The `REPLICA_ADDRESS` env variable not provided`"));
+        return Err(anyhow!(
+            "The `REPLICA_ADDRESS` env variable was not provided"
+        ));
     };
 
     let Some(canister_id) = args.get(1) else {

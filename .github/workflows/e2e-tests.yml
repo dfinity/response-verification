@@ -6,6 +6,9 @@ on:
       - main
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   SCCACHE_GHA_ENABLED: 'true'
   RUSTC_WRAPPER: 'sccache'
@@ -15,8 +18,6 @@ jobs:
     name: e2e_tests:required
     runs-on: ubuntu-latest
     container: ghcr.io/dfinity/icp-dev-env-all:v2.2.1
-    env:
-      ICP_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -32,3 +33,6 @@ jobs:
 
       - name: e2e tests
         run: ./scripts/e2e.sh
+        env:
+          # Read-only token so icp-cli can fetch recipe releases without hitting rate limits.
+          ICP_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
