@@ -7,10 +7,7 @@ import {
   lookupResultToBuffer,
 } from '@icp-sdk/core/agent';
 import { Principal } from '@icp-sdk/core/principal';
-import {
-  idlFactory,
-  _SERVICE,
-} from '../../declarations/certification_certified_counter_backend.did';
+import { idlFactory, _SERVICE } from '../../declarations/backend.did';
 
 const canisterId =
   process.env.CANISTER_ID_CERTIFICATION_CERTIFIED_COUNTER_BACKEND ?? '';

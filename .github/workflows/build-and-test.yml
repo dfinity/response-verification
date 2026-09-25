@@ -39,17 +39,15 @@ jobs:
   build_and_test_js:
     name: build_and_test_js:required
     runs-on: ubuntu-latest
+    container: ghcr.io/dfinity/icp-dev-env-all:v2.2.1
+    env:
+      ICP_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Setup PNPM
         uses: dfinity/ci-tools/actions/setup-pnpm@afeee4fbdc0683a88ec5a74ed7f59a2ce0e833ad # main
-
-      - name: Setup DFX
-        uses: dfinity/setup-dfx@e50c04f104ee4285ec010f10609483cf41e4d365 # main
-        with:
-          dfx-version: 'auto'
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
@@ -63,13 +61,13 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Generate canister declarations
-        run: dfx generate
+        run: pnpm run generate
 
       - name: Build NPM packages
         run: pnpm build
 
       - name: Build canisters
-        run: dfx build --check
+        run: icp build
 
       - name: Test NPM packages
         run: pnpm test

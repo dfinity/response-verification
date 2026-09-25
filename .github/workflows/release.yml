@@ -36,9 +36,6 @@ jobs:
       - name: Setup PNPM
         uses: dfinity/ci-tools/actions/setup-pnpm@afeee4fbdc0683a88ec5a74ed7f59a2ce0e833ad # main
 
-      - name: Setup DFX
-        uses: dfinity/setup-dfx@e50c04f104ee4285ec010f10609483cf41e4d365 # main
-
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
 
@@ -51,7 +48,7 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Generate canister declarations
-        run: dfx generate
+        run: pnpm run generate
 
       - name: Build NPM packages
         run: pnpm build

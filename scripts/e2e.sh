@@ -1,17 +1,10 @@
 #!/bin/bash
 
+# Runs the end-to-end tests against the response_verification_tests_frontend
+# canister deployed to a local icp-cli network.
 
-# Set the dfx command, this might be overwritten
-DFX=dfx
+CANISTER_NAME="response_verification_tests_frontend"
 
-# By default, we use the local DFX
-USE_LATEST_DFX=0
-
-# in case we decide to use the latest dfx
-SDK_GIT_BRANCH="master"
-SDK_REPO_DIR="$(pwd)/tmp/sdk"
-
-# Function to display usage
 print_usage() {
   echo "Run the end to end tests"
   echo
@@ -19,94 +12,46 @@ print_usage() {
   echo
   echo "Options:"
   echo "  -h                Show this help message and exit"
-  echo "  --use-latest-dfx  Clone, build and use the latest dfx"
   echo
 }
 
-
-# Download the SDK repo so we can build and test against the latest changes
-download_sdk_repo() {
-
-  if [ -d "$SDK_REPO_DIR" ]; then
-    echo "SDK repo already cloned, updating..."
-
-    pushd "$SDK_REPO_DIR" || clean_exit
-    git reset --hard
-    git clean -fxd -e target
-    git fetch
-    git checkout "$SDK_GIT_BRANCH"
-    git pull
-    popd || clean_exit
-  else
-    echo "SDK repo not cloned yet, cloning..."
-
-    git clone "https://github.com/dfinity/sdk" "$SDK_REPO_DIR"
-    pushd "$SDK_REPO_DIR" || clean_exit
-    git checkout "$SDK_GIT_BRANCH"
-    popd || clean_exit
+check_icp_command() {
+  if ! command -v icp &> /dev/null; then
+    echo "icp command was not found in your path"
+    exit 3
   fi
 }
 
-# check if the $DFX command exists
-check_dfx_command() {
-  if ! command -v $DFX &> /dev/null
-  then
-      echo "$DFX command was not found in your path"
-      exit 3
-  fi
+network_start() {
+  echo "Starting local network..."
+
+  icp network start -d || exit 1
+
+  REPLICA_ADDRESS=$(icp network status --json | sed -n 's/.*"api_url": *"\([^"]*\)".*/\1/p')
+  REPLICA_ADDRESS="${REPLICA_ADDRESS%/}"
+
+  echo "Local network running at $REPLICA_ADDRESS."
 }
 
-build_dfx() {
-  echo "Building DFX..."
+network_stop() {
+  echo "Stopping local network..."
 
-  pushd "$SDK_REPO_DIR" || clean_exit
-  cargo build -p dfx
-
-  # override dfx path
-  DFX="$(pwd)/target/debug/dfx"
-  popd || clean_exit
-
-  echo "DFX built at $DFX."
+  icp network stop
 }
 
-dfx_start() {
-  echo "Starting DFX..."
+deploy_test_canister() {
+  echo "Deploying $CANISTER_NAME..."
 
-  check_dfx_command
+  icp deploy "$CANISTER_NAME" || clean_exit
 
-  "$DFX" start --clean --background -qq --log file --logfile "./replica.log" -vv
-
-  DFX_REPLICA_PORT=$("$DFX" info webserver-port)
-  DFX_REPLICA_ADDRESS="http://localhost:$DFX_REPLICA_PORT"
-
-  echo "DFX local replica running at $DFX_REPLICA_ADDRESS."
-}
-
-dfx_stop() {
-  echo "Stopping DFX..."
-
-  check_dfx_command
-
-  "$DFX" stop
-}
-
-deploy_dfx_project() {
-  echo "Deploying DFX project..."
-
-  check_dfx_command
-
-  "$DFX" deploy response_verification_tests_frontend
-
-  echo "getting canister id..."
-  "$DFX" canister id response_verification_tests_frontend
-  DFX_CANISTER_ID=$("$DFX" canister id response_verification_tests_frontend)
-  echo "$DFX_CANISTER_ID"
+  CANISTER_ID=$(icp canister status "$CANISTER_NAME" --id-only) || clean_exit
+  echo "$CANISTER_ID"
 }
 
 clean_exit() {
   echo "Performing clean exit..."
 
-  dfx_stop
+  network_stop
 
   echo "TESTS FAILED!"
   exit 1
@@ -115,29 +60,24 @@ clean_exit() {
 run_e2e_tests() {
   echo "Running e2e tests..."
 
-  if [ -z "$DFX_REPLICA_ADDRESS" ]; then
-    echo "$DFX_REPLICA_ADDRESS must be defined!"
+  if [ -z "$REPLICA_ADDRESS" ]; then
+    echo "REPLICA_ADDRESS must be defined!"
     clean_exit
   fi
 
-  if [ -z "$DFX_CANISTER_ID" ]; then
-    echo "DFX_CANISTER_ID must be defined!"
+  if [ -z "$CANISTER_ID" ]; then
+    echo "CANISTER_ID must be defined!"
     clean_exit
   fi
 
-  DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$DFX_CANISTER_ID" || clean_exit
+  REPLICA_ADDRESS=$REPLICA_ADDRESS RUST_BACKTRACE=1 cargo run -p ic-response-verification-tests -- "$CANISTER_ID" || clean_exit
 
   pnpm run -F @dfinity/response-verification build || clean_exit
-  DFX_REPLICA_ADDRESS=$DFX_REPLICA_ADDRESS pnpm run -F response-verification-tests e2e-test -- "$DFX_CANISTER_ID" || clean_exit
+  REPLICA_ADDRESS=$REPLICA_ADDRESS pnpm run -F response-verification-tests e2e-test -- "$CANISTER_ID" || clean_exit
 }
 
-# Parse the script arguments
 for arg in "$@"; do
   case $arg in
-    --use-latest-dfx)
-      USE_LATEST_DFX=1
-      shift
-      ;;
     -h)
       print_usage
       exit 0
@@ -149,18 +89,13 @@ for arg in "$@"; do
   esac
 done
 
+check_icp_command
 
 pnpm i --frozen-lockfile
 
-if [ $USE_LATEST_DFX -eq 1 ]; then
-  # build latest dfx
-  download_sdk_repo
-  build_dfx
-fi
-
-dfx_start
-deploy_dfx_project
+network_start
+deploy_test_canister
 run_e2e_tests
-dfx_stop
+network_stop
 
 echo "TESTS PASSED!"

@@ -41,10 +41,8 @@ fn read_file(file_path: &str) -> Result<Vec<u8>> {
 async fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
-    let Ok(replica_address) = env::var("DFX_REPLICA_ADDRESS") else {
-        return Err(anyhow!(
-            "The `DFX_REPLICA_ADDRESS` env variable not provided`"
-        ));
+    let Ok(replica_address) = env::var("REPLICA_ADDRESS") else {
+        return Err(anyhow!("The `REPLICA_ADDRESS` env variable not provided`"));
     };
 
     let Some(canister_id) = args.get(1) else {

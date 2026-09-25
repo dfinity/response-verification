@@ -1,0 +1,37 @@
+type HttpUpdateResponse = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+ };
+type HttpUpdateRequest = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HttpResponse = 
+ record {
+   body: blob;
+   headers: vec HeaderField;
+   status_code: nat16;
+   upgrade: opt bool;
+ };
+type HttpRequest = 
+ record {
+   body: blob;
+   certificate_version: opt nat16;
+   headers: vec HeaderField;
+   method: text;
+   url: text;
+ };
+type HeaderField = 
+ record {
+   text;
+   text;
+ };
+service : {
+  http_request: (_req: HttpRequest) -> (HttpResponse) query;
+  http_request_update: (_req: HttpUpdateRequest) -> (HttpUpdateResponse);
+}

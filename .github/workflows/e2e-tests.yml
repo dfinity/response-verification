@@ -14,6 +14,9 @@ jobs:
   e2e_tests:
     name: e2e_tests:required
     runs-on: ubuntu-latest
+    container: ghcr.io/dfinity/icp-dev-env-all:v2.2.1
+    env:
+      ICP_CLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -24,14 +27,8 @@ jobs:
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
 
-      - name: Setup e2e Deps Cache
-        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
-        with:
-          path: tmp/
-          key: ${{ runner.os }}-tmp
-
       - name: Setup wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: e2e tests
-        run: ./scripts/e2e.sh --use-latest-dfx
+        run: ./scripts/e2e.sh
