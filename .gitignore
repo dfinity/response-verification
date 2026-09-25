@@ -7,8 +7,9 @@
 .DS_Store
 **/.DS_Store
 
-# DFX
-.dfx/
+# icp-cli and mops
+.icp/cache/
+.mops/
 .env
 
 # Rust
