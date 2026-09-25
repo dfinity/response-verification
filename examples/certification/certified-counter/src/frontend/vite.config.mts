@@ -1,10 +1,37 @@
-import { defineConfig, loadEnv } from 'vite';
+import { execSync } from 'node:child_process';
+import { defineConfig, type ServerOptions } from 'vite';
 import checker from 'vite-plugin-checker';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, '../../../../../', '');
+const environment = process.env.ICP_ENVIRONMENT || 'local';
+const BACKEND_CANISTER = 'certification_certified_counter_backend';
 
+function icp(args: string): string {
+  return execSync(`icp ${args}`, { encoding: 'utf-8', stdio: 'pipe' }).trim();
+}
+
+// The frontend canister sets the `ic_env` cookie in production. The dev server
+// simulates it from the running network, so the backend must already be deployed.
+function getDevServerConfig(): ServerOptions {
+  const networkStatus = JSON.parse(
+    icp(`network status -e ${environment} --json`),
+  );
+  const canisterId = icp(
+    `canister status ${BACKEND_CANISTER} -e ${environment} --id-only`,
+  );
+  const icEnv = `PUBLIC_CANISTER_ID:${BACKEND_CANISTER}=${canisterId}&ic_root_key=${networkStatus.root_key}`;
+
+  return {
+    headers: {
+      'Set-Cookie': `ic_env=${encodeURIComponent(icEnv)}; SameSite=Lax;`,
+    },
+    proxy: {
+      '/api': { target: networkStatus.api_url, changeOrigin: true },
+    },
+  };
+}
+
+export default defineConfig(({ command }) => {
   return {
     plugins: [
       checker({ typescript: true }),
@@ -24,17 +51,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-    define: {
-      'process.env': {
-        CANISTER_ID_CERTIFICATION_CERTIFIED_COUNTER_BACKEND:
-          env.CANISTER_ID_CERTIFICATION_CERTIFIED_COUNTER_BACKEND,
-        DFX_NETWORK: env.DFX_NETWORK,
-      },
-    },
-    server: {
-      proxy: {
-        '/api': 'http://127.0.0.1:8000',
-      },
-    },
+    ...(command === 'serve' ? { server: getDevServerConfig() } : {}),
   };
 });
