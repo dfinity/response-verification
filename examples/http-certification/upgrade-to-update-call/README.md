@@ -100,34 +100,34 @@ actor Http {
 
 This example uses a Rust canister called `http_certification_upgrade_to_update_call_rust_backend` or a Motoko canister called `http_certification_upgrade_to_update_call_motoko_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
+To test the canister, you can use [icp-cli](https://cli.internetcomputer.org/1.5/guides/installation/) to start a local network:
 
 ```shell
-dfx start --background --clean
+icp network start -d
 ```
 
 #### Testing the Rust canister
 
 ```shell
-dfx deploy http_certification_upgrade_to_update_call_rust_backend
+icp deploy http_certification_upgrade_to_update_call_rust_backend
 ```
 
 Make a request to the canister using curl:
 
 ```shell
-curl -v http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_upgrade_to_update_call_rust_backend)
+curl -v http://localhost:8000?canisterId=$(icp canister status http_certification_upgrade_to_update_call_rust_backend --id-only)
 ```
 
 #### Testing the Motoko canister
 
 ```shell
-dfx deploy http_certification_upgrade_to_update_call_motoko_backend
+icp deploy http_certification_upgrade_to_update_call_motoko_backend
 ```
 
 Make a request to the canister using curl:
 
 ```shell
-curl -v http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_upgrade_to_update_call_motoko_backend)
+curl -v http://localhost:8000?canisterId=$(icp canister status http_certification_upgrade_to_update_call_motoko_backend --id-only)
 ```
 
 ## Resources
