@@ -22,6 +22,4 @@ node_modules/
 # Other build files
 declarations/
 dist/
-tmp/
 pkg/
-replica.log
