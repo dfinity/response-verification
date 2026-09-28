@@ -1,9 +1,6 @@
 import { type CanisterFixture, type PocketIc } from '@dfinity/pic';
 import { resolve } from 'node:path';
-import {
-  type _SERVICE,
-  idlFactory,
-} from '../../declarations/http_certification_assets_backend.did';
+import { type _SERVICE, idlFactory } from '../../declarations/backend.did';
 
 export const BACKEND_WASM_PATH = resolve(
   __dirname,

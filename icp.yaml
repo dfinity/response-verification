@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://github.com/dfinity/icp-cli/raw/refs/tags/v1.5.0/docs/schemas/icp-yaml-schema.json
+
+canisters:
+  - name: certification_certified_counter_backend
+    recipe:
+      type: '@dfinity/rust@v3.4.0'
+      configuration:
+        candid: examples/certification/certified-counter/src/backend/backend.did
+        locked: true
+        shrink: true
+        compress: true
+  - name: certification_certified_counter_frontend
+    recipe:
+      type: '@dfinity/asset-canister@v2.3.0'
+      configuration:
+        version: '0.31.0'
+        dir: examples/certification/certified-counter/src/frontend/dist
+        build:
+          - pnpm -F certification-certified-counter-frontend build
+  # The backend embeds the frontend build output, so the frontend is built first.
+  - name: http_certification_assets_backend
+    build:
+      steps:
+        - type: script
+          commands:
+            - pnpm -F http-certification-assets-frontend build
+            - cargo build --target wasm32-unknown-unknown --release -p http_certification_assets_backend --locked
+            - cp target/wasm32-unknown-unknown/release/http_certification_assets_backend.wasm "$ICP_WASM_OUTPUT_PATH"
+            - ic-wasm "$ICP_WASM_OUTPUT_PATH" -o "$ICP_WASM_OUTPUT_PATH" metadata candid:service -f examples/http-certification/assets/src/backend/backend.did -v public --keep-name-section
+            - ic-wasm "$ICP_WASM_OUTPUT_PATH" -o "$ICP_WASM_OUTPUT_PATH" shrink --keep-name-section
+            - gzip --no-name "$ICP_WASM_OUTPUT_PATH" && mv "$ICP_WASM_OUTPUT_PATH.gz" "$ICP_WASM_OUTPUT_PATH"
+  # The backend embeds the frontend build output, so the frontend is built first.
+  - name: http_certification_custom_assets_backend
+    build:
+      steps:
+        - type: script
+          commands:
+            - pnpm -F http-certification-custom-assets-frontend build
+            - cargo build --target wasm32-unknown-unknown --release -p http_certification_custom_assets_backend --locked
+            - cp target/wasm32-unknown-unknown/release/http_certification_custom_assets_backend.wasm "$ICP_WASM_OUTPUT_PATH"
+            - ic-wasm "$ICP_WASM_OUTPUT_PATH" -o "$ICP_WASM_OUTPUT_PATH" metadata candid:service -f examples/http-certification/custom-assets/src/backend/backend.did -v public --keep-name-section
+            - ic-wasm "$ICP_WASM_OUTPUT_PATH" -o "$ICP_WASM_OUTPUT_PATH" shrink --keep-name-section
+            - gzip --no-name "$ICP_WASM_OUTPUT_PATH" && mv "$ICP_WASM_OUTPUT_PATH.gz" "$ICP_WASM_OUTPUT_PATH"
+  - name: http_certification_json_api_backend
+    recipe:
+      type: '@dfinity/rust@v3.4.0'
+      configuration:
+        candid: examples/http-certification/json-api/src/backend/backend.did
+        locked: true
+        shrink: true
+        compress: true
+  - name: http_certification_skip_certification_backend
+    recipe:
+      type: '@dfinity/rust@v3.4.0'
+      configuration:
+        candid: examples/http-certification/skip-certification/src/backend/backend.did
+        locked: true
+        shrink: true
+        compress: true
+  - name: http_certification_upgrade_to_update_call_rust_backend
+    recipe:
+      type: '@dfinity/rust@v3.4.0'
+      configuration:
+        candid: examples/http-certification/upgrade-to-update-call/src/backend.did
+        locked: true
+        shrink: true
+        compress: true
+  - name: http_certification_upgrade_to_update_call_motoko_backend
+    recipe:
+      type: '@dfinity/motoko@v5.1.0'
+      configuration:
+        shrink: true
+        compress: true
+  - name: response_verification_tests_frontend
+    recipe:
+      type: '@dfinity/asset-canister@v2.3.0'
+      configuration:
+        version: '0.31.0'
+        dir: packages/ic-response-verification-tests/src/frontend/dist
+        build:
+          - pnpm -F response-verification-tests-frontend build

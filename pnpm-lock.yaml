@@ -18,6 +18,9 @@ importers:
       '@dfinity/pic':
         specifier: 0.23.0
         version: 0.23.0
+      '@icp-sdk/bindgen':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@icp-sdk/core':
         specifier: ^6.0.0
         version: 6.1.0
@@ -556,6 +559,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@icp-sdk/bindgen@0.4.0':
+    resolution: {integrity: sha512-WXJoPIVnqCgFSNcprVpHwPBNWA1prwPh1/ezQYVrCP+Zj8CCJ7zj9L7p5cFcN7ghxoxfbx6tYT8t/HN9fyeYkA==}
+    hasBin: true
+
   '@icp-sdk/core@6.1.0':
     resolution: {integrity: sha512-hw3kozrCoP/JqRLXmG35stFjNOyzfA7FU+lPm66WdcSEIS5PD/sMu2yhNiPIkXFJ+jodeJyxX/a379nMvLS/3g==}
 
@@ -874,6 +881,10 @@ packages:
   chokidar@4.0.3:
     resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
     engines: {node: '>= 14.16.0'}
+
+  commander@14.0.3:
+    resolution: {integrity: sha512-H+y0Jo/T1RZ9qPP4Eh1pkcQcLRglraJaSLoyOtHxu6AapkjWVCy2Sit1QQ4x3Dng8qDlSsZEet7g5Pq06MvTgw==}
+    engines: {node: '>=20'}
 
   commander@2.20.3:
     resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
@@ -1673,6 +1684,10 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
+  '@icp-sdk/bindgen@0.4.0':
+    dependencies:
+      commander: 14.0.3
+
   '@icp-sdk/core@6.1.0':
     dependencies:
       '@dfinity/cbor': 0.2.3
@@ -1963,6 +1978,8 @@ snapshots:
   chokidar@4.0.3:
     dependencies:
       readdirp: 4.1.2
+
+  commander@14.0.3: {}
 
   commander@2.20.3:
     optional: true

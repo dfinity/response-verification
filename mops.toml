@@ -1,0 +1,9 @@
+[toolchain]
+moc = "1.16.1"
+
+[dependencies]
+core = "2.6.2"
+
+[canisters.http_certification_upgrade_to_update_call_motoko_backend]
+main = "examples/http-certification/upgrade-to-update-call/src/motoko-backend/main.mo"
+candid = "examples/http-certification/upgrade-to-update-call/src/motoko-backend/backend.did"
