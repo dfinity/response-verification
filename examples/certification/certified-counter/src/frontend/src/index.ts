@@ -12,7 +12,9 @@ import { idlFactory, _SERVICE } from '../../declarations/backend.did';
 
 // The frontend canister sets the `ic_env` cookie: the backend's canister ID
 // (injected by `icp deploy`) and the root key of the network serving the page.
-const canisterEnv = safeGetCanisterEnv();
+const canisterEnv = safeGetCanisterEnv<{
+  readonly 'PUBLIC_CANISTER_ID:certification_certified_counter_backend': string;
+}>();
 const canisterId =
   canisterEnv?.['PUBLIC_CANISTER_ID:certification_certified_counter_backend'];
 if (!canisterId) {
