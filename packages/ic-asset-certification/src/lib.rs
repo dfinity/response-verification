@@ -27,7 +27,7 @@
 //!   - [include_bytes!](https://doc.rust-lang.org/std/macro.include_bytes.html)
 //!   - [include_dir!](https://docs.rs/include_dir/latest/include_dir/index.html)
 //! - Uploading assets via canister endpoints at runtime:
-//!   - The [`dfx` asset canister](https://github.com/dfinity/sdk/blob/master/docs/design/asset-canister-interface.md) is a good example of this approach.
+//!   - The [certified-assets canister](https://github.com/dfinity/certified-assets) is a good example of this approach.
 //! - Generating assets dynamically in code, at runtime.
 //!
 //! With the assets in memory, they can be converted into the [Asset] type:
