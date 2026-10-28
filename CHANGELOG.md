@@ -1,3 +1,9 @@
+## 4.0.1 (2026-10-28)
+
+### Fix
+
+- **ic-certification**: remove `doc_auto_cfg` feature to fix docs.rs build
+
 ## 4.0.0 (2026-09-24)
 
 ### BREAKING CHANGE
