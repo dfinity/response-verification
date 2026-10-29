@@ -10,7 +10,6 @@
 # icp-cli and mops
 .icp/cache/
 .mops/
-.env
 
 # Rust
 .cargo/

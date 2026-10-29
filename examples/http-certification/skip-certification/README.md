@@ -54,22 +54,22 @@ The call to `data_certificate` returns a certificate that proves the canister's 
 
 This example uses a canister called `http_certification_skip_certification_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
+To test the canister, you can use [icp-cli](https://cli.internetcomputer.org/1.5/guides/installation/) to start a local network:
 
 ```shell
-dfx start --background --clean
+icp network start -d
 ```
 
 Then, deploy the canister:
 
 ```shell
-dfx deploy http_certification_skip_certification_backend
+icp deploy http_certification_skip_certification_backend
 ```
 
 Make a request to the canister using curl:
 
 ```shell
-curl -s http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend) | jq
+curl -s http://localhost:8000?canisterId=$(icp canister status http_certification_skip_certification_backend --id-only) | jq
 ```
 
 You should see output similar to the following:
@@ -83,7 +83,7 @@ You should see output similar to the following:
 Alternatively, print the URL in the terminal and then open it in a browser:
 
 ```shell
-echo http://localhost:$(dfx info webserver-port)?canisterId=$(dfx canister id http_certification_skip_certification_backend)
+echo http://localhost:8000?canisterId=$(icp canister status http_certification_skip_certification_backend --id-only)
 ```
 
 ## Resources
