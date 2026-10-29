@@ -1,14 +1,12 @@
 import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
 import { Principal } from '@icp-sdk/core/principal';
-import {
-  verifyRequestResponsePair,
-  Request,
-} from '@dfinity/response-verification';
+import { verifyRequestResponsePair } from '@dfinity/response-verification';
 
 import {
   _SERVICE,
   HeaderField,
-} from '../../declarations/http_certification_skip_certification_backend.did';
+  type HttpRequest,
+} from '../../declarations/backend.did';
 import { setupBackendCanister } from './wasm';
 
 const CERTIFICATE_VERSION = 2;
@@ -55,7 +53,7 @@ describe('HTTP', () => {
   });
 
   it('should serve uncertified metrics', async () => {
-    const request: Request = {
+    const request: HttpRequest = {
       url: '/',
       method: 'GET',
       headers: [],

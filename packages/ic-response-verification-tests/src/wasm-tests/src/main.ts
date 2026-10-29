@@ -30,9 +30,9 @@ async function createAgentAndActor(
 
 async function main(): Promise<void> {
   try {
-    const replicaAddress = process.env['DFX_REPLICA_ADDRESS'];
+    const replicaAddress = process.env['REPLICA_ADDRESS'];
     if (!replicaAddress) {
-      throw 'The `DFX_REPLICA_ADDRESS` env variable was not provided';
+      throw 'The `REPLICA_ADDRESS` env variable was not provided';
     }
 
     if (process.argv.length === 2) {

@@ -1,4 +1,4 @@
-import { ErrResponse } from '../../declarations/http_certification_json_api_backend.did';
+import { ErrResponse } from '../../declarations/backend.did';
 
 export function jsonDecode<T>(body?: Uint8Array | number[]): T {
   body = body ? Uint8Array.from(body) : body;

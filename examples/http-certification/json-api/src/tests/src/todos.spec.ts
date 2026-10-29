@@ -2,7 +2,6 @@ import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
 import { Principal } from '@icp-sdk/core/principal';
 import {
   verifyRequestResponsePair,
-  Request,
   VerifiedResponse,
   Response,
 } from '@dfinity/response-verification';
@@ -13,7 +12,8 @@ import {
   CreateTodoItemResponse,
   UpdateTodoItemRequest,
   UpdateTodoItemResponse,
-} from '../../declarations/http_certification_json_api_backend.did';
+  type HttpRequest,
+} from '../../declarations/backend.did';
 import { setupBackendCanister } from './wasm';
 import { CERTIFICATE_VERSION, jsonEncode } from './request';
 import {
@@ -62,7 +62,7 @@ describe('Todos', () => {
   });
 
   it('should initially have an empty array of todos', async () => {
-    const request: Request = {
+    const request: HttpRequest = {
       url: '/todos',
       method: 'GET',
       headers: [],
@@ -97,7 +97,7 @@ describe('Todos', () => {
 
   it('should create, update and delete a todo', async () => {
     const todoTitle = 'Buy milk';
-    const createRequest: Request = {
+    const createRequest: HttpRequest = {
       url: '/todos',
       method: 'POST',
       headers: [],
@@ -120,7 +120,7 @@ describe('Todos', () => {
     expect(createUpdateResponseBody.id).toBeDefined();
     expect(createUpdateResponseBody.id).toEqual(expect.any(Number));
 
-    const afterCreateRequest: Request = {
+    const afterCreateRequest: HttpRequest = {
       url: '/todos',
       method: 'GET',
       headers: [],
@@ -153,7 +153,7 @@ describe('Todos', () => {
     expectResponseEqual(verificationResult.response, afterCreateResponse);
     expect(verificationResultBody).toEqual(afterCreateResponseBody);
 
-    const updateRequest: Request = {
+    const updateRequest: HttpRequest = {
       url: `/todos/${createUpdateResponseBody.id}`,
       method: 'PATCH',
       headers: [],
@@ -172,7 +172,7 @@ describe('Todos', () => {
     >(updateUpdateResponse.body);
     expect(updateUpdateResponseBody).toBe(null);
 
-    const afterUpdateRequest: Request = {
+    const afterUpdateRequest: HttpRequest = {
       url: '/todos',
       method: 'GET',
       headers: [],
@@ -209,7 +209,7 @@ describe('Todos', () => {
     );
     expect(afterUpdateVerificationResultBody).toEqual(afterUpdateResponseBody);
 
-    const deleteRequest: Request = {
+    const deleteRequest: HttpRequest = {
       url: `/todos/${createUpdateResponseBody.id}`,
       method: 'DELETE',
       headers: [],
@@ -227,7 +227,7 @@ describe('Todos', () => {
     expect(deleteUpdateResponse.status_code).toEqual(204);
     expect(deleteUpdateResponseBody).toEqual(null);
 
-    const afterDeleteRequest: Request = {
+    const afterDeleteRequest: HttpRequest = {
       url: '/todos',
       method: 'GET',
       headers: [],
@@ -267,7 +267,7 @@ describe('Todos', () => {
 
   ['HEAD', 'PUT', 'OPTIONS', 'TRACE', 'CONNECT'].forEach(method => {
     it(`should return 405 for ${method} method`, async () => {
-      const request: Request = {
+      const request: HttpRequest = {
         url: '/todos',
         method,
         headers: [],
@@ -305,7 +305,7 @@ describe('Todos', () => {
   });
 
   it('should return 404 for unknown route', async () => {
-    const request: Request = {
+    const request: HttpRequest = {
       url: '/unknown',
       method: 'GET',
       headers: [],

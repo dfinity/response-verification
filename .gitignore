@@ -7,8 +7,9 @@
 .DS_Store
 **/.DS_Store
 
-# DFX
-.dfx/
+# icp-cli and mops
+.icp/cache/
+.mops/
 .env
 
 # Rust
@@ -21,6 +22,4 @@ node_modules/
 # Other build files
 declarations/
 dist/
-tmp/
 pkg/
-replica.log
