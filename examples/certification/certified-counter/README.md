@@ -4,40 +4,18 @@ This example project demonstrates how to create a certification for non-replicat
 
 ## Running the project locally
 
-From this project's directory:
-
-```shell
-cd examples/certification/certified-counter
-```
-
-Start DFX:
-
-```shell
-dfx start --background
-```
-
-Create canisters:
-
-```shell
-dfx canister create --all
-```
-
-Generate backend canister bindings:
-
-```shell
-dfx generate backend
-```
-
-Back to the root of repository:
-
-```shell
-cd ../../
-```
+Run these commands from the root of the repository, with [icp-cli](https://cli.internetcomputer.org/1.5/guides/installation/) installed.
 
 Install pnpm dependencies:
 
 ```shell
 pnpm i
+```
+
+Generate the backend canister's Candid declarations:
+
+```shell
+pnpm run generate
 ```
 
 Build the `@dfinity/certificate-verification` package:
@@ -46,22 +24,28 @@ Build the `@dfinity/certificate-verification` package:
 pnpm run --filter @dfinity/certificate-verification build
 ```
 
-Now change to this project's directory again:
+Start a local network:
 
 ```shell
-cd examples/certification/certified-counter
+icp network start -d
 ```
 
 Build and deploy the canisters:
 
 ```shell
-dfx deploy
+icp deploy certification_certified_counter_backend certification_certified_counter_frontend
 ```
 
-Print the web URL of the canister:
+`icp deploy` prints the frontend's URL, `http://certification_certified_counter_frontend.local.localhost:8000/`. Open it in your web browser.
+
+The frontend reads the backend's canister ID and the local network's root key from the `ic_env` cookie that the frontend canister sets, so it never fetches the root key at runtime.
+
+### Frontend development with hot reload
+
+With the network running and the backend deployed (`icp deploy certification_certified_counter_backend`), start the Vite dev server:
 
 ```shell
-echo "http://$(dfx canister id certification_certified_counter_frontend).localhost:$(dfx info webserver-port)"
+pnpm -F certification-certified-counter-frontend start
 ```
 
-Now you can open that URL in your web browser.
+The dev server sets the same `ic_env` cookie from `icp network status` and `icp canister status`, and proxies `/api` to the local network. Set `ICP_ENVIRONMENT` to target another environment.

@@ -524,32 +524,32 @@ fn insert_update_route(method: &str, path: &str, route_handler: RouteHandler) {
 
 This example uses a canister called `http_certification_json_api_backend`.
 
-To test the canister, you can use [`dfx`](https://internetcomputer.org/docs/building-apps/getting-started/install) to start a local development environment:
+To test the canister, you can use [icp-cli](https://cli.internetcomputer.org/1.5/guides/installation/) to start a local network:
 
 ```shell
-dfx start --background --clean
+icp network start -d
 ```
 
 Then, deploy the canister:
 
 ```shell
-dfx deploy http_certification_json_api_backend
+icp deploy http_certification_json_api_backend
 ```
 
 To fetch to-do items:
 
 ```shell
 curl -s \
-    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos" \
-    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" | jq
+    "http://$(icp canister status http_certification_json_api_backend --id-only).localhost:8000/todos" \
+    --resolve "$(icp canister status http_certification_json_api_backend --id-only).localhost:8000:127.0.0.1" | jq
 ```
 
 To add a to-do item:
 
 ```shell
 curl -s -X POST \
-    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos" \
-    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" \
+    "http://$(icp canister status http_certification_json_api_backend --id-only).localhost:8000/todos" \
+    --resolve "$(icp canister status http_certification_json_api_backend --id-only).localhost:8000:127.0.0.1" \
     -H "Content-Type: application/json" \
     -d '{ "title": "Learn Motoko" }' | jq
 ```
@@ -558,8 +558,8 @@ To update a to-do item:
 
 ```shell
 curl -s -X PATCH \
-    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos/0" \
-    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" \
+    "http://$(icp canister status http_certification_json_api_backend --id-only).localhost:8000/todos/0" \
+    --resolve "$(icp canister status http_certification_json_api_backend --id-only).localhost:8000:127.0.0.1" \
     -H "Content-Type: application/json" \
     -d '{ "completed": true }' | jq
 ```
@@ -568,8 +568,8 @@ To delete a to-do item:
 
 ```shell
 curl -s -X DELETE \
-    "http://$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port)/todos/0" \
-    --resolve "$(dfx canister id http_certification_json_api_backend).localhost:$(dfx info webserver-port):127.0.0.1" | jq
+    "http://$(icp canister status http_certification_json_api_backend --id-only).localhost:8000/todos/0" \
+    --resolve "$(icp canister status http_certification_json_api_backend --id-only).localhost:8000:127.0.0.1" | jq
 ```
 
 ## Resources
