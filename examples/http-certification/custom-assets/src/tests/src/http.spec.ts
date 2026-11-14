@@ -1,16 +1,14 @@
 import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
 import { Principal } from '@icp-sdk/core/principal';
-import {
-  verifyRequestResponsePair,
-  Request,
-} from '@dfinity/response-verification';
+import { verifyRequestResponsePair } from '@dfinity/response-verification';
 import { resolve } from 'path';
 import { readFile } from 'fs/promises';
 
 import {
   _SERVICE,
   HeaderField,
-} from '../../declarations/http_certification_custom_assets_backend.did';
+  type HttpRequest,
+} from '../../declarations/backend.did';
 import { setupBackendCanister } from './wasm';
 
 const CERTIFICATE_VERSION = 2;
@@ -57,7 +55,7 @@ describe('Assets', () => {
   });
 
   it('should serve uncertified metrics', async () => {
-    const request: Request = {
+    const request: HttpRequest = {
       url: '/metrics',
       method: 'GET',
       headers: [],
@@ -264,7 +262,7 @@ describe('Assets', () => {
   ].forEach(({ url, asset, encoding, contentType, cacheControl }) => {
     it(`should return "${asset}" for "${url}" with "${encoding}" encoding`, async () => {
       const indexHtml = await loadAsset(asset);
-      const request: Request = {
+      const request: HttpRequest = {
         url,
         method: 'GET',
         headers: [['Accept-Encoding', encoding]],

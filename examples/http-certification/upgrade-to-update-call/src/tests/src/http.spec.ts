@@ -3,8 +3,8 @@ import { Actor, PocketIc, PocketIcServer } from '@dfinity/pic';
 import {
   _SERVICE as RUST_SERVICE,
   HttpRequest,
-} from '../../declarations/rust-backend/http_certification_upgrade_to_update_call_rust_backend.did';
-import { _SERVICE as MOTOKO_SERVICE } from '../../declarations/motoko-backend/http_certification_upgrade_to_update_call_motoko_backend.did';
+} from '../../declarations/rust-backend/backend.did';
+import { _SERVICE as MOTOKO_SERVICE } from '../../declarations/motoko-backend/backend.did';
 import { setupMotokoBackendCanister, setupRustBackendCanister } from './wasm';
 
 describe('HTTP', () => {

@@ -3,11 +3,11 @@ import { resolve } from 'node:path';
 import {
   type _SERVICE as RUST_SERVICE,
   idlFactory as rustIdlFactory,
-} from '../../declarations/rust-backend/http_certification_upgrade_to_update_call_rust_backend.did';
+} from '../../declarations/rust-backend/backend.did';
 import {
   type _SERVICE as MOTOKO_SERVICE,
   idlFactory as motokoIdlFactory,
-} from '../../declarations/motoko-backend/http_certification_upgrade_to_update_call_motoko_backend.did';
+} from '../../declarations/motoko-backend/backend.did';
 
 const RUST_BACKEND_WASM_PATH = resolve(
   __dirname,
@@ -17,11 +17,10 @@ const RUST_BACKEND_WASM_PATH = resolve(
   '..',
   '..',
   '..',
-  '.dfx',
-  'local',
-  'canisters',
-  'http_certification_upgrade_to_update_call_rust_backend',
-  'http_certification_upgrade_to_update_call_rust_backend.wasm.gz',
+  'target',
+  'wasm32-unknown-unknown',
+  'release',
+  'http_certification_upgrade_to_update_call_rust_backend.wasm',
 );
 
 const Motoko_BACKEND_WASM_PATH = resolve(
@@ -32,11 +31,9 @@ const Motoko_BACKEND_WASM_PATH = resolve(
   '..',
   '..',
   '..',
-  '.dfx',
-  'local',
-  'canisters',
-  'http_certification_upgrade_to_update_call_motoko_backend',
-  'http_certification_upgrade_to_update_call_motoko_backend.wasm.gz',
+  '.mops',
+  '.build',
+  'http_certification_upgrade_to_update_call_motoko_backend.wasm',
 );
 
 export async function setupRustBackendCanister(
